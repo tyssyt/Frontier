@@ -83,7 +83,7 @@ public final class ParserContextUtils {
 
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
-            type = FArray.createMultiArray(type, arrayDepth);
+            type = FArray.getMultiArrayFrom(type, arrayDepth);
         return new Pair<>(type, e);
     }
 
