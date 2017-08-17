@@ -27,8 +27,6 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     private Map<FClassIdentifier, FClass> classes;
     private SyntaxTreeData treeData;
     private List<SyntaxError> errors = new ArrayList<>();
-    private Map<FrontierParser.LiteralContext, FLiteral> literalMap = new HashMap<>();
-    private Map<FrontierParser.ExpressionContext, FExpression> expressionMap = new HashMap<>();
     private FClass currentClass;
     private FFunction currentFunction;
     private MapStack<FVariableIdentifier, FVariable> declaredVars = new MapStack<>();
@@ -89,13 +87,18 @@ public class ToInternalRepresentation extends FrontierBaseListener {
 
     @Override
     public void exitLiteralExpr(FrontierParser.LiteralExprContext ctx) {
-        FLiteral literal = literalMap.get(ctx.literal());
-        expressionMap.put(ctx, new FLiteralExpression(literal));
+        FLiteral literal = treeData.literalMap.get(ctx.literal());
+        treeData.expressionMap.put(ctx, new FLiteralExpression(literal));
     }
 
     @Override
     public void exitThisExpr(FrontierParser.ThisExprContext ctx) {
-        super.exitThisExpr(ctx);
+        FVariableIdentifier identifier = FVariableIdentifier.THIS;
+        FVariable var = declaredVars.get(identifier);
+        if (var == null) {
+            errors.add(new UndeclaredVariable(identifier, currentFunction));
+        }
+        treeData.expressionMap.put(ctx, new FVariableExpression(var));
     }
 
     @Override
@@ -105,40 +108,41 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         if (var == null) {
             errors.add(new UndeclaredVariable(identifier, currentFunction));
         }
+        treeData.expressionMap.put(ctx, new FVariableExpression(var));
     }
 
     @Override
     public void exitBracketsExpr(FrontierParser.BracketsExprContext ctx) {
-        FExpression inner = expressionMap.get(ctx.expression());
-        expressionMap.put(ctx, new FBracketsExpression(inner));
+        FExpression inner = treeData.expressionMap.get(ctx.expression());
+        treeData.expressionMap.put(ctx, new FBracketsExpression(inner));
     }
 
     @Override
     public void exitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         //TODO type check
-        FExpression expression = expressionMap.get(ctx.children.get(1));
+        FExpression expression = treeData.expressionMap.get(ctx.children.get(1));
         FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.children.get(0).getText(), true);
         FUnaryOp res = new FUnaryOp(expression, op);
-        expressionMap.put(ctx, res);
+        treeData.expressionMap.put(ctx, res);
     }
 
     @Override
     public void exitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
         //TODO type check
-        FExpression expression = expressionMap.get(ctx.children.get(0));
+        FExpression expression = treeData.expressionMap.get(ctx.children.get(0));
         FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.children.get(1).getText(), false);
         FUnaryOp res = new FUnaryOp(expression, op);
-        expressionMap.put(ctx, res);
+        treeData.expressionMap.put(ctx, res);
     }
 
     @Override
     public void exitBinaryOp(FrontierParser.BinaryOpContext ctx) {
         //TODO type check
-        FExpression first = expressionMap.get(ctx.children.get(0));
-        FExpression second = expressionMap.get(ctx.children.get(2));
+        FExpression first = treeData.expressionMap.get(ctx.children.get(0));
+        FExpression second = treeData.expressionMap.get(ctx.children.get(2));
         FBinaryOp.Operator op = FBinaryOp.Operator.fromString(ctx.children.get(1).getText());
         FBinaryOp res = new FBinaryOp(first, second, op);
-        expressionMap.put(ctx, res);
+        treeData.expressionMap.put(ctx, res);
     }
 
     @Override
@@ -167,7 +171,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     //TODO store original representation as well to be able to reconstruct it
     @Override
     public void exitLiteral(FrontierParser.LiteralContext ctx) {
-        literalMap.put(ctx, ParserContextUtils.getLiteral(ctx));
+        treeData.literalMap.put(ctx, ParserContextUtils.getLiteral(ctx));
     }
 
     //TODO -------------------------
