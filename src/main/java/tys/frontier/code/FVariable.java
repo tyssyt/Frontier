@@ -1,10 +1,11 @@
 package tys.frontier.code;
 
-import tys.frontier.code.identifier.FIdentifierNameable;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.Typed;
 
-public class FVariable implements FIdentifierNameable {
+public class FVariable implements IdentifierNameable, Typed {
 
     private FVariableIdentifier identifier;
     private FType type;
@@ -19,6 +20,7 @@ public class FVariable implements FIdentifierNameable {
         return identifier;
     }
 
+    @Override
     public FType getType() {
         return type;
     }

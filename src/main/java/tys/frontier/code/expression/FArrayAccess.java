@@ -1,8 +1,15 @@
 package tys.frontier.code.expression;
 
-public class FArrayAccess {
+import tys.frontier.code.type.FArrayType;
+import tys.frontier.code.type.FType;
 
-    FExpression array;
-    FExpression index; //TODO int
+public class FArrayAccess implements FExpression {
 
+    private FExpression array;
+    private FExpression index; //TODO int
+
+    @Override
+    public FType getType() {
+        return ((FArrayType) array.getType()).baseType;
+    }
 }

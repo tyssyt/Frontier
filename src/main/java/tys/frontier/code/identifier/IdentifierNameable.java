@@ -1,6 +1,6 @@
 package tys.frontier.code.identifier;
 
-public interface FIdentifierNameable {
+public interface IdentifierNameable {
 
     FIdentifier getIdentifier();
 

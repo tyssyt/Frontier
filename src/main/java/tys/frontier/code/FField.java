@@ -1,13 +1,15 @@
 package tys.frontier.code;
 
-import tys.frontier.code.identifier.FIdentifierNameable;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.Typed;
 
 import java.util.Optional;
 
-public class FField implements FIdentifierNameable {
-    //TODO think about if this should extend FVariable instead of being a has relation
+public class FField implements IdentifierNameable, Typed {
+    //TODO think about if this should extend FVariable instead of being a has relation, maybe common superclass?
     private FVariable variable;
     private FClass clazz;
     private FVisibilityModifier modifier;
@@ -24,6 +26,11 @@ public class FField implements FIdentifierNameable {
     @Override
     public FVariableIdentifier getIdentifier() {
         return variable.getIdentifier();
+    }
+
+    @Override
+    public FType getType() {
+        return variable.getType();
     }
 
     public FVariable getVariable() {

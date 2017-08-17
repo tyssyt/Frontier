@@ -1,15 +1,16 @@
 package tys.frontier.code;
 
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FIdentifierNameable;
+import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.Typed;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class FFunction implements FIdentifierNameable {
+public class FFunction implements IdentifierNameable, Typed {
 
     private FFunctionIdentifier identifier;
     private FClass clazz;
@@ -55,6 +56,11 @@ public class FFunction implements FIdentifierNameable {
     @Override
     public FFunctionIdentifier getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public FType getType() {
+        return returnType;
     }
 
     public boolean isConstructor() {

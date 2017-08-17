@@ -1,17 +1,24 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.type.FType;
+
 public class FBinaryOp implements FExpression {
 
-    public final FExpression first;
-    public final FExpression second;
-    public final Operator operator;
+    private FExpression first;
+    private FExpression second;
+    private Operator operator;
     public FBinaryOp(FExpression first, FExpression second, Operator operator) {
         this.first = first;
         this.second = second;
         this.operator = operator;
     }
 
-    public  enum Operator { //TODO type restrictions of operators
+    @Override
+    public FType getType() {
+        return null; //TODO
+    }
+
+    public enum Operator { //TODO type restrictions of operators
         EQ("=="),
         NE("!="),
         AND("&&"),

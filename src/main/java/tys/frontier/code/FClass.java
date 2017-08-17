@@ -4,17 +4,18 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FIdentifierNameable;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.type.FClassType;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.Typed;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class FClass implements FIdentifierNameable {
+public class FClass implements IdentifierNameable, Typed {
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -52,12 +53,13 @@ public class FClass implements FIdentifierNameable {
         return identifier;
     }
 
-    public FVisibilityModifier getVisibility() {
-        return visibility;
-    }
-
+    @Override
     public FType getType() {
         return type;
+    }
+
+    public FVisibilityModifier getVisibility() {
+        return visibility;
     }
 
     public FVariable getThis() {

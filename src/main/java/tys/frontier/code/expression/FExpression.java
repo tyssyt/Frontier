@@ -1,4 +1,6 @@
 package tys.frontier.code.expression;
 
-public interface FExpression {
+import tys.frontier.code.type.Typed;
+
+public interface FExpression extends Typed {
 }

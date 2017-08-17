@@ -1,5 +1,7 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.type.FType;
+
 public class FUnaryOp implements FExpression {
 
     public final FExpression expression;
@@ -7,6 +9,11 @@ public class FUnaryOp implements FExpression {
     public FUnaryOp(FExpression expression, Operator operator) {
         this.expression = expression;
         this.operator = operator;
+    }
+
+    @Override
+    public FType getType() {
+        return null; //TODO
     }
 
     public enum Operator { //TODO type
