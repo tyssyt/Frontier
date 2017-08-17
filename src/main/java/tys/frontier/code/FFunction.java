@@ -62,7 +62,7 @@ public class FFunction implements IdentifierNameable, Typed {
     }
 
     public boolean hasSameSignatureAs(FFunction other) {
-        if (this.returnType != other.returnType || this.params.size() != other.params.size())
+        if (!this.identifier.equals(other.identifier) || this.params.size() != other.params.size())
             return false;
         Set<FClass> types = params.stream().map(FVariable::getType).collect(Collectors.toSet());
         return other.params.stream().map(FVariable::getType).allMatch(types::contains);
