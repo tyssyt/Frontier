@@ -70,6 +70,6 @@ public class FFunction implements IdentifierNameable, Typed {
 
     @Override
     public String toString() {
-        return modifier + (statik ? " static " : " ") + returnType + " " +identifier + " " + params;
+        return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
     }
 }
