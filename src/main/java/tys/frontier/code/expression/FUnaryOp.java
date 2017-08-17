@@ -1,0 +1,42 @@
+package tys.frontier.code.expression;
+
+public class FUnaryOp implements FExpression {
+
+    public final FExpression expression;
+    public final Operator operator;
+    public FUnaryOp(FExpression expression, Operator operator) {
+        this.expression = expression;
+        this.operator = operator;
+    }
+
+    public enum Operator { //TODO type
+        NOT("!", true),
+        PRE_INCREMENT("++", true),
+        PRE_DECREMENT("--", true),
+        POST_INCREMENT("++", false),
+        POST_ODECREMENT("--", false),
+        PLUS("+", true),
+        MINUS("-", true);
+
+        public final String stringRepresentation;
+        public boolean prefix;
+
+        Operator(String s, boolean prefix) {
+            stringRepresentation = s;
+            this.prefix = prefix;
+        }
+
+        public static Operator fromString (String string, boolean prefix) {
+            for (Operator op : values()) {
+                if (op.prefix==prefix && op.stringRepresentation.equals(string))
+                    return op;
+            }
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return stringRepresentation;
+        }
+    }
+}

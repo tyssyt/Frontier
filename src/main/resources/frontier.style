@@ -1,0 +1,70 @@
+{
+    "keywords": {
+        "class":        "class",
+        
+        "public":       "public",
+        "private":      "private",
+        "static":       "static",
+        
+        "new":          "new",
+        "this":         "this",
+        "null":         "null",
+        
+        "void":         "void",
+        "bool":         "bool",
+        "int":          "int",
+        "int32":        "int32",
+        "int64":        "int64",
+        "float32":      "float32",
+        "float64":      "float64",
+        
+        "if":           "if",
+        "then":         "then",
+        "else":         "else",
+        
+        "while":        "while",
+        "for":          "for",
+        
+        "switch":       "switch",
+        "case":         "case",
+        "default":      "default",
+        "fallthrough":  "fallthrough",
+        "continue":     "continue",
+        "break":        "break",
+        "return":       "return",
+        
+        "true":         "true",
+        "false":        "false",
+    
+    },
+    
+    "style": {
+        "useTabs":                  false,
+        "indention":                4,
+        "maxCharsPerLine":          100,
+        "maxParamsPerLine":         9999,
+        "paramsOnNewLine":          false,
+        "noBracketsForSingleStatement" : {
+            "conditional":  true,
+            "loop":         true,
+        },
+        "spaceAfter": {
+            "functionName":   true,
+            "conditional":  true,
+            "loop":         true,
+            "methodCall":   false,
+        },
+        "bracketsOnNewLineAfter": {
+            "class":        false,
+            "function":     false,
+            "conditional":  false,
+            "loop":         false,
+        },
+        "order": [
+            ["field","constructor","method"],
+            ["static","instance"],
+            ["public", "private"],
+            alphabet
+        ]
+    }
+}
