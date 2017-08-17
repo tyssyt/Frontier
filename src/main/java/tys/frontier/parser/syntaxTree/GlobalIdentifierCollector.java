@@ -109,11 +109,12 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
-        Pair<FVariable, Optional<ClassNotFound>> variableAndError =
+        Pair<FLocalVariable, Optional<ClassNotFound>> variableAndError =
                 ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
         variableAndError.b.ifPresent(errors::add);
+        FLocalVariable v = variableAndError.a;
 
-        FField res = new FField(variableAndError.a, currentClass, visibilityModifier, statik);
+        FField res = new FField(v.getIdentifier(), v.getType(), currentClass, visibilityModifier, statik);
         try {
             currentClass.addField(res);
             treeData.fields.put(ctx, res);

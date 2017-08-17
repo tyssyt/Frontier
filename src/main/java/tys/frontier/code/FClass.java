@@ -9,6 +9,7 @@ import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -17,12 +18,12 @@ public class FClass implements IdentifierNameable, Typed {
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
 
-    private FVariable thiz;
+    private FLocalVariable thiz;
 
     private Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
     private Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
-    public FClass(FClassIdentifier identifier, FVisibilityModifier visibility) {
+    public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
     }
@@ -43,12 +44,12 @@ public class FClass implements IdentifierNameable, Typed {
     }
 
     @Override
-    public FClassIdentifier getIdentifier() {
+    public FClassIdentifier getIdentifier () {
         return identifier;
     }
 
     @Override
-    public FClass getType() {
+    public FClass getType () {
         return this;
     }
 
@@ -56,11 +57,19 @@ public class FClass implements IdentifierNameable, Typed {
         return visibility;
     }
 
-    public FVariable getThis() {
+    public FLocalVariable getThis () {
         if (thiz == null) {
-            thiz = new FVariable(FVariableIdentifier.THIS, this);
+            thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
         }
         return thiz;
+    }
+
+    public FField getField (FVariableIdentifier identifier) {
+        return fields.get(identifier);
+    }
+
+    public Collection<FFunction> getFunctions (FFunctionIdentifier identifier) {
+        return functions.get(identifier);
     }
 
     @Override

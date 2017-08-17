@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FClass;
+import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
@@ -87,10 +88,10 @@ public final class ParserContextUtils {
         return new Pair<>(type, e);
     }
 
-    public static Pair<FVariable, Optional<ClassNotFound>> getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static Pair<FLocalVariable, Optional<ClassNotFound>> getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
         Pair<FClass, Optional<ClassNotFound>> typeAndError = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        return new Pair<>(new FVariable(identifier, typeAndError.a), typeAndError.b);
+        return new Pair<>(new FLocalVariable(identifier, typeAndError.a), typeAndError.b);
     }
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) {
@@ -134,7 +135,7 @@ public final class ParserContextUtils {
         List<FVariable> res = new ArrayList<>(cs.size());
         List<ClassNotFound> errors = new ArrayList<>();
         for (FrontierParser.TypedIdentifierContext c : cs) {
-            Pair<FVariable, Optional<ClassNotFound>> varAndError = getVariable(c, possibleTypes);
+            Pair<FLocalVariable, Optional<ClassNotFound>> varAndError = getVariable(c, possibleTypes);
             res.add(varAndError.a);
             varAndError.b.ifPresent(errors::add);
         }

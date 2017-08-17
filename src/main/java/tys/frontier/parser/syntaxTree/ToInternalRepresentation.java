@@ -18,7 +18,6 @@ import tys.frontier.util.MapStack;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -91,24 +90,35 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         treeData.expressionMap.put(ctx, new FLiteralExpression(literal));
     }
 
+    private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
+        FVariable var = declaredVars.get(identifier);
+        if (var == null) {
+            var = currentClass.getField(identifier);
+        }
+        if (var == null) {
+            throw new UndeclaredVariable(identifier, currentFunction);
+        }
+        return var;
+    }
+
     @Override
     public void exitThisExpr(FrontierParser.ThisExprContext ctx) {
         FVariableIdentifier identifier = FVariableIdentifier.THIS;
-        FVariable var = declaredVars.get(identifier);
-        if (var == null) {
-            errors.add(new UndeclaredVariable(identifier, currentFunction));
+        try {
+            treeData.expressionMap.put(ctx, new FVariableExpression(findVar(identifier)));
+        } catch (UndeclaredVariable e) {
+            //TODO maybe abort the analysis of the current expression but continue from there on?
         }
-        treeData.expressionMap.put(ctx, new FVariableExpression(var));
     }
 
     @Override
     public void exitVariableExpr(FrontierParser.VariableExprContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        FVariable var = declaredVars.get(identifier);
-        if (var == null) {
-            errors.add(new UndeclaredVariable(identifier, currentFunction));
+        try {
+            treeData.expressionMap.put(ctx, new FVariableExpression(findVar(identifier)));
+        } catch (UndeclaredVariable e) {
+            //TODO
         }
-        treeData.expressionMap.put(ctx, new FVariableExpression(var));
     }
 
     @Override
