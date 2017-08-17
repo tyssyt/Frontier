@@ -70,7 +70,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             returnType = FVoid.INSTANCE;
         }
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
-        Pair<List<FVariable>, List<ClassNotFound>> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
+        Pair<List<FLocalVariable>, List<ClassNotFound>> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
         errors.addAll(params.b);
 
         FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params.a);
@@ -90,7 +90,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
         if (identifier != currentClass.getIdentifier())
             errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
-        Pair<List<FVariable>, List<ClassNotFound>> paramsAndErrors =
+        Pair<List<FLocalVariable>, List<ClassNotFound>> paramsAndErrors =
                 ParserContextUtils.getParams(ctx.formalParameters(), classes);
         errors.addAll(paramsAndErrors.b);
 

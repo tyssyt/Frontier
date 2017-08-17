@@ -20,8 +20,8 @@ public class FClass implements IdentifierNameable, Typed {
 
     private FLocalVariable thiz;
 
-    private Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
-    private Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
+    protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
+    protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
@@ -36,10 +36,9 @@ public class FClass implements IdentifierNameable, Typed {
     }
 
     public void addFunction (FFunction function) throws SignatureCollision {
-        for (FFunction other : functions.get(function.getIdentifier())) {
-            if (function.hasSameSignatureAs(other))
-                throw new SignatureCollision(function, other, this);
-        }
+        FFunction old = getFunction(function.getSignature());
+        if (old != null)
+            throw new SignatureCollision(function, old, this);
         functions.put(function.getIdentifier(), function);
     }
 
@@ -70,6 +69,13 @@ public class FClass implements IdentifierNameable, Typed {
 
     public Collection<FFunction> getFunctions (FFunctionIdentifier identifier) {
         return functions.get(identifier);
+    }
+
+    public FFunction getFunction (FFunction.Signature signature) {
+        for (FFunction f : functions.get(signature.getIdentifier()))
+            if (f.getSignature().equals(signature))
+                return f;
+        return null;
     }
 
     @Override

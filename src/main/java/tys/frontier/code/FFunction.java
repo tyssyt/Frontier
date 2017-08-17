@@ -1,12 +1,12 @@
 package tys.frontier.code;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class FFunction implements IdentifierNameable, Typed {
 
@@ -15,16 +15,18 @@ public class FFunction implements IdentifierNameable, Typed {
     private FVisibilityModifier modifier;
     private boolean statik;
     private FClass returnType;
-    private List<FVariable> params;
+    private List<FLocalVariable> params;
+    private Signature signature;
     private List<FStatement> body;
 
-    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FVariable> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FLocalVariable> params) {
         this.identifier = identifier;
         this.clazz = clazz;
         this.modifier = modifier;
         this.statik = statik;
         this.returnType = returnType;
         this.params = params;
+        this.signature = new Signature(this);
     }
 
     public FClass getClazz() {
@@ -39,7 +41,7 @@ public class FFunction implements IdentifierNameable, Typed {
         return statik;
     }
 
-    public List<FVariable> getParams() {
+    public List<FLocalVariable> getParams() {
         return params;
     }
 
@@ -61,15 +63,58 @@ public class FFunction implements IdentifierNameable, Typed {
         return false;
     }
 
-    public boolean hasSameSignatureAs(FFunction other) {
-        if (!this.identifier.equals(other.identifier) || this.params.size() != other.params.size())
-            return false;
-        Set<FClass> types = params.stream().map(FVariable::getType).collect(Collectors.toSet());
-        return other.params.stream().map(FVariable::getType).allMatch(types::contains);
+    public Signature getSignature() {
+        return signature;
     }
 
     @Override
     public String toString() {
         return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
     }
+
+    public static class Signature {
+        private FFunctionIdentifier identifier;
+        private Multiset<FClass> paramTypes;
+
+        public Signature(FFunctionIdentifier identifier, Multiset<FClass> paramTypes) {
+            this.identifier = identifier;
+            this.paramTypes = paramTypes;
+        }
+
+        public Signature(FFunction function) {
+            this.identifier = function.getIdentifier();
+            this.paramTypes = HashMultiset.create();
+            for (FLocalVariable v : function.getParams())
+                paramTypes.add(v.getType());
+        }
+
+        public FFunctionIdentifier getIdentifier() {
+            return identifier;
+        }
+
+        public Multiset<FClass> getParamTypes() {
+            return paramTypes;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Signature signature = (Signature) o;
+            return this.identifier.equals(signature.identifier)
+                    && this.getParamTypes().equals(signature.paramTypes);
+        }
+
+        @Override
+        public int hashCode() {
+            return  31 * identifier.hashCode() + paramTypes.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return identifier + ", " + paramTypes;
+        }
+    }
+
 }

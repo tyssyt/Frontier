@@ -5,9 +5,9 @@ import tys.frontier.code.identifier.IdentifierNameable;
 
 public class IdentifierCollision extends SyntaxError {
 
-    private IdentifierNameable a;
-    private IdentifierNameable b;
-    private FClass clazz;
+    public final IdentifierNameable a;
+    public final IdentifierNameable b;
+    public final FClass clazz;
 
     public IdentifierCollision(IdentifierNameable a, IdentifierNameable b, FClass clazz) {
         super("between" + a + " and " + b + " in class" + clazz.getIdentifier());

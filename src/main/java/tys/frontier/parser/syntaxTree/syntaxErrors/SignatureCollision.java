@@ -5,9 +5,9 @@ import tys.frontier.code.FFunction;
 
 public class SignatureCollision extends SyntaxError {
 
-    private FFunction a;
-    private FFunction b;
-    private FClass clazz;
+    public final FFunction a;
+    public final FFunction b;
+    public final FClass clazz;
 
     public SignatureCollision(FFunction a, FFunction b, FClass clazz) {
         super("between " + a + " and " + b + " in class " + clazz.getIdentifier());

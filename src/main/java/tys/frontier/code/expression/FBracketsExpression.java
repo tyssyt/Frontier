@@ -4,7 +4,7 @@ import tys.frontier.code.FClass;
 
 public class FBracketsExpression implements FExpression {
 
-    public final FExpression inner;
+    private FExpression inner;
 
     public FBracketsExpression(FExpression inner) {
         this.inner = inner;

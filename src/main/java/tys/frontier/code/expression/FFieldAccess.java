@@ -7,6 +7,10 @@ public class FFieldAccess implements FExpression {
 
     private FField field;
 
+    public FFieldAccess(FField field) {
+        this.field = field;
+    }
+
     @Override
     public FClass getType() {
         return field.getType();

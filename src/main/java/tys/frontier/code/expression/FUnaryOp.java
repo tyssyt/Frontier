@@ -4,8 +4,9 @@ import tys.frontier.code.FClass;
 
 public class FUnaryOp implements FExpression {
 
-    public final FExpression expression;
-    public final Operator operator;
+    private final FExpression expression;
+    private final Operator operator;
+
     public FUnaryOp(FExpression expression, Operator operator) {
         this.expression = expression;
         this.operator = operator;

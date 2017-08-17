@@ -1,38 +1,48 @@
 package tys.frontier.code.predefinedClasses;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FField;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.*;
 import tys.frontier.code.identifier.FArrayIdentifier;
+import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
+import tys.frontier.util.IntPair;
 
 import java.util.concurrent.ConcurrentMap;
 
 public class FArray extends FClass {
 
     //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<FClass, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+    private static ConcurrentMap<IntPair<FClass>, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     private FClass baseClass;
+    private int depth;
 
-    private FArray(FClass baseClass) {
+    private FArray(FClass baseClass, int depth) {
         super(new FArrayIdentifier(baseClass.getIdentifier()), FVisibilityModifier.PUBLIC);
         this.baseClass = baseClass;
-    }
+        this.depth = depth;
 
-    public static FArray getArrayFrom(FClass baseClass) {
-        return existing.putIfAbsent(baseClass, new FArray(baseClass));
-    }
-
-    public static FArray getMultiArrayFrom(FClass baseClass, int arrayDepth) {
-        FArray cur = getArrayFrom(baseClass);
-        for (int i=1; i<arrayDepth; i++) {
-            cur = getArrayFrom(cur);
+        {
+            //create constructors
+            ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
+            for (int i = 0; i < depth; i++) {
+                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FInt.INSTANCE));
+                FConstructor c = new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build());
+                functions.put(FFunctionIdentifier.CONSTRUCTOR, c);
+            }
         }
-        return cur;
+    }
+
+    public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {
+        IntPair<FClass> pair = new IntPair<>(baseClass, arrayDepth);
+        FArray old = existing.get(pair);
+        if (old == null) {
+            return existing.put(pair, new FArray(baseClass, arrayDepth));
+        }
+        return old;
     }
 
     public FClass getBaseClass() {
@@ -48,4 +58,5 @@ public class FArray extends FClass {
     public void addFunction(FFunction function) throws SignatureCollision {
         throw new RuntimeException("somthing went terribly wrong");
     }
+
 }

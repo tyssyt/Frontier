@@ -5,7 +5,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FErrorIdentifier;
@@ -47,7 +46,7 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static FClass getPrimitiveType (FrontierParser.PrimitiveTypeContext ctx) {
+    public static FClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
             case FrontierParser.BOOL:
                 return FBool.INSTANCE;
@@ -65,12 +64,14 @@ public final class ParserContextUtils {
         return null;
     }
 
-    public static Pair<FClass, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static Pair<FClass, Optional<ClassNotFound>> getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
         FClass type;
         Optional<ClassNotFound> e = Optional.empty();
-        FrontierParser.ClassTypeContext c = ctx.classType();
+        FrontierParser.PredefinedTypeContext c = ctx.predefinedType();
         if (c != null) {
-            FClassIdentifier identifier = new FClassIdentifier(c.TypeIdentifier().getText());
+            type = getPredefined(c);
+        } else {
+            FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
             FClass clazz = possibleTypes.get(identifier);
             if (clazz != null)
                 type = clazz.getType();
@@ -78,14 +79,16 @@ public final class ParserContextUtils {
                 type = new FErrorClassType(new FErrorIdentifier(identifier));
                 e = Optional.of(new ClassNotFound(identifier));
             }
-        } else {
-            type = getPrimitiveType(ctx.primitiveType());
         }
+        return new Pair<>(type, e);
+    }
 
+    public static Pair<FClass, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+        Pair<FClass, Optional<ClassNotFound>> res = getBasicType(ctx.basicType(), possibleTypes);
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
-            type = FArray.getMultiArrayFrom(type, arrayDepth);
-        return new Pair<>(type, e);
+            res.a = FArray.getArrayFrom(res.a, arrayDepth);
+        return res;
     }
 
     public static Pair<FLocalVariable, Optional<ClassNotFound>> getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
@@ -127,12 +130,12 @@ public final class ParserContextUtils {
     }
 
     //TODO its late, I'm tired, this can be done less ugly
-    public static Pair<List<FVariable>, List<ClassNotFound>> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static Pair<List<FLocalVariable>, List<ClassNotFound>> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
         List<FrontierParser.TypedIdentifierContext> cs = ctx.typedIdentifier();
         //because I feel like optimizing just this particular thing...
         if (cs.isEmpty())
             return new Pair<>(Collections.emptyList(), Collections.emptyList());
-        List<FVariable> res = new ArrayList<>(cs.size());
+        List<FLocalVariable> res = new ArrayList<>(cs.size());
         List<ClassNotFound> errors = new ArrayList<>();
         for (FrontierParser.TypedIdentifierContext c : cs) {
             Pair<FLocalVariable, Optional<ClassNotFound>> varAndError = getVariable(c, possibleTypes);

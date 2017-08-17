@@ -4,7 +4,7 @@ import tys.frontier.code.identifier.FIdentifier;
 
 public class ClassNotFound extends SyntaxError {
 
-    private FIdentifier identifier;
+    public final FIdentifier identifier;
 
     public ClassNotFound(FIdentifier identifier) {
         super(identifier.toString());

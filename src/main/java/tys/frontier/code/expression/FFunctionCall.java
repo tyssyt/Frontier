@@ -7,8 +7,13 @@ import java.util.List;
 
 public class FFunctionCall implements FExpression {
 
-    FFunction function;
-    List<FExpression> params;
+    private FFunction function;
+    private List<FExpression> params;
+
+    public FFunctionCall(FFunction function, List<FExpression> params) {
+        this.function = function;
+        this.params = params;
+    }
 
     @Override
     public FClass getType() {

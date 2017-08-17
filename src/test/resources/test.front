@@ -1,16 +1,18 @@
 
 class Asdasd {
-    private int32 i;
-    private int64 l;
+    private B b;
+    private int64 v = b.getI();
 
     public static void doStuff (int32 q, bool e) {}
     public static void doStuff (bool f, int32 s, B b) {}
 }
 
 public class B {
-    public float32 f;
-    public static float64[] d;
 
-    Asdasd hahaha4 () {}
+    int64 i;
+
+    public int64 getI () {
+        return i;
+    }
 
 }

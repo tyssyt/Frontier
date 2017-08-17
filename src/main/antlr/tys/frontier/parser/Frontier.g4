@@ -98,21 +98,32 @@ variableDeclarator
     :   typedIdentifier (ASSIGN expression)?
     ;
 
+formalParameters
+    :   LPAREN (typedIdentifier (COMMA typedIdentifier)*)? RPAREN
+    ;
+
+//types ------------------------------------------------------------------------------------
+
 typedIdentifier
     :   typeType Identifier
     ;
 
 typeType
-    :   classType (Array)*
-    |   primitiveType (Array)*
+    :   basicType (Array)*
     ;
 
-classType
-    :   TypeIdentifier //(DOT TypeIdentifier)* internal classes allowed
+basicType
+    :   TypeIdentifier
+    |   predefinedType
     ;
 
-formalParameters
-    :   LPAREN (typedIdentifier (COMMA typedIdentifier)*)? RPAREN
+predefinedType
+    :   BOOL
+    |   INT
+    |   INT32
+    |   INT64
+    |   FLOAT32
+    |   FLOAT64
     ;
 
 
@@ -164,22 +175,26 @@ expressionList
     ;
 
 expression
-    :   LPAREN expression RPAREN                    #bracketsExpr
-    |   THIS                                        #thisExpr
-    |   literal                                     #literalExpr
-    |   Identifier                                  #variableExpr
-    |   NOT expression                              #preUnaryOp
-    |   expression (EQUAL|NOTEQUAL) expression      #binaryOp
-    |   expression (XOR|AND|OR) expression          #binaryOp
-    |   expression (LE|GE|LT|GT) expression         #binaryOp
-    |   expression (INC | DEC)                      #postUnaryOp
-    |   (ADD|SUB|INC|DEC) expression                #preUnaryOp
-    |   expression (MUL|DIV|MOD|ADD|SUB) expression #binaryOp
-    |   NEW creator                                 #newExpr
-    |   expression DOT Identifier                   #memberAccess
-    |   expression LBRACK expression RBRACK         #arrayAccess
-    |   expression LPAREN expressionList? RPAREN    #methodCall
+    :   LPAREN expression RPAREN                                #bracketsExpr
+    |   THIS                                                    #thisExpr
+    |   literal                                                 #literalExpr
+    |   Identifier                                              #variableExpr
+    |   NOT expression                                          #preUnaryOp
+    |   expression (EQUAL|NOTEQUAL) expression                  #binaryOp
+    |   expression (XOR|AND|OR) expression                      #binaryOp
+    |   expression (LE|GE|LT|GT) expression                     #binaryOp
+    |   expression (INC | DEC)                                  #postUnaryOp
+    |   (ADD|SUB|INC|DEC) expression                            #preUnaryOp
+    |   expression (MUL|DIV|MOD|ADD|SUB) expression             #binaryOp
+    |   expression LBRACK expression RBRACK                     #arrayAccess
+    |   expression DOT Identifier                               #fieldAccess
+    |   expression DOT Identifier LPAREN expressionList? RPAREN #externalFunctionCall
+    |   Identifier LPAREN expressionList? RPAREN                #internalFunctionCall
+    |   NEW basicType LPAREN expressionList? RPAREN             #newObject
+    |   NEW basicType (LBRACK expression RBRACK)+ (Array)*      #newArray
     ;
+
+//Literals------------------------------------------------------------------------------------
 
 literal
     :   IntegerLiteral
@@ -190,40 +205,9 @@ literal
     |   NULL
     ;
 
-creator
-    :   createdName (arrayCreatorRest | classCreatorRest)
-    ;
-
-createdName
-    :   TypeIdentifier
-    |   primitiveType
-    ;
-
-arrayCreatorRest
-    :   Array (Array)*
-    |   LBRACK expression RBRACK (LBRACK expression RBRACK)* (Array)*
-    ;
-
-classCreatorRest
-    :  LPAREN expressionList? RPAREN
-    ;
-
-
-
-//Boolean Literals----------------------------------------------------------------------
 booleanLiteral
     :   TRUE
     |   FALSE
-    ;
-
-//Primitive Types
-primitiveType
-    :   BOOL
-    |   INT
-    |   INT32
-    |   INT64
-    |   FLOAT32
-    |   FLOAT64
     ;
 
 //-------------------------------------------------------------------------------------------
