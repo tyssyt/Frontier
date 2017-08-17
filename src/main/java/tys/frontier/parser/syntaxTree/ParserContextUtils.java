@@ -7,12 +7,13 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.identifier.FErrorIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FBoolLiteral;
 import tys.frontier.code.literal.FInteger32Literal;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
-import tys.frontier.code.type.*;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
 import tys.frontier.util.Pair;
@@ -45,7 +46,7 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static FType getPrimitiveType (FrontierParser.PrimitiveTypeContext ctx) {
+    public static FClass getPrimitiveType (FrontierParser.PrimitiveTypeContext ctx) {
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
             case FrontierParser.BOOL:
                 return FBool.INSTANCE;
@@ -54,7 +55,7 @@ public final class ParserContextUtils {
             case FrontierParser.INT32:
                 return FInt32.INSTANCE;
             case FrontierParser.INT64:
-                return FInt64.INSTNACE;
+                return FInt64.INSTANCE;
             case FrontierParser.FLOAT32:
                 return FFloat32.INSTANCE;
             case FrontierParser.FLOAT64:
@@ -63,8 +64,8 @@ public final class ParserContextUtils {
         return null;
     }
 
-    public static Pair<FType, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
-        FType type;
+    public static Pair<FClass, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+        FClass type;
         Optional<ClassNotFound> e = Optional.empty();
         FrontierParser.ClassTypeContext c = ctx.classType();
         if (c != null) {
@@ -73,7 +74,7 @@ public final class ParserContextUtils {
             if (clazz != null)
                 type = clazz.getType();
             else {
-                type = new FErrorType(identifier);
+                type = new FErrorClassType(new FErrorIdentifier(identifier));
                 e = Optional.of(new ClassNotFound(identifier));
             }
         } else {
@@ -82,12 +83,12 @@ public final class ParserContextUtils {
 
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
-            type = new FArrayType(type, arrayDepth);
+            type = FArray.createMultiArray(type, arrayDepth);
         return new Pair<>(type, e);
     }
 
     public static Pair<FVariable, Optional<ClassNotFound>> getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
-        Pair<FType, Optional<ClassNotFound>> typeAndError = getType(ctx.typeType(), possibleTypes);
+        Pair<FClass, Optional<ClassNotFound>> typeAndError = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         return new Pair<>(new FVariable(identifier, typeAndError.a), typeAndError.b);
     }

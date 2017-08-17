@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.type.FType;
+import tys.frontier.code.FClass;
 
 public class FBinaryOp implements FExpression {
 
@@ -14,7 +14,7 @@ public class FBinaryOp implements FExpression {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return null; //TODO
     }
 

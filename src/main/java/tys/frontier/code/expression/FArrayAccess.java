@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.type.FArrayType;
-import tys.frontier.code.type.FType;
+import tys.frontier.code.FClass;
+import tys.frontier.code.predefinedClasses.FArray;
 
 public class FArrayAccess implements FExpression {
 
@@ -9,7 +9,7 @@ public class FArrayAccess implements FExpression {
     private FExpression index; //TODO int
 
     @Override
-    public FType getType() {
-        return ((FArrayType) array.getType()).baseType;
+    public FClass getType() {
+        return ((FArray) array.getType()).getBaseClass();
     }
 }

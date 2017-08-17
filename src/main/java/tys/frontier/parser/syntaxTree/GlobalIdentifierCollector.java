@@ -3,8 +3,7 @@ package tys.frontier.parser.syntaxTree;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FVoid;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.FrontierBaseVisitor;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
@@ -62,9 +61,9 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         FrontierParser.TypeTypeContext c = ctx.typeType();
-        FType returnType;
+        FClass returnType;
         if (c != null) {
-            Pair<FType, Optional<ClassNotFound>> returnTypeAndError = ParserContextUtils.getType(c, classes);
+            Pair<FClass, Optional<ClassNotFound>> returnTypeAndError = ParserContextUtils.getType(c, classes);
             returnTypeAndError.b.ifPresent(errors::add);
             returnType = returnTypeAndError.a;
         } else {

@@ -1,6 +1,7 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.type.FType;
+import tys.frontier.code.FClass;
+import tys.frontier.code.predefinedClasses.FBool;
 
 public class FBoolLiteral implements FLiteral {
 
@@ -14,7 +15,7 @@ public class FBoolLiteral implements FLiteral {
     }
 
     @Override
-    public FType getType() {
-        return null;
+    public FClass getType() {
+        return FBool.INSTANCE;
     }
 }

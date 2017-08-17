@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FVariable;
-import tys.frontier.code.type.FType;
 
 public class FVariableExpression implements FExpression {
 
@@ -12,7 +12,7 @@ public class FVariableExpression implements FExpression {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return variable.getType();
     }
 }

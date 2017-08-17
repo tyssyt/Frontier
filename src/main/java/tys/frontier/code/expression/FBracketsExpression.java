@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.type.FType;
+import tys.frontier.code.FClass;
 
 public class FBracketsExpression implements FExpression {
 
@@ -11,7 +11,7 @@ public class FBracketsExpression implements FExpression {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return inner.getType();
     }
 }

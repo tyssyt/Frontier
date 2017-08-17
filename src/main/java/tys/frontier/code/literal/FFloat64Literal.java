@@ -1,7 +1,7 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.type.FFloat64;
-import tys.frontier.code.type.FType;
+import tys.frontier.code.FClass;
+import tys.frontier.code.predefinedClasses.FFloat64;
 
 public class FFloat64Literal implements FLiteral {
 
@@ -12,7 +12,7 @@ public class FFloat64Literal implements FLiteral {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return FFloat64.INSTANCE;
     }
 

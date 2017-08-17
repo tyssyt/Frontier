@@ -1,6 +1,6 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.type.Typed;
+import tys.frontier.code.Typed;
 
 public interface FLiteral extends Typed {
 

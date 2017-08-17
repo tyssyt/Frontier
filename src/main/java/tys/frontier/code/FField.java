@@ -3,8 +3,6 @@ package tys.frontier.code;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FVarAssignment;
-import tys.frontier.code.type.FType;
-import tys.frontier.code.type.Typed;
 
 import java.util.Optional;
 
@@ -29,7 +27,7 @@ public class FField implements IdentifierNameable, Typed {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return variable.getType();
     }
 

@@ -3,8 +3,6 @@ package tys.frontier.code;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.type.FType;
-import tys.frontier.code.type.Typed;
 
 import java.util.List;
 import java.util.Set;
@@ -16,11 +14,11 @@ public class FFunction implements IdentifierNameable, Typed {
     private FClass clazz;
     private FVisibilityModifier modifier;
     private boolean statik;
-    private FType returnType;
+    private FClass returnType;
     private List<FVariable> params;
     private List<FStatement> body;
 
-    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FType returnType, List<FVariable> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FVariable> params) {
         this.identifier = identifier;
         this.clazz = clazz;
         this.modifier = modifier;
@@ -41,10 +39,6 @@ public class FFunction implements IdentifierNameable, Typed {
         return statik;
     }
 
-    public FType getReturnType() {
-        return returnType;
-    }
-
     public List<FVariable> getParams() {
         return params;
     }
@@ -59,7 +53,7 @@ public class FFunction implements IdentifierNameable, Typed {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return returnType;
     }
 
@@ -70,7 +64,7 @@ public class FFunction implements IdentifierNameable, Typed {
     public boolean hasSameSignatureAs(FFunction other) {
         if (this.returnType != other.returnType || this.params.size() != other.params.size())
             return false;
-        Set<FType> types = params.stream().map(FVariable::getType).collect(Collectors.toSet());
+        Set<FClass> types = params.stream().map(FVariable::getType).collect(Collectors.toSet());
         return other.params.stream().map(FVariable::getType).allMatch(types::contains);
     }
 

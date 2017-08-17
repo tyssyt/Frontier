@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.type.FType;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ public class FFunctionCall implements FExpression {
     List<FExpression> params;
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return function.getType();
     }
 }

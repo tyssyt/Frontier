@@ -6,9 +6,6 @@ import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
-import tys.frontier.code.type.FClassType;
-import tys.frontier.code.type.FType;
-import tys.frontier.code.type.Typed;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 
@@ -20,8 +17,6 @@ public class FClass implements IdentifierNameable, Typed {
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
 
-    //type implicitly defined by this class
-    private FClassType type;
     private FVariable thiz;
 
     private Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
@@ -30,7 +25,6 @@ public class FClass implements IdentifierNameable, Typed {
     public FClass(FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
-        this.type = new FClassType(this);
     }
 
     public void addField (FField field) throws IdentifierCollision {
@@ -54,8 +48,8 @@ public class FClass implements IdentifierNameable, Typed {
     }
 
     @Override
-    public FType getType() {
-        return type;
+    public FClass getType() {
+        return this;
     }
 
     public FVisibilityModifier getVisibility() {
@@ -64,7 +58,7 @@ public class FClass implements IdentifierNameable, Typed {
 
     public FVariable getThis() {
         if (thiz == null) {
-            thiz = new FVariable(FVariableIdentifier.THIS, this.type);
+            thiz = new FVariable(FVariableIdentifier.THIS, this);
         }
         return thiz;
     }
