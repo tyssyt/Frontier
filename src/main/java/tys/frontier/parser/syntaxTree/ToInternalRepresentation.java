@@ -327,20 +327,28 @@ public class ToInternalRepresentation extends FrontierBaseListener {
 
     @Override
     public void exitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
-        //TODO type check
         FExpression expression = treeData.expressionMap.get(ctx.expression());
         FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(0).getText(), true);
-        FUnaryOp res = new FUnaryOp(expression, op);
-        treeData.expressionMap.put(ctx, res);
+        try {
+            FUnaryOp res = new FUnaryOp(expression, op);
+            treeData.expressionMap.put(ctx, res);
+        } catch (IncompatibleTypes e) {
+            errors.add(e);
+            return; //TODO abort
+        }
     }
 
     @Override
     public void exitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
-        //TODO type check
         FExpression expression = treeData.expressionMap.get(ctx.expression());
         FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(1).getText(), false);
-        FUnaryOp res = new FUnaryOp(expression, op);
-        treeData.expressionMap.put(ctx, res);
+        try {
+            FUnaryOp res = new FUnaryOp(expression, op);
+            treeData.expressionMap.put(ctx, res);
+        } catch (IncompatibleTypes e) {
+            errors.add(e);
+            return; //TODO abort
+        }
     }
 
     @Override
@@ -349,13 +357,25 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         FExpression first = treeData.expressionMap.get(ctx.expression(0));
         FExpression second = treeData.expressionMap.get(ctx.expression(1));
         FBinaryOp.Operator op = FBinaryOp.Operator.fromString(ctx.getChild(1).getText());
-        FBinaryOp res = new FBinaryOp(first, second, op);
-        treeData.expressionMap.put(ctx, res);
+        try {
+            FBinaryOp res = new FBinaryOp(first, second, op);
+            treeData.expressionMap.put(ctx, res);
+        } catch (IncompatibleTypes e) {
+            return; //TODO abort
+        }
     }
 
     @Override
     public void exitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
-        super.exitArrayAccess(ctx);
+        FExpression array = treeData.expressionMap.get(ctx.expression(0));
+        FExpression index = treeData.expressionMap.get(ctx.expression(1));
+        try {
+            FArrayAccess res = new FArrayAccess(array, index);
+            treeData.expressionMap.put(ctx, res);
+        } catch (IncompatibleTypes e) {
+            errors.add(e);
+            return; //TODO abort
+        }
     }
 
     @Override
@@ -363,8 +383,10 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         FClass clazz = treeData.expressionMap.get(ctx.expression()).getType();
         FField f = clazz.getField(identifier);
-        if (f == null)
-            errors.add(new FieldNotFound(identifier)); //TODO abort
+        if (f == null) {
+            errors.add(new FieldNotFound(identifier));
+            return; //TODO abort
+        }
         treeData.expressionMap.put(ctx, new FFieldAccess(f));
     }
 

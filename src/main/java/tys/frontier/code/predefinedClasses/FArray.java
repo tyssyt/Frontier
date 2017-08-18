@@ -2,17 +2,18 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.*;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FConstructor;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 import tys.frontier.util.IntPair;
 
 import java.util.concurrent.ConcurrentMap;
 
-public class FArray extends FClass {
+public class FArray extends FPredefinedClass {
 
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<IntPair<FClass>, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
@@ -21,7 +22,7 @@ public class FArray extends FClass {
     private int depth;
 
     private FArray(FClass baseClass, int depth) {
-        super(new FArrayIdentifier(baseClass.getIdentifier()), FVisibilityModifier.PUBLIC);
+        super(new FArrayIdentifier(baseClass.getIdentifier()));
         this.baseClass = baseClass;
         this.depth = depth;
 
@@ -37,6 +38,7 @@ public class FArray extends FClass {
     }
 
     public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {
+        assert arrayDepth > 0;
         IntPair<FClass> pair = new IntPair<>(baseClass, arrayDepth);
         FArray old = existing.get(pair);
         if (old == null) {
@@ -49,14 +51,10 @@ public class FArray extends FClass {
         return baseClass;
     }
 
-    @Override
-    public void addField(FField field) throws IdentifierCollision {
-        throw new RuntimeException("somthing went terribly wrong");
-    }
-
-    @Override
-    public void addFunction(FFunction function) throws SignatureCollision {
-        throw new RuntimeException("somthing went terribly wrong");
+    public FClass getOneDimensionLess() {
+        if (depth == 1)
+            return baseClass;
+        return getArrayFrom(baseClass, depth-1);
     }
 
 }

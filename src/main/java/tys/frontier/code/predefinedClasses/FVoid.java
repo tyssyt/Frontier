@@ -9,7 +9,7 @@ public class FVoid extends FClass {
     public static final FVoid INSTANCE = new FVoid();
 
     private FVoid () {
-        super(FClassIdentifier.VOID, FVisibilityModifier.PUBLIC);
+        super(FClassIdentifier.VOID, FVisibilityModifier.PRIVATE);
     }
 
 }
