@@ -1,7 +1,16 @@
 package tys.frontier.code.statement.loop;
 
-public class FBreak {
+import tys.frontier.code.statement.FStatement;
 
-    FLoop loop;
+public class FBreak implements FStatement {
 
+    private FLoopIdentifier loop;
+
+    public FBreak(FLoopIdentifier loop) {
+        this.loop = loop;
+    }
+
+    public FLoopIdentifier getLoop() {
+        return loop;
+    }
 }

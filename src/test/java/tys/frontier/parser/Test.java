@@ -6,10 +6,12 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import tys.frontier.code.FClass;
 import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
+import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxError;
 import tys.frontier.style.StyleOptions;
 import tys.frontier.style.StyleUtilities;
@@ -24,14 +26,6 @@ import java.util.Map;
 public class Test {
 
     private static final String FILE_LOCATION = "test.front";
-
-    @org.junit.Test
-    public void test() {
-        System.out.println("!".toLowerCase());
-        System.out.println("!".toUpperCase());
-        System.out.println("!");
-    }
-
 
 
     //TODO this has to move, this is a test
@@ -57,7 +51,7 @@ public class Test {
         SyntaxTreeData treeData = triple.b;
         List<SyntaxError> errors = triple.c;
         {
-            StringBuilder sb = new StringBuilder().append("parsed classes:\n");
+            StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
             globalIdentifiers.values().forEach(i -> sb.append(i).append('\n'));
             Log.info(this, sb.toString());
         }
@@ -67,13 +61,14 @@ public class Test {
             e.printStackTrace();
         }
         if (errors.size() > 0) {
-            StringBuilder sb = new StringBuilder().append("parser errors: \n");
+            StringBuilder sb = new StringBuilder().append("identifier parser errors: \n");
             errors.forEach(e -> sb.append(e).append('\n'));
             Log.error(this, sb.toString());
             return;
         }
 
-        errors = ToInternalRepresentation.toInternal(globalIdentifiers, treeData);
+        Pair<List<NeedsTypeCheck>, List<SyntaxError>> typeChecksAndErrors = ToInternalRepresentation.toInternal(globalIdentifiers, treeData);
+        errors = typeChecksAndErrors.b;
         {
             StringBuilder sb = new StringBuilder().append("parsed classes:\n");
             globalIdentifiers.values().forEach(i -> sb.append(i).append('\n'));
@@ -90,8 +85,27 @@ public class Test {
             Log.error(this, sb.toString());
             return;
         }
+
+        errors.clear();
+        for (NeedsTypeCheck n : typeChecksAndErrors.a) {
+            try {
+                n.checkTypes();
+            } catch (IncompatibleTypes e) {
+                errors.add(e);
+            }
+        }
+        if (errors.size() > 0) {
+            StringBuilder sb = new StringBuilder().append("typecheck errors: \n");
+            errors.forEach(e -> sb.append(e).append('\n'));
+            Log.error(this, sb.toString());
+            return;
+        } else {
+            Log.info(this, "typecheck passed");
+        }
     }
 
-
-
+    @Override
+    public String toString() {
+        return "Test";
+    }
 }

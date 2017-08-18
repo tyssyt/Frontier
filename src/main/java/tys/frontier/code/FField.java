@@ -26,6 +26,10 @@ public class FField extends FVariable {
         return statik;
     }
 
+    public void setAssignment(FVarAssignment assignment) {
+        this.assignment = assignment;
+    }
+
     //TODO move the assignments to initializer collection in class
     public Optional<FVarAssignment> getAssignment() {
         return assignment == null ? Optional.empty() : Optional.of(assignment);

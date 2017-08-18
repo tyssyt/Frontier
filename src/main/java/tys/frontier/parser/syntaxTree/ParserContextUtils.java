@@ -22,6 +22,8 @@ import java.util.*;
 
 public final class ParserContextUtils {
 
+    //TODO the entire thing where we return the error as actual return sucks, please find a better solution
+
     private ParserContextUtils() {}
 
     public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) {
@@ -98,7 +100,7 @@ public final class ParserContextUtils {
     }
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) {
-        ParseTree child = ctx.children.get(0);
+        ParseTree child = ctx.getChild(0);
         FLiteral res = null;
         if (child instanceof FrontierParser.BooleanLiteralContext) {
             if (((FrontierParser.BooleanLiteralContext) child).TRUE() != null)

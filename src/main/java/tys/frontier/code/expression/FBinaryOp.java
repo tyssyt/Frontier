@@ -1,6 +1,11 @@
 package tys.frontier.code.expression;
 
+import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.FClass;
+
+import java.util.Arrays;
+
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 public class FBinaryOp implements FExpression {
 
@@ -36,16 +41,15 @@ public class FBinaryOp implements FExpression {
 
         public final String stringRepresentation;
 
+        private static ImmutableMap<String, Operator> stringMap =
+                Arrays.stream(values()).collect(toImmutableMap(o -> o.stringRepresentation, o -> o));
+
         Operator(String s) {
             stringRepresentation = s;
         }
 
         public static Operator fromString (String string) {
-            for (Operator op : values()) {
-                if (op.stringRepresentation.equals(string))
-                    return op;
-            }
-            return null;
+            return stringMap.get(string);
         }
 
         @Override

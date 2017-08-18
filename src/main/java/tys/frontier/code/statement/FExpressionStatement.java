@@ -4,6 +4,13 @@ import tys.frontier.code.expression.FExpression;
 
 public class FExpressionStatement implements FStatement {
 
-    FExpression expression;
+    private FExpression expression;
 
+    public FExpressionStatement(FExpression expression) {
+        this.expression = expression;
+    }
+
+    public FExpression getExpression() {
+        return expression;
+    }
 }

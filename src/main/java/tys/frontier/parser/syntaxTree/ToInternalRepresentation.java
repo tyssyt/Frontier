@@ -1,6 +1,7 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import tys.frontier.code.*;
@@ -10,6 +11,8 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.statement.*;
+import tys.frontier.code.statement.loop.*;
 import tys.frontier.parser.FrontierBaseListener;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
@@ -24,8 +27,11 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     private Map<FClassIdentifier, FClass> classes;
     private SyntaxTreeData treeData;
     private List<SyntaxError> errors = new ArrayList<>();
+    private List<NeedsTypeCheck> typeChecks = new ArrayList<>();
+
     private FClass currentClass;
     private FFunction currentFunction;
+    private Stack<FLoopIdentifier> loops = new Stack<>();
     private MapStack<FVariableIdentifier, FLocalVariable> declaredVars = new MapStack<>();
 
 
@@ -34,10 +40,10 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         this.treeData = syntaxTreeData;
     }
 
-    public static List<SyntaxError> toInternal (Map<FClassIdentifier, FClass> classes, SyntaxTreeData syntaxTreeData) {
+    public static Pair<List<NeedsTypeCheck>, List<SyntaxError>> toInternal (Map<FClassIdentifier, FClass> classes, SyntaxTreeData syntaxTreeData) {
         ToInternalRepresentation listener = new ToInternalRepresentation(classes, syntaxTreeData);
         ParseTreeWalker.DEFAULT.walk(listener, syntaxTreeData.root);
-        return listener.errors;
+        return new Pair<>(listener.typeChecks, listener.errors);
     }
 
     @Override
@@ -46,6 +52,46 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     }
 
     //fields
+    @Override
+    public void exitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
+        FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
+        if (c.expression() != null) {
+            try {
+                FVarDeclaration decl = fromVariableDeclarator(c);
+                FField field = treeData.fields.get(ctx);
+                field.setAssignment(decl.getAssignment().get());
+            } catch (ClassNotFound e) {
+                throw new RuntimeException(e); //this should not happen
+            }
+        }
+    }
+
+    private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
+        FVariable var = declaredVars.get(identifier);
+        if (var == null) {
+            var = currentClass.getField(identifier);
+        }
+        if (var == null) {
+            throw new UndeclaredVariable(identifier, currentFunction);
+        }
+        return var;
+    }
+
+    private FVarDeclaration fromVariableDeclarator(
+            FrontierParser.VariableDeclaratorContext ctx) throws ClassNotFound {
+        Pair<FLocalVariable, Optional<ClassNotFound>> var = ParserContextUtils.getVariable(ctx.typedIdentifier(), classes);
+        if (var.b.isPresent())
+            throw var.b.get();
+
+        FVarAssignment assign = null;
+        FrontierParser.ExpressionContext c = ctx.expression();
+        if (c != null) {
+            FExpression val = treeData.expressionMap.get(c);
+            assign = new FVarAssignment(var.a, FVarAssignment.Operator.ASSIGN, val);
+            typeChecks.add(assign);
+        }
+        return new FVarDeclaration(var.a, assign);
+    }
 
     //methods enter & exit
     @Override
@@ -68,6 +114,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void enterConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
         FConstructor c = treeData.constructors.get(ctx);
+        currentFunction = c;
         declaredVars.push(Utils.asMap(c.getParams()));
         FLocalVariable thiz = currentClass.getThis();
         declaredVars.put(thiz.getIdentifier(), thiz);
@@ -75,10 +122,174 @@ public class ToInternalRepresentation extends FrontierBaseListener {
 
     @Override
     public void exitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
+        currentFunction = null;
         declaredVars.pop();
     }
 
+
     //statements
+
+    @Override
+    public void exitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
+        treeData.statementMap.put(ctx, new FEmptyStatement());
+    }
+
+    @Override
+    public void exitExpressionStatement(FrontierParser.ExpressionStatementContext ctx) {
+        FExpressionStatement res = new FExpressionStatement(treeData.expressionMap.get(ctx.expression()));
+        treeData.statementMap.put(ctx, res);
+    }
+
+    @Override
+    public void exitReturnStatement(FrontierParser.ReturnStatementContext ctx) {
+        FReturn res = new FReturn(treeData.expressionMap.get(ctx.expression()), currentFunction);
+        treeData.statementMap.put(ctx, res);
+        typeChecks.add(res);
+    }
+
+    @Override
+    public void exitAssignment(FrontierParser.AssignmentContext ctx) {
+        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        try {
+            FVariable var = findVar(identifier);
+            FVarAssignment.Operator op = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
+            FExpression value = treeData.expressionMap.get(ctx.expression());
+            FVarAssignment res = new FVarAssignment(var, op, value);
+            treeData.statementMap.put(ctx, res);
+            typeChecks.add(res);
+        } catch (UndeclaredVariable e) {
+            errors.add(e);
+            //TODO what now?
+        }
+    }
+
+    @Override
+    public void exitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
+        try {
+            FVarDeclaration res = fromVariableDeclarator(ctx.variableDeclarator());
+            declaredVars.put(res.getVar().getIdentifier(), (FLocalVariable) res.getVar());
+            treeData.statementMap.put(ctx, res);
+        } catch (ClassNotFound e) {
+            errors.add(e);
+            //TODO what now?
+        }
+    }
+
+    @Override
+    public void enterBlockStatement(FrontierParser.BlockStatementContext ctx) {
+        declaredVars.push();
+    }
+    @Override
+    public void exitBlockStatement(FrontierParser.BlockStatementContext ctx) {
+        declaredVars.pop();
+        ImmutableList.Builder<FStatement> builder = new ImmutableList.Builder<>();
+        for (FrontierParser.StatementContext c : ctx.statement()) {
+            builder.add(treeData.statementMap.get(c));
+        }
+        treeData.statementMap.put(ctx, new FBlock(builder.build()));
+    }
+
+    @Override
+    public void exitIfStatement(FrontierParser.IfStatementContext ctx) {
+        FExpression cond = treeData.expressionMap.get(ctx.expression());
+        FStatement then = treeData.statementMap.get(ctx.statement(0));
+        FStatement elze = treeData.statementMap.get(ctx.statement(1));
+        FIf res = new FIf(cond, then, elze);
+        treeData.statementMap.put(ctx, res);
+        typeChecks.add(res);
+    }
+
+    @Override
+    public void enterWhileStatement(FrontierParser.WhileStatementContext ctx) {
+        declaredVars.push();
+        loops.push(new FLoopIdentifier());
+    }
+    @Override
+    public void exitWhileStatement(FrontierParser.WhileStatementContext ctx) {
+        declaredVars.pop();
+        FLoopIdentifier identifier = loops.pop();
+        FExpression cond = treeData.expressionMap.get(ctx.expression());
+        FStatement body = treeData.statementMap.get(ctx.statement());
+        FWhile res = new FWhile(identifier, cond, body);
+        treeData.statementMap.put(ctx, res);
+        typeChecks.add(res);
+    }
+
+    @Override
+    public void enterForStatement(FrontierParser.ForStatementContext ctx) {
+        declaredVars.push();
+        loops.push(new FLoopIdentifier());
+    }
+    @Override
+    public void exitForStatement(FrontierParser.ForStatementContext ctx) {
+        declaredVars.pop();
+        FLoopIdentifier identifier = loops.pop();
+
+        FVarDeclaration decl = null;
+        FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
+        if (c != null) {
+            try {
+                decl = fromVariableDeclarator(c);
+            } catch (ClassNotFound e) {
+                errors.add(e);
+                return; //TODO what now?
+            }
+        }
+
+        FExpression cond = treeData.expressionMap.get(ctx.expression());
+        FExpression inc = treeData.expressionMap.get(ctx.expression2().expression());
+        FStatement body = treeData.statementMap.get(ctx.statement());
+
+        FFor res = new FFor(identifier, decl, cond, inc, body);
+        treeData.statementMap.put(ctx, res);
+        typeChecks.add(res);
+    }
+
+    @Override
+    public void enterForeachStatement(FrontierParser.ForeachStatementContext ctx) {
+        declaredVars.push();
+        loops.push(new FLoopIdentifier());
+    }
+    @Override
+    public void exitForeachStatement(FrontierParser.ForeachStatementContext ctx) {
+        super.exitForeachStatement(ctx);
+        declaredVars.pop();
+        FLoopIdentifier identifier = loops.pop();
+
+        Pair<FLocalVariable, Optional<ClassNotFound>> it = ParserContextUtils.getVariable(ctx.typedIdentifier(), classes);
+        if (it.b.isPresent()) {
+            errors.add(it.b.get());
+            return; //TODO now what?
+        }
+
+        FExpression container = treeData.expressionMap.get(ctx.expression());
+        FStatement body = treeData.statementMap.get(ctx.statement());
+
+        FForEach res = new FForEach(identifier, it.a, container, body);
+        treeData.statementMap.put(ctx, res);
+        typeChecks.add(res);
+    }
+
+    @Override
+    public void exitBreakStatement(FrontierParser.BreakStatementContext ctx) {
+        if (loops.isEmpty()) {
+            errors.add(new StatementOutsideLoop());
+            //TODO what now
+            return;
+        }
+        treeData.statementMap.put(ctx, new FBreak(loops.peek()));
+    }
+
+    @Override
+    public void exitContinueStatement(FrontierParser.ContinueStatementContext ctx) {
+        if (loops.isEmpty()) {
+            errors.add(new StatementOutsideLoop());
+            //TODO what now
+            return;
+        }
+        treeData.statementMap.put(ctx, new FContinue(loops.peek()));
+    }
+
 
     //Expressions
 
@@ -86,17 +297,6 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     public void exitLiteralExpr(FrontierParser.LiteralExprContext ctx) {
         FLiteral literal = treeData.literalMap.get(ctx.literal());
         treeData.expressionMap.put(ctx, new FLiteralExpression(literal));
-    }
-
-    private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
-        FVariable var = declaredVars.get(identifier);
-        if (var == null) {
-            var = currentClass.getField(identifier);
-        }
-        if (var == null) {
-            throw new UndeclaredVariable(identifier, currentFunction);
-        }
-        return var;
     }
 
     @Override
@@ -128,8 +328,8 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         //TODO type check
-        FExpression expression = treeData.expressionMap.get(ctx.children.get(1));
-        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.children.get(0).getText(), true);
+        FExpression expression = treeData.expressionMap.get(ctx.expression());
+        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(0).getText(), true);
         FUnaryOp res = new FUnaryOp(expression, op);
         treeData.expressionMap.put(ctx, res);
     }
@@ -137,8 +337,8 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
         //TODO type check
-        FExpression expression = treeData.expressionMap.get(ctx.children.get(0));
-        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.children.get(1).getText(), false);
+        FExpression expression = treeData.expressionMap.get(ctx.expression());
+        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(1).getText(), false);
         FUnaryOp res = new FUnaryOp(expression, op);
         treeData.expressionMap.put(ctx, res);
     }
@@ -146,9 +346,9 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitBinaryOp(FrontierParser.BinaryOpContext ctx) {
         //TODO type check
-        FExpression first = treeData.expressionMap.get(ctx.children.get(0));
-        FExpression second = treeData.expressionMap.get(ctx.children.get(2));
-        FBinaryOp.Operator op = FBinaryOp.Operator.fromString(ctx.children.get(1).getText());
+        FExpression first = treeData.expressionMap.get(ctx.expression(0));
+        FExpression second = treeData.expressionMap.get(ctx.expression(1));
+        FBinaryOp.Operator op = FBinaryOp.Operator.fromString(ctx.getChild(1).getText());
         FBinaryOp res = new FBinaryOp(first, second, op);
         treeData.expressionMap.put(ctx, res);
     }
@@ -218,7 +418,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             treeData.expressionMap.put(ctx, res);
         } catch (FunctionNotFound e) {
             errors.add(e);
-            //TODO abort
+            return; //TODO abort
         }
     }
 
@@ -227,7 +427,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         Pair<FClass, Optional<ClassNotFound>> clazz = ParserContextUtils.getBasicType(ctx.basicType(), classes);
         if (clazz.b.isPresent()) {
             errors.add(clazz.b.get());
-            //TODO abort
+            return; //TODO abort
         }
 
         try {
@@ -235,7 +435,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             treeData.expressionMap.put(ctx, res);
         } catch (FunctionNotFound e) {
             errors.add(e);
-            //TODO abort
+            return; //TODO abort
         }
 
     }
@@ -245,7 +445,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         Pair<FClass, Optional<ClassNotFound>> baseClass = ParserContextUtils.getBasicType(ctx.basicType(), classes);
         if (baseClass.b.isPresent()) {
             errors.add(baseClass.b.get());
-            //TODO abort
+            return; //TODO abort
         }
 
         int initialisedDepth = ctx.LBRACK().size();
@@ -262,7 +462,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             treeData.expressionMap.put(ctx, res);
         } catch (FunctionNotFound e) {
             errors.add(e);
-            //TODO abort
+            return; //TODO abort
         }
     }
 

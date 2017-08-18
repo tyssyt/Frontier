@@ -128,23 +128,18 @@ predefinedType
 
 
 // STATEMENTS / BLOCKS ---------------------------------------------------------------------
-
-block
-    :   LBRACE statement* RBRACE
-    ;
-
 statement
-    :   block                                                   #blockstatement
-    |   variableDeclarator SEMI                                 #localVariableDeclarationStatement
-    |   IF LPAREN expression RPAREN statement (ELSE statement)? #ifstatement
-    |   FOR LPAREN forControl RPAREN statement                  #forstatement
-    |   FOR LPAREN forEachControl RPAREN statement              #foreachstatement
-    |   WHILE LPAREN expression RPAREN statement                #whilestatement
-    |   RETURN expression? SEMI                                 #returnstatement
-    |   BREAK SEMI                                              #breakstatement
-    |   CONTINUE SEMI                                           #continuestatement
-    |   SEMI                                                    #emptystatement
-    |   expression SEMI                                         #expressionstatement
+    :   LBRACE statement* RBRACE                                                            #blockStatement
+    |   variableDeclarator SEMI                                                             #localVariableDeclarationStatement
+    |   IF LPAREN expression RPAREN statement (ELSE statement)?                             #ifStatement
+    |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN statement  #forStatement
+    |   FOR LPAREN typedIdentifier SEMI expression RPAREN statement                         #foreachStatement
+    |   WHILE LPAREN expression RPAREN statement                                            #whileStatement
+    |   RETURN expression? SEMI                                                             #returnStatement
+    |   BREAK SEMI                                                                          #breakStatement
+    |   CONTINUE SEMI                                                                       #continueStatement
+    |   SEMI                                                                                #emptyStatement
+    |   expression SEMI                                                                     #expressionStatement
     |   <assoc=right> Identifier
         (   ASSIGN
         |   ADD_ASSIGN
@@ -157,14 +152,6 @@ statement
         |   MOD_ASSIGN
         )
         expression                                              #assignment
-    ;
-
-forControl
-    :   variableDeclarator? SEMI expression? SEMI expression?
-    ;
-
-forEachControl
-    :   typedIdentifier SEMI expression
     ;
 
 
@@ -192,6 +179,10 @@ expression
     |   Identifier LPAREN expressionList? RPAREN                #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN             #newObject
     |   NEW basicType (LBRACK expression RBRACK)+ (Array)*      #newArray
+    ;
+
+expression2
+    : expression
     ;
 
 //Literals------------------------------------------------------------------------------------

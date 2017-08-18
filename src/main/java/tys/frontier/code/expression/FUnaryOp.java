@@ -1,6 +1,12 @@
 package tys.frontier.code.expression;
 
+import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.FClass;
+import tys.frontier.util.Pair;
+
+import java.util.Arrays;
+
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 public class FUnaryOp implements FExpression {
 
@@ -26,6 +32,9 @@ public class FUnaryOp implements FExpression {
         PLUS("+", true),
         MINUS("-", true);
 
+        private static ImmutableMap<Pair<String, Boolean>, Operator> stringMap =
+                Arrays.stream(values()).collect(toImmutableMap(o -> new Pair<>(o.stringRepresentation, o.prefix), o -> o));
+
         public final String stringRepresentation;
         public boolean prefix;
 
@@ -35,11 +44,7 @@ public class FUnaryOp implements FExpression {
         }
 
         public static Operator fromString (String string, boolean prefix) {
-            for (Operator op : values()) {
-                if (op.prefix==prefix && op.stringRepresentation.equals(string))
-                    return op;
-            }
-            return null;
+            return stringMap.get(new Pair<>(string, prefix));
         }
 
         @Override
