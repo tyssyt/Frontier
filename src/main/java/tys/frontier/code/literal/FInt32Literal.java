@@ -3,11 +3,11 @@ package tys.frontier.code.literal;
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FInt32;
 
-public class FInteger32Literal implements FLiteral {
+public class FInt32Literal implements FLiteral {
 
     public final int value;
 
-    public FInteger32Literal(int value) {
+    public FInt32Literal(int value) {
         this.value = value;
     }
 
@@ -21,7 +21,7 @@ public class FInteger32Literal implements FLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FInteger32Literal that = (FInteger32Literal) o;
+        FInt32Literal that = (FInt32Literal) o;
 
         return value == that.value;
     }

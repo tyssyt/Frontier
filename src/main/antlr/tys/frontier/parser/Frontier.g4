@@ -170,8 +170,7 @@ expression
     |   expression (EQUAL|NOTEQUAL) expression                  #binaryOp
     |   expression (XOR|AND|OR) expression                      #binaryOp
     |   expression (LE|GE|LT|GT) expression                     #binaryOp
-    |   expression (INC | DEC)                                  #postUnaryOp
-    |   (ADD|SUB|INC|DEC) expression                            #preUnaryOp
+    |   (ADD|SUB) expression                                    #preUnaryOp
     |   expression (MUL|DIV|MOD|ADD|SUB) expression             #binaryOp
     |   expression LBRACK expression RBRACK                     #arrayAccess
     |   expression DOT Identifier                               #fieldAccess

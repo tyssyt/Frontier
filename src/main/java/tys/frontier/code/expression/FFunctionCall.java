@@ -8,9 +8,9 @@ import java.util.List;
 public class FFunctionCall implements FExpression {
 
     private FFunction function;
-    private List<FExpression> params;
+    private List<? extends FExpression> params;
 
-    public FFunctionCall(FFunction function, List<FExpression> params) {
+    public FFunctionCall(FFunction function, List<? extends FExpression> params) {
         this.function = function;
         this.params = params;
     }

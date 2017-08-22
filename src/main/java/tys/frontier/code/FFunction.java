@@ -1,11 +1,10 @@
 package tys.frontier.code;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FFunction implements IdentifierNameable, Typed {
@@ -17,7 +16,9 @@ public class FFunction implements IdentifierNameable, Typed {
     private FClass returnType;
     private List<FLocalVariable> params;
     private Signature signature;
-    private List<FStatement> body;
+    protected List<FStatement> body;
+
+    protected boolean predefined = false;
 
     public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FLocalVariable> params) {
         this.identifier = identifier;
@@ -27,6 +28,16 @@ public class FFunction implements IdentifierNameable, Typed {
         this.returnType = returnType;
         this.params = params;
         this.signature = new Signature(this);
+    }
+
+    protected FFunction(Signature signature, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FLocalVariable> params) {
+        this.identifier = signature.identifier;
+        this.clazz = clazz;
+        this.modifier = modifier;
+        this.statik = statik;
+        this.returnType = returnType;
+        this.params = params;
+        this.signature = signature;
     }
 
     public FClass getClazz() {
@@ -74,16 +85,16 @@ public class FFunction implements IdentifierNameable, Typed {
 
     public static class Signature {
         private FFunctionIdentifier identifier;
-        private Multiset<FClass> paramTypes;
+        private List<FClass> paramTypes;
 
-        public Signature(FFunctionIdentifier identifier, Multiset<FClass> paramTypes) {
+        public Signature(FFunctionIdentifier identifier, List<FClass> paramTypes) {
             this.identifier = identifier;
             this.paramTypes = paramTypes;
         }
 
         public Signature(FFunction function) {
             this.identifier = function.getIdentifier();
-            this.paramTypes = HashMultiset.create();
+            this.paramTypes = new ArrayList<>(function.getParams().size());
             for (FLocalVariable v : function.getParams())
                 paramTypes.add(v.getType());
         }
@@ -92,7 +103,7 @@ public class FFunction implements IdentifierNameable, Typed {
             return identifier;
         }
 
-        public Multiset<FClass> getParamTypes() {
+        public List<FClass> getParamTypes() {
             return paramTypes;
         }
 

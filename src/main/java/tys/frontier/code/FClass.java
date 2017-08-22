@@ -2,6 +2,9 @@ package tys.frontier.code;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.Operator.FEquals;
+import tys.frontier.code.Operator.FHashCode;
+import tys.frontier.code.Operator.FNotEquals;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -13,7 +16,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class FClass implements IdentifierNameable, Typed {
+public class FClass implements IdentifierNameable {
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -26,6 +29,11 @@ public class FClass implements IdentifierNameable, Typed {
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
+
+        FEquals eq = new FEquals(this);
+        addFunctionInternal(eq);
+        addFunctionInternal(new FNotEquals(eq));
+        addFunctionInternal(new FHashCode(this));
     }
 
     public void addField (FField field) throws IdentifierCollision {
@@ -39,17 +47,16 @@ public class FClass implements IdentifierNameable, Typed {
         FFunction old = getFunction(function.getSignature());
         if (old != null)
             throw new SignatureCollision(function, old, this);
+        addFunctionInternal(function);
+    }
+
+    protected void addFunctionInternal (FFunction function) {
         functions.put(function.getIdentifier(), function);
     }
 
     @Override
     public FClassIdentifier getIdentifier () {
         return identifier;
-    }
-
-    @Override
-    public FClass getType () {
-        return this;
     }
 
     public FVisibilityModifier getVisibility() {

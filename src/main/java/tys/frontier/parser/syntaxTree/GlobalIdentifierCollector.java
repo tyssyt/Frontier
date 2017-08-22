@@ -40,7 +40,10 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         //first go over all classes once to know their names
         for (FrontierParser.ClassDeclarationContext c : ctx.classDeclaration()) {
             FClass clazz = ParserContextUtils.getClass(c);
-            classes.put(clazz.getIdentifier(), clazz);
+            FClass old = classes.put(clazz.getIdentifier(), clazz);
+            if (old != null) {
+                errors.add(new IdentifierCollision(clazz, old, null));
+            }
             treeData.classes.put(c, clazz);
         }
         //in the second pass find fields and methods headers

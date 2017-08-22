@@ -5,16 +5,16 @@ import tys.frontier.code.predefinedClasses.FInt;
 
 import java.math.BigInteger;
 
-public class FIntegerLiteral implements FLiteral {
+public class FIntLiteral implements FLiteral {
 
     public final BigInteger value;
 
 
-    public FIntegerLiteral(BigInteger value) {
+    public FIntLiteral(BigInteger value) {
         this.value = value;
     }
 
-    public FIntegerLiteral(long value) {
+    public FIntLiteral(long value) {
         this.value = BigInteger.valueOf(value);
     }
 
@@ -28,7 +28,7 @@ public class FIntegerLiteral implements FLiteral {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        FIntegerLiteral that = (FIntegerLiteral) o;
+        FIntLiteral that = (FIntLiteral) o;
 
         return value.equals(that.value);
     }

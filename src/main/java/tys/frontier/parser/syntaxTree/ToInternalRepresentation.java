@@ -1,10 +1,9 @@
 package tys.frontier.parser.syntaxTree;
 
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multiset;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import tys.frontier.code.*;
+import tys.frontier.code.Operator.Operators;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -328,24 +327,12 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         FExpression expression = treeData.expressionMap.get(ctx.expression());
-        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(0).getText(), true);
-        try {
-            FUnaryOp res = new FUnaryOp(expression, op);
-            treeData.expressionMap.put(ctx, res);
-        } catch (IncompatibleTypes e) {
-            errors.add(e);
-            return; //TODO abort
-        }
-    }
+        FFunctionIdentifier identifier = Operators.PreUnary.fromString(ctx.getChild(0).getText()).identifier;
 
-    @Override
-    public void exitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
-        FExpression expression = treeData.expressionMap.get(ctx.expression());
-        FUnaryOp.Operator op = FUnaryOp.Operator.fromString(ctx.getChild(1).getText(), false);
         try {
-            FUnaryOp res = new FUnaryOp(expression, op);
-            treeData.expressionMap.put(ctx, res);
-        } catch (IncompatibleTypes e) {
+            FFunctionCall function = functionCall(identifier, ImmutableList.of(expression), expression.getType());
+            treeData.expressionMap.put(ctx, function);
+        } catch (FunctionNotFound e) {
             errors.add(e);
             return; //TODO abort
         }
@@ -353,15 +340,22 @@ public class ToInternalRepresentation extends FrontierBaseListener {
 
     @Override
     public void exitBinaryOp(FrontierParser.BinaryOpContext ctx) {
-        //TODO type check
         FExpression first = treeData.expressionMap.get(ctx.expression(0));
         FExpression second = treeData.expressionMap.get(ctx.expression(1));
-        FBinaryOp.Operator op = FBinaryOp.Operator.fromString(ctx.getChild(1).getText());
+        FFunctionIdentifier identifier = Operators.Binary.fromString(ctx.getChild(1).getText()).identifier;
+
         try {
-            FBinaryOp res = new FBinaryOp(first, second, op);
-            treeData.expressionMap.put(ctx, res);
-        } catch (IncompatibleTypes e) {
-            return; //TODO abort
+            FFunctionCall function = functionCall(identifier, ImmutableList.of(first, second), first.getType());
+            treeData.expressionMap.put(ctx, function);
+        } catch (FunctionNotFound e1) {
+            try {
+                FFunctionCall function = functionCall(identifier, ImmutableList.of(first, second), second.getType());
+                treeData.expressionMap.put(ctx, function);
+            } catch (FunctionNotFound e2) {
+                errors.add(e1);
+                errors.add(e2);
+                return; //TODO abort
+            }
         }
     }
 
@@ -399,8 +393,8 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             res.add(treeData.expressionMap.get(c));
         return res;
     }
-    private Multiset<FClass> typesFromExpressionList (List<FExpression> exps) {
-        Multiset<FClass> res = HashMultiset.create();
+    private List<FClass> typesFromExpressionList (List<FExpression> exps) {
+        List<FClass> res = new ArrayList<>(exps.size());
         for (FExpression exp : exps)
             res.add(exp.getType());
         return res;
@@ -409,7 +403,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
                                         List<FExpression> params,
                                         FClass clazz)
                                     throws FunctionNotFound {
-        Multiset<FClass> paramTypes = typesFromExpressionList(params);
+        List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
         FFunction f = clazz.getFunction(signature);
         if (f==null)

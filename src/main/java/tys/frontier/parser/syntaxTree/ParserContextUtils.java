@@ -10,7 +10,7 @@ import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FErrorIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FBoolLiteral;
-import tys.frontier.code.literal.FInteger32Literal;
+import tys.frontier.code.literal.FInt32Literal;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.*;
@@ -69,15 +69,13 @@ public final class ParserContextUtils {
     public static Pair<FClass, Optional<ClassNotFound>> getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
         FClass type;
         Optional<ClassNotFound> e = Optional.empty();
-        FrontierParser.PredefinedTypeContext c = ctx.predefinedType();
-        if (c != null) {
-            type = getPredefined(c);
+        FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
+        if (predefined != null) {
+            type = getPredefined(predefined);
         } else {
             FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
-            FClass clazz = possibleTypes.get(identifier);
-            if (clazz != null)
-                type = clazz.getType();
-            else {
+            type = possibleTypes.get(identifier);
+            if (type==null) {
                 type = new FErrorClassType(new FErrorIdentifier(identifier));
                 e = Optional.of(new ClassNotFound(identifier));
             }
@@ -115,7 +113,7 @@ public final class ParserContextUtils {
                 case FrontierParser.IntegerLiteral:
                     if (text.endsWith("L") || text.endsWith("l"))
                         throw new RuntimeException("no longs for now");
-                    res = new FInteger32Literal(Integer.parseInt(text));
+                    res = new FInt32Literal(Integer.parseInt(text));
                     break;
                 case FrontierParser.NULL:
                     res = FNull.INSTANCE;

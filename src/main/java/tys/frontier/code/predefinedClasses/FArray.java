@@ -7,7 +7,6 @@ import tys.frontier.code.FConstructor;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
-import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.util.IntPair;
 
@@ -31,9 +30,9 @@ public class FArray extends FPredefinedClass {
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
             for (int i = 0; i < depth; i++) {
                 builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FInt.INSTANCE));
-                FConstructor c = new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build());
-                functions.put(FFunctionIdentifier.CONSTRUCTOR, c);
+                addFunctionInternal(new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build()){{predefined=true;}});
             }
+
         }
     }
 
