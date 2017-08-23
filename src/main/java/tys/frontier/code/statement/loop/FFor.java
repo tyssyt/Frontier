@@ -5,6 +5,7 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.statement.NeedsTypeCheck;
+import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
 import java.util.Optional;
@@ -14,14 +15,14 @@ public class FFor implements FLoop, NeedsTypeCheck {
     private FLoopIdentifier identifier;
     private FVarDeclaration declaration; //optional
     private FExpression condition; //optional
-    private FExpression incement; //optional
+    private FExpression increment; //optional
     private FStatement body;
 
-    public FFor(FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression incement, FStatement body) {
+    public FFor(FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FStatement body) {
         this.identifier = identifier;
         this.declaration = declaration;
         this.condition = condition;
-        this.incement = incement;
+        this.increment = increment;
         this.body = body;
     }
 
@@ -38,12 +39,17 @@ public class FFor implements FLoop, NeedsTypeCheck {
         return condition == null ? Optional.empty() : Optional.of(condition);
     }
 
-    public Optional<FExpression> getIncement() {
-        return incement == null ? Optional.empty() : Optional.of(incement);
+    public Optional<FExpression> getIncrement() {
+        return increment == null ? Optional.empty() : Optional.of(increment);
     }
 
     public FStatement getBody() {
         return body;
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterFor(this);
     }
 
     @Override

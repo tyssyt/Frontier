@@ -1,6 +1,7 @@
 package tys.frontier.code.statement;
 
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.visitor.StatementVisitor;
 
 public class FExpressionStatement implements FStatement {
 
@@ -12,5 +13,10 @@ public class FExpressionStatement implements FStatement {
 
     public FExpression getExpression() {
         return expression;
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterExpression(this);
     }
 }

@@ -1,5 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
+import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -11,7 +12,6 @@ import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxError;
 import tys.frontier.util.Pair;
-import tys.frontier.util.Triple;
 
 import java.util.*;
 
@@ -28,9 +28,10 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         ctx.accept(this);
     }
 
-    public static Triple<Map<FClassIdentifier, FClass>, SyntaxTreeData, List<SyntaxError>> getIdentifiers (FrontierParser.FileContext ctx) {
+    public static Pair<SyntaxTreeData, List<SyntaxError>> getIdentifiers (FFile file, FrontierParser.FileContext ctx) {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
-        return new Triple<>(collector.classes, collector.treeData, collector.errors);
+        file.setClasses(ImmutableMap.copyOf(collector.classes));
+        return new Pair<>(collector.treeData, collector.errors);
     }
 
 

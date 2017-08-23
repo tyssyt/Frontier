@@ -4,6 +4,7 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.NeedsTypeCheck;
+import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
 public class FArrayAccess implements FExpression, NeedsTypeCheck {
@@ -17,9 +18,22 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
         checkTypes();
     }
 
+    public FExpression getArray() {
+        return array;
+    }
+
+    public FExpression getIndex() {
+        return index;
+    }
+
     @Override
     public FClass getType() {
         return ((FArray) array.getType()).getOneDimensionLess();
+    }
+
+    @Override
+    public <E> E accept(ExpressionVisitor<E> visitor) {
+        return visitor.enterArrayAccess(this);
     }
 
     @Override

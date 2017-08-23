@@ -4,6 +4,7 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.NeedsTypeCheck;
+import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
 public class FWhile implements FLoop, NeedsTypeCheck {
@@ -29,6 +30,11 @@ public class FWhile implements FLoop, NeedsTypeCheck {
 
     public FStatement getBody() {
         return body;
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterWhile(this);
     }
 
     @Override

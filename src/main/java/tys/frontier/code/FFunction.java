@@ -1,5 +1,6 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ImmutableList;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
@@ -16,7 +17,7 @@ public class FFunction implements IdentifierNameable, Typed {
     private FClass returnType;
     private List<FLocalVariable> params;
     private Signature signature;
-    protected List<FStatement> body;
+    protected ImmutableList<FStatement> body;
 
     protected boolean predefined = false;
 
@@ -58,6 +59,11 @@ public class FFunction implements IdentifierNameable, Typed {
 
     public List<FStatement> getBody() {
         return body;
+    }
+
+    public void setBody(ImmutableList<FStatement> body) {
+        assert this.body==null;
+        this.body = body;
     }
 
     @Override

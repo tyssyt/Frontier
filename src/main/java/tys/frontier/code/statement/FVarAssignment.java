@@ -3,6 +3,7 @@ package tys.frontier.code.statement;
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
 import java.util.Arrays;
@@ -31,6 +32,11 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
     public FExpression getValue() {
         return value;
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterVarAssignment(this);
     }
 
     @Override

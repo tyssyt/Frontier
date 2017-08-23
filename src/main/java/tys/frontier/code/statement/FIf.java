@@ -2,6 +2,7 @@ package tys.frontier.code.statement;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
 import java.util.Optional;
@@ -34,5 +35,10 @@ public class FIf implements FStatement, NeedsTypeCheck {
     public void checkTypes() throws IncompatibleTypes {
         if (condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterIf(this);
     }
 }

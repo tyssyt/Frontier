@@ -1,6 +1,7 @@
 package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.code.visitor.StatementVisitor;
 
 public class FBlock implements FStatement {
 
@@ -12,5 +13,10 @@ public class FBlock implements FStatement {
 
     public ImmutableList<FStatement> getStatements() {
         return statements;
+    }
+
+    @Override
+    public <S, E> S accept(StatementVisitor<S, E> visitor) {
+        return visitor.enterBlock(this);
     }
 }

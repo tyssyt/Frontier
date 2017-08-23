@@ -4,8 +4,7 @@ import com.google.common.collect.BiMap;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import tys.frontier.code.FClass;
-import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.FFile;
 import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
@@ -16,12 +15,10 @@ import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxError;
 import tys.frontier.style.StyleOptions;
 import tys.frontier.style.StyleUtilities;
 import tys.frontier.util.Pair;
-import tys.frontier.util.Triple;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public class Test {
 
@@ -46,13 +43,13 @@ public class Test {
         FrontierParser parser = new FrontierParser(tokens);
         FrontierParser.FileContext context = parser.file();
 
-        Triple<Map<FClassIdentifier, FClass>, SyntaxTreeData, List<SyntaxError>> triple = GlobalIdentifierCollector.getIdentifiers(context);
-        Map<FClassIdentifier, FClass> globalIdentifiers = triple.a;
-        SyntaxTreeData treeData = triple.b;
-        List<SyntaxError> errors = triple.c;
+        FFile file = new FFile(FILE_LOCATION);
+        Pair<SyntaxTreeData, List<SyntaxError>> pair = GlobalIdentifierCollector.getIdentifiers(file, context);
+        SyntaxTreeData treeData = pair.a;
+        List<SyntaxError> errors = pair.b;
         {
             StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
-            globalIdentifiers.values().forEach(i -> sb.append(i).append('\n'));
+            file.getClasses().values().forEach(i -> sb.append(i).append('\n'));
             Log.info(this, sb.toString());
         }
         try {
@@ -67,11 +64,11 @@ public class Test {
             return;
         }
 
-        Pair<List<NeedsTypeCheck>, List<SyntaxError>> typeChecksAndErrors = ToInternalRepresentation.toInternal(globalIdentifiers, treeData);
+        Pair<List<NeedsTypeCheck>, List<SyntaxError>> typeChecksAndErrors = ToInternalRepresentation.toInternal(file, treeData);
         errors = typeChecksAndErrors.b;
         {
             StringBuilder sb = new StringBuilder().append("parsed classes:\n");
-            globalIdentifiers.values().forEach(i -> sb.append(i).append('\n'));
+            file.getClasses().values().forEach(i -> sb.append(i).append('\n'));
             Log.info(this, sb.toString());
         }
         try {

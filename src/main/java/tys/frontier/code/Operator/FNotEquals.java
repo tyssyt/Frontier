@@ -1,5 +1,6 @@
 package tys.frontier.code.Operator;
 
+import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
@@ -9,7 +10,6 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FReturn;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 //weird exception of pre-definedness: do not print it to .front, but handle it normal in backend
@@ -20,13 +20,13 @@ public class FNotEquals extends FOperator {
         for (FLocalVariable var : equals.getParams()) {
             params.add(new FVariableExpression(var));
         }
-        body = Collections.singletonList(
+        body = ImmutableList.of(
                 new FReturn(
                         new FFunctionCall(
                                 FBool.INSTANCE.getFunction(
-                                        new Signature(FFunctionIdentifier.NOT, Collections.singletonList(FBool.INSTANCE))
+                                        new Signature(FFunctionIdentifier.NOT, ImmutableList.of(FBool.INSTANCE))
                                 ),
-                                Collections.singletonList(new FFunctionCall(
+                                ImmutableList.of(new FFunctionCall(
                                         equals, params
                                 ))
                         ),

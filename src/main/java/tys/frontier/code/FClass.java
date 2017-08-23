@@ -23,6 +23,7 @@ public class FClass implements IdentifierNameable {
 
     private FLocalVariable thiz;
 
+    //TODO try to replace them by immutable maps
     protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
@@ -36,24 +37,13 @@ public class FClass implements IdentifierNameable {
         addFunctionInternal(new FHashCode(this));
     }
 
-    public void addField (FField field) throws IdentifierCollision {
-        FField old = fields.put(field.getIdentifier(), field);
-        if (old != null) {
-            throw new IdentifierCollision(field, old, this);
-        }
+    public Map<FVariableIdentifier, FField> getFields() {
+        return fields;
     }
 
-    public void addFunction (FFunction function) throws SignatureCollision {
-        FFunction old = getFunction(function.getSignature());
-        if (old != null)
-            throw new SignatureCollision(function, old, this);
-        addFunctionInternal(function);
+    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+        return functions;
     }
-
-    protected void addFunctionInternal (FFunction function) {
-        functions.put(function.getIdentifier(), function);
-    }
-
     @Override
     public FClassIdentifier getIdentifier () {
         return identifier;
@@ -84,6 +74,25 @@ public class FClass implements IdentifierNameable {
                 return f;
         return null;
     }
+
+    public void addField (FField field) throws IdentifierCollision {
+        FField old = fields.put(field.getIdentifier(), field);
+        if (old != null) {
+            throw new IdentifierCollision(field, old, this);
+        }
+    }
+
+    public void addFunction (FFunction function) throws SignatureCollision {
+        FFunction old = getFunction(function.getSignature());
+        if (old != null)
+            throw new SignatureCollision(function, old, this);
+        addFunctionInternal(function);
+    }
+
+    protected void addFunctionInternal (FFunction function) {
+        functions.put(function.getIdentifier(), function);
+    }
+
 
     @Override
     public String toString() {
