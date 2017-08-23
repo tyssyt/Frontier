@@ -21,4 +21,14 @@ public class FVariableExpression implements FExpression {
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.visitVariable(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append(variable.getIdentifier());
+    }
+
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

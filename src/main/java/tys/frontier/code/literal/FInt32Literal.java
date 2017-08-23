@@ -6,9 +6,16 @@ import tys.frontier.code.predefinedClasses.FInt32;
 public class FInt32Literal implements FLiteral {
 
     public final int value;
+    public final String originalString;
 
-    public FInt32Literal(int value) {
+    public FInt32Literal(int value, String originalString) {
         this.value = value;
+        this.originalString = originalString;
+    }
+
+    @Override
+    public String getOriginalString() {
+        return originalString;
     }
 
     @Override
@@ -29,5 +36,10 @@ public class FInt32Literal implements FLiteral {
     @Override
     public int hashCode() {
         return value;
+    }
+
+    @Override
+    public String toString() {
+        return "" + value;
     }
 }

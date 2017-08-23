@@ -41,4 +41,14 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
         if (!FPredefinedClass.intTypes.contains(index.getType()))
             throw new IncompatibleTypes(FPredefinedClass.intTypes.iterator().next(), index.getType());
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        array.toString(sb).append('[');
+        return index.toString(sb).append(']');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

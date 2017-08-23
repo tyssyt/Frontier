@@ -3,13 +3,30 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.parser.syntaxTree.syntaxErrors.StaticAccessToInstanceField;
 
 public class FFieldAccess implements FExpression {
 
     private FField field;
+    private FExpression object;
 
-    public FFieldAccess(FField field) {
+    public FFieldAccess(FField field, FExpression object) {
         this.field = field;
+        this.object = object;
+    }
+
+    public FFieldAccess(FField field) throws StaticAccessToInstanceField {
+        if (!field.isStatic())
+            throw new StaticAccessToInstanceField(field);
+        this.field = field;
+    }
+
+    public FField getField() {
+        return field;
+    }
+
+    public FExpression getObject() {
+        return object;
     }
 
     @Override
@@ -20,5 +37,14 @@ public class FFieldAccess implements FExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.visitFieldAccess(this);
+    }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return object.toString(sb).append('.').append(field.getIdentifier());
+    }
+    @Override
+    public String toString() {
+        return tS();
     }
 }

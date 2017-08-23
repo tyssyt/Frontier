@@ -174,7 +174,9 @@ expression
     |   expression (MUL|DIV|MOD|ADD|SUB) expression             #binaryOp
     |   expression LBRACK expression RBRACK                     #arrayAccess
     |   expression DOT Identifier                               #fieldAccess
+    |   typeType DOT Identifier                                 #staticFieldAccess
     |   expression DOT Identifier LPAREN expressionList? RPAREN #externalFunctionCall
+    |   typeType DOT Identifier LPAREN expressionList RPAREN    #staticFunctionCall
     |   Identifier LPAREN expressionList? RPAREN                #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN             #newObject
     |   NEW basicType (LBRACK expression RBRACK)+ (Array)*      #newArray

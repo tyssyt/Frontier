@@ -66,21 +66,25 @@ public final class ParserContextUtils {
         return null;
     }
 
-    public static Pair<FClass, Optional<ClassNotFound>> getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static Pair<FClass, Optional<ClassNotFound>> getNonPredefined(String id, Map<FClassIdentifier, FClass> possibleTypes) {
         FClass type;
         Optional<ClassNotFound> e = Optional.empty();
-        FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
-        if (predefined != null) {
-            type = getPredefined(predefined);
-        } else {
-            FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
-            type = possibleTypes.get(identifier);
-            if (type==null) {
-                type = new FErrorClassType(new FErrorIdentifier(identifier));
-                e = Optional.of(new ClassNotFound(identifier));
-            }
+        FClassIdentifier identifier = new FClassIdentifier(id);
+        type = possibleTypes.get(identifier);
+        if (type==null) {
+            type = new FErrorClassType(new FErrorIdentifier(identifier));
+            e = Optional.of(new ClassNotFound(identifier));
         }
         return new Pair<>(type, e);
+    }
+
+    public static Pair<FClass, Optional<ClassNotFound>> getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+        FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
+        if (predefined != null) {
+            return new Pair<>(getPredefined(predefined), Optional.empty());
+        } else {
+            return getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        }
     }
 
     public static Pair<FClass, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
@@ -113,7 +117,7 @@ public final class ParserContextUtils {
                 case FrontierParser.IntegerLiteral:
                     if (text.endsWith("L") || text.endsWith("l"))
                         throw new RuntimeException("no longs for now");
-                    res = new FInt32Literal(Integer.parseInt(text));
+                    res = new FInt32Literal(Integer.parseInt(text), text);
                     break;
                 case FrontierParser.NULL:
                     res = FNull.INSTANCE;

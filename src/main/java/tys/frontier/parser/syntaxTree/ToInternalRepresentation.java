@@ -336,9 +336,9 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         FFunctionIdentifier identifier = Operators.PreUnary.fromString(ctx.getChild(0).getText()).identifier;
 
         try {
-            FFunctionCall function = functionCall(identifier, ImmutableList.of(expression), expression.getType());
+            FFunctionCall function = staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
             treeData.expressionMap.put(ctx, function);
-        } catch (FunctionNotFound e) {
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
             return; //TODO abort
         }
@@ -351,13 +351,13 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         FFunctionIdentifier identifier = Operators.Binary.fromString(ctx.getChild(1).getText()).identifier;
 
         try {
-            FFunctionCall function = functionCall(identifier, ImmutableList.of(first, second), first.getType());
+            FFunctionCall function = staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
             treeData.expressionMap.put(ctx, function);
-        } catch (FunctionNotFound e1) {
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e1) {
             try {
-                FFunctionCall function = functionCall(identifier, ImmutableList.of(first, second), second.getType());
+                FFunctionCall function = staticFunctionCall(second.getType(), identifier, ImmutableList.of(first, second));
                 treeData.expressionMap.put(ctx, function);
-            } catch (FunctionNotFound e2) {
+            } catch (FunctionNotFound | StaticAccessToInstanceFunction e2) {
                 errors.add(e1);
                 errors.add(e2);
                 return; //TODO abort
@@ -381,13 +381,34 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitFieldAccess(FrontierParser.FieldAccessContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        FClass clazz = treeData.expressionMap.get(ctx.expression()).getType();
-        FField f = clazz.getField(identifier);
+        FExpression object = treeData.expressionMap.get(ctx.expression());
+        FField f = object.getType().getField(identifier);
         if (f == null) {
             errors.add(new FieldNotFound(identifier));
             return; //TODO abort
         }
-        treeData.expressionMap.put(ctx, new FFieldAccess(f));
+        treeData.expressionMap.put(ctx, new FFieldAccess(f, object));
+    }
+
+    @Override
+    public void exitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
+        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        Pair<FClass, Optional<ClassNotFound>> clazz = ParserContextUtils.getType(ctx.typeType(), file.getClasses());
+        if (clazz.b.isPresent()) {
+            errors.add(clazz.b.get());
+            return; //TODO abort
+        }
+        FField f = clazz.a.getField(identifier);
+        if (f == null) {
+            errors.add(new FieldNotFound(identifier));
+            return; //TODO abort
+        }
+        try {
+            treeData.expressionMap.put(ctx, new FFieldAccess(f));
+        } catch (StaticAccessToInstanceField e) {
+            errors.add(e);
+            return; //TODO abort
+        }
     }
 
     private List<FExpression> getExpressions (FrontierParser.ExpressionListContext ctx) {
@@ -405,10 +426,22 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             res.add(exp.getType());
         return res;
     }
-    private FFunctionCall functionCall (FFunctionIdentifier identifier,
-                                        List<FExpression> params,
-                                        FClass clazz)
-                                    throws FunctionNotFound {
+    private FFunctionCall functionCall (FExpression object,
+                                        FFunctionIdentifier identifier,
+                                        List<FExpression> params)
+            throws FunctionNotFound {
+        List<FClass> paramTypes = typesFromExpressionList(params);
+        FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
+        FFunction f = object.getType().getFunction(signature);
+        if (f==null)
+            throw new FunctionNotFound(signature);
+        return new FFunctionCall(object, f, params);
+    }
+
+    private FFunctionCall staticFunctionCall (FClass clazz,
+                                              FFunctionIdentifier identifier,
+                                              List<FExpression> params)
+            throws FunctionNotFound, StaticAccessToInstanceFunction {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
         FFunction f = clazz.getFunction(signature);
@@ -420,10 +453,10 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
-        FClass clazz = treeData.expressionMap.get(ctx.expression()).getType();
+        FExpression object = treeData.expressionMap.get(ctx.expression());
 
         try {
-            FFunctionCall res = functionCall(identifier, getExpressions(ctx.expressionList()), clazz);
+            FFunctionCall res = functionCall(object, identifier, getExpressions(ctx.expressionList()));
             treeData.expressionMap.put(ctx, res);
         } catch (FunctionNotFound e) {
             errors.add(e);
@@ -434,11 +467,27 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     @Override
     public void exitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
-
         try {
-            FFunctionCall res = functionCall(identifier, getExpressions(ctx.expressionList()), currentClass);
+            FFunctionCall res = functionCall(new FVariableExpression(currentClass.getThis()), identifier, getExpressions(ctx.expressionList()));
             treeData.expressionMap.put(ctx, res);
         } catch (FunctionNotFound e) {
+            errors.add(e);
+            return; //TODO abort
+        }
+    }
+
+    @Override
+    public void exitStaticFunctionCall(FrontierParser.StaticFunctionCallContext ctx) {
+        Pair<FClass, Optional<ClassNotFound>> clazz = ParserContextUtils.getType(ctx.typeType(), file.getClasses());
+        if (clazz.b.isPresent()) {
+            errors.add(clazz.b.get());
+            return; //TODO abort
+        }
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
+        try {
+            FFunctionCall res = staticFunctionCall(clazz.a, identifier, getExpressions(ctx.expressionList()));
+            treeData.expressionMap.put(ctx, res);
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
             return; //TODO abort
         }
@@ -453,9 +502,9 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         }
 
         try {
-            FFunctionCall res = functionCall(FFunctionIdentifier.CONSTRUCTOR, getExpressions(ctx.expressionList()), clazz.a);
+            FFunctionCall res = staticFunctionCall(clazz.a, FFunctionIdentifier.CONSTRUCTOR, getExpressions(ctx.expressionList()));
             treeData.expressionMap.put(ctx, res);
-        } catch (FunctionNotFound e) {
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
             return; //TODO abort
         }
@@ -480,9 +529,9 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             params.add(treeData.expressionMap.get(c));
 
         try {
-            FFunctionCall res = functionCall(FFunctionIdentifier.CONSTRUCTOR, params, array);
+            FFunctionCall res = staticFunctionCall(array, FFunctionIdentifier.CONSTRUCTOR, params);
             treeData.expressionMap.put(ctx, res);
-        } catch (FunctionNotFound e) {
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
             return; //TODO abort
         }

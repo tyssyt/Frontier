@@ -24,4 +24,14 @@ public class FBracketsExpression implements FExpression {
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.enterBrackets(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append('(');
+        return inner.toString(sb).append(')');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

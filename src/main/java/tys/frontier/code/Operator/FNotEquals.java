@@ -8,6 +8,7 @@ import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FReturn;
+import tys.frontier.parser.syntaxTree.syntaxErrors.StaticAccessToInstanceFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,18 +21,22 @@ public class FNotEquals extends FOperator {
         for (FLocalVariable var : equals.getParams()) {
             params.add(new FVariableExpression(var));
         }
-        body = ImmutableList.of(
-                new FReturn(
-                        new FFunctionCall(
-                                FBool.INSTANCE.getFunction(
-                                        new Signature(FFunctionIdentifier.NOT, ImmutableList.of(FBool.INSTANCE))
-                                ),
-                                ImmutableList.of(new FFunctionCall(
-                                        equals, params
-                                ))
-                        ),
-                        this
-                )
-        );
+        try {
+            body = ImmutableList.of(
+                    new FReturn(
+                            new FFunctionCall(
+                                    FBool.INSTANCE.getFunction(
+                                            new Signature(FFunctionIdentifier.NOT, ImmutableList.of(FBool.INSTANCE))
+                                    ),
+                                    ImmutableList.of(new FFunctionCall(
+                                            equals, params
+                                    ))
+                            ),
+                            this
+                    )
+            );
+        } catch (StaticAccessToInstanceFunction e) {
+            throw new RuntimeException(e); //something went terribly wrong
+        }
     }
 }

@@ -6,14 +6,21 @@ import tys.frontier.code.predefinedClasses.FInt64;
 public class FInt64Literal implements FLiteral {
 
     public final long value;
+    public final String originalString;
 
-    public FInt64Literal(long value) {
+    public FInt64Literal(long value, String originalString) {
         this.value = value;
+        this.originalString = originalString;
     }
 
     @Override
     public FClass getType() {
         return FInt64.INSTANCE;
+    }
+
+    @Override
+    public String getOriginalString() {
+        return originalString;
     }
 
     @Override
@@ -29,5 +36,10 @@ public class FInt64Literal implements FLiteral {
     @Override
     public int hashCode() {
         return (int) (value ^ (value >>> 32));
+    }
+
+    @Override
+    public String toString() {
+        return "" + value;
     }
 }

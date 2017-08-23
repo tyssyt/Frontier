@@ -21,4 +21,13 @@ public class FLiteralExpression implements FExpression {
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.visitLiteral(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append(literal);
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

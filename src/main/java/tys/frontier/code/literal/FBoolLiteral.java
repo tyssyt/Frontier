@@ -18,4 +18,13 @@ public class FBoolLiteral implements FLiteral {
     public FClass getType() {
         return FBool.INSTANCE;
     }
+
+    @Override
+    public String toString() {
+        return "" + value;
+    }
+    @Override
+    public String getOriginalString() {
+        return toString();
+    }
 }

@@ -8,19 +8,26 @@ import java.math.BigInteger;
 public class FIntLiteral implements FLiteral {
 
     public final BigInteger value;
+    public final String originalString;
 
-
-    public FIntLiteral(BigInteger value) {
+    public FIntLiteral(BigInteger value, String originalString) {
         this.value = value;
+        this.originalString = originalString;
     }
 
-    public FIntLiteral(long value) {
+    public FIntLiteral(long value, String originalString) {
         this.value = BigInteger.valueOf(value);
+        this.originalString = originalString;
     }
 
     @Override
     public FClass getType() {
         return FInt.INSTANCE;
+    }
+
+    @Override
+    public String getOriginalString() {
+        return originalString;
     }
 
     @Override
@@ -36,5 +43,10 @@ public class FIntLiteral implements FLiteral {
     @Override
     public int hashCode() {
         return value.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "" + value;
     }
 }

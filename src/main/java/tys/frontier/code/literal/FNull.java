@@ -13,4 +13,14 @@ public class FNull implements FLiteral {
     public FClass getType() {
         return FVoid.INSTANCE;
     }
+
+    @Override
+    public String toString() {
+        return "null";
+    }
+
+    @Override
+    public String getOriginalString() {
+        return toString();
+    }
 }
