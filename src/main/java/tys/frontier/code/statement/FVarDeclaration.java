@@ -28,4 +28,15 @@ public class FVarDeclaration implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.enterVarDeclaration(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append(var);
+        getAssignment().ifPresent(a -> a.getValue().toString(sb.append(' ').append(a.getOperator()).append(' ')));
+        return sb.append(';');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

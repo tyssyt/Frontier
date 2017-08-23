@@ -19,4 +19,13 @@ public class FContinue implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.visitContinue(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append("continue;");
+    }
+    @Override
+    public String toString() {
+        return "continue;";
+    }
 }

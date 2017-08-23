@@ -19,4 +19,13 @@ public class FBreak implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.visitBreak(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append("break;");
+    }
+    @Override
+    public String toString() {
+        return "break;";
+    }
 }

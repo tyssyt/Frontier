@@ -7,4 +7,14 @@ public class FEmptyStatement implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.visitEmpty(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append(';');
+    }
+
+    @Override
+    public String toString() {
+        return ";";
+    }
 }

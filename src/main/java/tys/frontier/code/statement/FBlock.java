@@ -19,4 +19,16 @@ public class FBlock implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.enterBlock(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("{\n");
+        for (FStatement statement : statements)
+            statement.toString(sb).append('\n');
+        return sb.append('}');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

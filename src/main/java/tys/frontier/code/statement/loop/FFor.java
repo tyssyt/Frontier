@@ -57,4 +57,20 @@ public class FFor implements FLoop, NeedsTypeCheck {
         if (condition != null && condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("for (");
+        getDeclaration().ifPresent(d -> d.toString(sb));
+        sb.append("; ");
+        getCondition().ifPresent(c -> c.toString(sb));
+        sb.append("; ");
+        getIncrement().ifPresent(i -> i.toString(sb));
+        sb.append(") ");
+        return body.toString(sb);
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

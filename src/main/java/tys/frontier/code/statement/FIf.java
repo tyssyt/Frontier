@@ -41,4 +41,17 @@ public class FIf implements FStatement, NeedsTypeCheck {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.enterIf(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("if (");
+        condition.toString(sb).append(") then ");
+        then.toString(sb);
+        getElse().ifPresent(elze -> elze.toString(sb.append(" else ")));
+        return sb;
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

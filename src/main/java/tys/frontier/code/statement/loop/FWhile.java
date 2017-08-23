@@ -42,4 +42,15 @@ public class FWhile implements FLoop, NeedsTypeCheck {
         if (condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("while (");
+        condition.toString(sb).append(") ");
+        return body.toString(sb);
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

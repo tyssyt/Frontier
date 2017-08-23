@@ -49,4 +49,15 @@ public class FForEach implements FLoop, NeedsTypeCheck {
         if (FArray.getArrayFrom(iterator.getType(), 1) != container.getType())
             throw new IncompatibleTypes(container.getType(), FArray.getArrayFrom(iterator.getType(), 1));
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("for (").append(iterator).append(" : ");
+        container.toString(sb).append(") ");
+        return body.toString(sb);
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

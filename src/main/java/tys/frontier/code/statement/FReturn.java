@@ -30,4 +30,10 @@ public class FReturn extends FExpressionStatement implements NeedsTypeCheck {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.enterReturn(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("return ");
+        return getExpression().toString(sb).append(';');
+    }
 }

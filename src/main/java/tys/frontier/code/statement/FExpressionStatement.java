@@ -19,4 +19,13 @@ public class FExpressionStatement implements FStatement {
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.enterExpression(this);
     }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return expression.toString(sb).append(';');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

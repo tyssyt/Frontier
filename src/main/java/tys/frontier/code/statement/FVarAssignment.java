@@ -45,6 +45,16 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
             throw new IncompatibleTypes(variable.getType(), value.getType());
     }
 
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append(variable.getIdentifier()).append(' ').append(operator).append(' ');
+        return value.toString(sb).append(';');
+    }
+    @Override
+    public String toString() {
+        return tS();
+    }
+
     public enum Operator { //TODO type restrictions of operators
         ASSIGN("="),
         ADD_ASSIGN("+="),
