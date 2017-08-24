@@ -1,6 +1,5 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.ImmutableSet;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
@@ -11,13 +10,27 @@ import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 
 public abstract class FPredefinedClass extends FClass {
 
-    public static final ImmutableSet<FClass> intTypes =
-            ImmutableSet.of(FInt.INSTANCE, FInt32.INSTANCE, FInt64.INSTANCE);
+    static {
+        //make sure all important classes are loaded
+        FBool bool = FBool.INSTANCE;
+        FInt fInt = FInt.INSTANCE;
+        FInt32 int32 = FInt32.INSTANCE;
+        FInt64 int64 = FInt64.INSTANCE;
+        FFloat32 float32 = FFloat32.INSTANCE;
+        FFloat64 float64 = FFloat64.INSTANCE;
+    }
 
-    public static final ImmutableSet<FClass> boolTypes = ImmutableSet.of(FBool.INSTANCE);
+    public static void load() {
+        FBool.INSTANCE.addDefaultFunctions();
+        FInt.INSTANCE.addDefaultFunctions();
+        FInt32.INSTANCE.addDefaultFunctions();
+        FInt64.INSTANCE.addDefaultFunctions();
+        FFloat32.INSTANCE.addDefaultFunctions();
+        FFloat64.INSTANCE.addDefaultFunctions();
+    }
 
     public FPredefinedClass(FClassIdentifier identifier) {
-        super(identifier, FVisibilityModifier.PUBLIC);
+        super(identifier, FVisibilityModifier.PUBLIC, false);
     }
 
     @Override

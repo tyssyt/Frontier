@@ -24,7 +24,7 @@ public class FArray extends FPredefinedClass {
         super(new FArrayIdentifier(baseClass.getIdentifier()));
         this.baseClass = baseClass;
         this.depth = depth;
-
+        addDefaultFunctions();
         {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
@@ -34,6 +34,7 @@ public class FArray extends FPredefinedClass {
             }
 
         }
+
     }
 
     public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {

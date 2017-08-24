@@ -9,6 +9,7 @@ import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
 import tys.frontier.util.StringBuilderToString;
@@ -18,6 +19,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FClass implements IdentifierNameable, StringBuilderToString {
+
+    static {
+        FPredefinedClass.load();
+    }
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -31,7 +36,15 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
+        addDefaultFunctions();
+    }
 
+    protected FClass(FClassIdentifier identifier, FVisibilityModifier visibility, boolean b) {
+        this.identifier = identifier;
+        this.visibility = visibility;
+    }
+
+    protected void addDefaultFunctions() {
         FEquals eq = new FEquals(this);
         addFunctionInternal(eq);
         addFunctionInternal(new FNotEquals(eq));
