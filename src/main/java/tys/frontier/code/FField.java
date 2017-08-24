@@ -2,10 +2,11 @@ package tys.frontier.code;
 
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.util.StringBuilderToString;
 
 import java.util.Optional;
 
-public class FField extends FVariable {
+public class FField extends FVariable implements StringBuilderToString {
     private FClass clazz;
     private FVisibilityModifier modifier;
     private boolean statik;
@@ -36,7 +37,16 @@ public class FField extends FVariable {
     }
 
     @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append(modifier).append(' ');
+        if (statik)
+            sb.append("static ");
+        sb.append(super.toString());
+        getAssignment().ifPresent(a -> a.getValue().toString(sb.append(" = ")));
+        return sb.append(";");
+    }
+    @Override
     public String toString() {
-        return modifier + (statik ? " static " : " ") + super.toString();
+        return tS();
     }
 }

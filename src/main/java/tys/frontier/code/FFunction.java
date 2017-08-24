@@ -4,11 +4,12 @@ import com.google.common.collect.ImmutableList;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.util.StringBuilderToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FFunction implements IdentifierNameable, Typed {
+public class FFunction implements IdentifierNameable, Typed, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
     private FClass clazz;
@@ -84,9 +85,21 @@ public class FFunction implements IdentifierNameable, Typed {
         return signature;
     }
 
+    public String headerToString() {
+        return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
+    }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append(headerToString()).append(" {\n");
+        for (FStatement statement : body)
+            statement.toString(sb).append('\n');
+        return sb.append('}');
+    }
+
     @Override
     public String toString() {
-        return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
+        return tS();
     }
 
     public static class Signature {

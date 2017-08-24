@@ -11,12 +11,13 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
+import tys.frontier.util.StringBuilderToString;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class FClass implements IdentifierNameable {
+public class FClass implements IdentifierNameable, StringBuilderToString {
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -93,9 +94,31 @@ public class FClass implements IdentifierNameable {
         functions.put(function.getIdentifier(), function);
     }
 
+    public String headerToString() {
+        return visibility + " class " + identifier;
+    }
+
+    public StringBuilder summary(StringBuilder sb) {
+        sb.append(headerToString()).append("{\n  ");
+        for (FField field : fields.values()) {
+            field.toString(sb).append(", ");
+        }
+        sb.append("\n  ");
+        for (FFunction function : functions.values()) {
+            sb.append(headerToString()).append(", ");
+        }
+        return sb.append("\n}");
+    }
 
     @Override
-    public String toString() {
-        return visibility + " class " + identifier + "{\n  " + fields.values() + "\n  " + functions.values() + "\n}";
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append(headerToString()).append("{\n");
+        for (FField field : fields.values()) {
+            field.toString(sb).append('\n');
+        }
+        for (FFunction function : functions.values()) {
+            function.toString(sb).append('\n');
+        }
+        return sb.append("\n}");
     }
 }

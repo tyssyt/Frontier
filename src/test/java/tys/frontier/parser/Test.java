@@ -49,7 +49,7 @@ public class Test {
         List<SyntaxError> errors = pair.b;
         {
             StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
-            file.getClasses().values().forEach(i -> sb.append(i).append('\n'));
+            file.summary(sb);
             Log.info(this, sb.toString());
         }
         try {
@@ -68,7 +68,7 @@ public class Test {
         errors = typeChecksAndErrors.b;
         {
             StringBuilder sb = new StringBuilder().append("parsed classes:\n");
-            file.getClasses().values().forEach(i -> sb.append(i).append('\n'));
+            file.toString(sb);
             Log.info(this, sb.toString());
         }
         try {
