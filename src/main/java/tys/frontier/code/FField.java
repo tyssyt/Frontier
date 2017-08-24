@@ -27,6 +27,10 @@ public class FField extends FVariable implements StringBuilderToString {
         return statik;
     }
 
+    public FClass getClazz() {
+        return clazz;
+    }
+
     public void setAssignment(FVarAssignment assignment) {
         this.assignment = assignment;
     }

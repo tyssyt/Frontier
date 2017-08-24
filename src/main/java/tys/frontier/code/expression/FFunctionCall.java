@@ -51,7 +51,11 @@ public class FFunctionCall implements FExpression {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        object.toString(sb).append('.').append(function.getIdentifier()).append('(');
+        if (object == null)
+            sb.append(function.getClazz().getIdentifier());
+        else
+            object.toString(sb);
+        sb.append('.').append(function.getIdentifier()).append('(');
         Iterator<? extends FExpression> it = params.iterator();
         if (it.hasNext()) {
             it.next().toString(sb);

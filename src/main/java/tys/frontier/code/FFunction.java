@@ -92,8 +92,11 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(headerToString()).append(" {\n");
-        for (FStatement statement : body)
-            statement.toString(sb).append('\n');
+        if (predefined)
+            sb.append("predefined");
+        else
+            for (FStatement statement : body)
+                statement.toString(sb).append('\n');
         return sb.append('}');
     }
 

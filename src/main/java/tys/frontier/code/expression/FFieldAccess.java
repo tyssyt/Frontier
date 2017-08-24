@@ -41,7 +41,11 @@ public class FFieldAccess implements FExpression {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        return object.toString(sb).append('.').append(field.getIdentifier());
+        if (object == null)
+            sb.append(field.getClazz().getIdentifier());
+        else
+            object.toString(sb);
+        return sb.append('.').append(field.getIdentifier());
     }
     @Override
     public String toString() {
