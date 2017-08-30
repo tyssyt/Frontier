@@ -7,13 +7,13 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.FrontierBaseVisitor;
 import tys.frontier.parser.FrontierParser;
-import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxError;
+import tys.frontier.parser.syntaxTree.syntaxErrors.*;
 import tys.frontier.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
@@ -64,67 +64,67 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     public Object visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
+        //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
         FClass returnType;
         if (c != null) {
-            Pair<FClass, Optional<ClassNotFound>> returnTypeAndError = ParserContextUtils.getType(c, classes);
-            returnTypeAndError.b.ifPresent(errors::add);
-            returnType = returnTypeAndError.a;
+            try {
+                returnType = ParserContextUtils.getType(c, classes);
+            } catch (ClassNotFound e) {
+                errors.add(e);
+                returnType = FVoid.INSTANCE; //TODO do we want some error related type here?
+            }
         } else {
             returnType = FVoid.INSTANCE;
         }
-        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
-        Pair<List<FLocalVariable>, List<ClassNotFound>> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
-        errors.addAll(params.b);
 
-        FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params.a);
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
         try {
+            List<FLocalVariable> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
+            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
+        } catch (SyntaxErrors e) {
+            errors.addAll(e.errors);
         } catch (SignatureCollision e) {
             errors.add(e);
         }
         return null;
     }
 
-    @Override
-    public Object visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        //TODO better error would be nice, but this will change anyway when we restrict identifiers in the grammar
-        FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
-        if (identifier != currentClass.getIdentifier())
-            errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
-        Pair<List<FLocalVariable>, List<ClassNotFound>> paramsAndErrors =
-                ParserContextUtils.getParams(ctx.formalParameters(), classes);
-        errors.addAll(paramsAndErrors.b);
+        @Override
+        public Object visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
+            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+            //TODO better error would be nice, but this will change anyway when we restrict identifiers in the grammar
+            FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
+            if (!identifier.equals(currentClass.getIdentifier()))
+                errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
 
-
-        FConstructor res = new FConstructor(visibilityModifier, currentClass, paramsAndErrors.a);
-        try {
-            currentClass.addFunction(res);
-            treeData.constructors.put(ctx, res);
-        } catch (SignatureCollision e) {
-            errors.add(e);
+            try {
+                List<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
+                FConstructor res = new FConstructor(visibilityModifier, currentClass, params);
+                currentClass.addFunction(res);
+                treeData.constructors.put(ctx, res);
+            } catch (SyntaxErrors es) {
+                errors.addAll(es.errors);
+            } catch (SignatureCollision e) {
+                errors.add(e);
+            }
+            return null;
         }
-        return null;
-    }
 
-    @Override
-    public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        boolean statik = ParserContextUtils.isStatic(ctx.modifier());
-        Pair<FLocalVariable, Optional<ClassNotFound>> variableAndError =
-                ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
-        variableAndError.b.ifPresent(errors::add);
-        FLocalVariable v = variableAndError.a;
-
-        FField res = new FField(v.getIdentifier(), v.getType(), currentClass, visibilityModifier, statik);
-        try {
-            currentClass.addField(res);
-            treeData.fields.put(ctx, res);
-        } catch (IdentifierCollision e) {
-            errors.add(e);
+        @Override
+        public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
+            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+            boolean statik = ParserContextUtils.isStatic(ctx.modifier());
+            try {
+                FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
+                FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
+                currentClass.addField(res);
+                treeData.fields.put(ctx, res);
+            } catch (ClassNotFound | IdentifierCollision e) {
+                errors.add(e);
+            }
+            return null;
         }
-        return null;
     }
-}

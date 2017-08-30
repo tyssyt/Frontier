@@ -7,7 +7,6 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
-import tys.frontier.code.identifier.FErrorIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FBoolLiteral;
 import tys.frontier.code.literal.FInt32Literal;
@@ -16,9 +15,12 @@ import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
-import tys.frontier.util.Pair;
+import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxErrors;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public final class ParserContextUtils {
 
@@ -66,39 +68,36 @@ public final class ParserContextUtils {
         return null;
     }
 
-    public static Pair<FClass, Optional<ClassNotFound>> getNonPredefined(String id, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static FClass getNonPredefined(String id, Map<FClassIdentifier, FClass> possibleTypes) throws ClassNotFound {
         FClass type;
-        Optional<ClassNotFound> e = Optional.empty();
         FClassIdentifier identifier = new FClassIdentifier(id);
         type = possibleTypes.get(identifier);
         if (type==null) {
-            type = new FErrorClassType(new FErrorIdentifier(identifier));
-            e = Optional.of(new ClassNotFound(identifier));
+            throw new ClassNotFound(identifier);
         }
-        return new Pair<>(type, e);
+        return type;
     }
 
-    public static Pair<FClass, Optional<ClassNotFound>> getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static FClass getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+            throws ClassNotFound {
         FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
-        if (predefined != null) {
-            return new Pair<>(getPredefined(predefined), Optional.empty());
-        } else {
-            return getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
-        }
+        return predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
     }
 
-    public static Pair<FClass, Optional<ClassNotFound>> getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
-        Pair<FClass, Optional<ClassNotFound>> res = getBasicType(ctx.basicType(), possibleTypes);
+    public static FClass getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+            throws ClassNotFound{
+        FClass res = getBasicType(ctx.basicType(), possibleTypes);
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
-            res.a = FArray.getArrayFrom(res.a, arrayDepth);
+            res = FArray.getArrayFrom(res, arrayDepth);
         return res;
     }
 
-    public static Pair<FLocalVariable, Optional<ClassNotFound>> getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
-        Pair<FClass, Optional<ClassNotFound>> typeAndError = getType(ctx.typeType(), possibleTypes);
+    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+            throws ClassNotFound{
+        FClass type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        return new Pair<>(new FLocalVariable(identifier, typeAndError.a), typeAndError.b);
+        return new FLocalVariable(identifier, type);
     }
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) {
@@ -134,19 +133,23 @@ public final class ParserContextUtils {
     }
 
     //TODO its late, I'm tired, this can be done less ugly
-    public static Pair<List<FLocalVariable>, List<ClassNotFound>> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes) {
+    public static List<FLocalVariable> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+            throws SyntaxErrors {
         List<FrontierParser.TypedIdentifierContext> cs = ctx.typedIdentifier();
-        //because I feel like optimizing just this particular thing...
         if (cs.isEmpty())
-            return new Pair<>(Collections.emptyList(), Collections.emptyList());
+            return Collections.emptyList();
         List<FLocalVariable> res = new ArrayList<>(cs.size());
         List<ClassNotFound> errors = new ArrayList<>();
         for (FrontierParser.TypedIdentifierContext c : cs) {
-            Pair<FLocalVariable, Optional<ClassNotFound>> varAndError = getVariable(c, possibleTypes);
-            res.add(varAndError.a);
-            varAndError.b.ifPresent(errors::add);
+            try {
+                res.add(getVariable(c, possibleTypes));
+            } catch (ClassNotFound e) {
+                errors.add(e);
+            }
         }
-        return new Pair<>(res, errors);
+        if (!errors.isEmpty())
+            throw new SyntaxErrors(errors);
+        return res;
     }
 
 
