@@ -48,6 +48,8 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         return listener.typeChecks;
     }
 
+
+
     @Override
     public void enterClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
@@ -177,6 +179,11 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     public void exitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
         try {
             FVarDeclaration res = fromVariableDeclarator(ctx.variableDeclarator());
+            FVariableIdentifier identifier = res.getVar().getIdentifier();
+            if (declaredVars.contains(identifier)) {
+                errors.add(new TwiceDefinedLocalVariable(identifier));
+                return; //TODO what now?
+            }
             declaredVars.put(res.getVar().getIdentifier(), (FLocalVariable) res.getVar());
             treeData.statementMap.put(ctx, res);
         } catch (ClassNotFound e) {
