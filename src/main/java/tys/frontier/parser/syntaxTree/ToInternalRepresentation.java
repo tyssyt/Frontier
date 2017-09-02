@@ -15,7 +15,6 @@ import tys.frontier.parser.FrontierBaseListener;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
 import tys.frontier.util.MapStack;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -41,10 +40,12 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         this.treeData = syntaxTreeData;
     }
 
-    public static Pair<List<NeedsTypeCheck>, List<SyntaxError>> toInternal (FFile file, SyntaxTreeData syntaxTreeData) {
+    public static List<NeedsTypeCheck> toInternal(SyntaxTreeData syntaxTreeData, FFile file) throws SyntaxErrors {
         ToInternalRepresentation listener = new ToInternalRepresentation(file, syntaxTreeData);
         ParseTreeWalker.DEFAULT.walk(listener, syntaxTreeData.root);
-        return new Pair<>(listener.typeChecks, listener.errors);
+        if (!listener.errors.isEmpty())
+            throw new SyntaxErrors(listener.errors);
+        return listener.typeChecks;
     }
 
     @Override

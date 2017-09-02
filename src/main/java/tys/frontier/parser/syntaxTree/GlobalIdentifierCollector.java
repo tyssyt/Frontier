@@ -8,7 +8,6 @@ import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.FrontierBaseVisitor;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
-import tys.frontier.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,10 +27,12 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         ctx.accept(this);
     }
 
-    public static Pair<SyntaxTreeData, List<SyntaxError>> getIdentifiers (FFile file, FrontierParser.FileContext ctx) {
+    public static SyntaxTreeData getIdentifiers(FrontierParser.FileContext ctx, FFile file) throws SyntaxErrors {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
         file.setClasses(ImmutableMap.copyOf(collector.classes));
-        return new Pair<>(collector.treeData, collector.errors);
+        if (!collector.errors.isEmpty())
+            throw new SyntaxErrors(collector.errors);
+        return collector.treeData;
     }
 
 
@@ -92,39 +93,39 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         return null;
     }
 
-        @Override
-        public Object visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-            //TODO better error would be nice, but this will change anyway when we restrict identifiers in the grammar
-            FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
-            if (!identifier.equals(currentClass.getIdentifier()))
-                errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
+    @Override
+    public Object visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
+        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+        //TODO better error would be nice, but this will change anyway when we restrict identifiers in the grammar
+        FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
+        if (!identifier.equals(currentClass.getIdentifier()))
+            errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
 
-            try {
-                List<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
-                FConstructor res = new FConstructor(visibilityModifier, currentClass, params);
-                currentClass.addFunction(res);
-                treeData.constructors.put(ctx, res);
-            } catch (SyntaxErrors es) {
-                errors.addAll(es.errors);
-            } catch (SignatureCollision e) {
-                errors.add(e);
-            }
-            return null;
+        try {
+            List<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
+            FConstructor res = new FConstructor(visibilityModifier, currentClass, params);
+            currentClass.addFunction(res);
+            treeData.constructors.put(ctx, res);
+        } catch (SyntaxErrors es) {
+            errors.addAll(es.errors);
+        } catch (SignatureCollision e) {
+            errors.add(e);
         }
-
-        @Override
-        public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
-            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-            boolean statik = ParserContextUtils.isStatic(ctx.modifier());
-            try {
-                FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
-                FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
-                currentClass.addField(res);
-                treeData.fields.put(ctx, res);
-            } catch (ClassNotFound | IdentifierCollision e) {
-                errors.add(e);
-            }
-            return null;
-        }
+        return null;
     }
+
+    @Override
+    public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
+        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+        boolean statik = ParserContextUtils.isStatic(ctx.modifier());
+        try {
+            FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
+            FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
+            currentClass.addField(res);
+            treeData.fields.put(ctx, res);
+        } catch (ClassNotFound | IdentifierCollision e) {
+            errors.add(e);
+        }
+        return null;
+    }
+}

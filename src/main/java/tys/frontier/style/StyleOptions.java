@@ -6,7 +6,7 @@ import org.json.JSONObject;
 public class StyleOptions {
 
     public static final StyleOptions DEFAULT_STYLE_OPTIONS = builder().createStyleOptions();
-    public static final StyleOptions G_STYLE_OPTIONS = builder()
+    public static final StyleOptions NAME_PENDING = builder()
             .setUseTabs(false)
             .setIndention(0)
             .setMaxCharsPerLine(99999)
@@ -67,28 +67,27 @@ public class StyleOptions {
     }
 
     //TODO there must be a better way to do this
-    public static StyleOptions fromStyleFile (JSONObject styleFile) throws JSONException {
-        JSONObject style = styleFile.getJSONObject("style");
+    public static StyleOptions fromStyleFile (JSONObject options) {
         StyleOptionsBuilder builder = builder();
 
         try {
-            builder.setUseTabs(style.getBoolean("useTabs"));
+            builder.setUseTabs(options.getBoolean("useTabs"));
         } catch (JSONException e) {}
         try {
-            builder.setIndention(style.getInt("indention"));
+            builder.setIndention(options.getInt("indention"));
         } catch (JSONException e) {}
         try {
-            builder.setMaxCharsPerLine(style.getInt("maxCharsPerLine"));
+            builder.setMaxCharsPerLine(options.getInt("maxCharsPerLine"));
         } catch (JSONException e) {}
         try {
-            builder.setMaxParamsPerLine(style.getInt("maxParamsPerLine"));
+            builder.setMaxParamsPerLine(options.getInt("maxParamsPerLine"));
         } catch (JSONException e) {}
         try {
-            builder.setParamsOnNewLine(style.getBoolean("paramsOnNewLine"));
+            builder.setParamsOnNewLine(options.getBoolean("paramsOnNewLine"));
         } catch (JSONException e) {}
 
         try {
-            JSONObject noBracketsForSingleStatement = style.getJSONObject("noBracketsForSingleStatementAfter");
+            JSONObject noBracketsForSingleStatement = options.getJSONObject("noBracketsForSingleStatementAfter");
             try {
                 builder.setNoBracketsForSingleStatementConditional(noBracketsForSingleStatement.getBoolean("conditional"));
             } catch (JSONException e) {}
@@ -99,7 +98,7 @@ public class StyleOptions {
 
 
         try {
-            JSONObject spaceAfter = style.getJSONObject("spaceAfter");
+            JSONObject spaceAfter = options.getJSONObject("spaceAfter");
             try {
                 builder.setSpaceAfterFunctionName(spaceAfter.getBoolean("functionName"));
             } catch (JSONException e) {}
@@ -116,7 +115,7 @@ public class StyleOptions {
 
 
         try {
-            JSONObject bracketsOnNewLine = style.getJSONObject("bracketsOnNewLineAfter");
+            JSONObject bracketsOnNewLine = options.getJSONObject("bracketsOnNewLineAfter");
             builder.setBracketsOnNewLineAfterClass(bracketsOnNewLine.getBoolean("class"));
             builder.setBracketsOnNewLineAfterFunction(bracketsOnNewLine.getBoolean("function"));
             builder.setBracketsOnNewLineAfterConditional(bracketsOnNewLine.getBoolean("conditional"));

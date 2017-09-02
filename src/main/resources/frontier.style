@@ -38,7 +38,7 @@
     
     },
     
-    "style": {
+    "options": {
         "useTabs":                  false,
         "indention":                4,
         "maxCharsPerLine":          100,

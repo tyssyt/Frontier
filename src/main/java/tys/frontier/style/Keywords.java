@@ -44,8 +44,7 @@ public class Keywords {
 
     private Keywords(){}
 
-    public static BiMap<String, Integer> fromStyleFile (JSONObject styleFile) throws JSONException {
-        JSONObject keywords = styleFile.getJSONObject("keywords");
+    public static BiMap<String, Integer> fromStyleFile (JSONObject keywords) {
         BiMap<String, Integer> res = HashBiMap.create(DEFAULT_KEYWORDS.size());
         for (Map.Entry<String, Integer> keywordAndToken : DEFAULT_KEYWORDS.entrySet()) {
             String newKeyword;
