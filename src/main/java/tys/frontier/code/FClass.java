@@ -118,7 +118,7 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         }
         sb.append("\n  ");
         for (FFunction function : functions.values()) {
-            sb.append(headerToString()).append(", ");
+            sb.append(function.headerToString()).append(", ");
         }
         return sb.append("\n}");
     }

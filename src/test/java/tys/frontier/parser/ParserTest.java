@@ -1,6 +1,10 @@
 package tys.frontier.parser;
 
+import org.junit.Before;
 import org.junit.Test;
+import tys.frontier.logging.Log;
+import tys.frontier.logging.Logger;
+import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
 import tys.frontier.style.Style;
 
@@ -13,9 +17,16 @@ public class ParserTest {
 
     private static final String prefix = "Parser/SyntaxErrors/";
 
+    @Before
+    public void setUp() throws Exception {
+        Logger logger = Log.DEFAULT_LOGGER;
+        if (logger instanceof StdOutLogger)
+            ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
+    }
+
     private SyntaxError parseSyntaxError(String file) throws IOException {
         try {
-            new Parser(prefix + "BreakOutsideLoop.front", Style.DEFAULT_STYLE).parse();
+            new Parser(prefix + file, Style.DEFAULT_STYLE).parse();
         } catch (SyntaxErrors es) {
             assertEquals(1, es.errors.size());
             return es.errors.iterator().next();

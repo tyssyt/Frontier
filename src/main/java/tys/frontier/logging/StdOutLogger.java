@@ -3,11 +3,25 @@ package tys.frontier.logging;
 import java.io.PrintStream;
 import java.util.Date;
 
+import static tys.frontier.logging.Logger.Level.INFO;
+
 public class StdOutLogger implements Logger {
+
+    private Level level = INFO;
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public void setLevel(Level level) {
+        this.level = level;
+    }
 
     @Override
     public void log(Object source, String message, Object cause, Level severity) {
         Date now = new Date();
+        if (severity.ordinal() > level.ordinal())
+            return;
         PrintStream out;
         switch (severity) {
             case WARNING: case ERROR: case FATAL:
