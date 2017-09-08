@@ -4,7 +4,7 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FConstructor;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
-import tys.frontier.parser.FrontierParser;
+import tys.frontier.parser.antlr.FrontierParser;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -6,6 +6,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import tys.frontier.code.FFile;
 import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.logging.Log;
+import tys.frontier.parser.antlr.FrontierLexer;
+import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;

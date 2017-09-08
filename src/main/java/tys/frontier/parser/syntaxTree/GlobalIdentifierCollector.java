@@ -5,8 +5,8 @@ import tys.frontier.code.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
-import tys.frontier.parser.FrontierBaseVisitor;
-import tys.frontier.parser.FrontierParser;
+import tys.frontier.parser.antlr.FrontierBaseVisitor;
+import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
 
 import java.util.ArrayList;

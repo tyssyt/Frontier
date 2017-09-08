@@ -3,11 +3,11 @@ grammar Frontier;
 //heaviliy inspired by https://github.com/antlr/grammars-v4/blob/master/java/Java.g4
 
 @parser::header {
-package tys.frontier.parser;
+package tys.frontier.parser.antlr;
 }
 
 @lexer::header {
-package tys.frontier.parser;
+package tys.frontier.parser.antlr;
 
 import java.util.*;
 }
