@@ -10,7 +10,7 @@ public class FField extends FVariable implements StringBuilderToString {
     private FClass clazz;
     private FVisibilityModifier modifier;
     private boolean statik;
-    private FVarAssignment assignment;
+    private FVarAssignment assignment; //TODO this assignment should not be part of the field, but part of an implicit static initializer block or some similar concept
 
     public FField(FVariableIdentifier identifier, FClass type, FClass clazz, FVisibilityModifier modifier, boolean statik) {
         super(identifier, type);

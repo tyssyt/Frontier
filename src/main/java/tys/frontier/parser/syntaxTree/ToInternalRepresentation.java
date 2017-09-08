@@ -1,7 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.Operators;
 import tys.frontier.code.expression.*;
@@ -11,7 +10,7 @@ import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
-import tys.frontier.parser.FrontierBaseListener;
+import tys.frontier.parser.FrontierBaseVisitor;
 import tys.frontier.parser.FrontierParser;
 import tys.frontier.parser.syntaxTree.syntaxErrors.*;
 import tys.frontier.util.MapStack;
@@ -22,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
-public class ToInternalRepresentation extends FrontierBaseListener {
+public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFile file;
     private SyntaxTreeData treeData;
@@ -41,39 +40,41 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     }
 
     public static List<NeedsTypeCheck> toInternal(SyntaxTreeData syntaxTreeData, FFile file) throws SyntaxErrors {
-        ToInternalRepresentation listener = new ToInternalRepresentation(file, syntaxTreeData);
-        ParseTreeWalker.DEFAULT.walk(listener, syntaxTreeData.root);
-        if (!listener.errors.isEmpty())
-            throw new SyntaxErrors(listener.errors);
-        return listener.typeChecks;
+        ToInternalRepresentation visitor = new ToInternalRepresentation(file, syntaxTreeData);
+        visitor.visitFile(syntaxTreeData.root);
+        if (!visitor.errors.isEmpty())
+            throw new SyntaxErrors(visitor.errors);
+        return visitor.typeChecks;
     }
 
 
 
     @Override
-    public void enterClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
+    public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
+        try {
+            return visitChildren(ctx);
+        } finally {
+            currentClass = null;
+        }
     }
 
     //fields
     @Override
-    public void exitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
+    public FField visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
         FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
+        FField field = treeData.fields.get(ctx);
         if (c.expression() != null) {
-            try {
-                FVarDeclaration decl = fromVariableDeclarator(c);
-                FField field = treeData.fields.get(ctx);
-                decl.getAssignment().ifPresent(field::setAssignment);
-            } catch (ClassNotFound e) {
-                throw new RuntimeException(e); //this should not happen
-            }
+            FVarDeclaration decl = visitVariableDeclarator(c);
+            decl.getAssignment().ifPresent(field::setAssignment);
         }
+        return field;
     }
 
     private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
-        FVariable var = declaredVars.get(identifier);
+        FVariable var = declaredVars.get(identifier); //first check local vars
         if (var == null) {
-            var = currentClass.getField(identifier);
+            var = currentClass.getField(identifier);  //then try fields
         }
         if (var == null) {
             throw new UndeclaredVariable(identifier, currentFunction);
@@ -81,14 +82,22 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         return var;
     }
 
-    private FVarDeclaration fromVariableDeclarator(
-            FrontierParser.VariableDeclaratorContext ctx) throws ClassNotFound {
-        FLocalVariable var = ParserContextUtils.getVariable(ctx.typedIdentifier(), file.getClasses());
+    @Override
+    public FVarDeclaration visitVariableDeclarator(FrontierParser.VariableDeclaratorContext ctx) {
+        FrontierParser.ExpressionContext c = ctx.expression();
+        FLocalVariable var;
+        try {
+            var = ParserContextUtils.getVariable(ctx.typedIdentifier(), file.getClasses());
+        } catch (ClassNotFound e) {
+            errors.add(e);
+            if (c != null)
+                visitExpression(c); //still visit the expression to find more errors
+            throw new Failed();
+        }
 
         FVarAssignment assign = null;
-        FrontierParser.ExpressionContext c = ctx.expression();
         if (c != null) {
-            FExpression val = treeData.expressionMap.get(c);
+            FExpression val = visitExpression(c);
             assign = new FVarAssignment(var, FVarAssignment.Operator.ASSIGN, val);
             typeChecks.add(assign);
         }
@@ -96,335 +105,424 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     }
 
     //methods enter & exitArrayAccess
-    @Override
-    public void enterMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
-        FFunction f = treeData.functions.get(ctx);
-        currentFunction = f;
-        declaredVars.push(Utils.asMap(f.getParams()));
-        if (!f.isStatic()) {
-            FLocalVariable thiz = currentClass.getThis();
-            declaredVars.put(thiz.getIdentifier(), thiz);
-        }
-    }
 
     private ImmutableList<FStatement> statementsFromList (List<FrontierParser.StatementContext> contexts) {
         ImmutableList.Builder<FStatement> builder = new ImmutableList.Builder<>();
         for (FrontierParser.StatementContext c : contexts) {
-            builder.add(treeData.statementMap.get(c));
+            try {
+                builder.add(visitStatement(c));
+            } catch (Failed f) {}
         }
         return builder.build();
     }
 
     @Override
-    public void exitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
-        currentFunction.setBody(statementsFromList(ctx.statement()));
-        currentFunction = null;
-        declaredVars.pop();
+    public FFunction visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
+        FFunction f = treeData.functions.get(ctx);
+        currentFunction = f;
+        declaredVars.push(Utils.asMap(f.getParams()));
+        try {
+            if (!f.isStatic()) {
+                FLocalVariable thiz = currentClass.getThis();
+                declaredVars.put(thiz.getIdentifier(), thiz);
+            }
+            f.setBody(statementsFromList(ctx.statement()));
+            return f;
+        } finally {
+            currentFunction = null;
+            declaredVars.pop();
+        }
     }
 
     @Override
-    public void enterConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-        FConstructor c = treeData.constructors.get(ctx);
-        currentFunction = c;
-        declaredVars.push(Utils.asMap(c.getParams()));
-        FLocalVariable thiz = currentClass.getThis();
-        declaredVars.put(thiz.getIdentifier(), thiz);
+    public FConstructor visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
+        FConstructor f = treeData.constructors.get(ctx);
+        currentFunction = f;
+        declaredVars.push(Utils.asMap(f.getParams()));
+        try {
+            FLocalVariable thiz = currentClass.getThis();
+            declaredVars.put(thiz.getIdentifier(), thiz);
+            f.setBody(statementsFromList(ctx.statement()));
+            return f;
+        } finally {
+            currentFunction = null;
+            declaredVars.pop();
+        }
     }
-
-    @Override
-    public void exitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-        currentFunction.setBody(statementsFromList(ctx.statement()));
-        currentFunction = null;
-        declaredVars.pop();
-    }
-
 
     //statements
-
-    @Override
-    public void exitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
-        treeData.statementMap.put(ctx, new FEmptyStatement());
+    public FStatement visitStatement(FrontierParser.StatementContext ctx) throws Failed {
+        return (FStatement) ctx.accept(this);
     }
 
     @Override
-    public void exitExpressionStatement(FrontierParser.ExpressionStatementContext ctx) {
-        FExpressionStatement res = new FExpressionStatement(treeData.expressionMap.get(ctx.expression()));
-        treeData.statementMap.put(ctx, res);
+    public FEmptyStatement visitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
+        return new FEmptyStatement();
     }
 
     @Override
-    public void exitReturnStatement(FrontierParser.ReturnStatementContext ctx) {
-        FReturn res = new FReturn(treeData.expressionMap.get(ctx.expression()), currentFunction);
-        treeData.statementMap.put(ctx, res);
+    public FExpressionStatement visitExpressionStatement(FrontierParser.ExpressionStatementContext ctx) {
+        return new FExpressionStatement(visitExpression(ctx.expression()));
+    }
+
+    @Override
+    public FReturn visitReturnStatement(FrontierParser.ReturnStatementContext ctx) {
+        FrontierParser.ExpressionContext c = ctx.expression();
+        FExpression val = c == null ? null : visitExpression(c);
+        FReturn res = new FReturn(val, currentFunction);
         typeChecks.add(res);
+        return res;
     }
 
     @Override
-    public void exitAssignment(FrontierParser.AssignmentContext ctx) {
+    public FVarAssignment visitAssignment(FrontierParser.AssignmentContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        FVariable var;
         try {
-            FVariable var = findVar(identifier);
-            FVarAssignment.Operator op = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
-            FExpression value = treeData.expressionMap.get(ctx.expression());
-            FVarAssignment res = new FVarAssignment(var, op, value);
-            treeData.statementMap.put(ctx, res);
-            typeChecks.add(res);
+            var = findVar(identifier);
         } catch (UndeclaredVariable e) {
             errors.add(e);
-            //TODO what now?
+            visitExpression(ctx.expression());
+            throw new Failed();
         }
+        FExpression value = visitExpression(ctx.expression());
+        FVarAssignment.Operator op = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
+        FVarAssignment res = new FVarAssignment(var, op, value);
+        typeChecks.add(res);
+        return res;
     }
 
     @Override
-    public void exitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
+    public FVarDeclaration visitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
+        FVarDeclaration res = visitVariableDeclarator(ctx.variableDeclarator());
+        FVariableIdentifier identifier = res.getVar().getIdentifier();
+        if (declaredVars.contains(identifier)) {
+            errors.add(new TwiceDefinedLocalVariable(identifier));
+            throw new Failed();
+        }
+        declaredVars.put(res.getVar().getIdentifier(), (FLocalVariable) res.getVar());
+        return res;
+    }
+
+    @Override
+    public FBlock visitBlockStatement(FrontierParser.BlockStatementContext ctx) {
+        declaredVars.push();
         try {
-            FVarDeclaration res = fromVariableDeclarator(ctx.variableDeclarator());
-            FVariableIdentifier identifier = res.getVar().getIdentifier();
-            if (declaredVars.contains(identifier)) {
-                errors.add(new TwiceDefinedLocalVariable(identifier));
-                return; //TODO what now?
-            }
-            declaredVars.put(res.getVar().getIdentifier(), (FLocalVariable) res.getVar());
-            treeData.statementMap.put(ctx, res);
-        } catch (ClassNotFound e) {
-            errors.add(e);
-            //TODO what now?
+            return new FBlock(statementsFromList(ctx.statement()));
+        } finally {
+            declaredVars.pop();
         }
     }
 
     @Override
-    public void enterBlockStatement(FrontierParser.BlockStatementContext ctx) {
-        declaredVars.push();
-    }
-    @Override
-    public void exitBlockStatement(FrontierParser.BlockStatementContext ctx) {
-        declaredVars.pop();
-        FBlock res = new FBlock(statementsFromList(ctx.statement()));
-        treeData.statementMap.put(ctx, res);
-    }
-
-    @Override
-    public void exitIfStatement(FrontierParser.IfStatementContext ctx) {
-        FExpression cond = treeData.expressionMap.get(ctx.expression());
-        FStatement then = treeData.statementMap.get(ctx.statement(0));
-        FStatement elze = treeData.statementMap.get(ctx.statement(1));
+    public FIf visitIfStatement(FrontierParser.IfStatementContext ctx) {
+        FExpression cond = null;
+        FStatement then = null;
+        FStatement elze = null;
+        boolean failed = false;
+        try {
+            cond = visitExpression(ctx.expression());
+        } catch (Failed f) {
+            failed = true;
+        }
+        try {
+            then = visitStatement(ctx.statement(0));
+        } catch (Failed f) {
+            failed = true;
+        }
+        try {
+            elze = visitStatement(ctx.statement(1));
+        } catch (Failed f) {
+            failed = true;
+        }
+        if (failed)
+            throw new Failed();
         FIf res = new FIf(cond, then, elze);
-        treeData.statementMap.put(ctx, res);
         typeChecks.add(res);
+        return res;
     }
 
     @Override
-    public void enterWhileStatement(FrontierParser.WhileStatementContext ctx) {
+    public FWhile visitWhileStatement(FrontierParser.WhileStatementContext ctx) {
+        FLoopIdentifier identifier = new FLoopIdentifier();
+        loops.push(identifier);
         declaredVars.push();
-        loops.push(new FLoopIdentifier());
-    }
-    @Override
-    public void exitWhileStatement(FrontierParser.WhileStatementContext ctx) {
-        declaredVars.pop();
-        FLoopIdentifier identifier = loops.pop();
-        FExpression cond = treeData.expressionMap.get(ctx.expression());
-        FStatement body = treeData.statementMap.get(ctx.statement());
-        FWhile res = new FWhile(identifier, cond, body);
-        treeData.statementMap.put(ctx, res);
-        typeChecks.add(res);
-    }
-
-    @Override
-    public void enterForStatement(FrontierParser.ForStatementContext ctx) {
-        declaredVars.push();
-        loops.push(new FLoopIdentifier());
-    }
-    @Override
-    public void exitForStatement(FrontierParser.ForStatementContext ctx) {
-        declaredVars.pop();
-        FLoopIdentifier identifier = loops.pop();
-
-        FVarDeclaration decl = null;
-        FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
-        if (c != null) {
+        try {
+            FExpression cond;
             try {
-                decl = fromVariableDeclarator(c);
+                cond = visitExpression(ctx.expression());
+            } catch (Failed f) {
+                visitStatement(ctx.statement()); //still visit the body to find more errors
+                throw f;
+            }
+            FStatement body = visitStatement(ctx.statement());
+            FWhile res = new FWhile(identifier, cond, body);
+            typeChecks.add(res);
+            return res;
+        } finally {
+            loops.pop();
+            declaredVars.pop();
+        }
+    }
+
+    @Override
+    public FFor visitForStatement(FrontierParser.ForStatementContext ctx) {
+        FLoopIdentifier identifier = new FLoopIdentifier();
+        loops.push(identifier);
+        declaredVars.push();
+        try {
+            FVarDeclaration decl = null;
+            FExpression cond = null;
+            FExpression inc = null;
+            FStatement body = null;
+            boolean failed = false;
+
+            FrontierParser.VariableDeclaratorContext dc = ctx.variableDeclarator();
+            if (dc != null) {
+                try {
+                    decl = visitVariableDeclarator(dc);
+                } catch (Failed f) {
+                    failed = true;
+                }
+            }
+
+            FrontierParser.ExpressionContext ec = ctx.expression();
+            if (ec != null) {
+                try {
+                    cond = visitExpression(ec);
+                } catch (Failed f) {
+                    failed = true;
+                }
+            }
+
+            ec = ctx.expression2().expression();
+            if (ec != null) {
+                try {
+                    inc = visitExpression(ec);
+                } catch (Failed f) {
+                    failed = true;
+                }
+            }
+
+            FrontierParser.StatementContext sc = ctx.statement();
+            if (sc != null) {
+                try {
+                    body = visitStatement(sc);
+                } catch (Failed f) {
+                    failed = true;
+                }
+            }
+
+            if (failed)
+                throw new Failed();
+
+            FFor res = new FFor(identifier, decl, cond, inc, body);
+            typeChecks.add(res);
+            return res;
+        } finally {
+            loops.pop();
+            declaredVars.pop();
+        }
+    }
+
+    @Override
+    public FForEach visitForeachStatement(FrontierParser.ForeachStatementContext ctx) {
+        FLoopIdentifier identifier = new FLoopIdentifier();
+        loops.push(identifier);
+        declaredVars.push();
+        try {
+            FLocalVariable it = null;
+            FExpression container = null;
+            FStatement body = null;
+            boolean failed = false;
+
+            try {
+                it = ParserContextUtils.getVariable(ctx.typedIdentifier(), file.getClasses());
             } catch (ClassNotFound e) {
                 errors.add(e);
-                return; //TODO what now?
+                failed = true;
             }
+
+            try {
+                container = visitExpression(ctx.expression());
+            } catch (Failed f) {
+                failed = true;
+            }
+
+            try {
+                body = visitStatement(ctx.statement());
+            } catch (Failed f) {
+                failed = true;
+            }
+
+            if (failed)
+                throw new Failed();
+
+            FForEach res = new FForEach(identifier, it, container, body);
+            typeChecks.add(res);
+            return res;
+        } finally {
+            loops.pop();
+            declaredVars.pop();
         }
-
-        FExpression cond = treeData.expressionMap.get(ctx.expression());
-        FExpression inc = treeData.expressionMap.get(ctx.expression2().expression());
-        FStatement body = treeData.statementMap.get(ctx.statement());
-
-        FFor res = new FFor(identifier, decl, cond, inc, body);
-        treeData.statementMap.put(ctx, res);
-        typeChecks.add(res);
     }
 
     @Override
-    public void enterForeachStatement(FrontierParser.ForeachStatementContext ctx) {
-        declaredVars.push();
-        loops.push(new FLoopIdentifier());
-    }
-    @Override
-    public void exitForeachStatement(FrontierParser.ForeachStatementContext ctx) {
-        super.exitForeachStatement(ctx);
-        declaredVars.pop();
-        FLoopIdentifier identifier = loops.pop();
-
-        FLocalVariable it;
-        try {
-            it = ParserContextUtils.getVariable(ctx.typedIdentifier(), file.getClasses());
-        } catch (ClassNotFound e) {
-            errors.add(e);
-            return; //TODO now what?
-        }
-
-        FExpression container = treeData.expressionMap.get(ctx.expression());
-        FStatement body = treeData.statementMap.get(ctx.statement());
-
-        FForEach res = new FForEach(identifier, it, container, body);
-        treeData.statementMap.put(ctx, res);
-        typeChecks.add(res);
-    }
-
-    @Override
-    public void exitBreakStatement(FrontierParser.BreakStatementContext ctx) {
+    public FBreak visitBreakStatement(FrontierParser.BreakStatementContext ctx) {
         if (loops.isEmpty()) {
             errors.add(new StatementOutsideLoop());
-            //TODO what now
-            return;
+            throw new Failed();
         }
-        treeData.statementMap.put(ctx, new FBreak(loops.peek()));
+        return new FBreak(loops.peek());
     }
 
     @Override
-    public void exitContinueStatement(FrontierParser.ContinueStatementContext ctx) {
+    public FContinue visitContinueStatement(FrontierParser.ContinueStatementContext ctx) {
         if (loops.isEmpty()) {
             errors.add(new StatementOutsideLoop());
-            //TODO what now
-            return;
+            throw new Failed();
         }
-        treeData.statementMap.put(ctx, new FContinue(loops.peek()));
+        return new FContinue(loops.peek());
     }
 
 
     //Expressions
-
-    @Override
-    public void exitLiteralExpr(FrontierParser.LiteralExprContext ctx) {
-        FLiteral literal = treeData.literalMap.get(ctx.literal());
-        treeData.expressionMap.put(ctx, new FLiteralExpression(literal));
+    public FExpression visitExpression(FrontierParser.ExpressionContext ctx) throws Failed {
+        return (FExpression) ctx.accept(this);
     }
 
     @Override
-    public void exitThisExpr(FrontierParser.ThisExprContext ctx) {
+    public FLiteralExpression visitLiteralExpr(FrontierParser.LiteralExprContext ctx) {
+        return new FLiteralExpression(visitLiteral(ctx.literal()));
+    }
+
+    @Override
+    public FVariableExpression visitThisExpr(FrontierParser.ThisExprContext ctx) {
         FVariableIdentifier identifier = FVariableIdentifier.THIS;
         try {
-            treeData.expressionMap.put(ctx, new FVariableExpression(findVar(identifier)));
+            return new FVariableExpression(findVar(identifier));
         } catch (UndeclaredVariable e) {
-            //TODO maybe abort the analysis of the current expression but continue from there on?
+            errors.add(e);
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitVariableExpr(FrontierParser.VariableExprContext ctx) {
+    public FVariableExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         try {
-            treeData.expressionMap.put(ctx, new FVariableExpression(findVar(identifier)));
+            return new FVariableExpression(findVar(identifier));
         } catch (UndeclaredVariable e) {
-            //TODO abort
+            errors.add(e);
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitBracketsExpr(FrontierParser.BracketsExprContext ctx) {
-        FExpression inner = treeData.expressionMap.get(ctx.expression());
-        treeData.expressionMap.put(ctx, new FBracketsExpression(inner));
+    public FBracketsExpression visitBracketsExpr(FrontierParser.BracketsExprContext ctx) {
+        return new FBracketsExpression(visitExpression(ctx.expression()));
     }
 
     @Override
-    public void exitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
-        FExpression expression = treeData.expressionMap.get(ctx.expression());
+    public FFunctionCall visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
+        FExpression expression = visitExpression(ctx.expression());
         FFunctionIdentifier identifier = Operators.PreUnary.fromString(ctx.getChild(0).getText()).identifier;
 
         try {
-            FFunctionCall function = staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
-            treeData.expressionMap.put(ctx, function);
+            return staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
         } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitBinaryOp(FrontierParser.BinaryOpContext ctx) {
-        FExpression first = treeData.expressionMap.get(ctx.expression(0));
-        FExpression second = treeData.expressionMap.get(ctx.expression(1));
+    public FFunctionCall visitBinaryOp(FrontierParser.BinaryOpContext ctx) {
+        FExpression first;
+        try {
+            first = visitExpression(ctx.expression(0));
+        } catch (Failed f) {
+            //still try to parse the second, we might find other errors
+            visitExpression(ctx.expression(1));
+            throw f;
+        }
+        FExpression second = visitExpression(ctx.expression(1));
         FFunctionIdentifier identifier = Operators.Binary.fromString(ctx.getChild(1).getText()).identifier;
 
         try {
-            FFunctionCall function = staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
-            treeData.expressionMap.put(ctx, function);
+            return staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
         } catch (FunctionNotFound | StaticAccessToInstanceFunction e1) {
             try {
-                FFunctionCall function = staticFunctionCall(second.getType(), identifier, ImmutableList.of(first, second));
-                treeData.expressionMap.put(ctx, function);
+                return staticFunctionCall(second.getType(), identifier, ImmutableList.of(first, second));
             } catch (FunctionNotFound | StaticAccessToInstanceFunction e2) {
                 errors.add(e1);
                 errors.add(e2);
-                return; //TODO abort
+                throw new Failed();
             }
         }
     }
 
     @Override
-    public void exitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
-        FExpression array = treeData.expressionMap.get(ctx.expression(0));
-        FExpression index = treeData.expressionMap.get(ctx.expression(1));
+    public FArrayAccess visitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
+        FExpression array;
         try {
-            FArrayAccess res = new FArrayAccess(array, index);
-            treeData.expressionMap.put(ctx, res);
+            array = visitExpression(ctx.expression(0));
+        } catch (Failed f) {
+            //still try to parse the second, we might find other errors
+            visitExpression(ctx.expression(1));
+            throw f;
+        }
+        FExpression index = visitExpression(ctx.expression(1));
+        try {
+            return new FArrayAccess(array, index);
         } catch (IncompatibleTypes e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitFieldAccess(FrontierParser.FieldAccessContext ctx) {
+    public FFieldAccess visitFieldAccess(FrontierParser.FieldAccessContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        FExpression object = treeData.expressionMap.get(ctx.expression());
+        FExpression object = visitExpression(ctx.expression());
         FField f = object.getType().getField(identifier);
         if (f == null) {
             errors.add(new FieldNotFound(identifier));
-            return; //TODO abort
+            throw new Failed();
         }
-        treeData.expressionMap.put(ctx, new FFieldAccess(f, object));
+        return new FFieldAccess(f, object);
     }
 
     @Override
-    public void exitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
+    public FFieldAccess visitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         try {
-            FClass clazz = ParserContextUtils.getType(ctx.typeType(), file.getClasses());
-            FField f = clazz.getField(identifier);
-            if (f == null) {
-                errors.add(new FieldNotFound(identifier));
-                return; //TODO abort
-            }
-            treeData.expressionMap.put(ctx, new FFieldAccess(f));
-        } catch (ClassNotFound | StaticAccessToInstanceField e) {
+            FField f = ParserContextUtils.getType(ctx.typeType(), file.getClasses()).getField(identifier);
+            if (f == null)
+                throw new FieldNotFound(identifier);
+            return new FFieldAccess(f);
+        } catch (ClassNotFound | StaticAccessToInstanceField | FieldNotFound e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
-    private List<FExpression> getExpressions (FrontierParser.ExpressionListContext ctx) {
+    @Override
+    public List<FExpression> visitExpressionList(FrontierParser.ExpressionListContext ctx) {
         if (ctx == null)
             return Collections.emptyList();
         List<FrontierParser.ExpressionContext> cs = ctx.expression();
         List<FExpression> res = new ArrayList<>(cs.size());
-        for (FrontierParser.ExpressionContext c : cs)
-            res.add(treeData.expressionMap.get(c));
+        boolean failed = false;
+        for (FrontierParser.ExpressionContext c : cs) {
+            try {
+                res.add(visitExpression(c));
+            } catch (Failed f) {
+                failed = true;
+            }
+        }
+        if (failed)
+            throw new Failed();
         return res;
     }
     private List<FClass> typesFromExpressionList (List<FExpression> exps) {
@@ -433,9 +531,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
             res.add(exp.getType());
         return res;
     }
-    private FFunctionCall functionCall (FExpression object,
-                                        FFunctionIdentifier identifier,
-                                        List<FExpression> params)
+    private FFunctionCall functionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
@@ -445,9 +541,7 @@ public class ToInternalRepresentation extends FrontierBaseListener {
         return new FFunctionCall(object, f, params);
     }
 
-    private FFunctionCall staticFunctionCall (FClass clazz,
-                                              FFunctionIdentifier identifier,
-                                              List<FExpression> params)
+    private FFunctionCall staticFunctionCall (FClass clazz, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, StaticAccessToInstanceFunction {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
@@ -458,82 +552,100 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     }
 
     @Override
-    public void exitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
+    public FFunctionCall visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
-        FExpression object = treeData.expressionMap.get(ctx.expression());
-
+        FExpression object;
         try {
-            FFunctionCall res = functionCall(object, identifier, getExpressions(ctx.expressionList()));
-            treeData.expressionMap.put(ctx, res);
+            object = visitExpression(ctx.expression());
+        } catch (Failed f) {
+            visitExpressionList(ctx.expressionList());
+            throw f;
+        }
+        List<FExpression> params = visitExpressionList(ctx.expressionList());
+        try {
+            return functionCall(object, identifier, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
-            //TODO abort
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) {
+    public FFunctionCall visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
+        List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            FFunctionCall res = functionCall(new FVariableExpression(currentClass.getThis()), identifier, getExpressions(ctx.expressionList()));
-            treeData.expressionMap.put(ctx, res);
+            return functionCall(new FVariableExpression(currentClass.getThis()), identifier, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitStaticFunctionCall(FrontierParser.StaticFunctionCallContext ctx) {
+    public FFunctionCall visitStaticFunctionCall(FrontierParser.StaticFunctionCallContext ctx) {
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
+        List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
             FClass clazz = ParserContextUtils.getType(ctx.typeType(), file.getClasses());
-            FFunctionCall res = staticFunctionCall(clazz, identifier, getExpressions(ctx.expressionList()));
-            treeData.expressionMap.put(ctx, res);
+            return staticFunctionCall(clazz, identifier, params);
         } catch (ClassNotFound | FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
     @Override
-    public void exitNewObject(FrontierParser.NewObjectContext ctx) {
+    public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
+        FClass clazz;
         try {
-            FClass clazz = ParserContextUtils.getBasicType(ctx.basicType(), file.getClasses());
-            FFunctionCall res = staticFunctionCall(clazz, FFunctionIdentifier.CONSTRUCTOR, getExpressions(ctx.expressionList()));
-            treeData.expressionMap.put(ctx, res);
-        } catch (ClassNotFound |FunctionNotFound | StaticAccessToInstanceFunction e) {
+            clazz = ParserContextUtils.getBasicType(ctx.basicType(), file.getClasses());
+        } catch (ClassNotFound e) {
             errors.add(e);
-            return; //TODO abort
+            visitExpressionList(ctx.expressionList()); //parse param list to find more errors
+            throw new Failed();
         }
-
+        List<FExpression> params = visitExpressionList(ctx.expressionList());
+        try {
+            return staticFunctionCall(clazz, FFunctionIdentifier.CONSTRUCTOR, params);
+        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
+            errors.add(e);
+            throw new Failed();
+        }
     }
 
     @Override
-    public void exitNewArray(FrontierParser.NewArrayContext ctx) {
+    public FFunctionCall visitNewArray(FrontierParser.NewArrayContext ctx) {
+        List<FrontierParser.ExpressionContext> cs = ctx.expression();
+        int initialisedDepth = cs.size();
+        int uninitialisedDepth = ctx.Array().size();
+
+        List<FExpression> params = new ArrayList<>(initialisedDepth);
+        boolean failed = false;
+        for (FrontierParser.ExpressionContext c : cs) {
+            try {
+                params.add(visitExpression(c));
+            } catch (Failed f) {
+                failed = true;
+            }
+        }
+
         FClass baseClass;
         try {
             baseClass = ParserContextUtils.getBasicType(ctx.basicType(), file.getClasses());
         } catch (ClassNotFound e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
+        if (failed)
+            throw new Failed();
 
-        List<FrontierParser.ExpressionContext> cs = ctx.expression();
-        int initialisedDepth = cs.size();
-        int uninitialisedDepth = ctx.Array().size();
         FArray array = FArray.getArrayFrom(baseClass, initialisedDepth+uninitialisedDepth);
-
-        List<FExpression> params = new ArrayList<>(initialisedDepth);
-        for (FrontierParser.ExpressionContext c : cs)
-            params.add(treeData.expressionMap.get(c));
-
         try {
-            FFunctionCall res = staticFunctionCall(array, FFunctionIdentifier.CONSTRUCTOR, params);
-            treeData.expressionMap.put(ctx, res);
+            return staticFunctionCall(array, FFunctionIdentifier.CONSTRUCTOR, params);
         } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
             errors.add(e);
-            return; //TODO abort
+            throw new Failed();
         }
     }
 
@@ -541,7 +653,9 @@ public class ToInternalRepresentation extends FrontierBaseListener {
     //TODO move literal processing steps from lexer to parser to properly deal with them
     //TODO store original representation as well to be able to reconstruct it
     @Override
-    public void exitLiteral(FrontierParser.LiteralContext ctx) {
-        treeData.literalMap.put(ctx, ParserContextUtils.getLiteral(ctx));
+    public FLiteral visitLiteral(FrontierParser.LiteralContext ctx) {
+        return ParserContextUtils.getLiteral(ctx);
     }
+
+    private static class Failed extends RuntimeException {}
 }
