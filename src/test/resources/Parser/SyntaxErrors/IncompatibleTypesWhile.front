@@ -1,0 +1,8 @@
+class A {
+
+    void test () {
+        bool[][] b = new bool[2][2];
+        while(b[1]);
+    }
+
+}

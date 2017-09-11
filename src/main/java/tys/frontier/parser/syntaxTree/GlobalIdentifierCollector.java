@@ -44,7 +44,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FClass clazz = ParserContextUtils.getClass(c);
             FClass old = classes.put(clazz.getIdentifier(), clazz);
             if (old != null) {
-                errors.add(new IdentifierCollision(clazz, old, null));
+                errors.add(new IdentifierCollision(clazz, old));
             }
             treeData.classes.put(c, clazz);
         }

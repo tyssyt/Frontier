@@ -28,7 +28,7 @@ public class FIf implements FStatement, NeedsTypeCheck {
     }
 
     public Optional<FStatement> getElse() {
-        return elze == null ? Optional.empty() : Optional.of(elze);
+        return Optional.ofNullable(elze);
     }
 
     @Override

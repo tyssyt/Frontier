@@ -41,7 +41,7 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (value.getType() != value.getType())
+        if (variable.getType() != value.getType())
             throw new IncompatibleTypes(variable.getType(), value.getType());
     }
 

@@ -10,7 +10,7 @@ public class SignatureCollision extends SyntaxError {
     public final FClass clazz;
 
     public SignatureCollision(FFunction a, FFunction b, FClass clazz) {
-        super("between " + a + " and " + b + " in class " + clazz.getIdentifier());
+        super("between " + a.headerToString() + " and " + b.headerToString() + " in class " + clazz.getIdentifier());
         this.a = a;
         this.b = b;
         this.clazz = clazz;

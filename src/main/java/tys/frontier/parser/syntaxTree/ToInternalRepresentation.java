@@ -65,10 +65,29 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
         FField field = treeData.fields.get(ctx);
         if (c.expression() != null) {
-            FVarDeclaration decl = visitVariableDeclarator(c);
-            decl.getAssignment().ifPresent(field::setAssignment);
+            declaredVars.push();
+            if (!field.isStatic()) {
+                FLocalVariable thiz = currentClass.getThis();
+                declaredVars.put(thiz.getIdentifier(), thiz);
+            }
+            try {
+                FVarDeclaration decl = visitVariableDeclarator(c);
+                decl.getAssignment().ifPresent(field::setAssignment);
+            } catch (Failed f) {
+                //do not allow Failed to propagate any further
+            } finally {
+                declaredVars.pop();
+            }
         }
         return field;
+    }
+
+    private FLocalVariable findLocalVar(FVariableIdentifier identifier) throws UndeclaredVariable {
+        FLocalVariable var = declaredVars.get(identifier); //first check local vars
+        if (var == null) {
+            throw new UndeclaredVariable(identifier);
+        }
+        return var;
     }
 
     private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
@@ -77,7 +96,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             var = currentClass.getField(identifier);  //then try fields
         }
         if (var == null) {
-            throw new UndeclaredVariable(identifier, currentFunction);
+            throw new UndeclaredVariable(identifier);
         }
         return var;
     }
@@ -230,8 +249,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } catch (Failed f) {
             failed = true;
         }
+        FrontierParser.StatementContext sc = ctx.statement(1);
         try {
-            elze = visitStatement(ctx.statement(1));
+            elze = sc == null ? null : visitStatement(sc);
         } catch (Failed f) {
             failed = true;
         }
@@ -278,39 +298,31 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             boolean failed = false;
 
             FrontierParser.VariableDeclaratorContext dc = ctx.variableDeclarator();
-            if (dc != null) {
-                try {
-                    decl = visitVariableDeclarator(dc);
-                } catch (Failed f) {
-                    failed = true;
-                }
+            try {
+                decl = dc == null ? null : visitVariableDeclarator(dc);
+            } catch (Failed f) {
+                failed = true;
             }
 
             FrontierParser.ExpressionContext ec = ctx.expression();
-            if (ec != null) {
-                try {
-                    cond = visitExpression(ec);
-                } catch (Failed f) {
-                    failed = true;
-                }
+            try {
+                cond = ec == null ? null : visitExpression(ec);
+            } catch (Failed f) {
+                failed = true;
             }
 
-            ec = ctx.expression2().expression();
-            if (ec != null) {
-                try {
-                    inc = visitExpression(ec);
-                } catch (Failed f) {
-                    failed = true;
-                }
+            FrontierParser.Expression2Context c2 = ctx.expression2();
+            try {
+                inc = c2 == null ? null : visitExpression(c2.expression());
+            } catch (Failed f) {
+                failed = true;
             }
 
             FrontierParser.StatementContext sc = ctx.statement();
-            if (sc != null) {
-                try {
-                    body = visitStatement(sc);
-                } catch (Failed f) {
-                    failed = true;
-                }
+            try {
+                body = sc == null ? null : visitStatement(sc);
+            } catch (Failed f) {
+                failed = true;
             }
 
             if (failed)
@@ -396,11 +408,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         return new FLiteralExpression(visitLiteral(ctx.literal()));
     }
 
+    private FLocalVariableExpression getThisExpr() throws UndeclaredVariable {
+        return new FLocalVariableExpression(findLocalVar(FVariableIdentifier.THIS));
+    }
+
     @Override
-    public FVariableExpression visitThisExpr(FrontierParser.ThisExprContext ctx) {
-        FVariableIdentifier identifier = FVariableIdentifier.THIS;
+    public FLocalVariableExpression visitThisExpr(FrontierParser.ThisExprContext ctx) {
         try {
-            return new FVariableExpression(findVar(identifier));
+            return getThisExpr();
         } catch (UndeclaredVariable e) {
             errors.add(e);
             throw new Failed();
@@ -411,7 +426,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FVariableExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         try {
-            return new FVariableExpression(findVar(identifier));
+            FVariable var = findVar(identifier);
+            if (var instanceof FLocalVariable)
+                return new FLocalVariableExpression((FLocalVariable) var);
+            else if (var instanceof FField) {
+                FField field = ((FField) var);
+                if (field.isStatic())
+                    return new FFieldAccess(field);
+                else
+                    return new FFieldAccess(field, getThisExpr());
+            } else {
+                throw new RuntimeException();
+            }
         } catch (UndeclaredVariable e) {
             errors.add(e);
             throw new Failed();
@@ -430,7 +456,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
-        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
+        } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
         }
@@ -451,10 +477,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
-        } catch (FunctionNotFound | StaticAccessToInstanceFunction e1) {
+        } catch (FunctionNotFound e1) {
             try {
                 return staticFunctionCall(second.getType(), identifier, ImmutableList.of(first, second));
-            } catch (FunctionNotFound | StaticAccessToInstanceFunction e2) {
+            } catch (FunctionNotFound e2) {
                 errors.add(e1);
                 errors.add(e2);
                 throw new Failed();
@@ -501,7 +527,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             if (f == null)
                 throw new FieldNotFound(identifier);
             return new FFieldAccess(f);
-        } catch (ClassNotFound | StaticAccessToInstanceField | FieldNotFound e) {
+        } catch (ClassNotFound | FieldNotFound e) {
             errors.add(e);
             throw new Failed();
         }
@@ -542,7 +568,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FFunctionCall staticFunctionCall (FClass clazz, FFunctionIdentifier identifier, List<FExpression> params)
-            throws FunctionNotFound, StaticAccessToInstanceFunction {
+            throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
         FFunction f = clazz.getFunction(signature);
@@ -575,8 +601,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            return functionCall(new FVariableExpression(currentClass.getThis()), identifier, params);
-        } catch (FunctionNotFound e) {
+            return functionCall(getThisExpr(), identifier, params);
+        } catch (FunctionNotFound | UndeclaredVariable e) {
             errors.add(e);
             throw new Failed();
         }
@@ -589,7 +615,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             FClass clazz = ParserContextUtils.getType(ctx.typeType(), file.getClasses());
             return staticFunctionCall(clazz, identifier, params);
-        } catch (ClassNotFound | FunctionNotFound | StaticAccessToInstanceFunction e) {
+        } catch (ClassNotFound | FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
         }
@@ -608,7 +634,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
             return staticFunctionCall(clazz, FFunctionIdentifier.CONSTRUCTOR, params);
-        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
+        } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
         }
@@ -643,7 +669,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FArray array = FArray.getArrayFrom(baseClass, initialisedDepth+uninitialisedDepth);
         try {
             return staticFunctionCall(array, FFunctionIdentifier.CONSTRUCTOR, params);
-        } catch (FunctionNotFound | StaticAccessToInstanceFunction e) {
+        } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
         }

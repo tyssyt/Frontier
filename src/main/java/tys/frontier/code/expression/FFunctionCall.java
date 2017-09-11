@@ -3,11 +3,9 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
-import tys.frontier.parser.syntaxTree.syntaxErrors.StaticAccessToInstanceFunction;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 
 public class FFunctionCall implements FExpression {
     private FExpression object;
@@ -20,15 +18,14 @@ public class FFunctionCall implements FExpression {
         this.params = params;
     }
 
-    public FFunctionCall(FFunction function, List<? extends FExpression> params) throws StaticAccessToInstanceFunction {
-        if (!function.isStatic())
-            throw new StaticAccessToInstanceFunction(function);
+    public FFunctionCall(FFunction function, List<? extends FExpression> params) {
+        assert (function.isStatic());
         this.function = function;
         this.params = params;
     }
 
-    public Optional<FExpression> getObject() {
-        return object==null ? Optional.empty() : Optional.of(object);
+    public FExpression getObject() {
+        return object;
     }
 
     public FFunction getFunction() {

@@ -37,7 +37,7 @@ public interface StatementVisitor<Statement, Expression> {
 
     Statement exitIf(FIf fIf, Expression cond, Statement then, Optional<Statement> elze);
 
-    Statement exitReturn(FReturn fReturn, Expression value);
+    Statement exitReturn(FReturn fReturn, Optional<Expression> value);
 
     Statement exitVarDeclaration(FVarDeclaration declaration, Optional<Statement> value);
 
@@ -89,26 +89,19 @@ public interface StatementVisitor<Statement, Expression> {
 
         @Override
         public Statement enterIf(FIf fIf) {
-            Optional<Statement> elze;
-            if (fIf.getElse().isPresent())
-                elze = Optional.of(enterStatement(fIf.getElse().get()));
-            else
-                elze = Optional.empty();
+            Optional<Statement> elze = fIf.getElse().map(this::enterStatement);
             return exitIf(fIf, exprVis.enterExpression(fIf.getCondition()), enterStatement(fIf.getThen()), elze);
         }
 
         @Override
         public Statement enterReturn(FReturn fReturn) {
-            return exitReturn(fReturn, exprVis.enterExpression(fReturn.getExpression()));
+            Optional<Expression> value = fReturn.getExpression().map(exprVis::enterExpression);
+            return exitReturn(fReturn, value);
         }
 
         @Override
         public Statement enterVarDeclaration(FVarDeclaration declaration) {
-            Optional<Statement> value;
-            if (declaration.getAssignment().isPresent())
-                value = Optional.of(enterStatement(declaration.getAssignment().get()));
-            else
-                value = Optional.empty();
+            Optional<Statement> value = declaration.getAssignment().map(this::enterStatement);
             return exitVarDeclaration(declaration, value);
         }
 
@@ -124,21 +117,9 @@ public interface StatementVisitor<Statement, Expression> {
 
         @Override
         public Statement enterFor(FFor fFor) {
-            Optional<Statement> decl;
-            if (fFor.getDeclaration().isPresent())
-                decl = Optional.of(enterStatement(fFor.getDeclaration().get()));
-            else
-                decl = Optional.empty();
-            Optional<Expression> cond;
-            if (fFor.getCondition().isPresent())
-                cond = Optional.of(exprVis.enterExpression(fFor.getCondition().get()));
-            else
-                cond = Optional.empty();
-            Optional<Expression> inc;
-            if (fFor.getIncrement().isPresent())
-                inc = Optional.of(exprVis.enterExpression(fFor.getIncrement().get()));
-            else
-                inc = Optional.empty();
+            Optional<Statement> decl = fFor.getDeclaration().map(this::enterStatement);
+            Optional<Expression> cond = fFor.getCondition().map(exprVis::enterExpression);
+            Optional<Expression> inc = fFor.getIncrement().map(exprVis::enterExpression);
             return exitFor(fFor, decl, cond, inc, enterStatement(fFor.getBody()));
         }
 
@@ -164,7 +145,7 @@ public interface StatementVisitor<Statement, Expression> {
         }
 
         @Override
-        public Statement exitReturn(FReturn fReturn, Expression value) {
+        public Statement exitReturn(FReturn fReturn, Optional<Expression> value) {
             return getDefault();
         }
 

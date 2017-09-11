@@ -32,15 +32,15 @@ public class FFor implements FLoop, NeedsTypeCheck {
     }
 
     public Optional<FVarDeclaration> getDeclaration() {
-        return declaration == null ? Optional.empty() : Optional.of(declaration);
+        return Optional.ofNullable(declaration);
     }
 
     public Optional<FExpression> getCondition() {
-        return condition == null ? Optional.empty() : Optional.of(condition);
+        return Optional.ofNullable(condition);
     }
 
     public Optional<FExpression> getIncrement() {
-        return increment == null ? Optional.empty() : Optional.of(increment);
+        return Optional.ofNullable(increment);
     }
 
     public FStatement getBody() {

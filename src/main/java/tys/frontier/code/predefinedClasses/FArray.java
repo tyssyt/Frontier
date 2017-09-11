@@ -29,7 +29,7 @@ public class FArray extends FPredefinedClass {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
             for (int i = 0; i < depth; i++) {
-                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FInt.INSTANCE));
+                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FInt32.INSTANCE)); //TODO other int types, solved when we have promotion
                 addFunctionInternal(new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build()){{predefined=true;}});
             }
 
@@ -40,11 +40,7 @@ public class FArray extends FPredefinedClass {
     public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {
         assert arrayDepth > 0;
         IntPair<FClass> pair = new IntPair<>(baseClass, arrayDepth);
-        FArray old = existing.get(pair);
-        if (old == null) {
-            return existing.put(pair, new FArray(baseClass, arrayDepth));
-        }
-        return old;
+        return existing.computeIfAbsent(pair, p -> new FArray(baseClass, arrayDepth));
     }
 
     public FClass getBaseClass() {

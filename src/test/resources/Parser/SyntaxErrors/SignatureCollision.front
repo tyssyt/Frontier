@@ -1,0 +1,9 @@
+class A {
+
+    void test (A a, B b) {}
+    void test (A a, B b, A a) {}
+    A test (A a, B b) {}
+
+}
+
+class B {}

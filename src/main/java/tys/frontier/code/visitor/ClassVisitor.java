@@ -44,11 +44,7 @@ public interface ClassVisitor<Class, Field, Function, Statement> {
 
         @Override
         public Field enterField(FField field) {
-            Optional<Statement> assign;
-            if (field.getAssignment().isPresent())
-                assign = Optional.of(stVis.enterStatement(field.getAssignment().get()));
-            else
-                assign = Optional.empty();
+            Optional<Statement> assign = field.getAssignment().map(a ->stVis.enterStatement((a)));
             return exitField(field, assign);
         }
 

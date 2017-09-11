@@ -2,6 +2,8 @@ package tys.frontier.parser;
 
 import org.junit.Before;
 import org.junit.Test;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FField;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
@@ -43,6 +45,9 @@ public class ParserTest {
     public void parseClassIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("ClassIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);
+        IdentifierCollision c = ((IdentifierCollision) e);
+        assertTrue(c.a instanceof FClass);
+        assertTrue(c.b instanceof FClass);
     }
     @Test
     public void parseClassNotFound() throws Exception {
@@ -58,6 +63,9 @@ public class ParserTest {
     public void parseFieldIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("FieldIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);
+        IdentifierCollision c = ((IdentifierCollision) e);
+        assertTrue(c.a instanceof FField);
+        assertTrue(c.b instanceof FField);
     }
     @Test
     public void parseFieldNotFound() throws Exception {
@@ -103,16 +111,6 @@ public class ParserTest {
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
         assertTrue(e instanceof SignatureCollision);
-    }
-    @Test
-    public void parseStaticAccessToInstanceField() throws Exception {
-        SyntaxError e = parseSyntaxError("StaticAccessToInstanceField.front");
-        assertTrue(e instanceof StaticAccessToInstanceField);
-    }
-    @Test
-    public void parseStaticAccessToInstanceFunction() throws Exception {
-        SyntaxError e = parseSyntaxError("StaticAccessToInstanceFunction.front");
-        assertTrue(e instanceof StaticAccessToInstanceFunction);
     }
     @Test
     public void parseTwiceDefinedLocalVariable() throws Exception {

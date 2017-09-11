@@ -28,7 +28,7 @@ public interface ExpressionVisitor<Expression>  {
 
     Expression visitLiteral(FLiteralExpression expression);
 
-    Expression visitVariable(FVariableExpression expression);
+    Expression visitVariable(FLocalVariableExpression expression);
 
     abstract class Default<Expression> implements ExpressionVisitor<Expression> {
         public Expression getDefault() {
@@ -87,7 +87,7 @@ public interface ExpressionVisitor<Expression>  {
         }
 
         @Override
-        public Expression visitVariable(FVariableExpression expression) {
+        public Expression visitVariable(FLocalVariableExpression expression) {
             return getDefault();
         }
     }

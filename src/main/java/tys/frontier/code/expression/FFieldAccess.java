@@ -2,10 +2,10 @@ package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
+import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
-import tys.frontier.parser.syntaxTree.syntaxErrors.StaticAccessToInstanceField;
 
-public class FFieldAccess implements FExpression {
+public class FFieldAccess implements FVariableExpression {
 
     private FField field;
     private FExpression object;
@@ -15,13 +15,17 @@ public class FFieldAccess implements FExpression {
         this.object = object;
     }
 
-    public FFieldAccess(FField field) throws StaticAccessToInstanceField {
-        if (!field.isStatic())
-            throw new StaticAccessToInstanceField(field);
+    public FFieldAccess(FField field) {
+        assert(field.isStatic());
         this.field = field;
     }
 
     public FField getField() {
+        return field;
+    }
+
+    @Override
+    public FVariable getVariable() {
         return field;
     }
 

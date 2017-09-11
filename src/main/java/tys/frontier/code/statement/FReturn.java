@@ -1,19 +1,26 @@
 package tys.frontier.code.statement;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
-public class FReturn extends FExpressionStatement implements NeedsTypeCheck {
+import java.util.Optional;
 
-    //TODO in a return the expression is optional, sooo
+public class FReturn  implements FStatement, NeedsTypeCheck {
 
+    private FExpression expression;
     private FFunction function;
 
     public FReturn(FExpression expression, FFunction function) {
-        super(expression);
+        this.expression = expression;
         this.function = function;
+    }
+
+    public Optional<FExpression> getExpression() {
+        return Optional.ofNullable(expression);
     }
 
     public FFunction getFunction() {
@@ -22,8 +29,9 @@ public class FReturn extends FExpressionStatement implements NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (getExpression().getType() != function.getType())
-            throw new IncompatibleTypes(function.getType(), getExpression().getType());
+        FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
+        if (function.getType() != expressionType)
+            throw new IncompatibleTypes(function.getType(), expressionType);
     }
 
     @Override
@@ -34,6 +42,7 @@ public class FReturn extends FExpressionStatement implements NeedsTypeCheck {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append("return ");
-        return getExpression().toString(sb).append(';');
+        getExpression().ifPresent(e -> e.toString(sb));
+        return sb.append(';');
     }
 }

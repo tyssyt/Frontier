@@ -92,7 +92,7 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     public void addField (FField field) throws IdentifierCollision {
         FField old = fields.put(field.getIdentifier(), field);
         if (old != null) {
-            throw new IdentifierCollision(field, old, this);
+            throw new IdentifierCollision(field, old);
         }
     }
 

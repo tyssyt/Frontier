@@ -21,7 +21,7 @@ public class FVarDeclaration implements FStatement {
     }
 
     public Optional<FVarAssignment> getAssignment() {
-        return assignment == null ? Optional.empty() : Optional.of(assignment);
+        return Optional.ofNullable(assignment);
     }
 
     @Override

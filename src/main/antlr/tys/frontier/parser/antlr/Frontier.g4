@@ -133,7 +133,7 @@ statement
     |   variableDeclarator SEMI                                                             #localVariableDeclarationStatement
     |   IF LPAREN expression RPAREN statement (ELSE statement)?                             #ifStatement
     |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN statement  #forStatement
-    |   FOR LPAREN typedIdentifier SEMI expression RPAREN statement                         #foreachStatement
+    |   FOR LPAREN typedIdentifier COLON expression RPAREN statement                         #foreachStatement
     |   WHILE LPAREN expression RPAREN statement                                            #whileStatement
     |   RETURN expression? SEMI                                                             #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
