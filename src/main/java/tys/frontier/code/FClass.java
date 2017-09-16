@@ -29,7 +29,6 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
 
     private FLocalVariable thiz;
 
-    //TODO try to replace them by immutable maps
     protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 

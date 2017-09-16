@@ -1,5 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FClassIdentifier;
@@ -81,7 +82,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
         try {
-            List<FLocalVariable> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
+            ImmutableList<FLocalVariable> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
             FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
@@ -102,7 +103,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
 
         try {
-            List<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
+            ImmutableList<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
             FConstructor res = new FConstructor(visibilityModifier, currentClass, params);
             currentClass.addFunction(res);
             treeData.constructors.put(ctx, res);

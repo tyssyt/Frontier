@@ -1,12 +1,11 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ImmutableList;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-
-import java.util.List;
 
 public class FConstructor extends FFunction {
 
-    public FConstructor(FVisibilityModifier modifier, FClass clazz, List<FLocalVariable> params) {
+    public FConstructor(FVisibilityModifier modifier, FClass clazz, ImmutableList<FLocalVariable> params) {
         super(FFunctionIdentifier.CONSTRUCTOR, clazz, modifier, true, clazz, params);
     }
 

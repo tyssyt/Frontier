@@ -86,6 +86,6 @@ public class Parser {
 
     @Override
     public String toString() {
-        return "Parser{file='" + file + ", " + stage + '}'; //TODO what is that after file in non-japanese locale?
+        return "Parser{file='" + file + ", " + stage + '}';
     }
 }

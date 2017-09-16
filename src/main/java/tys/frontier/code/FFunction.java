@@ -16,13 +16,13 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
     private FVisibilityModifier modifier;
     private boolean statik;
     private FClass returnType;
-    private List<FLocalVariable> params;
+    private ImmutableList<FLocalVariable> params;
     private Signature signature;
     protected ImmutableList<FStatement> body;
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FLocalVariable> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FLocalVariable> params) {
         this.identifier = identifier;
         this.clazz = clazz;
         this.modifier = modifier;
@@ -32,7 +32,7 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
         this.signature = new Signature(this);
     }
 
-    protected FFunction(Signature signature, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, List<FLocalVariable> params) {
+    protected FFunction(Signature signature, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FLocalVariable> params) {
         this.identifier = signature.identifier;
         this.clazz = clazz;
         this.modifier = modifier;
@@ -54,11 +54,11 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
         return statik;
     }
 
-    public List<FLocalVariable> getParams() {
+    public ImmutableList<FLocalVariable> getParams() {
         return params;
     }
 
-    public List<FStatement> getBody() {
+    public ImmutableList<FStatement> getBody() {
         return body;
     }
 

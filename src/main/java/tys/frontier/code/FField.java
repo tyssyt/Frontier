@@ -32,6 +32,7 @@ public class FField extends FVariable implements StringBuilderToString {
     }
 
     public void setAssignment(FVarAssignment assignment) {
+        assert this.assignment == null;
         this.assignment = assignment;
     }
 

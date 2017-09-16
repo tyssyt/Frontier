@@ -1,5 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
+import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -18,13 +19,10 @@ import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
 import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxErrors;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public final class ParserContextUtils {
-
-    //TODO the entire thing where we return the error as actual return sucks, please find a better solution
 
     private ParserContextUtils() {}
 
@@ -132,13 +130,12 @@ public final class ParserContextUtils {
         return res;
     }
 
-    //TODO its late, I'm tired, this can be done less ugly
-    public static List<FLocalVariable> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+    public static ImmutableList<FLocalVariable> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
             throws SyntaxErrors {
         List<FrontierParser.TypedIdentifierContext> cs = ctx.typedIdentifier();
         if (cs.isEmpty())
-            return Collections.emptyList();
-        List<FLocalVariable> res = new ArrayList<>(cs.size());
+            return ImmutableList.of();
+        ImmutableList.Builder<FLocalVariable> res = ImmutableList.builder();
         List<ClassNotFound> errors = new ArrayList<>();
         for (FrontierParser.TypedIdentifierContext c : cs) {
             try {
@@ -149,7 +146,7 @@ public final class ParserContextUtils {
         }
         if (!errors.isEmpty())
             throw new SyntaxErrors(errors);
-        return res;
+        return res.build();
     }
 
 

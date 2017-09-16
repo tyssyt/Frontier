@@ -7,8 +7,6 @@ import tys.frontier.code.Operator.FOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 
-import java.util.List;
-
 abstract public class FPredefinedOperator extends FOperator {
 
     public static class Unary extends FPredefinedOperator {
@@ -34,7 +32,7 @@ abstract public class FPredefinedOperator extends FOperator {
     }
 
 
-    private FPredefinedOperator(FFunctionIdentifier identifier, FClass clazz, FClass returnType, List<FLocalVariable> params) {
+    private FPredefinedOperator(FFunctionIdentifier identifier, FClass clazz, FClass returnType, ImmutableList<FLocalVariable> params) {
         super(identifier, clazz, returnType, params);
         predefined = true;
     }
