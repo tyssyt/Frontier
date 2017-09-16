@@ -13,7 +13,7 @@ public class FVarDeclaration implements FStatement {
     public FVarDeclaration(FVariable var, FVarAssignment assignment) {
         this.var = var;
         this.assignment = assignment;
-        assert assignment == null || var == assignment.getVariable();
+        assert assignment == null || var == assignment.getVariableExpression().getVariable();
     }
 
     public FVariable getVar() {

@@ -72,7 +72,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             }
             try {
                 FVarDeclaration decl = visitVariableDeclarator(c);
-                decl.getAssignment().ifPresent(field::setAssignment);
+                decl.getAssignment().ifPresent(field::setAssignment); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
             } catch (Failed f) {
                 //do not allow Failed to propagate any further
             } finally {
@@ -117,7 +117,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FVarAssignment assign = null;
         if (c != null) {
             FExpression val = visitExpression(c);
-            assign = new FVarAssignment(var, FVarAssignment.Operator.ASSIGN, val);
+            assign = new FVarAssignment(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, val);
             typeChecks.add(assign);
         }
         return new FVarDeclaration(var, assign);
@@ -130,7 +130,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         for (FrontierParser.StatementContext c : contexts) {
             try {
                 builder.add(visitStatement(c));
-            } catch (Failed f) {}
+            } catch (Failed f) {
+                //this is fine, failed statements are not added to the list, they will have raised errors
+            }
         }
         return builder.build();
     }
@@ -195,16 +197,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FVarAssignment visitAssignment(FrontierParser.AssignmentContext ctx) {
-        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-        FVariable var;
+        FVariableExpression var;
         try {
-            var = findVar(identifier);
-        } catch (UndeclaredVariable e) {
+            FExpression e = visitExpression(ctx.expression(0));
+            if (!(e instanceof FVariableExpression))
+                throw new NonAssignableExpression(e);
+            var = (FVariableExpression) e;
+        } catch (NonAssignableExpression e) {
             errors.add(e);
-            visitExpression(ctx.expression());
+            visitExpression(ctx.expression(1));
             throw new Failed();
         }
-        FExpression value = visitExpression(ctx.expression());
+        FExpression value = visitExpression(ctx.expression(1));
         FVarAssignment.Operator op = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
         FVarAssignment res = new FVarAssignment(var, op, value);
         typeChecks.add(res);

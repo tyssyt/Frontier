@@ -1,8 +1,8 @@
 package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableMap;
-import tys.frontier.code.FVariable;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
 
@@ -12,18 +12,18 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
-    private FVariable variable;
+    private FVariableExpression variableExpression;
     private Operator operator;
     private FExpression value;
 
-    public FVarAssignment(FVariable variable, Operator operator, FExpression value) {
-        this.variable = variable;
+    public FVarAssignment(FVariableExpression variable, Operator operator, FExpression value) {
+        this.variableExpression = variable;
         this.operator = operator;
         this.value = value;
     }
 
-    public FVariable getVariable() {
-        return variable;
+    public FVariableExpression getVariableExpression() {
+        return variableExpression;
     }
 
     public Operator getOperator() {
@@ -41,13 +41,13 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (variable.getType() != value.getType())
-            throw new IncompatibleTypes(variable.getType(), value.getType());
+        if (variableExpression.getType() != value.getType())
+            throw new IncompatibleTypes(variableExpression.getType(), value.getType());
     }
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append(variable.getIdentifier()).append(' ').append(operator).append(' ');
+        variableExpression.toString(sb).append(' ').append(operator).append(' ');
         return value.toString(sb).append(';');
     }
     @Override
