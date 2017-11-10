@@ -3,9 +3,9 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FPredefinedClasses;
-import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.code.visitor.ExpressionVisitor;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 public class FArrayAccess implements FExpression, NeedsTypeCheck {
 

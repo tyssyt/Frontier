@@ -1,4 +1,4 @@
-package tys.frontier.parser.syntaxTree.syntaxErrors;
+package tys.frontier.parser.syntaxErrors;
 
 public class StatementOutsideLoop extends SyntaxError {
 }

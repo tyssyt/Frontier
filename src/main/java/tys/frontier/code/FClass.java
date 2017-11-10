@@ -10,8 +10,8 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
+import tys.frontier.parser.syntaxErrors.IdentifierCollision;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.Collection;

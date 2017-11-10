@@ -7,7 +7,7 @@ import tys.frontier.code.FField;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
-import tys.frontier.parser.syntaxTree.syntaxErrors.*;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.style.Style;
 
 import java.io.IOException;

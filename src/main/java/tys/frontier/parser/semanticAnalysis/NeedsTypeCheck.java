@@ -1,7 +1,7 @@
-package tys.frontier.code.statement;
+package tys.frontier.parser.semanticAnalysis;
 
-import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 
 import java.util.ArrayList;
 import java.util.Collection;

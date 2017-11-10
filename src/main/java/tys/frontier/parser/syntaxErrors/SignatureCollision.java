@@ -1,4 +1,4 @@
-package tys.frontier.parser.syntaxTree.syntaxErrors;
+package tys.frontier.parser.syntaxErrors;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;

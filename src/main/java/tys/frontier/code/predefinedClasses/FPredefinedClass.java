@@ -5,8 +5,8 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SignatureCollision;
+import tys.frontier.parser.syntaxErrors.IdentifierCollision;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
 
 public abstract class FPredefinedClass extends FClass {
 

@@ -15,8 +15,8 @@ import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxTree.syntaxErrors.ClassNotFound;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.ClassNotFound;
+import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 
 import java.util.ArrayList;
 import java.util.List;

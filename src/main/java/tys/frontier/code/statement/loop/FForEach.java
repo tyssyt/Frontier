@@ -4,9 +4,9 @@ import tys.frontier.code.FVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.code.visitor.StatementVisitor;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 public class FForEach implements FLoop, NeedsTypeCheck {
 

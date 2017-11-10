@@ -5,7 +5,8 @@ import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.visitor.StatementVisitor;
-import tys.frontier.parser.syntaxTree.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import java.util.Optional;
 

@@ -4,14 +4,14 @@ import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import tys.frontier.code.FFile;
-import tys.frontier.code.statement.NeedsTypeCheck;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
-import tys.frontier.parser.syntaxTree.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
 
 import java.io.IOException;

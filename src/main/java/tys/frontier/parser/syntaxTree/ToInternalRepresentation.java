@@ -12,7 +12,8 @@ import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxTree.syntaxErrors.*;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.MapStack;
 import tys.frontier.util.Utils;
 

@@ -1,12 +1,12 @@
-package tys.frontier.parser.syntaxTree.syntaxErrors;
+package tys.frontier.parser.syntaxErrors;
 
 import tys.frontier.code.identifier.FVariableIdentifier;
 
-public class FieldNotFound extends SyntaxError {
+public class UndeclaredVariable extends SyntaxError {
 
     public final FVariableIdentifier identifier;
 
-    public FieldNotFound(FVariableIdentifier identifier) {
+    public UndeclaredVariable(FVariableIdentifier identifier) {
         super(identifier.toString());
         this.identifier = identifier;
     }

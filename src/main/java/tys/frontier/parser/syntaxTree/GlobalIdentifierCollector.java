@@ -8,7 +8,7 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxTree.syntaxErrors.*;
+import tys.frontier.parser.syntaxErrors.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
