@@ -40,7 +40,7 @@ public class FFieldAccess implements FVariableExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return visitor.visitFieldAccess(this);
+        return visitor.enterFieldAccess(this);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package tys.frontier.code.visitor;
 
+import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 
@@ -41,7 +42,7 @@ public interface StatementVisitor<Statement, Expression> {
 
     Statement exitVarDeclaration(FVarDeclaration declaration, Optional<Statement> value);
 
-    Statement exitVarAssignment(FVarAssignment assignment, Expression value);
+    Statement exitVarAssignment(FVarAssignment assignment, Optional<Expression> object, Expression value);
 
     Statement exitWhile(FWhile fWhile, Expression cond, Statement body);
 
@@ -107,7 +108,12 @@ public interface StatementVisitor<Statement, Expression> {
 
         @Override
         public Statement enterVarAssignment(FVarAssignment assignment) {
-            return exitVarAssignment(assignment, exprVis.enterExpression(assignment.getValue()));
+            Optional<Expression> object;
+            if (assignment.getVariableExpression() instanceof FFieldAccess)
+                object = Optional.of(exprVis.enterExpression(((FFieldAccess) assignment.getVariableExpression()).getObject()));
+            else
+                object = Optional.empty();
+            return exitVarAssignment(assignment, object, exprVis.enterExpression(assignment.getValue()));
         }
 
         @Override
@@ -155,7 +161,7 @@ public interface StatementVisitor<Statement, Expression> {
         }
 
         @Override
-        public Statement exitVarAssignment(FVarAssignment assignment, Expression value) {
+        public Statement exitVarAssignment(FVarAssignment assignment, Optional<Expression> object, Expression value) {
             return getDefault();
         }
 

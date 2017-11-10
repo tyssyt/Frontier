@@ -16,16 +16,18 @@ public interface ExpressionVisitor<Expression>  {
 
     Expression enterFunctionCall(FFunctionCall functionCall);
 
+    Expression enterFieldAccess(FFieldAccess fieldAccess);
+
     //Bottom Up
     Expression exitArrayAccess(FArrayAccess arrayAccess, Expression array, Expression index);
 
     Expression exitBrackets(FBracketsExpression brackets, Expression inner);
 
-    Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params);
+    Expression exitFunctionCall(FFunctionCall functionCall, Expression object, List<Expression> params);
+
+    Expression exitFieldAccess(FFieldAccess fieldAccess, Expression object);
 
     //Leafs
-    Expression visitFieldAccess(FFieldAccess fieldAccess);
-
     Expression visitLiteral(FLiteralExpression expression);
 
     Expression visitVariable(FLocalVariableExpression expression);
@@ -53,10 +55,16 @@ public interface ExpressionVisitor<Expression>  {
 
         @Override
         public Expression enterFunctionCall(FFunctionCall functionCall) {
+            Expression object = enterExpression(functionCall.getObject());
             List<Expression> params = new ArrayList<>(functionCall.getParams().size());
             for (FExpression expression : functionCall.getParams())
                 params.add(enterExpression(expression));
-            return exitFunctionCall(functionCall, params);
+            return exitFunctionCall(functionCall, object, params);
+        }
+
+        @Override
+        public Expression enterFieldAccess(FFieldAccess fieldAccess) {
+            return exitFieldAccess(fieldAccess, enterExpression(fieldAccess.getObject()));
         }
 
         //Bottom Up
@@ -71,16 +79,16 @@ public interface ExpressionVisitor<Expression>  {
         }
 
         @Override
-        public Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params) {
+        public Expression exitFunctionCall(FFunctionCall functionCall, Expression object, List<Expression> params) {
+            return getDefault();
+        }
+
+        @Override
+        public Expression exitFieldAccess(FFieldAccess fieldAccess, Expression object) {
             return getDefault();
         }
 
         //leafs
-        @Override
-        public Expression visitFieldAccess(FFieldAccess fieldAccess) {
-            return getDefault();
-        }
-
         @Override
         public Expression visitLiteral(FLiteralExpression expression) {
             return getDefault();

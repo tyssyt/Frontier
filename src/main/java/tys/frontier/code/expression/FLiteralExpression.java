@@ -12,6 +12,10 @@ public class FLiteralExpression implements FExpression {
         this.literal = literal;
     }
 
+    public FLiteral getLiteral() {
+        return literal;
+    }
+
     @Override
     public FClass getType() {
         return literal.getType();
