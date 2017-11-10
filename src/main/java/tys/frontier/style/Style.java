@@ -71,6 +71,14 @@ public class Style {
         return options;
     }
 
+    public String getKeyword(int tokenId) {
+        return keywords.inverse().get(tokenId);
+    }
+
+    public Indenter createIndenter() {
+        return new Indenter(options);
+    }
+
     @Override
     public String toString() {
         return "Style(" + name + ")";

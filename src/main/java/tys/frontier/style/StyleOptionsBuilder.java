@@ -1,5 +1,10 @@
 package tys.frontier.style;
 
+import tys.frontier.code.FClassMember;
+import tys.frontier.style.order.Order;
+
+import java.util.Comparator;
+
 public class StyleOptionsBuilder {
     private boolean useTabs = false;
     private int indention = 4;
@@ -16,6 +21,7 @@ public class StyleOptionsBuilder {
     private boolean bracketsOnNewLineAfterFunction = false;
     private boolean bracketsOnNewLineAfterConditional = false;
     private boolean bracketsOnNewLineAfterLoop = false;
+    private Comparator<FClassMember> order;
 
     public StyleOptionsBuilder setUseTabs(boolean useTabs) {
         this.useTabs = useTabs;
@@ -95,7 +101,15 @@ public class StyleOptionsBuilder {
         return this;
     }
 
+    public StyleOptionsBuilder appendOrder(Comparator<FClassMember> next) {
+        if (order == null)
+            order = next;
+        else
+            order = order.thenComparing(next);
+        return this;
+    }
+
     public StyleOptions createStyleOptions() {
-        return new StyleOptions(useTabs, indention, maxCharsPerLine, maxParamsPerLine, paramsOnNewLine, noBracketsForSingleStatementConditional, noBracketsForSingleStatementLoop, spaceAfterFunctionName, spaceAfterConditional, spaceAfterLoop, spaceAfterMethodCall, bracketsOnNewLineAfterClass, bracketsOnNewLineAfterFunction, bracketsOnNewLineAfterConditional, bracketsOnNewLineAfterLoop);
+        return new StyleOptions(useTabs, indention, maxCharsPerLine, maxParamsPerLine, paramsOnNewLine, noBracketsForSingleStatementConditional, noBracketsForSingleStatementLoop, spaceAfterFunctionName, spaceAfterConditional, spaceAfterLoop, spaceAfterMethodCall, bracketsOnNewLineAfterClass, bracketsOnNewLineAfterFunction, bracketsOnNewLineAfterConditional, bracketsOnNewLineAfterLoop, order == null ? Order.DEFAULT : order);
     }
 }

@@ -5,7 +5,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import org.json.JSONException;
 import org.json.JSONObject;
-import tys.frontier.parser.FrontierParser;
+import tys.frontier.parser.antlr.FrontierParser;
 
 import java.util.Map;
 

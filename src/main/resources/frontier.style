@@ -61,10 +61,21 @@
             "loop":         false,
         },
         "order": [
-            ["field","constructor","method"],
-            ["static","instance"],
-            ["public", "private"],
-            alphabet
+            {
+               "by":    "type",
+               "order": ["field","constructor","operator","function"]
+            },
+            {
+               "by":    "static",
+               "order": ["static","instance"]
+            },
+            {
+               "by":    "visibility",
+               "order": ["public", "private"]
+            },
+            {
+               "by":    "alphabet"
+            }
         ]
     }
 }

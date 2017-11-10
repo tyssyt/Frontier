@@ -2,6 +2,10 @@ package tys.frontier.style;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import tys.frontier.code.FClassMember;
+import tys.frontier.style.order.Order;
+
+import java.util.Comparator;
 
 public class StyleOptions {
 
@@ -44,7 +48,9 @@ public class StyleOptions {
     public final boolean bracketsOnNewLineAfterConditional;
     public final boolean bracketsOnNewLineAfterLoop;
 
-    StyleOptions(boolean useTabs, int indention, int maxCharsPerLine, int maxParamsPerLine, boolean paramsOnNewLine, boolean noBracketsForSingleStatementConditional, boolean noBracketsForSingleStatementLoop, boolean spaceAfterFunctionName, boolean spaceAfterConditional, boolean spaceAfterLoop, boolean spaceAfterMethodCall, boolean bracketsOnNewLineAfterClass, boolean bracketsOnNewLineAfterFunction, boolean bracketsOnNewLineAfterConditional, boolean bracketsOnNewLineAfterLoop) {
+    public final Comparator<FClassMember> order;
+
+    StyleOptions(boolean useTabs, int indention, int maxCharsPerLine, int maxParamsPerLine, boolean paramsOnNewLine, boolean noBracketsForSingleStatementConditional, boolean noBracketsForSingleStatementLoop, boolean spaceAfterFunctionName, boolean spaceAfterConditional, boolean spaceAfterLoop, boolean spaceAfterMethodCall, boolean bracketsOnNewLineAfterClass, boolean bracketsOnNewLineAfterFunction, boolean bracketsOnNewLineAfterConditional, boolean bracketsOnNewLineAfterLoop, Comparator<FClassMember> order) {
         this.useTabs = useTabs;
         this.indention = indention;
         this.maxCharsPerLine = maxCharsPerLine;
@@ -60,6 +66,7 @@ public class StyleOptions {
         this.bracketsOnNewLineAfterFunction = bracketsOnNewLineAfterFunction;
         this.bracketsOnNewLineAfterConditional = bracketsOnNewLineAfterConditional;
         this.bracketsOnNewLineAfterLoop = bracketsOnNewLineAfterLoop;
+        this.order = order;
     }
 
     public static StyleOptionsBuilder builder () {
@@ -116,10 +123,23 @@ public class StyleOptions {
 
         try {
             JSONObject bracketsOnNewLine = options.getJSONObject("bracketsOnNewLineAfter");
-            builder.setBracketsOnNewLineAfterClass(bracketsOnNewLine.getBoolean("class"));
-            builder.setBracketsOnNewLineAfterFunction(bracketsOnNewLine.getBoolean("function"));
-            builder.setBracketsOnNewLineAfterConditional(bracketsOnNewLine.getBoolean("conditional"));
-            builder.setBracketsOnNewLineAfterLoop(bracketsOnNewLine.getBoolean("loop"));
+            try {
+                builder.setBracketsOnNewLineAfterClass(bracketsOnNewLine.getBoolean("class"));
+            } catch (JSONException e) {}
+            try {
+                builder.setBracketsOnNewLineAfterFunction(bracketsOnNewLine.getBoolean("function"));
+            } catch (JSONException e) {}
+            try {
+                builder.setBracketsOnNewLineAfterConditional(bracketsOnNewLine.getBoolean("conditional"));
+            } catch (JSONException e) {}
+            try {
+                builder.setBracketsOnNewLineAfterLoop(bracketsOnNewLine.getBoolean("loop"));
+            } catch (JSONException e) {}
+        } catch (JSONException e) {}
+
+        //TODO order
+        try {
+            builder.appendOrder(Order.fromJSON(options.getJSONArray("order")));
         } catch (JSONException e) {}
 
         return builder.createStyleOptions();
