@@ -10,6 +10,11 @@ public class FConstructor extends FFunction {
     }
 
     @Override
+    public MemberType getMemberType() {
+        return MemberType.CONSTRUCTOR;
+    }
+
+    @Override
     public boolean isConstructor() {
         return true;
     }

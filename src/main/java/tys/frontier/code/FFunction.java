@@ -9,7 +9,7 @@ import tys.frontier.util.StringBuilderToString;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FFunction implements IdentifierNameable, Typed, StringBuilderToString {
+public class FFunction implements FClassMember, IdentifierNameable, Typed, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
     private FClass clazz;
@@ -46,10 +46,12 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
         return clazz;
     }
 
+    @Override
     public FVisibilityModifier getModifier() {
         return modifier;
     }
 
+    @Override
     public boolean isStatic() {
         return statik;
     }
@@ -75,6 +77,11 @@ public class FFunction implements IdentifierNameable, Typed, StringBuilderToStri
     @Override
     public FClass getType() {
         return returnType;
+    }
+
+    @Override
+    public MemberType getMemberType() {
+        return MemberType.FUNCTION;
     }
 
     public boolean isConstructor() {

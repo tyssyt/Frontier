@@ -6,7 +6,7 @@ import tys.frontier.util.StringBuilderToString;
 
 import java.util.Optional;
 
-public class FField extends FVariable implements StringBuilderToString {
+public class FField extends FVariable implements FClassMember, StringBuilderToString {
     private FClass clazz;
     private FVisibilityModifier modifier;
     private boolean statik;
@@ -19,16 +19,23 @@ public class FField extends FVariable implements StringBuilderToString {
         this.statik = statik;
     }
 
+    @Override
     public FVisibilityModifier getModifier() {
         return modifier;
     }
 
+    @Override
     public boolean isStatic() {
         return statik;
     }
 
     public FClass getClazz() {
         return clazz;
+    }
+
+    @Override
+    public MemberType getMemberType() {
+        return MemberType.FIELD;
     }
 
     public void setAssignment(FVarAssignment assignment) {

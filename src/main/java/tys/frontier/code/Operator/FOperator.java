@@ -12,4 +12,9 @@ public abstract class FOperator extends FFunction {
     public FOperator(FFunctionIdentifier identifier, FClass clazz, FClass returnType, ImmutableList<FLocalVariable> params) {
         super(identifier, clazz, FVisibilityModifier.PUBLIC, true, returnType, params);
     }
+
+    @Override
+    public MemberType getMemberType() {
+        return MemberType.OPERATOR;
+    }
 }
