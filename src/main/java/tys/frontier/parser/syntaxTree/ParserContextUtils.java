@@ -34,7 +34,7 @@ public final class ParserContextUtils {
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
         if (ctx == null)
-            return FVisibilityModifier.NONE;
+            return FVisibilityModifier.PUBLIC;
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
             case FrontierParser.PUBLIC:
                 return FVisibilityModifier.PUBLIC;

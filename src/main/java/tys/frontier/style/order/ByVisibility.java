@@ -12,7 +12,6 @@ public class ByVisibility implements Comparator<FClassMember> {
     public static final ByVisibility DEFAULT = new ByVisibility(new EnumComparator<>(FVisibilityModifier.class,
             ImmutableList.<FVisibilityModifier>builder()
                     .add(FVisibilityModifier.PUBLIC)
-                    .add(FVisibilityModifier.NONE)
                     .add(FVisibilityModifier.PRIVATE)
                     .build()
     ));

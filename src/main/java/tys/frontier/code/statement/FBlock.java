@@ -3,6 +3,9 @@ package tys.frontier.code.statement;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.visitor.StatementVisitor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class FBlock implements FStatement {
 
     private ImmutableList<FStatement> statements;
@@ -13,6 +16,17 @@ public class FBlock implements FStatement {
 
     public ImmutableList<FStatement> getStatements() {
         return statements;
+    }
+
+    public List<FStatement> flattenRecursive() {
+        List<FStatement> res = new ArrayList<>();
+        for(FStatement statement : statements) {
+            if (statement instanceof FBlock)
+                res.addAll(((FBlock) statement).flattenRecursive());
+            else
+                res.add(statement);
+        }
+        return res;
     }
 
     @Override

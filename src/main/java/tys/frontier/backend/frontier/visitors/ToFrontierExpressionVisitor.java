@@ -12,7 +12,7 @@ public class ToFrontierExpressionVisitor extends ExpressionVisitor.Default<Strin
 
     private Style style;
 
-    public ToFrontierExpressionVisitor(Style style) {
+    ToFrontierExpressionVisitor(Style style) {
         this.style = style;
     }
 
@@ -40,7 +40,10 @@ public class ToFrontierExpressionVisitor extends ExpressionVisitor.Default<Strin
     @Override
     public StringBuilder exitFunctionCall(FFunctionCall functionCall, StringBuilder object, List<StringBuilder> params) {
         //TODO operators
-        object.append('.').append(functionCall.getFunction().getIdentifier().name).append('(');
+        object.append('.').append(functionCall.getFunction().getIdentifier().name);
+        if (style.getOptions().spaceAfterMethodCall)
+            object.append(' ');
+        object.append('(');
         Iterator<StringBuilder> it = params.iterator();
         if (it.hasNext())
             object.append(it.next());

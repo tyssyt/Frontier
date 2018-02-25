@@ -17,7 +17,7 @@ public class FExpressionStatement implements FStatement {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterExpression(this);
+        return visitor.enterExpressionStatement(this);
     }
 
     @Override

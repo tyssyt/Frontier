@@ -130,7 +130,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         ImmutableList.Builder<FStatement> builder = new ImmutableList.Builder<>();
         for (FrontierParser.StatementContext c : contexts) {
             try {
-                builder.add(visitStatement(c));
+                FStatement statement = visitStatement(c);
+                if (statement instanceof FEmptyStatement)
+                    continue;
+                builder.add(statement);
             } catch (Failed f) {
                 //this is fine, failed statements are not added to the list, they will have raised errors
             }
@@ -224,15 +227,20 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(new TwiceDefinedLocalVariable(identifier));
             throw new Failed();
         }
-        declaredVars.put(res.getVar().getIdentifier(), (FLocalVariable) res.getVar());
+        declaredVars.put(res.getVar().getIdentifier(), res.getVar());
         return res;
     }
 
     @Override
-    public FBlock visitBlockStatement(FrontierParser.BlockStatementContext ctx) {
+    public FStatement visitBlockStatement(FrontierParser.BlockStatementContext ctx) {
         declaredVars.push();
         try {
-            return new FBlock(statementsFromList(ctx.statement()));
+            ImmutableList<FStatement> statements = statementsFromList(ctx.statement());
+            if (statements.size() == 0)
+                return new FEmptyStatement();
+            if (statements.size() == 1)
+                return statements.get(0);
+            return new FBlock(statements);
         } finally {
             declaredVars.pop();
         }
@@ -366,6 +374,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 failed = true;
             }
 
+            if (it != null) {
+                declaredVars.put(it.getIdentifier(), it);
+            }
             try {
                 body = visitStatement(ctx.statement());
             } catch (Failed f) {

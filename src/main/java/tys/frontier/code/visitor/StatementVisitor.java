@@ -1,5 +1,6 @@
 package tys.frontier.code.visitor;
 
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -10,12 +11,15 @@ import java.util.Optional;
 
 public interface StatementVisitor<Statement, Expression> {
 
+    //
+    Expression enterExpression(FExpression expression);
+
     //top-down pass
     Statement enterStatement(FStatement statement);
 
     Statement enterBlock(FBlock block);
 
-    Statement enterExpression(FExpressionStatement statement);
+    Statement enterExpressionStatement(FExpressionStatement statement);
 
     Statement enterIf(FIf fIf);
 
@@ -34,7 +38,7 @@ public interface StatementVisitor<Statement, Expression> {
     //bottom-up pass
     Statement exitBlock(FBlock block, List<Statement> statements);
 
-    Statement exitExpression(FExpressionStatement statement, Expression expression);
+    Statement exitExpressionStatement(FExpressionStatement statement, Expression expression);
 
     Statement exitIf(FIf fIf, Expression cond, Statement then, Optional<Statement> elze);
 
@@ -69,6 +73,12 @@ public interface StatementVisitor<Statement, Expression> {
             return null;
         }
 
+        //
+        @Override
+        public Expression enterExpression(FExpression expression) {
+            return exprVis.enterExpression(expression);
+        }
+
         //top-down
         @Override
         public Statement enterStatement(FStatement statement) {
@@ -84,19 +94,19 @@ public interface StatementVisitor<Statement, Expression> {
         }
 
         @Override
-        public Statement enterExpression(FExpressionStatement statement) {
-            return exitExpression(statement, exprVis.enterExpression(statement.getExpression()));
+        public Statement enterExpressionStatement(FExpressionStatement statement) {
+            return exitExpressionStatement(statement, enterExpression(statement.getExpression()));
         }
 
         @Override
         public Statement enterIf(FIf fIf) {
             Optional<Statement> elze = fIf.getElse().map(this::enterStatement);
-            return exitIf(fIf, exprVis.enterExpression(fIf.getCondition()), enterStatement(fIf.getThen()), elze);
+            return exitIf(fIf, enterExpression(fIf.getCondition()), enterStatement(fIf.getThen()), elze);
         }
 
         @Override
         public Statement enterReturn(FReturn fReturn) {
-            Optional<Expression> value = fReturn.getExpression().map(exprVis::enterExpression);
+            Optional<Expression> value = fReturn.getExpression().map(this::enterExpression);
             return exitReturn(fReturn, value);
         }
 
@@ -110,28 +120,28 @@ public interface StatementVisitor<Statement, Expression> {
         public Statement enterVarAssignment(FVarAssignment assignment) {
             Optional<Expression> object;
             if (assignment.getVariableExpression() instanceof FFieldAccess)
-                object = Optional.of(exprVis.enterExpression(((FFieldAccess) assignment.getVariableExpression()).getObject()));
+                object = Optional.of(enterExpression(((FFieldAccess) assignment.getVariableExpression()).getObject()));
             else
                 object = Optional.empty();
-            return exitVarAssignment(assignment, object, exprVis.enterExpression(assignment.getValue()));
+            return exitVarAssignment(assignment, object, enterExpression(assignment.getValue()));
         }
 
         @Override
         public Statement enterWhile(FWhile fWhile) {
-            return exitWhile(fWhile, exprVis.enterExpression(fWhile.getCondition()), enterStatement(fWhile.getBody()));
+            return exitWhile(fWhile, enterExpression(fWhile.getCondition()), enterStatement(fWhile.getBody()));
         }
 
         @Override
         public Statement enterFor(FFor fFor) {
             Optional<Statement> decl = fFor.getDeclaration().map(this::enterStatement);
-            Optional<Expression> cond = fFor.getCondition().map(exprVis::enterExpression);
-            Optional<Expression> inc = fFor.getIncrement().map(exprVis::enterExpression);
+            Optional<Expression> cond = fFor.getCondition().map(this::enterExpression);
+            Optional<Expression> inc = fFor.getIncrement().map(this::enterExpression);
             return exitFor(fFor, decl, cond, inc, enterStatement(fFor.getBody()));
         }
 
         @Override
         public Statement enterForEach(FForEach forEach) {
-            return exitForEach(forEach, exprVis.enterExpression(forEach.getContainer()), enterStatement(forEach.getBody()));
+            return exitForEach(forEach, enterExpression(forEach.getContainer()), enterStatement(forEach.getBody()));
         }
 
         //bottom up
@@ -141,7 +151,7 @@ public interface StatementVisitor<Statement, Expression> {
         }
 
         @Override
-        public Statement exitExpression(FExpressionStatement statement, Expression expression) {
+        public Statement exitExpressionStatement(FExpressionStatement statement, Expression expression) {
             return getDefault();
         }
 

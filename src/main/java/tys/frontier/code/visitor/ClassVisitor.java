@@ -17,15 +17,15 @@ public interface ClassVisitor<Class, Field, Function, Statement> {
 
     Function enterFunction(FFunction function);
 
-    Class exitClass(FClass clazz, List<Field> fields, List<Function> functions);
+    default Class exitClass(FClass clazz, List<Field> fields, List<Function> functions) {return null;}
 
-    Field exitField(FField field, Optional<Statement> assign);
+    default Field exitField(FField field, Optional<Statement> assign) {return null;}
 
-    Function exitFunction(FFunction function, List<Statement> body);
+    default Function exitFunction(FFunction function, List<Statement> body) {return null;}
 
     class Default<Class, Field, Function, Statement, Expression> implements ClassVisitor<Class, Field, Function, Statement> {
 
-        private StatementVisitor<Statement, Expression> stVis;
+        protected StatementVisitor<Statement, Expression> stVis;
 
         public Default(StatementVisitor<Statement, Expression> statementVisitor) {
             this.stVis = statementVisitor;
