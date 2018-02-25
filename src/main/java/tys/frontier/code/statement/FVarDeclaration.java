@@ -1,22 +1,22 @@
 package tys.frontier.code.statement;
 
-import tys.frontier.code.FVariable;
+import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.visitor.StatementVisitor;
 
 import java.util.Optional;
 
 public class FVarDeclaration implements FStatement {
 
-    private FVariable var;
+    private FLocalVariable var;
     private FVarAssignment assignment; //optional
 
-    public FVarDeclaration(FVariable var, FVarAssignment assignment) {
+    public FVarDeclaration(FLocalVariable var, FVarAssignment assignment) {
         this.var = var;
         this.assignment = assignment;
         assert assignment == null || var == assignment.getVariableExpression().getVariable();
     }
 
-    public FVariable getVar() {
+    public FLocalVariable getVar() {
         return var;
     }
 

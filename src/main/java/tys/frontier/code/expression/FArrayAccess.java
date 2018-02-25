@@ -2,7 +2,7 @@ package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FPredefinedClasses;
+import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -38,8 +38,8 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (!FPredefinedClasses.intTypes.contains(index.getType()))
-            throw new IncompatibleTypes(FPredefinedClasses.intTypes.iterator().next(), index.getType());
+        if (!FPredefinedClass.intTypes.contains(index.getType()))
+            throw new IncompatibleTypes(FPredefinedClass.intTypes.iterator().next(), index.getType());
     }
 
     @Override
