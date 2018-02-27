@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public class FReturn  implements FStatement, NeedsTypeCheck {
 
-    private FExpression expression;
+    private FExpression expression; //optional, null if function is void
     private FFunction function;
 
     public FReturn(FExpression expression, FFunction function) {
@@ -37,7 +37,8 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterReturn(this);
+        visitor.enterReturn(this);
+        return visitor.exitReturn(this, getExpression().map(visitor::visit));
     }
 
     @Override

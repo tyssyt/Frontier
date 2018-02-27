@@ -33,7 +33,8 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return visitor.enterArrayAccess(this);
+        visitor.enterArrayAccess(this);
+        return visitor.exitArrayAccess(this, visitor.visit(array), visitor.visit(index));
     }
 
     @Override

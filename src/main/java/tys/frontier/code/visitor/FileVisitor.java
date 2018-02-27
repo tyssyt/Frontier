@@ -3,17 +3,24 @@ package tys.frontier.code.visitor;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface FileVisitor<File, Class> {
 
-    File enterFile(FFile file);
+    default File visit(FFile file) {
+        return file.accept(this);
+    }
+    Class visit(FClass clazz);
 
-    File exitFile(FFile file, List<Class> classes);
+    //Top down
+    default void enterFile(FFile file) {}
 
-    class Default<File, Class, Field, Function, Statement> implements FileVisitor<File, Class> {
+    //Bottom Up
+    default File exitFile(FFile file, List<Class> classes) {
+        return null;
+    }
 
+    abstract class Default<File, Class, Field, Function, Statement> implements FileVisitor<File, Class> {
         private ClassVisitor<Class, Field, Function, Statement> classVisitor;
 
         public Default(ClassVisitor<Class, Field, Function, Statement> classVisitor) {
@@ -21,16 +28,8 @@ public interface FileVisitor<File, Class> {
         }
 
         @Override
-        public File enterFile(FFile file) {
-            List<Class> classes = new ArrayList<>(file.getClasses().size());
-            for (FClass c : file.getClasses().values())
-                classes.add(classVisitor.enterClass(c));
-            return exitFile(file, classes);
-        }
-
-        @Override
-        public File exitFile(FFile file, List<Class> classes) {
-            return null;
+        public Class visit(FClass clazz) {
+            return classVisitor.visit(clazz);
         }
     }
 

@@ -41,7 +41,8 @@ public class FForEach implements FLoop, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterForEach(this);
+        visitor.enterForEach(this);
+        return visitor.exitForEach(this, visitor.visit(container), visitor.visit(body));
     }
 
     @Override

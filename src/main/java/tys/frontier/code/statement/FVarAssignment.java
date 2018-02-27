@@ -37,7 +37,8 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterVarAssignment(this);
+        visitor.enterVarAssignment(this);
+        return visitor.exitVarAssignment(this, visitor.visit(variableExpression), visitor.visit(value));
     }
 
     @Override

@@ -8,7 +8,7 @@ import java.util.Optional;
 public class FVarDeclaration implements FStatement {
 
     private FLocalVariable var;
-    private FVarAssignment assignment; //optional
+    private FVarAssignment assignment; //optional TODO this is messy bit works for now
 
     public FVarDeclaration(FLocalVariable var, FVarAssignment assignment) {
         this.var = var;
@@ -26,7 +26,9 @@ public class FVarDeclaration implements FStatement {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterVarDeclaration(this);
+        visitor.enterVarDeclaration(this);
+        return visitor.exitVarDeclaration(this, getAssignment().map(visitor::visit));
+
     }
 
     @Override

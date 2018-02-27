@@ -40,7 +40,8 @@ public class FIf implements FStatement, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterIf(this);
+        visitor.enterIf(this);
+        return visitor.exitIf(this, visitor.visit(condition), visitor.visit(then), getElse().map(visitor::visit));
     }
 
     @Override

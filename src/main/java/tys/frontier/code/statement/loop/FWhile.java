@@ -34,7 +34,8 @@ public class FWhile implements FLoop, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterWhile(this);
+        visitor.enterWhile(this);
+        return visitor.exitWhile(this, visitor.visit(condition), visitor.visit(body));
     }
 
     @Override

@@ -31,7 +31,11 @@ public class FBlock implements FStatement {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterBlock(this);
+        visitor.enterBlock(this);
+        List<S> statements = new ArrayList<>(this.statements.size());
+        for (FStatement s : this.statements)
+            statements.add(visitor.visit(s));
+        return visitor.exitBlock(this, statements);
     }
 
     @Override

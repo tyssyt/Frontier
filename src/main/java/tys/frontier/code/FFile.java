@@ -2,7 +2,11 @@ package tys.frontier.code;
 
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.visitor.FileVisitor;
 import tys.frontier.util.StringBuilderToString;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FFile implements StringBuilderToString {
 
@@ -29,6 +33,14 @@ public class FFile implements StringBuilderToString {
     public void setClasses(ImmutableMap<FClassIdentifier, FClass> classes) {
         assert this.classes == null;
         this.classes = classes;
+    }
+
+    public <F, C> F accept(FileVisitor<F, C> visitor) {
+        visitor.enterFile(this);
+        List<C> classes = new ArrayList<>(this.classes.size());
+        for (FClass c : this.classes.values())
+            classes.add(visitor.visit(c));
+        return visitor.exitFile(this, classes);
     }
 
     public StringBuilder summary(StringBuilder sb) {

@@ -4,6 +4,7 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -43,7 +44,12 @@ public class FFunctionCall implements FExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return visitor.enterFunctionCall(this);
+        visitor.enterFunctionCall(this);
+        E object = visitor.visit(this.object);
+        List<E> params = new ArrayList<>(this.params.size());
+        for (FExpression expression : this.params)
+            params.add(visitor.visit(expression));
+        return visitor.exitFunctionCall(this, object, params);
     }
 
     @Override

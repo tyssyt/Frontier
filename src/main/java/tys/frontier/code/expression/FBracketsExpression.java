@@ -22,7 +22,8 @@ public class FBracketsExpression implements FExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return visitor.enterBrackets(this);
+        visitor.enterBrackets(this);
+        return visitor.exitBrackets(this, visitor.visit(inner));
     }
 
     @Override

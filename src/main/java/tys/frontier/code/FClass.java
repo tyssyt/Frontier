@@ -10,13 +10,13 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
+import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.StringBuilderToString;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class FClass implements IdentifierNameable, StringBuilderToString {
 
@@ -104,6 +104,24 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
 
     protected void addFunctionInternal (FFunction function) {
         functions.put(function.getIdentifier(), function);
+    }
+
+    public <C,Fi,Fu,S> C accept(ClassVisitor<C,Fi,Fu,S> visitor) {
+        visitor.enterClass(this);
+        List<Fi> fields = new ArrayList<>(this.fields.size());
+        for (FField f : this.fields.values()) {
+            visitor.enterField(f);
+            fields.add(visitor.exitField(f, f.getAssignment().map(visitor::visit)));
+        }
+        List<Fu> functions = new ArrayList<>(this.functions.values().size());
+        for (FFunction f : this.functions.values()) {
+            visitor.enterFunction(f);
+            List<S> body = new ArrayList<>(f.getBody().size());
+            for (FStatement s : f.getBody())
+                body.add(visitor.visit(s));
+            functions.add(visitor.exitFunction(f, body));
+        }
+        return visitor.exitClass(this, fields, functions);
     }
 
     public String headerToString() {

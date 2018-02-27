@@ -49,7 +49,11 @@ public class FFor implements FLoop, NeedsTypeCheck {
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
-        return visitor.enterFor(this);
+        visitor.enterFor(this);
+        Optional<S> decl = getDeclaration().map(visitor::visit);
+        Optional<E> cond = getCondition().map(visitor::visit);
+        Optional<E> incr = getIncrement().map(visitor::visit);
+        return visitor.exitFor(this, decl, cond, incr, visitor.visit(body));
     }
 
     @Override
