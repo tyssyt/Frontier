@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -38,7 +39,12 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterVarAssignment(this);
-        return visitor.exitVarAssignment(this, visitor.visit(variableExpression), visitor.visit(value));
+        return visitor.exitVarAssignment(this, variableExpression.accept(visitor), value.accept(visitor));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitVarAssignment(this);
     }
 
     @Override

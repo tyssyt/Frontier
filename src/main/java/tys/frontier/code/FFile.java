@@ -35,11 +35,11 @@ public class FFile implements StringBuilderToString {
         this.classes = classes;
     }
 
-    public <F, C> F accept(FileVisitor<F, C> visitor) {
+    public <F,C,Fi,Fu,S,E> F accept(FileVisitor<F,C,Fi,Fu,S,E> visitor) {
         visitor.enterFile(this);
         List<C> classes = new ArrayList<>(this.classes.size());
         for (FClass c : this.classes.values())
-            classes.add(visitor.visit(c));
+            classes.add(c.accept(visitor));
         return visitor.exitFile(this, classes);
     }
 

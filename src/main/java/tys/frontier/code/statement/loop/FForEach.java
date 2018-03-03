@@ -5,6 +5,7 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -42,7 +43,12 @@ public class FForEach implements FLoop, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterForEach(this);
-        return visitor.exitForEach(this, visitor.visit(container), visitor.visit(body));
+        return visitor.exitForEach(this, container.accept(visitor), body.accept(visitor));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitForEach(this);
     }
 
     @Override

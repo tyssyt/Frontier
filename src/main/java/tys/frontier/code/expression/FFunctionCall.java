@@ -3,13 +3,14 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.code.visitor.ExpressionWalker;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class FFunctionCall implements FExpression {
-    private FExpression object;
+    private FExpression object; //null if the function is static
     private FFunction function;
     private List<? extends FExpression> params;
 
@@ -45,11 +46,16 @@ public class FFunctionCall implements FExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterFunctionCall(this);
-        E object = visitor.visit(this.object);
+        E object = this.object == null ? null : this.object.accept(visitor);
         List<E> params = new ArrayList<>(this.params.size());
         for (FExpression expression : this.params)
-            params.add(visitor.visit(expression));
+            params.add(expression.accept(visitor));
         return visitor.exitFunctionCall(this, object, params);
+    }
+
+    @Override
+    public <E> E accept(ExpressionWalker<E> walker) {
+        return walker.visitFunctionCall(this);
     }
 
     @Override

@@ -3,6 +3,7 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FLocalVariableExpression implements FVariableExpression {
 
@@ -25,6 +26,11 @@ public class FLocalVariableExpression implements FVariableExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.visitVariable(this);
+    }
+
+    @Override
+    public <E> E accept(ExpressionWalker<E> walker) {
+        return walker.visitVariable(this);
     }
 
     @Override

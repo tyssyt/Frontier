@@ -1,18 +1,12 @@
 package tys.frontier.code.visitor;
 
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface StatementVisitor<Statement, Expression> {
-
-    default Statement visit(FStatement statement) {
-        return statement.accept(this);
-    }
-    Expression visit(FExpression expression);
+public interface StatementVisitor<Statement, Expression> extends ExpressionVisitor<Expression> {
 
     //Top Down
     default void enterBlock(FBlock block) {}
@@ -64,18 +58,5 @@ public interface StatementVisitor<Statement, Expression> {
     }
     default Statement visitContinue(FContinue fContinue) {
         return null;
-    }
-
-    abstract class Default<Statement, Expression> implements StatementVisitor<Statement, Expression> {
-        private ExpressionVisitor<Expression> exprVis;
-
-        public Default(ExpressionVisitor<Expression> expressionVisitor) {
-            this.exprVis = expressionVisitor;
-        }
-
-        @Override
-        public Expression visit(FExpression expression) {
-            return exprVis.visit(expression);
-        }
     }
 }

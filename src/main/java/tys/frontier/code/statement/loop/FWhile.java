@@ -4,6 +4,7 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -35,7 +36,12 @@ public class FWhile implements FLoop, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterWhile(this);
-        return visitor.exitWhile(this, visitor.visit(condition), visitor.visit(body));
+        return visitor.exitWhile(this, condition.accept(visitor), body.accept(visitor));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitWhile(this);
     }
 
     @Override

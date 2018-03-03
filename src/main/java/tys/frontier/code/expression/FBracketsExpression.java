@@ -2,6 +2,7 @@ package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FBracketsExpression implements FExpression {
 
@@ -23,7 +24,12 @@ public class FBracketsExpression implements FExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterBrackets(this);
-        return visitor.exitBrackets(this, visitor.visit(inner));
+        return visitor.exitBrackets(this, inner.accept(visitor));
+    }
+
+    @Override
+    public <E> E accept(ExpressionWalker<E> walker) {
+        return walker.visitBrackets(this);
     }
 
     @Override

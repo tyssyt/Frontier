@@ -106,19 +106,19 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         functions.put(function.getIdentifier(), function);
     }
 
-    public <C,Fi,Fu,S> C accept(ClassVisitor<C,Fi,Fu,S> visitor) {
+    public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
         visitor.enterClass(this);
         List<Fi> fields = new ArrayList<>(this.fields.size());
         for (FField f : this.fields.values()) {
             visitor.enterField(f);
-            fields.add(visitor.exitField(f, f.getAssignment().map(visitor::visit)));
+            fields.add(visitor.exitField(f, f.getAssignment().map(assignment -> assignment.accept(visitor))));
         }
         List<Fu> functions = new ArrayList<>(this.functions.values().size());
         for (FFunction f : this.functions.values()) {
             visitor.enterFunction(f);
             List<S> body = new ArrayList<>(f.getBody().size());
             for (FStatement s : f.getBody())
-                body.add(visitor.visit(s));
+                body.add(s.accept(visitor));
             functions.add(visitor.exitFunction(f, body));
         }
         return visitor.exitClass(this, fields, functions);

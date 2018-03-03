@@ -2,6 +2,7 @@ package tys.frontier.code.statement.loop;
 
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 
 public class FContinue implements FStatement {
 
@@ -18,6 +19,11 @@ public class FContinue implements FStatement {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         return visitor.visitContinue(this);
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitContinue(this);
     }
 
     @Override

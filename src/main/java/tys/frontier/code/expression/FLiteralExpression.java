@@ -3,6 +3,7 @@ package tys.frontier.code.expression;
 import tys.frontier.code.FClass;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FLiteralExpression implements FExpression {
 
@@ -24,6 +25,11 @@ public class FLiteralExpression implements FExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         return visitor.visitLiteral(this);
+    }
+
+    @Override
+    public <E> E accept(ExpressionWalker<E> walker) {
+        return walker.visitLiteral(this);
     }
 
     @Override

@@ -4,11 +4,12 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
+import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FFieldAccess implements FVariableExpression {
 
     private FField field;
-    private FExpression object;
+    private FExpression object; //null for static fields
 
     public FFieldAccess(FField field, FExpression object) {
         this.field = field;
@@ -41,7 +42,13 @@ public class FFieldAccess implements FVariableExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterFieldAccess(this);
-        return visitor.exitFieldAccess(this, visitor.visit(object));
+        E object = this.object == null ? null : this.object.accept(visitor);
+        return visitor.exitFieldAccess(this, object);
+    }
+
+    @Override
+    public <E> E accept(ExpressionWalker<E> walker) {
+        return walker.visitFieldAccess(this);
     }
 
     @Override

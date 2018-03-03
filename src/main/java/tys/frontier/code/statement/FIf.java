@@ -3,6 +3,7 @@ package tys.frontier.code.statement;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -41,7 +42,12 @@ public class FIf implements FStatement, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterIf(this);
-        return visitor.exitIf(this, visitor.visit(condition), visitor.visit(then), getElse().map(visitor::visit));
+        return visitor.exitIf(this, condition.accept(visitor), then.accept(visitor), getElse().map(statement -> statement.accept(visitor)));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitIf(this);
     }
 
     @Override

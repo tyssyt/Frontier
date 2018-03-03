@@ -5,6 +5,7 @@ import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -38,7 +39,12 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterReturn(this);
-        return visitor.exitReturn(this, getExpression().map(visitor::visit));
+        return visitor.exitReturn(this, getExpression().map(expression -> expression.accept(visitor)));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitReturn(this);
     }
 
     @Override

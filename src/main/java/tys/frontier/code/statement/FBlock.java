@@ -2,6 +2,7 @@ package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,13 @@ public class FBlock implements FStatement {
         visitor.enterBlock(this);
         List<S> statements = new ArrayList<>(this.statements.size());
         for (FStatement s : this.statements)
-            statements.add(visitor.visit(s));
+            statements.add(s.accept(visitor));
         return visitor.exitBlock(this, statements);
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitBlock(this);
     }
 
     @Override

@@ -6,10 +6,6 @@ import java.util.List;
 
 public interface ExpressionVisitor<Expression>  {
 
-    default Expression visit(FExpression expression) {
-        return expression.accept(this);
-    }
-
     //Top down
     default void enterArrayAccess(FArrayAccess arrayAccess) {}
     default void enterBrackets(FBracketsExpression brackets) {}

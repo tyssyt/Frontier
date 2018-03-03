@@ -5,6 +5,7 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -50,10 +51,15 @@ public class FFor implements FLoop, NeedsTypeCheck {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterFor(this);
-        Optional<S> decl = getDeclaration().map(visitor::visit);
-        Optional<E> cond = getCondition().map(visitor::visit);
-        Optional<E> incr = getIncrement().map(visitor::visit);
-        return visitor.exitFor(this, decl, cond, incr, visitor.visit(body));
+        Optional<S> decl = getDeclaration().map(declaration -> declaration.accept(visitor));
+        Optional<E> cond = getCondition().map(condition -> condition.accept(visitor));
+        Optional<E> incr = getIncrement().map(increment -> increment.accept(visitor));
+        return visitor.exitFor(this, decl, cond, incr, body.accept(visitor));
+    }
+
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitFor(this);
     }
 
     @Override

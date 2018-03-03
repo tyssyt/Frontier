@@ -2,6 +2,7 @@ package tys.frontier.code.statement;
 
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.visitor.StatementVisitor;
+import tys.frontier.code.visitor.StatementWalker;
 
 import java.util.Optional;
 
@@ -27,8 +28,12 @@ public class FVarDeclaration implements FStatement {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterVarDeclaration(this);
-        return visitor.exitVarDeclaration(this, getAssignment().map(visitor::visit));
+        return visitor.exitVarDeclaration(this, getAssignment().map(assignment -> assignment.accept(visitor)));
+    }
 
+    @Override
+    public <S, E> S accept(StatementWalker<S, E> walker) {
+        return walker.visitVarDeclaration(this);
     }
 
     @Override
