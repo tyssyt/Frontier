@@ -1,7 +1,7 @@
 package tys.frontier.util;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -9,12 +9,15 @@ public class EnumComparator<E extends Enum<E>> implements Comparator<E> {
 
     private int[] order;
 
+    public EnumComparator(Class<E> enumClass) {
+        this(enumClass, Arrays.asList(enumClass.getEnumConstants()));
+    }
+
     public EnumComparator(Class<E> keyType, List<E> order) {
         this.order = new int[keyType.getEnumConstants().length];
-        Collections.reverse(order);
-        int weight = 1;
+        int weight = order.size();
         for (E e : order) {
-            this.order[e.ordinal()] = weight++;
+            this.order[e.ordinal()] = --weight;
         }
     }
 
