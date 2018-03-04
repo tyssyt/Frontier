@@ -7,11 +7,13 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
     antlr "org.antlr:antlr4:4.7"
-    compile group: 'org.bytedeco.javacpp-presets', name: 'llvm' + '-platform', version: '5.0.1' + '-1.4'
+    compile files(fileTree(dir: 'lib', includes: ['*.jar']))
+    //compile group: 'org.bytedeco.javacpp-presets', name: 'llvm' + '-platform', version: '5.0.1' + '-1.4.1-SNAPSHOT'
     compile group: 'com.opensymphony', name: 'xwork-core', version: '2.1.6'
     compile group: 'org.json', name: 'json', version: '20170516'
     compile group: 'com.google.guava', name: 'guava', version: '23.0'
