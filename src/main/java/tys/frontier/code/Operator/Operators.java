@@ -38,7 +38,9 @@ public class Operators {
         LT(FFunctionIdentifier.SMALLER),
         GT(FFunctionIdentifier.GREATER),
         LE(FFunctionIdentifier.SMALLER_EQUAL),
-        GE(FFunctionIdentifier.GREATER_EQUAL);
+        GE(FFunctionIdentifier.GREATER_EQUAL),
+        PLUS(FFunctionIdentifier.PLUS),
+        MINUS(FFunctionIdentifier.MINUS);
 
         private static Map<String, Binary> stringMap = Arrays.stream(values()).collect(toMap(e -> e.identifier.name, e -> e));
 
