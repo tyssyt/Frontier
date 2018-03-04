@@ -44,7 +44,7 @@ public class LLVMBackend implements Backend {
             res.parseClasses(file);
         for (FFile file : files)
             res.parseFunctionHeaders(file);
-        res.fillInFunctionBodies();
+        res.fillInBodies();
         return res;
     }
 

@@ -151,4 +151,9 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         }
         return sb.append("\n}");
     }
+
+    @Override
+    public String toString() {
+        return tS();
+    }
 }

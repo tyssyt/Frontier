@@ -3,10 +3,7 @@ package tys.frontier.backend.llvm;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import org.bytedeco.javacpp.BytePointer;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FFile;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.*;
 import tys.frontier.code.predefinedClasses.*;
 
 import java.util.ArrayList;
@@ -28,6 +25,7 @@ public class LLVMModule implements AutoCloseable {
             .put(FInt64.INSTANCE, LLVMInt64Type())
             .put(FFloat32.INSTANCE, LLVMFloatType())
             .put(FFloat64.INSTANCE, LLVMDoubleType())
+            .put(FVoid.INSTANCE, LLVMVoidType())
             .build();
 
     private boolean verificationNeeded = false;
@@ -81,7 +79,14 @@ public class LLVMModule implements AutoCloseable {
      */
     public void parseClasses(FFile file) {
         verificationNeeded = true;
-        //TODO parse classes, create types and add to llvmTypes
+        for (FClass clazz : file.getClasses().values()) {
+            if (clazz instanceof FPredefinedClass)
+                continue;
+            LLVMTypeRef type = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
+            LLVMTypeRef old = llvmTypes.put(clazz, type);
+            if (old != null)
+                throw new RuntimeException("type defined twice:" + clazz.getIdentifier());
+        }
     }
 
     /**
@@ -112,8 +117,9 @@ public class LLVMModule implements AutoCloseable {
             offset = 1;
         }
         List<FLocalVariable> fParams = function.getParams();
-        for (int i=0; i<fParams.size(); i++)
-            LLVMSetValueName(LLVMGetParam(res, i+offset), fParams.get(i).getIdentifier().name);
+        for (int i=0; i<fParams.size(); i++) {
+            LLVMSetValueName(LLVMGetParam(res, i + offset), fParams.get(i).getIdentifier().name);
+        }
         todoFunctionBodies.add(function);
         return res;
     }
@@ -142,8 +148,17 @@ public class LLVMModule implements AutoCloseable {
      * Creates LLVM Code for all parsed Functions in this module.
      * Should be called after {@Link #parseFunctionHeaders(FFile)}.
      */
-    public void fillInFunctionBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
+    public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
+
+        for (Map.Entry<FClass, LLVMTypeRef> entry : llvmTypes.entrySet()) { //TODO defensive coding would be to have a set of todo classbodies
+            List<LLVMTypeRef> subtypes = new ArrayList<>();
+            for (FField field : entry.getKey().getFields().values()) {
+                subtypes.add(llvmTypes.get(field.getType()));
+            }
+            LLVMStructSetBody(entry.getValue(), createPointerPointer(subtypes), subtypes.size(), FALSE);
+        }
+
         try (LLVMTransformer trans = new LLVMTransformer(this)) {
             for (FFunction function : todoFunctionBodies) {
                 trans.visitFunction(function);
