@@ -12,18 +12,18 @@ import java.util.List;
 public class FFunctionCall implements FExpression {
     private FExpression object; //null if the function is static
     private FFunction function;
-    private List<? extends FExpression> params;
+    private List<? extends FExpression> arguments;
 
-    public FFunctionCall(FExpression object, FFunction function, List<? extends FExpression> params) {
+    public FFunctionCall(FExpression object, FFunction function, List<? extends FExpression> arguments) {
         this.object = object;
         this.function = function;
-        this.params = params;
+        this.arguments = arguments;
     }
 
-    public FFunctionCall(FFunction function, List<? extends FExpression> params) {
+    public FFunctionCall(FFunction function, List<? extends FExpression> arguments) {
         assert (function.isStatic());
         this.function = function;
-        this.params = params;
+        this.arguments = arguments;
     }
 
     public FExpression getObject() {
@@ -34,8 +34,8 @@ public class FFunctionCall implements FExpression {
         return function;
     }
 
-    public List<? extends FExpression> getParams() {
-        return params;
+    public List<? extends FExpression> getArguments() {
+        return arguments;
     }
 
     @Override
@@ -47,9 +47,9 @@ public class FFunctionCall implements FExpression {
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterFunctionCall(this);
         E object = this.object == null ? null : this.object.accept(visitor);
-        List<E> params = new ArrayList<>(this.params.size());
-        for (FExpression expression : this.params)
-            params.add(expression.accept(visitor));
+        List<E> params = new ArrayList<>(this.arguments.size());
+        for (FExpression arg : this.arguments)
+            params.add(arg.accept(visitor));
         return visitor.exitFunctionCall(this, object, params);
     }
 
@@ -65,7 +65,7 @@ public class FFunctionCall implements FExpression {
         else
             object.toString(sb);
         sb.append('.').append(function.getIdentifier()).append('(');
-        Iterator<? extends FExpression> it = params.iterator();
+        Iterator<? extends FExpression> it = arguments.iterator();
         if (it.hasNext()) {
             it.next().toString(sb);
             while (it.hasNext())

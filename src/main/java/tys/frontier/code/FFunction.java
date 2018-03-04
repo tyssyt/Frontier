@@ -9,6 +9,7 @@ import tys.frontier.util.StringBuilderToString;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO the FFunction hierachy is so messy with constructors and predefined and stuff...
 public class FFunction implements FClassMember, IdentifierNameable, Typed, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
@@ -86,6 +87,10 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
 
     public boolean isConstructor() {
         return false;
+    }
+
+    public boolean isPredefined() {
+        return predefined;
     }
 
     public Signature getSignature() {
