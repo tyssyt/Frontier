@@ -1,21 +1,25 @@
 package tys.frontier.parser;
 
-import com.opensymphony.xwork2.util.ClassLoaderUtil;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.atn.ATNConfigSet;
+import org.antlr.v4.runtime.dfa.DFA;
 import tys.frontier.code.FFile;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.style.Style;
+import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 public class Parser {
@@ -53,39 +57,70 @@ public class Parser {
         stage = Stage.INITIALIZING;
         //create Lexer & Parser & parse
         FrontierLexer lexer;
-        InputStream input = ClassLoaderUtil.getResourceAsStream(file, this.getClass());
-        lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        FrontierParser parser = new FrontierParser(tokens);
-        FrontierParser.FileContext context = parser.file();
+        try (InputStream input = Utils.loadFile(file)) {
+            lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            FrontierParser parser = new FrontierParser(tokens);
+            AntLrErrorListener errorListener = new AntLrErrorListener();
+            parser.addErrorListener(errorListener);
+            FrontierParser.FileContext context = parser.file();
 
-        stage = Stage.IDENTIFIER_COLLECTION;
-        FFile res = new FFile(file);
-        SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context, res);
-        {
-            StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
-            res.summary(sb);
-            Log.info(this, sb.toString());
+            if (parser.getNumberOfSyntaxErrors() > 0)
+                throw new SyntaxErrors(errorListener.errors);
+
+            stage = Stage.IDENTIFIER_COLLECTION;
+            FFile res = new FFile(file);
+            SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context, res);
+            {
+                StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
+                res.summary(sb);
+                Log.info(this, sb.toString());
+            }
+
+            stage = Stage.TO_INTERNAL_REPRESENTATION;
+            List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, res);
+            {
+                StringBuilder sb = new StringBuilder().append("parsed classes:\n");
+                res.toString(sb);
+                Log.info(this, sb.toString());
+            }
+
+            stage = Stage.TYPE_CHECKS;
+            NeedsTypeCheck.checkAll(typeChecks);
+            Log.info(this, "typecheck passed");
+
+            stage = Stage.FINISHED;
+            return res;
         }
-
-        stage = Stage.TO_INTERNAL_REPRESENTATION;
-        List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, res);
-        {
-            StringBuilder sb = new StringBuilder().append("parsed classes:\n");
-            res.toString(sb);
-            Log.info(this, sb.toString());
-        }
-
-        stage = Stage.TYPE_CHECKS;
-        NeedsTypeCheck.checkAll(typeChecks);
-        Log.info(this, "typecheck passed");
-
-        stage = Stage.FINISHED;
-        return res;
     }
 
     @Override
     public String toString() {
         return "Parser{file='" + file + ", " + stage + '}';
+    }
+
+    private class AntLrErrorListener implements ANTLRErrorListener {
+
+        private List<AntRecognitionException> errors = new ArrayList<>();
+
+        @Override
+        public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+            errors.add(new AntRecognitionException(e));
+        }
+
+        @Override
+        public void reportAmbiguity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact, BitSet ambigAlts, ATNConfigSet configs) {
+
+        }
+
+        @Override
+        public void reportAttemptingFullContext(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, BitSet conflictingAlts, ATNConfigSet configs) {
+
+        }
+
+        @Override
+        public void reportContextSensitivity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {
+
+        }
     }
 }

@@ -11,8 +11,6 @@ import static org.bytedeco.javacpp.LLVM.*;
 
 public class LLVMBackend implements Backend {
 
-    private static  final String out = "D:\\Frontier\\test\\test.o"; //TODO
-
     private static boolean initialized = false;
 
     private static void initialize() {
