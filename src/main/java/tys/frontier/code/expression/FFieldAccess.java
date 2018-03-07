@@ -8,17 +8,20 @@ import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FFieldAccess implements FVariableExpression {
 
-    private FField field;
-    private FExpression object; //null for static fields
+    private final FField field;
+    private final FExpression object; //null for static fields
+    private AccessType accessType = AccessType.LOAD;
 
+    //for instance fields
     public FFieldAccess(FField field, FExpression object) {
         this.field = field;
         this.object = object;
     }
 
+    //for static fields
     public FFieldAccess(FField field) {
-        assert(field.isStatic());
         this.field = field;
+        this.object = null;
     }
 
     public FField getField() {
@@ -32,6 +35,17 @@ public class FFieldAccess implements FVariableExpression {
 
     public FExpression getObject() {
         return object;
+    }
+
+    @Override
+    public AccessType getAccessType() {
+        return accessType;
+    }
+
+    @Override
+    public void setStore() {
+        assert accessType == AccessType.LOAD : "access type set twice: " + this;
+        accessType = AccessType.STORE;
     }
 
     @Override

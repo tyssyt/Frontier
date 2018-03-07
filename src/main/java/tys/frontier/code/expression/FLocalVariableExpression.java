@@ -8,6 +8,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 public class FLocalVariableExpression implements FVariableExpression {
 
     private final FLocalVariable variable;
+    private AccessType accessType = AccessType.LOAD;
 
     public FLocalVariableExpression(FLocalVariable variable) {
         this.variable = variable;
@@ -16,6 +17,17 @@ public class FLocalVariableExpression implements FVariableExpression {
     @Override
     public FLocalVariable getVariable() {
         return variable;
+    }
+
+    @Override
+    public AccessType getAccessType() {
+        return accessType;
+    }
+
+    @Override
+    public void setStore() {
+        assert accessType == AccessType.LOAD : "access type set twice: " + this;
+        accessType = AccessType.STORE;
     }
 
     @Override

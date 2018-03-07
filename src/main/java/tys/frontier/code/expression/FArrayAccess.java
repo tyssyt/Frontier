@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
+import tys.frontier.code.FVariable;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -8,10 +9,11 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FArrayAccess implements FExpression, NeedsTypeCheck {
+public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
 
-    private FExpression array;
-    private FExpression index;
+    private final FExpression array;
+    private final FExpression index;
+    private AccessType accessType = AccessType.LOAD;
 
     public FArrayAccess(FExpression array, FExpression index) throws IncompatibleTypes {
         this.array = array;
@@ -25,6 +27,22 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
 
     public FExpression getIndex() {
         return index;
+    }
+
+    @Override
+    public FVariable getVariable() {
+        throw new RuntimeException("no idea what we should return here -.-"); //TODO maybe have a subclass that stores the actual (int) value that was accessed?
+    }
+
+    @Override
+    public AccessType getAccessType() {
+        return accessType;
+    }
+
+    @Override
+    public void setStore() {
+        assert accessType == AccessType.LOAD : "access type set twice: " + this;
+        accessType = AccessType.STORE;
     }
 
     @Override
@@ -47,6 +65,8 @@ public class FArrayAccess implements FExpression, NeedsTypeCheck {
     public void checkTypes() throws IncompatibleTypes {
         if (!FPredefinedClass.intTypes.contains(index.getType()))
             throw new IncompatibleTypes(FPredefinedClass.intTypes.iterator().next(), index.getType());
+        if (!(array.getType() instanceof FArray))
+            throw new IncompatibleTypes(FArray.getArrayFrom(array.getType(), 1), array.getType());
     }
 
     @Override
