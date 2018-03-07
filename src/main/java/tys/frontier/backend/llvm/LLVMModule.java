@@ -1,8 +1,8 @@
 package tys.frontier.backend.llvm;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
-import org.bytedeco.javacpp.BytePointer;
+import com.koloboke.collect.map.hash.HashObjIntMap;
+import com.koloboke.collect.map.hash.HashObjIntMaps;
 import tys.frontier.code.*;
 import tys.frontier.code.predefinedClasses.*;
 
@@ -19,21 +19,14 @@ public class LLVMModule implements AutoCloseable {
     private static final int FALSE = 0;
     private static final int TRUE = 0;
 
-    public static final ImmutableMap<FPredefinedClass, LLVMTypeRef> LLVM_PREDEF_TYPES = ImmutableMap.<FPredefinedClass, LLVMTypeRef>builder()
-            .put(FBool.INSTANCE, LLVMInt1Type())
-            .put(FInt32.INSTANCE, LLVMInt32Type())
-            .put(FInt64.INSTANCE, LLVMInt64Type())
-            .put(FFloat32.INSTANCE, LLVMFloatType())
-            .put(FFloat64.INSTANCE, LLVMDoubleType())
-            .put(FVoid.INSTANCE, LLVMVoidType())
-            .build();
-
     private boolean verificationNeeded = false;
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
+    private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
+    private List<FClass> todoTypeBodies = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
-    private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>(LLVM_PREDEF_TYPES);
 
     public LLVMModule(String name) {
         this(name, LLVMGetGlobalContext(), false);
@@ -43,6 +36,16 @@ public class LLVMModule implements AutoCloseable {
         this.context = context;
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
+        fillInPredefinedTypes();
+    }
+
+    private void fillInPredefinedTypes() {
+        llvmTypes.put(FBool.INSTANCE, LLVMInt1TypeInContext(context));
+        llvmTypes.put(FInt32.INSTANCE, LLVMInt32TypeInContext(context));
+        llvmTypes.put(FInt64.INSTANCE, LLVMInt64TypeInContext(context));
+        llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
+        llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
+        llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
     }
 
     @Override
@@ -60,17 +63,16 @@ public class LLVMModule implements AutoCloseable {
         return module;
     }
 
-    public Map<FClass, LLVMTypeRef> getLlvmTypes() {
+    Map<FClass, LLVMTypeRef> getLlvmTypes() {
         return llvmTypes;
     }
 
-    /**
-     * Gets the LLVM Type corresponding to the FClass.
-     * @param fType
-     * @return
-     */
-    public LLVMTypeRef getLLVMType(FClass fType) {
-        return llvmTypes.get(fType);
+    HashObjIntMap<FField> getFieldIndices() {
+        return fieldIndices;
+    }
+
+    public int getFieldIndex(FField field) {
+        return fieldIndices.getInt(field);
     }
 
     /**
@@ -82,10 +84,12 @@ public class LLVMModule implements AutoCloseable {
         for (FClass clazz : file.getClasses().values()) {
             if (clazz instanceof FPredefinedClass)
                 continue;
-            LLVMTypeRef type = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
-            LLVMTypeRef old = llvmTypes.put(clazz, type);
+            LLVMTypeRef baseType = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
+            LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
+            LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
             if (old != null)
                 throw new RuntimeException("type defined twice:" + clazz.getIdentifier());
+            todoTypeBodies.add(clazz);
         }
     }
 
@@ -97,9 +101,15 @@ public class LLVMModule implements AutoCloseable {
     public void parseFunctionHeaders(FFile file ) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FClass clazz : file.getClasses().values())
-            for (FFunction function : clazz.getFunctions().values())
+        for (FClass clazz : file.getClasses().values()) {
+            if (clazz instanceof FPredefinedClass)
+                continue;
+            for (FFunction function : clazz.getFunctions().values()) {
+                if (function.isPredefined())
+                    continue;
                 addFunction(function);
+            }
+        }
     }
 
     /**
@@ -117,10 +127,10 @@ public class LLVMModule implements AutoCloseable {
             offset = 1;
         }
         List<FLocalVariable> fParams = function.getParams();
-        for (int i=0; i<fParams.size(); i++) {
+        for (int i=0; i<fParams.size(); i++)
             LLVMSetValueName(LLVMGetParam(res, i + offset), fParams.get(i).getIdentifier().name);
-        }
-        todoFunctionBodies.add(function);
+        if (!function.isPredefined())
+            todoFunctionBodies.add(function);
         return res;
     }
 
@@ -136,38 +146,42 @@ public class LLVMModule implements AutoCloseable {
 
         List<LLVMTypeRef> llvmParamTypes = new ArrayList<>(size);
         if (!function.isStatic())
-            llvmParamTypes.add(llvmTypes.get(function.getClazz())); //add this as first param
+            llvmParamTypes.add(llvmTypes.get(function.getClazz())); //add 'this' as first param
         for (FLocalVariable param : fParams)
             llvmParamTypes.add(llvmTypes.get(param.getType()));
 
-        LLVMTypeRef returnType = getLLVMType(function.getType());
+        LLVMTypeRef returnType = llvmTypes.get(function.getType());
         return LLVMFunctionType(returnType, createPointerPointer(llvmParamTypes), size, FALSE);
     }
 
     /**
-     * Creates LLVM Code for all parsed Functions in this module.
+     * Creates LLVM Code for all parsed Functions and Classes in this module.
      * Should be called after {@Link #parseFunctionHeaders(FFile)}.
      */
     public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
 
-        for (Map.Entry<FClass, LLVMTypeRef> entry : llvmTypes.entrySet()) { //TODO defensive coding would be to have a set of todo classbodies
+        //start with filling in the bodies for missing types
+        for (FClass type : todoTypeBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
-            for (FField field : entry.getKey().getFields().values()) {
+            int index = 0;
+            for (FField field : type.getFields().values()) {
                 subtypes.add(llvmTypes.get(field.getType()));
+                fieldIndices.put(field, index++);
             }
-            LLVMStructSetBody(entry.getValue(), createPointerPointer(subtypes), subtypes.size(), FALSE);
+            LLVMStructSetBody(LLVMGetElementType(llvmTypes.get(type)), createPointerPointer(subtypes), subtypes.size(), FALSE);
         }
 
+        //next are bodies for functions
         try (LLVMTransformer trans = new LLVMTransformer(this)) {
-            for (FFunction function : todoFunctionBodies) {
+            for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);
-            }
         }
         verify();
     }
 
     public void verify() {
+        /*
         if (!verificationNeeded)
             return;
         BytePointer outMassage = new BytePointer();
@@ -177,6 +191,7 @@ public class LLVMModule implements AutoCloseable {
             throw e; //TODO error handling
         }
         verificationNeeded = false;
+        */
     }
 
     private LLVMPassManagerRef createPassManager(int optimizationLevel) {

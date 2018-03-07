@@ -1,5 +1,6 @@
 package tys.frontier.backend.llvm;
 
+import com.koloboke.collect.map.hash.HashObjIntMap;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
@@ -7,9 +8,7 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
-import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FPredefinedOperator;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
@@ -33,6 +32,7 @@ class LLVMTransformer implements
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
     private Map<FClass, LLVMTypeRef> llvmTypes;
+    private HashObjIntMap<FField> fieldIndices;
     private Map<FField, LLVMValueRef> fields = new HashMap<>();
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
 
@@ -40,6 +40,7 @@ class LLVMTransformer implements
         LLVMContextRef context = module.getContext();
         this.module = module.getModule();
         this.llvmTypes = module.getLlvmTypes();
+        this.fieldIndices = module.getFieldIndices();
         this.builder = LLVMCreateBuilderInContext(context);
         this.entryBlockAllocaBuilder = LLVMCreateBuilderInContext(context);
     }
@@ -70,7 +71,7 @@ class LLVMTransformer implements
         }
 
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(res, "alloca");
-        LLVMPositionBuilderAtEnd(builder, allocaBlock);
+        LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(res, "entry");
         LLVMPositionBuilderAtEnd(builder, entryBlock);
 
@@ -97,8 +98,7 @@ class LLVMTransformer implements
             LLVMBuildRetVoid(builder);
         localVars.clear();
 
-        LLVMVerifyFunction(res, 0); //TODO set to 1 for not aborting when we want better error handling
-        //LLVMViewFunctionCFG(res);
+        LLVMViewFunctionCFG(res);
         return res;
     }
 
@@ -148,7 +148,7 @@ class LLVMTransformer implements
     public LLVMValueRef visitReturn(FReturn fReturn) {
         return fReturn.getExpression()
                 .map(expression -> LLVMBuildRet(builder, expression.accept(this)))
-                .orElse(LLVMBuildRetVoid(builder));
+                .orElseGet(() -> LLVMBuildRetVoid(builder));
     }
 
     @Override
@@ -303,7 +303,21 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFieldAccess(FFieldAccess fieldAccess) {
-        throw new RuntimeException("no field access"); //TODO GPR once we do classes
+        FField field = fieldAccess.getField();
+        if (field.isStatic()) {
+            throw new RuntimeException("TODO static fields"); //TODO
+        } else {
+            LLVMValueRef object = fieldAccess.getObject().accept(this);
+            LLVMValueRef address = LLVMBuildStructGEP(builder, object, fieldIndices.getInt(field), "GEP_" + field.getIdentifier().name);
+            switch (fieldAccess.getAccessType()) {
+                case LOAD:
+                    return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
+                case STORE:
+                    return address;
+                default:
+                    throw new RuntimeException();
+            }
+        }
     }
 
     @Override
@@ -312,17 +326,17 @@ class LLVMTransformer implements
         if (literal instanceof FIntLiteral) {
             throw new RuntimeException("no ints yet, please specify size"); //TODO
         } else if (literal instanceof FInt32Literal) {
-            return LLVMConstInt(LLVMInt32Type(), ((FInt32Literal)literal).value, TRUE);
+            return LLVMConstInt(llvmTypes.get(FInt32.INSTANCE), ((FInt32Literal)literal).value, TRUE);
         } else if (literal instanceof FInt64Literal) {
-            return LLVMConstInt(LLVMInt64Type(), ((FInt64Literal) literal).value, TRUE);
+            return LLVMConstInt(llvmTypes.get(FInt64.INSTANCE), ((FInt64Literal) literal).value, TRUE);
         } else if (literal instanceof FFloat32Literal) {
-            return LLVMConstRealOfString(LLVMFloatType(), ((FFloat32Literal)literal).originalString);
+            return LLVMConstRealOfString(llvmTypes.get(FFloat32.INSTANCE), ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {
-            return LLVMConstRealOfString(LLVMDoubleType(), ((FFloat64Literal)literal).originalString);
+            return LLVMConstRealOfString(llvmTypes.get(FFloat64.INSTANCE), ((FFloat64Literal)literal).originalString);
         } else if (literal == FBoolLiteral.TRUE) {
-            return LLVMConstInt(LLVMInt1Type(), TRUE, FALSE);
+            return LLVMConstInt(llvmTypes.get(FBool.INSTANCE), TRUE, FALSE);
         } if (literal == FBoolLiteral.FALSE) {
-            return LLVMConstInt(LLVMInt1Type(), FALSE, FALSE);
+            return LLVMConstInt(llvmTypes.get(FBool.INSTANCE), FALSE, FALSE);
         } else if (literal == FNull.INSTANCE) {
             //return LLVMConstNull()
             //return LLVMConstPointerNull()
@@ -335,6 +349,13 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitVariable(FLocalVariableExpression expression) {
         LLVMValueRef address = localVars.get(expression.getVariable());
-        return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
+        switch (expression.getAccessType()) {
+            case LOAD:
+                return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
+            case STORE:
+                return address;
+            default:
+                throw new RuntimeException();
+        }
     }
 }
