@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.Operator.FEquals;
 import tys.frontier.code.Operator.FHashCode;
@@ -10,6 +11,7 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
@@ -31,6 +33,9 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
 
     protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
+
+    private FBlock instanceInitializer;
+    private FBlock staticInitializer;
 
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
@@ -88,11 +93,39 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         return null;
     }
 
+    public FBlock getInstanceInitializer() {
+        if (instanceInitializer == null) {
+            //TODO order fields that depend on others so they can be initialzed in a nice order, error on cyclic dependencies
+            ImmutableList.Builder<FStatement> statements = ImmutableList.builder();
+            for (FField field : fields.values())
+                if (!field.isStatic())
+                    field.getAssignment().ifPresent(statements::add);
+            instanceInitializer = new FBlock(statements.build());
+        }
+        return instanceInitializer;
+    }
+
+    public FBlock getStaticInitializer() {
+        if (staticInitializer == null) {
+            //TODO order fields that depend on others so they can be initialzed in a nice order, error on cyclic dependencies
+            ImmutableList.Builder<FStatement> statements = ImmutableList.builder();
+            for (FField field : fields.values())
+                if (field.isStatic())
+                    field.getAssignment().ifPresent(statements::add);
+            staticInitializer = new FBlock(statements.build());
+        }
+        return staticInitializer;
+    }
+
     public void addField (FField field) throws IdentifierCollision {
         FField old = fields.put(field.getIdentifier(), field);
         if (old != null) {
             throw new IdentifierCollision(field, old);
         }
+        if (field.isStatic())
+            staticInitializer = null;
+        else
+            instanceInitializer = null;
     }
 
     public void addFunction (FFunction function) throws SignatureCollision {

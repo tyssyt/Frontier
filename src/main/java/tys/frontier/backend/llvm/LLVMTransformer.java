@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.bytedeco.javacpp.LLVM.*;
-import static tys.frontier.backend.llvm.LLVMUtil.createPointerPointer;
+import static tys.frontier.backend.llvm.LLVMUtil.*;
 
 class LLVMTransformer implements
         AutoCloseable,
@@ -65,7 +65,7 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFunction(FFunction function) {
-        LLVMValueRef res = LLVMGetNamedFunction(module, function.getIdentifier().name);
+        LLVMValueRef res = LLVMGetNamedFunction(module, getFunctionName(function));
         if (res.isNull()) {
             throw new RuntimeException("no Prototype defined for: " + function.getIdentifier().name); //TODO when we have proper error handling, this needs tp be handled properly
         }
@@ -98,6 +98,7 @@ class LLVMTransformer implements
             LLVMBuildRetVoid(builder);
         localVars.clear();
 
+        LLVMVerifyFunction(res, 0); //TODO these 2 lines are mostly for debug
         LLVMViewFunctionCFG(res);
         return res;
     }
@@ -304,19 +305,20 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitFieldAccess(FFieldAccess fieldAccess) {
         FField field = fieldAccess.getField();
+        LLVMValueRef address;
         if (field.isStatic()) {
-            throw new RuntimeException("TODO static fields"); //TODO
+            address = LLVMGetNamedGlobal(module, getStaticFieldName(field));
         } else {
             LLVMValueRef object = fieldAccess.getObject().accept(this);
-            LLVMValueRef address = LLVMBuildStructGEP(builder, object, fieldIndices.getInt(field), "GEP_" + field.getIdentifier().name);
-            switch (fieldAccess.getAccessType()) {
-                case LOAD:
-                    return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
-                case STORE:
-                    return address;
-                default:
-                    throw new RuntimeException();
-            }
+            address = LLVMBuildStructGEP(builder, object, fieldIndices.getInt(field), "GEP_" + field.getIdentifier().name);
+        }
+        switch (fieldAccess.getAccessType()) {
+            case LOAD:
+                return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
+            case STORE:
+                return address;
+            default:
+                throw new RuntimeException();
         }
     }
 

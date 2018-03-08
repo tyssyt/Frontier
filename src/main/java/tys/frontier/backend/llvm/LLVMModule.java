@@ -3,6 +3,7 @@ package tys.frontier.backend.llvm;
 import com.google.common.primitives.Ints;
 import com.koloboke.collect.map.hash.HashObjIntMap;
 import com.koloboke.collect.map.hash.HashObjIntMaps;
+import org.bytedeco.javacpp.BytePointer;
 import tys.frontier.code.*;
 import tys.frontier.code.predefinedClasses.*;
 
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.bytedeco.javacpp.LLVM.*;
-import static tys.frontier.backend.llvm.LLVMUtil.createPointerPointer;
+import static tys.frontier.backend.llvm.LLVMUtil.*;
 
 public class LLVMModule implements AutoCloseable {
 
@@ -79,7 +80,7 @@ public class LLVMModule implements AutoCloseable {
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
      * @param file file to parse
      */
-    public void parseClasses(FFile file) {
+    public void parseTypes(FFile file) {
         verificationNeeded = true;
         for (FClass clazz : file.getClasses().values()) {
             if (clazz instanceof FPredefinedClass)
@@ -95,15 +96,26 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Parses all function Headers found in the file, creating corresponding function prototypes in this module.
-     * Should be called after {@Link #parseClasses(FFile)}.
-     * @param file
+     * Should be called after {@link #parseTypes(FFile)}.
+     * @param file input file
      */
-    public void parseFunctionHeaders(FFile file ) {
+    public void parseClassMembers(FFile file ) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
         for (FClass clazz : file.getClasses().values()) {
             if (clazz instanceof FPredefinedClass)
                 continue;
+            for (FField field : clazz.getFields().values()) {
+                if (field.isStatic()) {
+                    //TODO see if the initializer is a const and direclty init here instead of the block?
+                    //TODO see if something can be done for final?
+                    //TODO optimizer flags like we don't care bout the address and readonly
+                    //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
+                    LLVMTypeRef type = llvmTypes.get(field.getType());
+                    LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
+                    LLVMSetInitializer(global, LLVMConstNull(type));
+                }
+            }
             for (FFunction function : clazz.getFunctions().values()) {
                 if (function.isPredefined())
                     continue;
@@ -115,11 +127,11 @@ public class LLVMModule implements AutoCloseable {
     /**
      * Parses function header and adds a Prototype to this module.
      * Does not generate code for the body.
-     * @param function
+     * @param function function to add
      * @return Reference to the LLVM function
      */
     private LLVMValueRef addFunction(FFunction function) {
-        LLVMValueRef res = LLVMAddFunction(module, function.getIdentifier().name, getLLVMFunctionType(function));
+        LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set names for all arguments
         int offset = 0;
         if (!function.isStatic()) {
@@ -156,7 +168,7 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Creates LLVM Code for all parsed Functions and Classes in this module.
-     * Should be called after {@Link #parseFunctionHeaders(FFile)}.
+     * Should be called after {@link #parseClassMembers(FFile)}.
      */
     public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
@@ -166,14 +178,16 @@ public class LLVMModule implements AutoCloseable {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
             for (FField field : type.getFields().values()) {
+                if (field.isStatic())
+                    continue;
                 subtypes.add(llvmTypes.get(field.getType()));
                 fieldIndices.put(field, index++);
             }
             LLVMStructSetBody(LLVMGetElementType(llvmTypes.get(type)), createPointerPointer(subtypes), subtypes.size(), FALSE);
         }
 
-        //next are bodies for functions
         try (LLVMTransformer trans = new LLVMTransformer(this)) {
+            //last are bodies for fields
             for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);
         }
@@ -181,7 +195,6 @@ public class LLVMModule implements AutoCloseable {
     }
 
     public void verify() {
-        /*
         if (!verificationNeeded)
             return;
         BytePointer outMassage = new BytePointer();
@@ -191,7 +204,6 @@ public class LLVMModule implements AutoCloseable {
             throw e; //TODO error handling
         }
         verificationNeeded = false;
-        */
     }
 
     private LLVMPassManagerRef createPassManager(int optimizationLevel) {

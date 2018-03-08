@@ -29,7 +29,11 @@ public class LLVMBackend implements Backend {
         //TODO a pass that transformes for each into for
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         try (LLVMModule module = createModule(file)) {
+            module.dump();
             module.optimize(3);
+            module.dump();
+            module.optimize(3);
+            module.dump();
             emitToFile(module, out);
         }
     }
@@ -41,9 +45,9 @@ public class LLVMBackend implements Backend {
     public static LLVMModule createModule(Collection<FFile> files, String name) {
         LLVMModule res = new LLVMModule(name);
         for (FFile file : files)
-            res.parseClasses(file);
+            res.parseTypes(file);
         for (FFile file : files)
-            res.parseFunctionHeaders(file);
+            res.parseClassMembers(file);
         res.fillInBodies();
         return res;
     }

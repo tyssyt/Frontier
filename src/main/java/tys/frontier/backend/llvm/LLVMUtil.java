@@ -2,6 +2,8 @@ package tys.frontier.backend.llvm;
 
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
+import tys.frontier.code.FField;
+import tys.frontier.code.FFunction;
 
 import java.util.List;
 
@@ -23,6 +25,14 @@ public class LLVMUtil {
         for (int i=1; i<size; i++)
             res.put(i, rest.get(i-1));
         return res;
+    }
+
+    public static String getStaticFieldName(FField field) {
+        return "sf." + field.getClazz().getIdentifier().name + '.' + field.getIdentifier().name;
+    }
+
+    public static String getFunctionName(FFunction function) {
+        return "fun." + function.getClazz().getIdentifier().name + '.' + function.getIdentifier().name;
     }
 
 }
