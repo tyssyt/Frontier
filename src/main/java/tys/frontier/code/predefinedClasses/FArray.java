@@ -2,10 +2,7 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FConstructor;
-import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.*;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.util.IntPair;
@@ -25,6 +22,7 @@ public class FArray extends FPredefinedClass {
         this.baseClass = baseClass;
         this.depth = depth;
         addDefaultFunctions();
+        addField(new FField(FVariableIdentifier.SIZE, FInt32.INSTANCE, this, FVisibilityModifier.PUBLIC, false)); //TODO make final
         {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
