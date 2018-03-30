@@ -97,9 +97,6 @@ class LLVMTransformer implements
         if (function.getType() == FVoid.INSTANCE)
             LLVMBuildRetVoid(builder);
         localVars.clear();
-
-        LLVMVerifyFunction(res, 0); //TODO these 2 lines are mostly for debug
-        LLVMViewFunctionCFG(res);
         return res;
     }
 

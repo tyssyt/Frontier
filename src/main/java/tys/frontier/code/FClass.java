@@ -4,8 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.Operator.FEquals;
-import tys.frontier.code.Operator.FHashCode;
-import tys.frontier.code.Operator.FNotEquals;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -51,8 +49,8 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     protected void addDefaultFunctions() {
         FEquals eq = new FEquals(this);
         addFunctionInternal(eq);
-        addFunctionInternal(new FNotEquals(eq));
-        addFunctionInternal(new FHashCode(this));
+        //addFunctionInternal(new FNotEquals(eq)); //TODO these functions will be re added at some point later
+        //addFunctionInternal(new FHashCode(this));
     }
 
     public Map<FVariableIdentifier, FField> getFields() {

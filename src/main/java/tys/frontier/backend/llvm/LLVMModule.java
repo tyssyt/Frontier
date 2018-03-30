@@ -4,9 +4,11 @@ import com.google.common.primitives.Ints;
 import com.koloboke.collect.map.hash.HashObjIntMap;
 import com.koloboke.collect.map.hash.HashObjIntMaps;
 import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
 import tys.frontier.code.predefinedClasses.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +40,12 @@ public class LLVMModule implements AutoCloseable {
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
         fillInPredefinedTypes();
+
+
+        //TODO debug again
+        LLVMTypeRef intType = LLVMInt32TypeInContext(context);
+        LLVMTypeRef functiontype = LLVMFunctionType(intType, intType, 1, FALSE);
+        LLVMAddFunction(module, "putchar", functiontype);
     }
 
     private void fillInPredefinedTypes() {
@@ -190,11 +198,32 @@ public class LLVMModule implements AutoCloseable {
             //last are bodies for fields
             for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);
+            generateMain(trans);
         }
         verify();
     }
 
-    public void verify() {
+    private void generateMain(LLVMTransformer transformer) {
+        /*
+        TODO this is a rough outline on how we would parse input params, but first we need to decide what internal type is string and how to map the i8 array to it
+        PointerPointer<LLVMTypeRef> argTypes = new PointerPointer<>(2);
+        argTypes.put(0, llvmTypes.get(FInt32.INSTANCE));
+        argTypes.put(1, llvmTypes.get(FArray.getArrayFrom(FInt8.INSTANCE, 1)));
+        */
+        PointerPointer<LLVMTypeRef> argTypes = new PointerPointer<>(0);
+
+        LLVMTypeRef returnType = LLVMInt32Type();
+        LLVMTypeRef functionType = LLVMFunctionType(returnType, argTypes, 0, FALSE);
+
+        LLVMValueRef function = LLVMAddFunction(module, "main", functionType);
+        LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
+        LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
+        LLVMPositionBuilderAtEnd(builder, entryBlock);
+        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 1, FALSE)); //TODO this is debug code, why does the exe not work :(
+        //LLVMBuildRetVoid(builder);
+    }
+
+    public void verify() { //TODO this should be called at other places as well
         if (!verificationNeeded)
             return;
         BytePointer outMassage = new BytePointer();
@@ -227,7 +256,7 @@ public class LLVMModule implements AutoCloseable {
 
     //Debug commands
 
-    public void dump() {
+    public void dump() { //TODO the emitToString kinda makes this irrelevant
         LLVMDumpModule(module);
     }
 
@@ -239,5 +268,71 @@ public class LLVMModule implements AutoCloseable {
         //LLVMViewFunctionCFGOnly(res);
     }
 
+    public String emitToString() {
+        BytePointer out = LLVMPrintModuleToString(module);
+        String res = out.getString();
+        LLVMDisposeMessage(out);
+        return res;
+    }
+
+    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
+        BytePointer error = new BytePointer();
+        int errorId = 0;
+        switch (fileType) {
+            case LLVM_IR:
+                errorId = LLVMPrintModuleToFile(module, fileName, error);
+                break;
+            case LLVM_BITCODE:
+                errorId = LLVMWriteBitcodeToFile(module, fileName);
+                break;
+            case TEXTUAL_ASSEMBLY:
+                errorId = emitToFile(fileName, LLVMAssemblyFile, error);
+                break;
+            case NATIVE_OBJECT:
+                errorId = emitToFile(fileName, LLVMObjectFile, error);
+                break;
+            case EXECUTABLE:
+                String tempName = fileName + "_temp.o";
+                errorId = emitToFile(tempName, LLVMObjectFile, error); //TODO dirty hacks :D
+                if (errorId == 0){
+                    try {
+                        Process p = Linker.buildCall(tempName, fileName).inheritIO().start();
+                        p.waitFor();
+                    } catch (IOException | InterruptedException e) {
+                        throw new RuntimeException(e); //TODO error handling
+                    }
+                }
+                break;
+        }
+        if (errorId != 0) {
+            String message = error.getString();
+            LLVMDisposeMessage(error);
+            throw new RuntimeException(message); //TODO error handling
+        }
+    }
+
+    //TODO find taget triples and other config options we want to make available and make them params & prolly enum them
+    private int emitToFile(String file, int fileType, BytePointer error) {
+        LLVMBackend.initialize();
+        BytePointer targetTriple = LLVMGetDefaultTargetTriple();
+        LLVMTargetRef target = new LLVMTargetRef();
+        if (LLVMGetTargetFromTriple(targetTriple, target, error) != 0) {
+            RuntimeException e = new RuntimeException(error.getString());
+            LLVMDisposeMessage(error);
+            throw new RuntimeException(e); //TODO error handling;
+        }
+        String cpu = "generic"; //TODO is there any other useful value here?
+        LLVMTargetMachineRef targetMachine = LLVMCreateTargetMachine(target, targetTriple.getString(), cpu, "", LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);
+
+        LLVMTargetDataRef dataLayout = LLVMCreateTargetDataLayout(targetMachine);
+        LLVMSetModuleDataLayout(module, dataLayout);
+        LLVMSetTarget(module, targetTriple);
+
+        int res = LLVMTargetMachineEmitToFile(targetMachine, module, new BytePointer(file), LLVMObjectFile, error);
+        LLVMDisposeTargetData(dataLayout);
+        LLVMDisposeTargetMachine(targetMachine);
+        LLVMDisposeMessage(targetTriple);
+        return res;
+    }
 
 }
