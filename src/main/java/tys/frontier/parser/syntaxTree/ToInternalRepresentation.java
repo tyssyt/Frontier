@@ -103,7 +103,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FVarDeclaration visitVariableDeclarator(FrontierParser.VariableDeclaratorContext ctx) {
+    public FVarDeclaration visitVariableDeclarator(FrontierParser.VariableDeclaratorContext ctx) { //FIXME this is all bullshit and does not work with fields
         FrontierParser.ExpressionContext c = ctx.expression();
         FLocalVariable var;
         try {
