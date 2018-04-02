@@ -38,12 +38,14 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
+        thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
         addDefaultFunctions();
     }
 
     protected FClass(FClassIdentifier identifier, FVisibilityModifier visibility, boolean b) {
         this.identifier = identifier;
         this.visibility = visibility;
+        thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
     }
 
     protected void addDefaultFunctions() {
@@ -70,9 +72,6 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     }
 
     public FLocalVariable getThis () {
-        if (thiz == null) {
-            thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
-        }
         return thiz;
     }
 
