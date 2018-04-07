@@ -15,6 +15,7 @@ public class FFunctionCall implements FExpression {
     private List<? extends FExpression> arguments;
 
     public FFunctionCall(FExpression object, FFunction function, List<? extends FExpression> arguments) {
+        assert (!function.isStatic());
         this.object = object;
         this.function = function;
         this.arguments = arguments;

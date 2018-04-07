@@ -9,6 +9,8 @@ import tys.frontier.code.identifier.FClassIdentifier;
 
 public abstract class FPredefinedClass extends FClass {
 
+    //TODO all functions added to a predefined class should be auto marked as predefined
+
     static {
         //make sure all important classes are loaded
         FBool bool = FBool.INSTANCE;
