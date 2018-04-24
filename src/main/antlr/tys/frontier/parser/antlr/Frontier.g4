@@ -25,6 +25,7 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 //Keywords--------------------------------------------------------------------
 //keep them up to date with the keywords.java
 tokens {
+    IMPORT,
     CLASS,
     PUBLIC,
     PRIVATE,
@@ -58,7 +59,11 @@ tokens {
 // starting point -------------------------------------------------------
 
 file
-    :   classDeclaration* EOF
+    :   importStatement* classDeclaration* EOF
+    ;
+
+importStatement
+    :   IMPORT ModuleIdentifier SEMI
     ;
 
 classDeclaration
@@ -514,7 +519,7 @@ Identifier
     }
     ;
 
-TypeIdentifier
+TypeIdentifier //Class names
     :   UpperCaseLetter LetterOrDigit*
     {
         String text = getText();
@@ -523,6 +528,10 @@ TypeIdentifier
             setType(type);
         }
     }
+    ;
+
+ModuleIdentifier
+    :   UpperCaseLetter LetterOrDigit*
     ;
 
 fragment LetterOrDigit   : [a-zA-Z0-9_];
