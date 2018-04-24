@@ -246,7 +246,7 @@ public class LLVMModule implements AutoCloseable {
 
         //call entry Point
         LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(entryPoint));
-        LLVMBuildCall(builder, func, null, 0, "callMainEntryPoint");
+        LLVMBuildCall(builder, func, null, 0, "");
 
         LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
     }

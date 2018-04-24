@@ -284,19 +284,21 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFunctionCall(FFunctionCall functionCall) {
-        if (functionCall.getFunction().isPredefined())
+        FFunction function = functionCall.getFunction();
+        if (function.isPredefined())
             return predefinedFunctionCall(functionCall);
 
-        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(functionCall.getFunction()));
+        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(function));
         int size = functionCall.getArguments().size();
         List<LLVMValueRef> args = new ArrayList<>();
-        if (!functionCall.getFunction().isStatic()) {
+        if (!function.isStatic()) {
             size++;
             args.add(functionCall.getObject().accept(this));
         }
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        return LLVMBuildCall(builder, func, createPointerPointer(args), size, "calltmp");
+        String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        return LLVMBuildCall(builder, func, createPointerPointer(args), size, instructionName);
     }
 
     @Override
