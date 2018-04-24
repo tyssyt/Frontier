@@ -287,7 +287,7 @@ class LLVMTransformer implements
         if (functionCall.getFunction().isPredefined())
             return predefinedFunctionCall(functionCall);
 
-        LLVMValueRef func = LLVMGetNamedFunction(module, functionCall.getFunction().getIdentifier().name);
+        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(functionCall.getFunction()));
         int size = functionCall.getArguments().size();
         List<LLVMValueRef> args = new ArrayList<>();
         if (!functionCall.getFunction().isStatic()) {
