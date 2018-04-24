@@ -69,6 +69,8 @@ public class LLVMBackend implements Backend {
         for (FFile file : fModule.getFiles())
             res.parseClassMembers(file);
         res.fillInBodies();
+        fModule.getEntryPoint().ifPresent(res::generateMain);
+        res.verify();
         return res;
     }
 

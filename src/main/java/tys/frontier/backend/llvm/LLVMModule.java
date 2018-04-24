@@ -223,12 +223,11 @@ public class LLVMModule implements AutoCloseable {
             //last are bodies for fields
             for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);
-            generateMain(trans);
         }
-        verify();
     }
 
-    private void generateMain(LLVMTransformer transformer) {
+    public void generateMain(FFunction entryPoint) {
+        verificationNeeded = true;
         /*
         TODO this is a rough outline on how we would parse input params, but first we need to decide what internal type is string and how to map the i8 array to it
         PointerPointer<LLVMTypeRef> argTypes = new PointerPointer<>(2);
@@ -244,8 +243,12 @@ public class LLVMModule implements AutoCloseable {
         LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
         LLVMPositionBuilderAtEnd(builder, entryBlock);
-        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 1, FALSE)); //TODO this is debug code, why does the exe not work :(
-        //LLVMBuildRetVoid(builder);
+
+        //call entry Point
+        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(entryPoint));
+        LLVMBuildCall(builder, func, null, 0, "callMainEntryPoint");
+
+        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
     }
 
     public void verify() { //TODO this should be called at other places as well
