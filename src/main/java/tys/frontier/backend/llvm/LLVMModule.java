@@ -8,6 +8,7 @@ import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
+import tys.frontier.modules.io.IOClass;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
@@ -41,12 +43,6 @@ public class LLVMModule implements AutoCloseable {
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
         fillInPredefinedTypes();
-
-
-        //TODO debug again
-        LLVMTypeRef intType = LLVMInt32TypeInContext(context);
-        LLVMTypeRef functiontype = LLVMFunctionType(intType, intType, 1, FALSE);
-        LLVMAddFunction(module, "putchar", functiontype);
     }
 
     private void fillInPredefinedTypes() {
@@ -88,11 +84,15 @@ public class LLVMModule implements AutoCloseable {
     public void parseDependencies(Module fModule) {
         verificationNeeded = true;
         for (FClass clazz : fModule.getImportedClasses().values()) {
-            assert !(clazz instanceof FPredefinedClass);
+            //assert !(clazz instanceof FPredefinedClass);
+            if (clazz instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
+                continue;
             parseType(clazz);
         }
 
         for (FClass clazz : fModule.getImportedClasses().values()) {
+            if (clazz instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
+                continue;
             for (FField field : clazz.getFields().values()) {
                 if (field.isStatic()) {
                     LLVMTypeRef type = llvmTypes.get(field.getType());
@@ -104,6 +104,14 @@ public class LLVMModule implements AutoCloseable {
                 addFunctionHeader(function);
             }
         }
+
+        //FIXME the hack part:
+        for (FClass clazz : fModule.getImportedClasses().values()) {
+            if (clazz == IOClass.INSTANCE) {
+                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getFunctions(IOClass.PUTCHAR_ID))));
+            }
+        }
+
     }
 
     /**

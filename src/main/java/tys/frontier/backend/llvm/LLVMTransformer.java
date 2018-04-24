@@ -1,6 +1,7 @@
 package tys.frontier.backend.llvm;
 
 import com.koloboke.collect.map.hash.HashObjIntMap;
+import org.bytedeco.javacpp.BytePointer;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
@@ -12,12 +13,14 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
+import tys.frontier.modules.io.IOClass;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
@@ -33,7 +36,7 @@ class LLVMTransformer implements
     private LLVMBuilderRef entryBlockAllocaBuilder;
     private Map<FClass, LLVMTypeRef> llvmTypes;
     private HashObjIntMap<FField> fieldIndices;
-    private Map<FField, LLVMValueRef> fields = new HashMap<>();
+    private Map<FField, LLVMValueRef> fields = new HashMap<>(); //TODO why this not used?
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
 
     public LLVMTransformer(LLVMModule module) {
@@ -269,6 +272,18 @@ class LLVMTransformer implements
         }
     }
 
+    private LLVMValueRef predefinedIO (FFunctionCall functionCall) {
+        FFunction function = functionCall.getFunction();
+        if (function.getIdentifier() == IOClass.PUTCHAR_ID) {
+            LLVMValueRef func = LLVMGetNamedFunction(module, "putchar");
+            LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
+            return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
+
+        } else {
+            throw new RuntimeException("unknown IO function: " + function.headerToString());
+        }
+    }
+
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function instanceof FPredefinedOperator.Unary) {
@@ -277,6 +292,8 @@ class LLVMTransformer implements
             return predefinedBinary(functionCall);
         } else if (function.getClazz() instanceof FArray) {
             throw new RuntimeException("yeah predef sucks and i need to clean up functions first :("); //TODO
+        } else if (function.getClazz() == IOClass.INSTANCE) {
+            return predefinedIO(functionCall);
         } else {
             throw new RuntimeException("unknown predefined function: " + function.headerToString());
         }
