@@ -4,9 +4,11 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import tys.frontier.code.FFile;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.dependencies.ImportResolver;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -27,6 +29,7 @@ public class Parser {
     public enum Stage {
         CREATED,
         INITIALIZING,
+        IMPORT_RESOLVING,
         IDENTIFIER_COLLECTION,
         TO_INTERNAL_REPRESENTATION,
         TYPE_CHECKS,
@@ -52,9 +55,11 @@ public class Parser {
         return stage;
     }
 
-    public FFile parse() throws IOException, SyntaxErrors {
+    public FrontierModule parse() throws IOException, SyntaxErrors {
         assert stage == Stage.CREATED;
         stage = Stage.INITIALIZING;
+        FrontierModule res = new FrontierModule("Anonymous", "1", null);
+
         //create Lexer & Parser & parse
         FrontierLexer lexer;
         try (InputStream input = Utils.loadFile(file)) {
@@ -68,20 +73,23 @@ public class Parser {
             if (parser.getNumberOfSyntaxErrors() > 0)
                 throw new SyntaxErrors(errorListener.errors);
 
+            stage = Stage.IMPORT_RESOLVING;
+            res.addDependencies(ImportResolver.resolve(context));
+
             stage = Stage.IDENTIFIER_COLLECTION;
-            FFile res = new FFile(file);
-            SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context, res);
+            FFile file = new FFile(this.file);
+            SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context, file);
             {
                 StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
-                res.summary(sb);
+                file.summary(sb);
                 Log.info(this, sb.toString());
             }
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
-            List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, res);
+            List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
             {
                 StringBuilder sb = new StringBuilder().append("parsed classes:\n");
-                res.toString(sb);
+                file.toString(sb);
                 Log.info(this, sb.toString());
             }
 
@@ -90,6 +98,7 @@ public class Parser {
             Log.info(this, "typecheck passed");
 
             stage = Stage.FINISHED;
+            res.addFile(file);
             return res;
         }
     }
