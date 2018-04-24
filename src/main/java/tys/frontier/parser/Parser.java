@@ -1,9 +1,11 @@
 package tys.frontier.parser;
 
+import com.google.common.collect.MoreCollectors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import tys.frontier.code.FFile;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.module.FrontierModule;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
@@ -23,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class Parser {
 
@@ -99,6 +102,17 @@ public class Parser {
 
             stage = Stage.FINISHED;
             res.addFile(file);
+            //search for entry Point
+            try {
+                FFunction entryPoint = res.getExportedFunctions().values().stream()
+                        .filter(FFunction::isMain)
+                        .collect(MoreCollectors.onlyElement());
+                res.setEntryPoint(entryPoint);
+            } catch (IllegalArgumentException e) {
+                Log.warning(this, "more then 1 entry Point found in File", e);
+            } catch (NoSuchElementException e) {
+                Log.warning(this, "no entry Point found in File", e);
+            }
             return res;
         }
     }

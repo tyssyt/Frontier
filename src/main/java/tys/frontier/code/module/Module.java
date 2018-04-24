@@ -19,6 +19,8 @@ public abstract class Module {
 
     protected List<Module> importedModules = new ArrayList<>(); //dependencies
 
+    protected FFunction entryPoint = null;
+
     protected Map<FClassIdentifier, FClass> exportedClasses = new HashMap<>();
     protected Multimap<FClass, FField> exportedFields = HashMultimap.create(); //TODO maybe we just don't need these fields
     protected Multimap<FClass, FFunction> exportedFunctions = HashMultimap.create(); //TODO maybe we just don't need these fields
@@ -56,6 +58,14 @@ public abstract class Module {
 
     public Multimap<FClass, FFunction> getExportedFunctions() {
         return exportedFunctions;
+    }
+
+    public Optional<FFunction> getEntryPoint() {
+        return Optional.ofNullable(entryPoint);
+    }
+
+    public void setEntryPoint(FFunction entryPoint) {
+        this.entryPoint = entryPoint;
     }
 
     public void addDependency (Module dependency) {

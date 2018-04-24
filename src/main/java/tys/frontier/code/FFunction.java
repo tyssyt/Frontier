@@ -3,6 +3,7 @@ package tys.frontier.code;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.util.StringBuilderToString;
 
@@ -97,6 +98,14 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
         return signature;
     }
 
+    public boolean isMain() {
+        return signature.isMain()
+                && statik
+                && modifier == FVisibilityModifier.PUBLIC
+                && clazz.getVisibility() == FVisibilityModifier.PUBLIC
+                && returnType == FVoid.INSTANCE;
+    }
+
     public String headerToString() {
         return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
     }
@@ -141,6 +150,10 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
             return paramTypes;
         }
 
+        public boolean isMain() {
+            return identifier.name.equals("main") && paramTypes.isEmpty();
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -161,5 +174,4 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
             return identifier + ", " + paramTypes;
         }
     }
-
 }
