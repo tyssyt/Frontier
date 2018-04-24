@@ -63,7 +63,7 @@ file
     ;
 
 importStatement
-    :   IMPORT ModuleIdentifier SEMI
+    :   IMPORT TypeIdentifier SEMI
     ;
 
 classDeclaration
@@ -528,10 +528,6 @@ TypeIdentifier //Class names
             setType(type);
         }
     }
-    ;
-
-ModuleIdentifier
-    :   UpperCaseLetter LetterOrDigit*
     ;
 
 fragment LetterOrDigit   : [a-zA-Z0-9_];

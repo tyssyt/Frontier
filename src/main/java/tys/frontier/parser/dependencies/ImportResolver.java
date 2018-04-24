@@ -29,7 +29,7 @@ public class ImportResolver extends FrontierBaseVisitor {
 
     @Override
     public Object visitImportStatement(FrontierParser.ImportStatementContext ctx) {
-        String moduleName = ctx.ModuleIdentifier().getText();
+        String moduleName = ctx.TypeIdentifier().getText();
         try {
             dependencies.add(resolveImport(moduleName));
         } catch (UnresolvableImport unresolvableImport) {
