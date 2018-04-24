@@ -2,9 +2,7 @@ package tys.frontier.backend.llvm;
 
 import tys.frontier.backend.Backend;
 import tys.frontier.code.FFile;
-
-import java.util.Collection;
-import java.util.Collections;
+import tys.frontier.code.module.FrontierModule;
 
 import static org.bytedeco.javacpp.LLVM.*;
 
@@ -40,11 +38,11 @@ public class LLVMBackend implements Backend {
         LLVMInitializeAllAsmPrinters();
     }
 
-    public static void runBackend(FFile file, String out, OutputFileType fileType) {
+    public static void runBackend(FrontierModule fModule, String out, OutputFileType fileType) {
         //TODO a pass that transformes for each into for
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(file)) {
+        try (LLVMModule module = createModule(fModule)) {
             if (out.indexOf('.') == -1)
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
@@ -57,15 +55,18 @@ public class LLVMBackend implements Backend {
         }
     }
 
-    public static LLVMModule createModule(FFile file) {
-        return createModule(Collections.singleton(file), file.getName());
-    }
-
-    public static LLVMModule createModule(Collection<FFile> files, String name) {
-        LLVMModule res = new LLVMModule(name);
-        for (FFile file : files)
+    /**
+     * Creates a LLVMModule based on a Frontier Module
+     * LLVMModule is package privete, so this is the only way to create one from the outside
+     * @param fModule the frontier module
+     * @return a LLVM Module
+     */
+    public static LLVMModule createModule(FrontierModule fModule) {
+        LLVMModule res = new LLVMModule(fModule.getName());
+        res.parseDependencies(fModule);
+        for (FFile file : fModule.getFiles())
             res.parseTypes(file);
-        for (FFile file : files)
+        for (FFile file : fModule.getFiles())
             res.parseClassMembers(file);
         res.fillInBodies();
         return res;

@@ -6,6 +6,7 @@ import com.koloboke.collect.map.hash.HashObjIntMaps;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
+import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 
 import java.io.IOException;
@@ -84,6 +85,27 @@ public class LLVMModule implements AutoCloseable {
         return fieldIndices.getInt(field);
     }
 
+    public void parseDependencies(Module fModule) {
+        verificationNeeded = true;
+        for (FClass clazz : fModule.getImportedClasses().values()) {
+            assert !(clazz instanceof FPredefinedClass);
+            parseType(clazz);
+        }
+
+        for (FClass clazz : fModule.getImportedClasses().values()) {
+            for (FField field : clazz.getFields().values()) {
+                if (field.isStatic()) {
+                    LLVMTypeRef type = llvmTypes.get(field.getType());
+                    LLVMAddGlobal(module, type, getStaticFieldName(field));
+                }
+            }
+            for (FFunction function : clazz.getFunctions().values()) {
+                assert !function.isPredefined();
+                addFunctionHeader(function);
+            }
+        }
+    }
+
     /**
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
      * @param file file to parse
@@ -93,13 +115,17 @@ public class LLVMModule implements AutoCloseable {
         for (FClass clazz : file.getClasses().values()) {
             if (clazz instanceof FPredefinedClass)
                 continue;
-            LLVMTypeRef baseType = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
-            LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
-            LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
-            if (old != null)
-                throw new RuntimeException("type defined twice:" + clazz.getIdentifier());
+            parseType(clazz);
             todoTypeBodies.add(clazz);
         }
+    }
+
+    private void parseType(FClass clazz) {
+        LLVMTypeRef baseType = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
+        LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
+        LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
+        if (old != null)
+            throw new RuntimeException("type defined twice:" + clazz.getIdentifier());
     }
 
     /**
@@ -107,7 +133,7 @@ public class LLVMModule implements AutoCloseable {
      * Should be called after {@link #parseTypes(FFile)}.
      * @param file input file
      */
-    public void parseClassMembers(FFile file ) {
+    public void parseClassMembers(FFile file) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
         for (FClass clazz : file.getClasses().values()) {
@@ -127,7 +153,8 @@ public class LLVMModule implements AutoCloseable {
             for (FFunction function : clazz.getFunctions().values()) {
                 if (function.isPredefined())
                     continue;
-                addFunction(function);
+                addFunctionHeader(function);
+                todoFunctionBodies.add(function);
             }
         }
     }
@@ -138,7 +165,7 @@ public class LLVMModule implements AutoCloseable {
      * @param function function to add
      * @return Reference to the LLVM function
      */
-    private LLVMValueRef addFunction(FFunction function) {
+    private LLVMValueRef addFunctionHeader(FFunction function) {
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set names for all arguments
         int offset = 0;
@@ -149,8 +176,6 @@ public class LLVMModule implements AutoCloseable {
         List<FLocalVariable> fParams = function.getParams();
         for (int i=0; i<fParams.size(); i++)
             LLVMSetValueName(LLVMGetParam(res, i + offset), fParams.get(i).getIdentifier().name);
-        if (!function.isPredefined())
-            todoFunctionBodies.add(function);
         return res;
     }
 
