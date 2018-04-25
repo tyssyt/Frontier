@@ -47,8 +47,8 @@ public class LLVMModule implements AutoCloseable {
 
     private void fillInPredefinedTypes() {
         llvmTypes.put(FBool.INSTANCE, LLVMInt1TypeInContext(context));
-        llvmTypes.put(FInt32.INSTANCE, LLVMInt32TypeInContext(context));
-        llvmTypes.put(FInt64.INSTANCE, LLVMInt64TypeInContext(context));
+        llvmTypes.put(FIntN._32, LLVMInt32TypeInContext(context));
+        llvmTypes.put(FIntN._64, LLVMInt64TypeInContext(context));
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));

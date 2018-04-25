@@ -6,6 +6,8 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.Operator.FBinaryOperator;
+import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
@@ -217,12 +219,10 @@ class LLVMTransformer implements
         }
 
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
-        if (id == FFunctionIdentifier.NOT) {
-            return LLVMBuildNot(builder, arg, "nottmp");
-        } else if (id == FFunctionIdentifier.MINUS) {
-            return LLVMBuildNeg(builder, arg, "negtmp");
-        } else if (id == FFunctionIdentifier.HASHCODE) {
-            throw new RuntimeException("fuck Hashcode, I can't even parse that yet"); //TODO
+        if (id.equals(FUnaryOperator.Pre.NOT.identifier)) {
+            return LLVMBuildNot(builder, arg, "not");
+        } else if (id.equals(FUnaryOperator.Pre.NEG.identifier)) {
+            return LLVMBuildNeg(builder, arg, "neg");
         } else {
             throw new RuntimeException("unknown predefined unary operator: " + functionCall.getFunction().headerToString());
         }
@@ -238,35 +238,36 @@ class LLVMTransformer implements
             left = functionCall.getObject().accept(this);
             right = functionCall.getArguments().get(0).accept(this);
         }
-        //TODO promotion? propably done in some other part of frontier though since the frontend needs to understand it as well
 
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
-        if (id == FFunctionIdentifier.PLUS) {
-            return LLVMBuildAdd(builder, left, right, "addtmp");
-        } else if (id == FFunctionIdentifier.MINUS) {
-            return LLVMBuildSub(builder, left, right, "subtmp");
-        } else if (id == FFunctionIdentifier.TIMES) {
-            return LLVMBuildMul(builder, left, right, "multmp");
-        } else if (id == FFunctionIdentifier.DIVIDED) {
-            return LLVMBuildSDiv(builder, left, right, "sdivtmp");
-        } else if (id == FFunctionIdentifier.MODULO) {
-            return LLVMBuildSRem(builder, left, right, "sremtmp");
-        } else if (id == FFunctionIdentifier.AND) {
-            return LLVMBuildAnd(builder, left, right, "andtmp");
-        } else if (id == FFunctionIdentifier.OR) {
-            return LLVMBuildOr(builder, left, right, "ortmp");
-        } else if (id == FFunctionIdentifier.XOR) {
-            return LLVMBuildXor(builder, left, right, "xortmp");
-        } else if (id == FFunctionIdentifier.SMALLER) {
-            return LLVMBuildICmp(builder, LLVMIntSLT, left, right, "slttmp");
-        } else if (id == FFunctionIdentifier.GREATER) {
-            return LLVMBuildICmp(builder, LLVMIntSGT, left, right, "sgttmp");
-        } else if (id == FFunctionIdentifier.SMALLER_EQUAL) {
-            return LLVMBuildICmp(builder, LLVMIntSLE, left, right, "sletmp");
-        } else if (id == FFunctionIdentifier.GREATER_EQUAL) {
-            return LLVMBuildICmp(builder, LLVMIntSGE, left, right, "sgetmp");
-        } else if (id == FFunctionIdentifier.EQUALS) {
-            return LLVMBuildICmp(builder, LLVMIntEQ, left, right, "eqtmp");
+        if (id.equals(FBinaryOperator.Arith.PLUS.identifier)) {
+            return LLVMBuildAdd(builder, left, right, "add");
+        } else if (id.equals(FBinaryOperator.Arith.MINUS.identifier)) {
+            return LLVMBuildSub(builder, left, right, "sub");
+        } else if (id.equals(FBinaryOperator.Arith.TIMES.identifier)) {
+            return LLVMBuildMul(builder, left, right, "mul");
+        } else if (id.equals(FBinaryOperator.Arith.DIVIDED.identifier)) {
+            return LLVMBuildSDiv(builder, left, right, "sdiv");
+        } else if (id.equals(FBinaryOperator.Arith.MODULO.identifier)) {
+            return LLVMBuildSRem(builder, left, right, "srem");
+        } else if (id.equals(FBinaryOperator.Arith.AND.identifier)) {
+            return LLVMBuildAnd(builder, left, right, "and");
+        } else if (id.equals(FBinaryOperator.Arith.OR.identifier)) {
+            return LLVMBuildOr(builder, left, right, "or");
+        } else if (id.equals(FBinaryOperator.Arith.XOR.identifier)) {
+            return LLVMBuildXor(builder, left, right, "xor");
+        } else if (id.equals(FBinaryOperator.Bool.SMALLER.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntSLT, left, right, "slt");
+        } else if (id.equals(FBinaryOperator.Bool.GREATER.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntSGT, left, right, "sgt");
+        } else if (id.equals(FBinaryOperator.Bool.SMALLER_EQUAL.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntSLE, left, right, "sle");
+        } else if (id.equals(FBinaryOperator.Bool.GREATER_EQUAL.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntSGE, left, right, "sge");
+        } else if (id.equals(FBinaryOperator.Bool.EQUALS_ID.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntEQ, left, right, "eq");
+        } else if (id.equals(FBinaryOperator.Bool.NOT_EQUALS_ID.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntNE, left, right, "ne");
         } else {
             throw new RuntimeException("unknown predefined binary operator: " + functionCall.getFunction().headerToString());
         }
@@ -286,9 +287,9 @@ class LLVMTransformer implements
 
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
-        if (function instanceof FPredefinedOperator.Unary) {
+        if (function instanceof FUnaryOperator) {
             return predefinedUnary(functionCall);
-        } else if (function instanceof FPredefinedOperator.Binary) {
+        } else if (function instanceof FBinaryOperator) {
             return predefinedBinary(functionCall);
         } else if (function.getClazz() instanceof FArray) {
             throw new RuntimeException("yeah predef sucks and i need to clean up functions first :("); //TODO
@@ -341,12 +342,10 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitLiteral(FLiteralExpression expression) {
         FLiteral literal = expression.getLiteral();
-        if (literal instanceof FIntLiteral) {
-            throw new RuntimeException("no ints yet, please specify size"); //TODO
-        } else if (literal instanceof FInt32Literal) {
-            return LLVMConstInt(llvmTypes.get(FInt32.INSTANCE), ((FInt32Literal)literal).value, TRUE);
+        if (literal instanceof FInt32Literal) {
+            return LLVMConstInt(llvmTypes.get(FIntN._32), ((FInt32Literal)literal).value, TRUE);
         } else if (literal instanceof FInt64Literal) {
-            return LLVMConstInt(llvmTypes.get(FInt64.INSTANCE), ((FInt64Literal) literal).value, TRUE);
+            return LLVMConstInt(llvmTypes.get(FIntN._64), ((FInt64Literal) literal).value, TRUE);
         } else if (literal instanceof FFloat32Literal) {
             return LLVMConstRealOfString(llvmTypes.get(FFloat32.INSTANCE), ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {

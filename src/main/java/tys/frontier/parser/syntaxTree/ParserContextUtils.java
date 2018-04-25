@@ -53,11 +53,11 @@ public final class ParserContextUtils {
             case FrontierParser.BOOL:
                 return FBool.INSTANCE;
             case FrontierParser.INT:
-                return FInt.INSTANCE;
+                throw new RuntimeException("yeah dont use unbeounded int yet dude..."); //TODO unbounded int type
             case FrontierParser.INT32:
-                return FInt32.INSTANCE;
+                return FIntN._32;
             case FrontierParser.INT64:
-                return FInt64.INSTANCE;
+                return FIntN._64;
             case FrontierParser.FLOAT32:
                 return FFloat32.INSTANCE;
             case FrontierParser.FLOAT64:

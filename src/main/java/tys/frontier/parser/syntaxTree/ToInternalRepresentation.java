@@ -2,7 +2,7 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
-import tys.frontier.code.Operator.Operators;
+import tys.frontier.code.Operator.FOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -470,7 +470,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FFunctionCall visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         FExpression expression = visitExpression(ctx.expression());
-        FFunctionIdentifier identifier = Operators.PreUnary.fromString(ctx.getChild(0).getText()).identifier;
+        FFunctionIdentifier identifier = new FFunctionIdentifier('_' + ctx.getChild(0).getText());
 
         try {
             return staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
@@ -491,7 +491,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throw f;
         }
         FExpression second = visitExpression(ctx.expression(1));
-        FFunctionIdentifier identifier = Operators.Binary.fromString(ctx.getChild(1).getText()).identifier;
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(1).getText());
 
         try {
             return staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
@@ -651,7 +651,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            return staticFunctionCall(clazz, FFunctionIdentifier.CONSTRUCTOR, params);
+            return staticFunctionCall(clazz, FOperator.CONSTRUCTOR, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
@@ -686,7 +686,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FArray array = FArray.getArrayFrom(baseClass, initialisedDepth+uninitialisedDepth);
         try {
-            return staticFunctionCall(array, FFunctionIdentifier.CONSTRUCTOR, params);
+            return staticFunctionCall(array, FOperator.CONSTRUCTOR, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();

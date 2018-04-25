@@ -3,12 +3,11 @@ package tys.frontier.code;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.Operator.FEquals;
+import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
-import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
@@ -19,10 +18,6 @@ import tys.frontier.util.StringBuilderToString;
 import java.util.*;
 
 public class FClass implements IdentifierNameable, StringBuilderToString {
-
-    static {
-        FPredefinedClass.load();
-    }
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -49,10 +44,14 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
     }
 
     protected void addDefaultFunctions() {
-        FEquals eq = new FEquals(this);
-        addFunctionInternal(eq);
-        //addFunctionInternal(new FNotEquals(eq)); //TODO these functions will be re added at some point later
-        //addFunctionInternal(new FHashCode(this));
+        try {
+            addFunction(FBinaryOperator.Bool.EQUALS.createPredefined(this));
+            addFunction(FBinaryOperator.Bool.NOT_EQUALS.createPredefined(this));
+            addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
+            addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
+        } catch (SignatureCollision e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Map<FVariableIdentifier, FField> getFields() {
@@ -129,10 +128,6 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         FFunction old = getFunction(function.getSignature());
         if (old != null)
             throw new SignatureCollision(function, old, this);
-        addFunctionInternal(function);
-    }
-
-    protected void addFunctionInternal (FFunction function) {
         functions.put(function.getIdentifier(), function);
     }
 

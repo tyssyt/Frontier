@@ -5,6 +5,7 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.IntPair;
 
 import java.util.concurrent.ConcurrentMap;
@@ -22,13 +23,17 @@ public class FArray extends FPredefinedClass {
         this.baseClass = baseClass;
         this.depth = depth;
         addDefaultFunctions();
-        addField(new FField(FVariableIdentifier.SIZE, FInt32.INSTANCE, this, FVisibilityModifier.PUBLIC, false)); //TODO make final
+        addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.PUBLIC, false)); //TODO make final
         {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
             for (int i = 0; i < depth; i++) {
-                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FInt32.INSTANCE)); //TODO other int types, solved when we have promotion
-                addFunctionInternal(new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build()){{predefined=true;}});
+                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FIntN._32)); //TODO other int types, solved when we have promotion
+                try {
+                    addFunction(new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build()){{predefined=true;}});
+                } catch (SignatureCollision e) {
+                    throw new RuntimeException(e);
+                }
             }
 
         }

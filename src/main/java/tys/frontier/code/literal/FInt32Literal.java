@@ -1,7 +1,7 @@
 package tys.frontier.code.literal;
 
 import tys.frontier.code.FClass;
-import tys.frontier.code.predefinedClasses.FInt32;
+import tys.frontier.code.predefinedClasses.FIntN;
 
 public class FInt32Literal implements FLiteral {
 
@@ -20,7 +20,7 @@ public class FInt32Literal implements FLiteral {
 
     @Override
     public FClass getType() {
-        return FInt32.INSTANCE;
+        return FIntN._32;
     }
 
     @Override
