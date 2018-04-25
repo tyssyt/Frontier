@@ -210,6 +210,42 @@ class LLVMTransformer implements
         return brackets.getInner().accept(this);
     }
 
+    @Override
+    public LLVMValueRef visitImplicitCast(FImplicitCast implicitCast) {
+        LLVMValueRef toCast = implicitCast.getCastedExpression().accept(this);
+        LLVMTypeRef targetType = llvmTypes.get(implicitCast.getType());
+        switch (implicitCast.getCastType()) {
+            case INTEGER_PROMOTION:
+                return LLVMBuildSExt(builder, toCast, targetType, "sExt");
+            case FLOAT_PROMOTION:
+                return LLVMBuildFPExt(builder, toCast, targetType, "fpExt");
+            case INT_TO_FLOAT:
+                return LLVMBuildSIToFP(builder, toCast, targetType, "siToFP");
+            case OBJECT_DEMOTION:
+                throw new RuntimeException("object demotion not yet implemented");
+            default:
+                throw new RuntimeException("unknown Cast Type: " + implicitCast.getCastType());
+        }
+    }
+
+    @Override
+    public LLVMValueRef visitExplicitCast(FExplicitCast explicitCast) {
+        LLVMValueRef toCast = explicitCast.getCastedExpression().accept(this);
+        LLVMTypeRef targetType = llvmTypes.get(explicitCast.getType());
+        switch (explicitCast.getCastType()) {
+            case INTEGER_DEMOTION:
+                return LLVMBuildTrunc(builder, toCast, targetType, "trunc");
+            case FLOAT_DEMOTION:
+                return LLVMBuildFPTrunc(builder, toCast, targetType, "fpTrunc");
+            case FLOAT_TO_INT:
+                return LLVMBuildFPToSI(builder, toCast, targetType, "fpToSI");
+            case OBJECT_PROMOTION:
+                throw new RuntimeException("object promotion not yet implemented");
+            default:
+                throw new RuntimeException("unknown Cast Type: " + explicitCast.getCastType());
+        }
+    }
+
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall) {
         LLVMValueRef arg;
         if (functionCall.getFunction().isStatic()) {

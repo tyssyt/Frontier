@@ -29,6 +29,14 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
+    default Expression visitImplicitCast(FImplicitCast implicitCast) {
+        return implicitCast.getCastedExpression().accept(this);
+    }
+
+    default Expression visitExplicitCast(FExplicitCast explicitCast) {
+        return explicitCast.getCastedExpression().accept(this);
+    }
+
     default Expression visitLiteral(FLiteralExpression expression) {
         return null;
     }

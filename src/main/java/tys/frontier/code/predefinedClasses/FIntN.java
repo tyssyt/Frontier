@@ -18,6 +18,10 @@ public class FIntN extends FPredefinedClass {
 
     private int n;
 
+    public int getN() {
+        return n;
+    }
+
     private FIntN(int n) {
         super(new FIntIdentifier(n));
         this.n = n;

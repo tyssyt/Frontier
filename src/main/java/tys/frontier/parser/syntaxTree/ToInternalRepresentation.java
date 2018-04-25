@@ -46,7 +46,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         ToInternalRepresentation visitor = new ToInternalRepresentation(file, syntaxTreeData, importedClasses);
         visitor.visitFile(syntaxTreeData.root);
         if (!visitor.errors.isEmpty())
-            throw new SyntaxErrors(visitor.errors);
+            throw SyntaxErrors.create(visitor.errors);
         return visitor.typeChecks;
     }
 
@@ -504,6 +504,22 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 throw new Failed();
             }
         }
+    }
+
+    @Override
+    public FExplicitCast visitCast(FrontierParser.CastContext ctx) {
+        FClass type;
+        try {
+            type = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+        } catch (ClassNotFound classNotFound) {
+            errors.add(classNotFound);
+            visitExpression(ctx.expression());
+            throw new Failed();
+        }
+        FExpression castedExpression = visitExpression(ctx.expression());
+        FExplicitCast res = new FExplicitCast(type, castedExpression);
+        typeChecks.add(res);
+        return res;
     }
 
     @Override

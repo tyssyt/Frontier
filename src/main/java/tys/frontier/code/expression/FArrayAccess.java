@@ -12,7 +12,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
 
     private final FExpression array;
-    private final FExpression index;
+    private FExpression index;
     private AccessType accessType = AccessType.LOAD;
 
     public FArrayAccess(FExpression array, FExpression index) throws IncompatibleTypes {
@@ -64,7 +64,7 @@ public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
     @Override
     public void checkTypes() throws IncompatibleTypes {
         if (!(index.getType() == FIntN._32))
-            throw new IncompatibleTypes(FIntN._32, index.getType());
+            index = new FImplicitCast(FIntN._32, index);
         if (!(array.getType() instanceof FArray))
             throw new IncompatibleTypes(FArray.getArrayFrom(array.getType(), 1), array.getType());
     }

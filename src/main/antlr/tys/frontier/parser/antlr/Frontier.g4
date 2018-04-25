@@ -187,6 +187,7 @@ expression
     |   Identifier LPAREN expressionList? RPAREN                #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN             #newObject
     |   NEW basicType (LBRACK expression RBRACK)+ (Array)*      #newArray
+    |   LPAREN typeType RPAREN expression                       #cast
     ;
 
 expression2
