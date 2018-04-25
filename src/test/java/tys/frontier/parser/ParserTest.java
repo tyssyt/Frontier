@@ -1,5 +1,6 @@
 package tys.frontier.parser;
 
+import com.google.common.collect.Iterables;
 import org.junit.Before;
 import org.junit.Test;
 import tys.frontier.code.FClass;
@@ -12,7 +13,6 @@ import tys.frontier.style.Style;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ParserTest {
@@ -20,7 +20,7 @@ public class ParserTest {
     private static final String prefix = "Parser/SyntaxErrors/";
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
             ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
@@ -30,8 +30,7 @@ public class ParserTest {
         try {
             new Parser(prefix + file, Style.DEFAULT_STYLE).parse();
         } catch (SyntaxErrors es) {
-            assertEquals(1, es.errors.size());
-            return es.errors.iterator().next();
+            return Iterables.getOnlyElement(es.errors);
         }
         throw new RuntimeException("no error");
     }
