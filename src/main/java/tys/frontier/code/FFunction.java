@@ -1,10 +1,12 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.ArrayList;
@@ -126,7 +128,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
         return tS();
     }
 
-    public static class Signature {
+    public static class Signature implements StringBuilderToString {
         private FFunctionIdentifier identifier;
         private List<FClass> paramTypes;
 
@@ -154,6 +156,30 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
             return identifier.name.equals("main") && paramTypes.isEmpty();
         }
 
+        /**
+         * Compares if the source signature could call a method with this signature
+         * @param source types that want to call this signature
+         * @return an array the same size as the number of parameters. True means the parameter must be cast, false that it must be casted first
+         * @throws IncompatibleSignatures when the number of parameters differs
+         * @throws IncompatibleTypes when a parameter can't be casted
+         */
+        public boolean[] castSignatureFrom(Signature source) throws IncompatibleSignatures, IncompatibleTypes {
+            if (source.paramTypes.size() != paramTypes.size())
+                throw new IncompatibleSignatures(this, source);
+            boolean[] res = new boolean[paramTypes.size()];
+            for (int i = 0; i < paramTypes.size(); i++) {
+                FClass sourceType = source.paramTypes.get(i);
+                FClass targetType = paramTypes.get(i);
+                if (sourceType == targetType)
+                    res[i] = false;
+                else {
+                    FImplicitCast.getCastType(targetType, sourceType);
+                    res[i] = true;
+                }
+            }
+            return res;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -170,8 +196,32 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
         }
 
         @Override
+        public StringBuilder toString(StringBuilder sb) {
+            sb.append(identifier).append('(');
+            boolean first = true;
+            for (FClass type : paramTypes) {
+                if (first)
+                    first = false;
+                else
+                    sb.append(',');
+                sb.append(type.getIdentifier());
+            }
+            return sb.append(')');
+        }
+
+        @Override
         public String toString() {
-            return identifier + ", " + paramTypes;
+            return tS();
+        }
+    }
+
+    public static class IncompatibleSignatures extends Exception {
+        public final Signature one, two;
+
+        public IncompatibleSignatures(Signature one, Signature two) {
+            super("Signatures " + one + " & " + two + " are not compatible.");
+            this.one = one;
+            this.two = two;
         }
     }
 }

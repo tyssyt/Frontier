@@ -19,7 +19,7 @@ public class ImportResolver extends FrontierBaseVisitor {
         ImportResolver importResolver = new ImportResolver();
         importResolver.visitFile(ctx);
         if (!importResolver.unresolvableImports.isEmpty()) {
-            throw new SyntaxErrors(importResolver.unresolvableImports);
+            throw SyntaxErrors.create(importResolver.unresolvableImports);
         }
         return importResolver.dependencies;
     }

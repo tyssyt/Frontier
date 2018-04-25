@@ -4,24 +4,26 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FFunctionCall implements FExpression {
+public class FFunctionCall implements FExpression, NeedsTypeCheck {
     private FExpression object; //null if the function is static
     private FFunction function;
-    private List<? extends FExpression> arguments;
+    private List<FExpression> arguments;
 
-    public FFunctionCall(FExpression object, FFunction function, List<? extends FExpression> arguments) {
+    public FFunctionCall(FExpression object, FFunction function, List<FExpression> arguments) {
         assert (!function.isStatic());
         this.object = object;
         this.function = function;
         this.arguments = arguments;
     }
 
-    public FFunctionCall(FFunction function, List<? extends FExpression> arguments) {
+    public FFunctionCall(FFunction function, List<FExpression> arguments) {
         assert (function.isStatic());
         this.function = function;
         this.arguments = arguments;
@@ -42,6 +44,15 @@ public class FFunctionCall implements FExpression {
     @Override
     public FClass getType() {
         return function.getType();
+    }
+
+    @Override
+    public void checkTypes() throws IncompatibleTypes {
+        List<FClass> paramTypes = function.getSignature().getParamTypes();
+        for (int i = 0; i < arguments.size(); i++) {
+            if (arguments.get(i).getType() != paramTypes.get(i))
+                arguments.set(i, new FImplicitCast(paramTypes.get(i), arguments.get(i)));
+        }
     }
 
     @Override

@@ -32,7 +32,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
         file.setClasses(ImmutableMap.copyOf(collector.classes));
         if (!collector.errors.isEmpty())
-            throw new SyntaxErrors(collector.errors);
+            throw SyntaxErrors.create(collector.errors);
         return collector.treeData;
     }
 

@@ -145,9 +145,8 @@ public final class ParserContextUtils {
             }
         }
         if (!errors.isEmpty())
-            throw new SyntaxErrors(errors);
+            throw SyntaxErrors.create(errors);
         return res.build();
     }
-
 
 }

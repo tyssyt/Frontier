@@ -21,7 +21,7 @@ public interface NeedsTypeCheck {
             }
         }
         if (!errors.isEmpty())
-            throw new SyntaxErrors(errors);
+            throw SyntaxErrors.create(errors);
     }
 
 }

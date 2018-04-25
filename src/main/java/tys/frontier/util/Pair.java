@@ -6,6 +6,9 @@ public class Pair<A,B> implements Map.Entry<A, B> {
     public A a;
     public B b;
 
+    public Pair() {
+    }
+
     public Pair(A a, B b) {
         this.a = a;
         this.b = b;

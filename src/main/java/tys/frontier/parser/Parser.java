@@ -74,7 +74,7 @@ public class Parser {
             FrontierParser.FileContext context = parser.file();
 
             if (parser.getNumberOfSyntaxErrors() > 0)
-                throw new SyntaxErrors(errorListener.errors);
+                throw SyntaxErrors.create(errorListener.errors);
 
             stage = Stage.IMPORT_RESOLVING;
             res.addDependencies(ImportResolver.resolve(context));
@@ -83,17 +83,15 @@ public class Parser {
             FFile file = new FFile(this.file);
             SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context, file);
             {
-                StringBuilder sb = new StringBuilder().append("parsed identifiers:\n");
-                file.summary(sb);
-                Log.info(this, sb.toString());
+                Log.info(this, "parsed identifiers");
+                Log.debug(this, file.summary());
             }
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
             {
-                StringBuilder sb = new StringBuilder().append("parsed classes:\n");
-                file.toString(sb);
-                Log.info(this, sb.toString());
+                Log.info(this, "parsed classes");
+                Log.debug(this, file.toString());
             }
 
             stage = Stage.TYPE_CHECKS;

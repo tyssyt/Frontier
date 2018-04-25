@@ -3,6 +3,7 @@ package tys.frontier.code;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import com.google.common.primitives.Booleans;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -11,8 +12,11 @@ import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.*;
@@ -87,6 +91,36 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
             if (f.getSignature().equals(signature))
                 return f;
         return null;
+    }
+
+    /**
+     * Resolves a function call.
+     * Will potentially implicitly cast the parameters to find a fitting function
+     * TODO once we have class hiereachies, also check parents
+     * @param signature the signature of the function to resolve
+     * @return the resolved function, and a boolean array where the i-th value is true if the i-th parameter must be cast
+     */
+    public Pair<FFunction, boolean[]> resolveFunction (FFunction.Signature signature) throws FunctionNotFound {
+        int bestCost = Integer.MAX_VALUE;
+        Pair<FFunction, boolean[]> res = new Pair<>();
+        for (FFunction f : functions.get(signature.getIdentifier())) {
+            try {
+                boolean[] cost = f.getSignature().castSignatureFrom(signature);
+                int costSum = Booleans.countTrue(cost);
+                if (costSum < bestCost) {
+                    bestCost = costSum;
+                    res.a = f;
+                    res.b = cost;
+                    if (bestCost == 0)
+                        break;
+                } else if (costSum == bestCost) {
+                    res.a = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+                }
+            } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
+        }
+        if (res.a == null)
+            throw new FunctionNotFound(signature);
+        return res;
     }
 
     public FBlock getInstanceInitializer() {

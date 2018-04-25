@@ -595,9 +595,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
-        FFunction f = object.getType().getFunction(signature);
-        if (f==null)
-            throw new FunctionNotFound(signature);
+        FFunction f = object.getType().resolveFunction(signature).a;
         return new FFunctionCall(object, f, params);
     }
 
@@ -605,9 +603,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
-        FFunction f = clazz.getFunction(signature);
-        if (f==null)
-            throw new FunctionNotFound(signature);
+        FFunction f = clazz.resolveFunction(signature).a;
         return new FFunctionCall(f, params);
     }
 
