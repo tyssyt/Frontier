@@ -9,10 +9,7 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.code.literal.FBoolLiteral;
-import tys.frontier.code.literal.FInt32Literal;
-import tys.frontier.code.literal.FLiteral;
-import tys.frontier.code.literal.FNull;
+import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.ClassNotFound;
@@ -113,8 +110,9 @@ public final class ParserContextUtils {
             switch (token.getType()) {
                 case FrontierParser.IntegerLiteral:
                     if (text.endsWith("L") || text.endsWith("l"))
-                        throw new RuntimeException("no longs for now");
-                    res = new FInt32Literal(Integer.parseInt(text), text);
+                        res = new FInt64Literal(Long.parseLong(text.substring(0,text.length()-1)), text);
+                    else
+                        res = new FInt32Literal(Integer.parseInt(text), text);
                     break;
                 case FrontierParser.NULL:
                     res = FNull.INSTANCE;
