@@ -48,9 +48,9 @@ public class FBinaryOperator extends FOperator {
         NOT_EQUALS(new FFunctionIdentifier("=!=")),
         NOT_EQUALS_ID(new FFunctionIdentifier("=!*=")),
         NOT_EQUALS_CONTAINER(new FFunctionIdentifier("=![]=")),
-        SMALLER(new FFunctionIdentifier("<")),
+        LESS(new FFunctionIdentifier("<")),
         GREATER(new FFunctionIdentifier(">")),
-        SMALLER_EQUAL(new FFunctionIdentifier("<=")),
+        LESS_EQUAL(new FFunctionIdentifier("<=")),
         GREATER_EQUAL(new FFunctionIdentifier(">="));
 
         public final FFunctionIdentifier identifier;

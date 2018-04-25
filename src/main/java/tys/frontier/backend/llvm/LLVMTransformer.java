@@ -292,11 +292,11 @@ class LLVMTransformer implements
             return LLVMBuildOr(builder, left, right, "or");
         } else if (id.equals(FBinaryOperator.Arith.XOR.identifier)) {
             return LLVMBuildXor(builder, left, right, "xor");
-        } else if (id.equals(FBinaryOperator.Bool.SMALLER.identifier)) {
+        } else if (id.equals(FBinaryOperator.Bool.LESS.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntSLT, left, right, "slt");
         } else if (id.equals(FBinaryOperator.Bool.GREATER.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntSGT, left, right, "sgt");
-        } else if (id.equals(FBinaryOperator.Bool.SMALLER_EQUAL.identifier)) {
+        } else if (id.equals(FBinaryOperator.Bool.LESS_EQUAL.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntSLE, left, right, "sle");
         } else if (id.equals(FBinaryOperator.Bool.GREATER_EQUAL.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntSGE, left, right, "sge");

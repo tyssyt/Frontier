@@ -37,8 +37,8 @@ public class FIntN extends FPredefinedClass {
             addFunction(FBinaryOperator.Bool.NOT_EQUALS.createPredefined(this));
             addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
             addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.SMALLER.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.SMALLER_EQUAL.createPredefined(this));
+            addFunction(FBinaryOperator.Bool.LESS.createPredefined(this));
+            addFunction(FBinaryOperator.Bool.LESS_EQUAL.createPredefined(this));
             addFunction(FBinaryOperator.Bool.GREATER.createPredefined(this));
             addFunction(FBinaryOperator.Bool.GREATER_EQUAL.createPredefined(this));
 
