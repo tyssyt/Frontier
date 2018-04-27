@@ -21,7 +21,7 @@ import tys.frontier.util.StringBuilderToString;
 
 import java.util.*;
 
-public class FClass implements IdentifierNameable, StringBuilderToString {
+public class FClass implements IdentifierNameable, HasVisibility, StringBuilderToString {
 
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -70,6 +70,7 @@ public class FClass implements IdentifierNameable, StringBuilderToString {
         return identifier;
     }
 
+    @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
     }

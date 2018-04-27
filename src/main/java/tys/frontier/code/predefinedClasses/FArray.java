@@ -23,14 +23,14 @@ public class FArray extends FPredefinedClass {
         this.baseClass = baseClass;
         this.depth = depth;
         addDefaultFunctions();
-        addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.PUBLIC, false)); //TODO make final
+        addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
         {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
             for (int i = 0; i < depth; i++) {
                 builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FIntN._32)); //TODO other int types, solved when we have promotion
                 try {
-                    addFunction(new FConstructor(FVisibilityModifier.PUBLIC, this, builder.build()){{predefined=true;}});
+                    addFunction(new FConstructor(FVisibilityModifier.EXPORT, this, builder.build()){{predefined=true;}});
                 } catch (SignatureCollision e) {
                     throw new RuntimeException(e);
                 }

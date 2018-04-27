@@ -8,20 +8,20 @@ import java.util.Optional;
 
 public class FField extends FVariable implements FClassMember, StringBuilderToString {
     private FClass clazz;
-    private FVisibilityModifier modifier;
+    private FVisibilityModifier visibility;
     private boolean statik;
     private FVarAssignment assignment; //TODO this assignment should not be part of the field, but part of an implicit static initializer block or some similar concept
 
-    public FField(FVariableIdentifier identifier, FClass type, FClass clazz, FVisibilityModifier modifier, boolean statik) {
+    public FField(FVariableIdentifier identifier, FClass type, FClass clazz, FVisibilityModifier visibility, boolean statik) {
         super(identifier, type);
         this.clazz = clazz;
-        this.modifier = modifier;
+        this.visibility = visibility;
         this.statik = statik;
     }
 
     @Override
-    public FVisibilityModifier getModifier() {
-        return modifier;
+    public FVisibilityModifier getVisibility() {
+        return visibility;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class FField extends FVariable implements FClassMember, StringBuilderToSt
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append(modifier).append(' ');
+        sb.append(visibility).append(' ');
         if (statik)
             sb.append("static ");
         sb.append(super.toString());

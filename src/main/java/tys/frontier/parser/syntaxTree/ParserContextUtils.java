@@ -31,10 +31,10 @@ public final class ParserContextUtils {
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
         if (ctx == null)
-            return FVisibilityModifier.PUBLIC;
+            return FVisibilityModifier.NONE;
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
-            case FrontierParser.PUBLIC:
-                return FVisibilityModifier.PUBLIC;
+            case FrontierParser.EXPORT:
+                return FVisibilityModifier.EXPORT;
             case FrontierParser.PRIVATE:
                 return FVisibilityModifier.PRIVATE;
         }

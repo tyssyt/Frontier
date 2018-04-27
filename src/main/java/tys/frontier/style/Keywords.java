@@ -14,7 +14,7 @@ public class Keywords {
     public static final ImmutableBiMap<String, Integer> DEFAULT_KEYWORDS = new ImmutableBiMap.Builder<String, Integer>()
             .put("import", FrontierParser.IMPORT)
             .put("class", FrontierParser.CLASS)
-            .put("public", FrontierParser.PUBLIC)
+            .put("export", FrontierParser.EXPORT)
             .put("private", FrontierParser.PRIVATE)
             .put("static", FrontierParser.STATIC)
             .put("new", FrontierParser.NEW)

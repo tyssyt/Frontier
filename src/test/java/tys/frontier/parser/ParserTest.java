@@ -121,4 +121,11 @@ public class ParserTest {
         SyntaxError e = parseSyntaxError("UndeclaredVariable.front");
         assertTrue(e instanceof UndeclaredVariable);
     }
+    @Test
+    public void parseAccessForbidden() throws Exception {
+        SyntaxError e = parseSyntaxError("AccessForbidden.front");
+        assertTrue(e instanceof AccessForbidden);
+        assertTrue(((AccessForbidden) e).accessed instanceof FField);
+    }
+
 }

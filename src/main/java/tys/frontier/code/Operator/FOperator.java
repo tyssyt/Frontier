@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 
 public abstract class FOperator extends FFunction {
@@ -16,7 +15,7 @@ public abstract class FOperator extends FFunction {
     public static final FFunctionIdentifier ARRAY_RANGE_ACCESS = new FFunctionIdentifier("[-]");
 
     public FOperator(FFunctionIdentifier identifier, FClass clazz, boolean statik, FClass returnType, ImmutableList<FLocalVariable> params) {
-        super(identifier, clazz, FVisibilityModifier.PUBLIC, statik, returnType, params);
+        super(identifier, clazz, clazz.getVisibility(), statik, returnType, params);
     }
 
     @Override

@@ -27,7 +27,7 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 tokens {
     IMPORT,
     CLASS,
-    PUBLIC,
+    EXPORT,
     PRIVATE,
     STATIC,
     NEW,
@@ -75,7 +75,7 @@ modifier
     ;
 
 visibilityModifier
-    :   PUBLIC
+    :   EXPORT
     |   PRIVATE
     ;
 

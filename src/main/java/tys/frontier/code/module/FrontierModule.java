@@ -22,7 +22,7 @@ public class FrontierModule extends Module {
     public void addFile (FFile toAdd) {
         files.add(toAdd);
         for (FClass fClass : toAdd.getClasses().values()) {
-            if (fClass.getVisibility() == FVisibilityModifier.PUBLIC) {
+            if (fClass.getVisibility() == FVisibilityModifier.EXPORT) {
                 addExportedClass(fClass);
             }
         }

@@ -85,15 +85,15 @@ public abstract class Module {
     }
 
     protected void addExportedClass(FClass toExport) {
-        assert toExport.getVisibility() == FVisibilityModifier.PUBLIC;
+        assert toExport.getVisibility() == FVisibilityModifier.EXPORT;
         exportedClasses.put(toExport.getIdentifier(), toExport);
         for (FField field : toExport.getFields().values()) {
-            if (field.getModifier() != FVisibilityModifier.PUBLIC)
+            if (field.getVisibility() != FVisibilityModifier.EXPORT)
                 continue;
             exportedFields.put(toExport, field);
         }
         for (FFunction function : toExport.getFunctions().values()) {
-            if (function.getModifier() != FVisibilityModifier.PUBLIC)
+            if (function.getVisibility() != FVisibilityModifier.EXPORT)
                 continue;
             exportedFunctions.put(toExport, function);
         }

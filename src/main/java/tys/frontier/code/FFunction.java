@@ -51,7 +51,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
     }
 
     @Override
-    public FVisibilityModifier getModifier() {
+    public FVisibilityModifier getVisibility() {
         return modifier;
     }
 
@@ -103,8 +103,8 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
     public boolean isMain() {
         return signature.isMain()
                 && statik
-                && modifier == FVisibilityModifier.PUBLIC
-                && clazz.getVisibility() == FVisibilityModifier.PUBLIC
+                && modifier == FVisibilityModifier.EXPORT
+                && clazz.getVisibility() == FVisibilityModifier.EXPORT
                 && returnType == FVoid.INSTANCE;
     }
 

@@ -22,7 +22,7 @@ public class IOClass extends FPredefinedClass {
     private IOClass() {
         super(IDENTIFIER);
         try {
-            addFunction(new FFunction(PUTCHAR_ID, this, FVisibilityModifier.PUBLIC, true, FVoid.INSTANCE,
+            addFunction(new FFunction(PUTCHAR_ID, this, FVisibilityModifier.EXPORT, true, FVoid.INSTANCE,
                     ImmutableList.of(
                             new FLocalVariable(new FVariableIdentifier("char"), FIntN._32)
                     )){{predefined = true;}});

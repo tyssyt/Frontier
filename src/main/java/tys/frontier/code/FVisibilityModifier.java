@@ -3,7 +3,8 @@ package tys.frontier.code;
 import tys.frontier.parser.antlr.FrontierParser;
 
 public enum FVisibilityModifier {
-    PUBLIC ("public", FrontierParser.PUBLIC),
+    EXPORT ("export", FrontierParser.EXPORT),
+    NONE("", 0),
     PRIVATE ("private", FrontierParser.PRIVATE);
 
     public final String text;

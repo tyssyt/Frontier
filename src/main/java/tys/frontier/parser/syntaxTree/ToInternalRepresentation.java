@@ -550,6 +550,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(new FieldNotFound(identifier));
             throw new Failed();
         }
+        if (currentClass != object.getType() && f.getVisibility() == FVisibilityModifier.PRIVATE) {
+            errors.add(new AccessForbidden(f));
+            throw new Failed();
+        }
         return new FFieldAccess(f, object);
     }
 
@@ -557,11 +561,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFieldAccess visitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         try {
-            FField f = ParserContextUtils.getType(ctx.typeType(), knownClasses).getField(identifier);
+            FClass clazz = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            FField f = clazz.getField(identifier);
             if (f == null)
                 throw new FieldNotFound(identifier);
+            if (currentClass != clazz && f.getVisibility() == FVisibilityModifier.PRIVATE)
+                throw new AccessForbidden(f);
             return new FFieldAccess(f);
-        } catch (ClassNotFound | FieldNotFound e) {
+        } catch (ClassNotFound | FieldNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
         }
@@ -591,11 +598,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             res.add(exp.getType());
         return res;
     }
+
     private FFunctionCall functionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
         FFunction f = object.getType().resolveFunction(signature).a;
+        if (currentClass != object.getType() && f.getVisibility() == FVisibilityModifier.PRIVATE) {
+            errors.add(new AccessForbidden(f));
+            throw new Failed();
+        }
         return new FFunctionCall(object, f, params);
     }
 
@@ -604,6 +616,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FClass> paramTypes = typesFromExpressionList(params);
         FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
         FFunction f = clazz.resolveFunction(signature).a;
+        if (currentClass != clazz && f.getVisibility() == FVisibilityModifier.PRIVATE) {
+            errors.add(new AccessForbidden(f));
+            throw new Failed();
+        }
         return new FFunctionCall(f, params);
     }
 

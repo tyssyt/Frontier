@@ -3,7 +3,7 @@
         "import":       "import",
         "class":        "class",
         
-        "public":       "public",
+        "export":       "export",
         "private":      "private",
         "static":       "static",
         

@@ -8,7 +8,7 @@ import tys.frontier.code.identifier.FClassIdentifier;
 public abstract class FPredefinedClass extends FClass {
 
     public FPredefinedClass(FClassIdentifier identifier) {
-        super(identifier, FVisibilityModifier.PUBLIC, false);
+        super(identifier, FVisibilityModifier.EXPORT, false);
     }
 
     @Override

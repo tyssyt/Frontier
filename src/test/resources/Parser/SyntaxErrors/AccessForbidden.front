@@ -1,0 +1,11 @@
+class A {
+    private static int32 i;
+}
+
+class B {
+
+    void test() {
+        A.i;
+    }
+
+}
