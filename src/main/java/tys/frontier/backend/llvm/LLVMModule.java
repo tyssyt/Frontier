@@ -47,8 +47,6 @@ public class LLVMModule implements AutoCloseable {
 
     private void fillInPredefinedTypes() {
         llvmTypes.put(FBool.INSTANCE, LLVMInt1TypeInContext(context));
-        llvmTypes.put(FIntN._32, LLVMInt32TypeInContext(context));
-        llvmTypes.put(FIntN._64, LLVMInt64TypeInContext(context));
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
@@ -69,12 +67,15 @@ public class LLVMModule implements AutoCloseable {
         return module;
     }
 
-    Map<FClass, LLVMTypeRef> getLlvmTypes() {
-        return llvmTypes;
-    }
-
-    HashObjIntMap<FField> getFieldIndices() {
-        return fieldIndices;
+    LLVMTypeRef getLlvmType (FClass fType) {
+        if (fType instanceof FIntN) {
+            return LLVMIntTypeInContext(context, ((FIntN) fType).getN());
+        } else if (fType instanceof FArray) {
+            //TODO
+            throw new RuntimeException("asd");
+        } else {
+            return llvmTypes.get(fType);
+        }
     }
 
     public int getFieldIndex(FField field) {
@@ -95,7 +96,7 @@ public class LLVMModule implements AutoCloseable {
                 continue;
             for (FField field : clazz.getFields().values()) {
                 if (field.isStatic()) {
-                    LLVMTypeRef type = llvmTypes.get(field.getType());
+                    LLVMTypeRef type = getLlvmType(field.getType());
                     LLVMAddGlobal(module, type, getStaticFieldName(field));
                 }
             }
@@ -153,7 +154,7 @@ public class LLVMModule implements AutoCloseable {
                     //TODO see if something can be done for final?
                     //TODO optimizer flags like we don't care bout the address and readonly
                     //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
-                    LLVMTypeRef type = llvmTypes.get(field.getType());
+                    LLVMTypeRef type = getLlvmType(field.getType());
                     LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
                     LLVMSetInitializer(global, LLVMConstNull(type));
                 }
@@ -199,11 +200,11 @@ public class LLVMModule implements AutoCloseable {
 
         List<LLVMTypeRef> llvmParamTypes = new ArrayList<>(size);
         if (!function.isStatic())
-            llvmParamTypes.add(llvmTypes.get(function.getClazz())); //add 'this' as first param
+            llvmParamTypes.add(getLlvmType(function.getClazz())); //add 'this' as first param
         for (FLocalVariable param : fParams)
-            llvmParamTypes.add(llvmTypes.get(param.getType()));
+            llvmParamTypes.add(getLlvmType(param.getType()));
 
-        LLVMTypeRef returnType = llvmTypes.get(function.getType());
+        LLVMTypeRef returnType = getLlvmType(function.getType());
         return LLVMFunctionType(returnType, createPointerPointer(llvmParamTypes), size, FALSE);
     }
 
@@ -221,10 +222,10 @@ public class LLVMModule implements AutoCloseable {
             for (FField field : type.getFields().values()) {
                 if (field.isStatic())
                     continue;
-                subtypes.add(llvmTypes.get(field.getType()));
+                subtypes.add(getLlvmType(field.getType()));
                 fieldIndices.put(field, index++);
             }
-            LLVMStructSetBody(LLVMGetElementType(llvmTypes.get(type)), createPointerPointer(subtypes), subtypes.size(), FALSE);
+            LLVMStructSetBody(LLVMGetElementType(getLlvmType(type)), createPointerPointer(subtypes), subtypes.size(), FALSE);
         }
 
         try (LLVMTransformer trans = new LLVMTransformer(this)) {

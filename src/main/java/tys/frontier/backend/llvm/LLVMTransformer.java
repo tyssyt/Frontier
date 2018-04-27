@@ -1,8 +1,6 @@
 package tys.frontier.backend.llvm;
 
-import com.koloboke.collect.map.hash.HashObjIntMap;
 import org.bytedeco.javacpp.BytePointer;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
@@ -11,7 +9,8 @@ import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
-import tys.frontier.code.predefinedClasses.*;
+import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
@@ -33,21 +32,16 @@ class LLVMTransformer implements
     private static final int TRUE = 1;
     private static final int FALSE = 0;
 
-    private LLVMModuleRef module;
+    private LLVMModule module;
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
-    private Map<FClass, LLVMTypeRef> llvmTypes;
-    private HashObjIntMap<FField> fieldIndices;
     private Map<FField, LLVMValueRef> fields = new HashMap<>(); //TODO why this not used?
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
 
     public LLVMTransformer(LLVMModule module) {
-        LLVMContextRef context = module.getContext();
-        this.module = module.getModule();
-        this.llvmTypes = module.getLlvmTypes();
-        this.fieldIndices = module.getFieldIndices();
-        this.builder = LLVMCreateBuilderInContext(context);
-        this.entryBlockAllocaBuilder = LLVMCreateBuilderInContext(context);
+        this.module = module;
+        this.builder = LLVMCreateBuilderInContext(module.getContext());
+        this.entryBlockAllocaBuilder = LLVMCreateBuilderInContext(module.getContext());
     }
 
     @Override
@@ -61,7 +55,7 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef createEntryBlockAlloca(FLocalVariable variable) {
-        LLVMValueRef res = LLVMBuildAlloca(entryBlockAllocaBuilder, llvmTypes.get(variable.getType()), variable.getIdentifier().name);
+        LLVMValueRef res = LLVMBuildAlloca(entryBlockAllocaBuilder, module.getLlvmType(variable.getType()), variable.getIdentifier().name);
         LLVMValueRef old = localVars.put(variable, res);
         if (old != null)
             throw new RuntimeException("variable was already declared, this should not happen"); //TODO error handling
@@ -70,7 +64,7 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFunction(FFunction function) {
-        LLVMValueRef res = LLVMGetNamedFunction(module, getFunctionName(function));
+        LLVMValueRef res = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
         if (res.isNull()) {
             throw new RuntimeException("no Prototype defined for: " + function.getIdentifier().name); //TODO when we have proper error handling, this needs tp be handled properly
         }
@@ -213,7 +207,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitImplicitCast(FImplicitCast implicitCast) {
         LLVMValueRef toCast = implicitCast.getCastedExpression().accept(this);
-        LLVMTypeRef targetType = llvmTypes.get(implicitCast.getType());
+        LLVMTypeRef targetType = module.getLlvmType(implicitCast.getType());
         switch (implicitCast.getCastType()) {
             case INTEGER_PROMOTION:
                 return LLVMBuildSExt(builder, toCast, targetType, "sExt");
@@ -231,7 +225,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitExplicitCast(FExplicitCast explicitCast) {
         LLVMValueRef toCast = explicitCast.getCastedExpression().accept(this);
-        LLVMTypeRef targetType = llvmTypes.get(explicitCast.getType());
+        LLVMTypeRef targetType = module.getLlvmType(explicitCast.getType());
         switch (explicitCast.getCastType()) {
             case INTEGER_DEMOTION:
                 return LLVMBuildTrunc(builder, toCast, targetType, "trunc");
@@ -312,7 +306,7 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedIO (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function.getIdentifier() == IOClass.PUTCHAR_ID) {
-            LLVMValueRef func = LLVMGetNamedFunction(module, "putchar");
+            LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "putchar");
             LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
             return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
 
@@ -342,7 +336,7 @@ class LLVMTransformer implements
         if (function.isPredefined())
             return predefinedFunctionCall(functionCall);
 
-        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(function));
+        LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
         int size = functionCall.getArguments().size();
         List<LLVMValueRef> args = new ArrayList<>();
         if (!function.isStatic()) {
@@ -360,10 +354,10 @@ class LLVMTransformer implements
         FField field = fieldAccess.getField();
         LLVMValueRef address;
         if (field.isStatic()) {
-            address = LLVMGetNamedGlobal(module, getStaticFieldName(field));
+            address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
         } else {
             LLVMValueRef object = fieldAccess.getObject().accept(this);
-            address = LLVMBuildStructGEP(builder, object, fieldIndices.getInt(field), "GEP_" + field.getIdentifier().name);
+            address = LLVMBuildStructGEP(builder, object, module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
         }
         switch (fieldAccess.getAccessType()) {
             case LOAD:
@@ -378,18 +372,19 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitLiteral(FLiteralExpression expression) {
         FLiteral literal = expression.getLiteral();
+        LLVMTypeRef type = module.getLlvmType(literal.getType());
         if (literal instanceof FInt32Literal) {
-            return LLVMConstInt(llvmTypes.get(FIntN._32), ((FInt32Literal)literal).value, TRUE);
+            return LLVMConstInt(type, ((FInt32Literal)literal).value, TRUE);
         } else if (literal instanceof FInt64Literal) {
-            return LLVMConstInt(llvmTypes.get(FIntN._64), ((FInt64Literal) literal).value, TRUE);
+            return LLVMConstInt(type, ((FInt64Literal) literal).value, TRUE);
         } else if (literal instanceof FFloat32Literal) {
-            return LLVMConstRealOfString(llvmTypes.get(FFloat32.INSTANCE), ((FFloat32Literal)literal).originalString);
+            return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {
-            return LLVMConstRealOfString(llvmTypes.get(FFloat64.INSTANCE), ((FFloat64Literal)literal).originalString);
+            return LLVMConstRealOfString(type, ((FFloat64Literal)literal).originalString);
         } else if (literal == FBoolLiteral.TRUE) {
-            return LLVMConstInt(llvmTypes.get(FBool.INSTANCE), TRUE, FALSE);
+            return LLVMConstInt(type, TRUE, FALSE);
         } if (literal == FBoolLiteral.FALSE) {
-            return LLVMConstInt(llvmTypes.get(FBool.INSTANCE), FALSE, FALSE);
+            return LLVMConstInt(type, FALSE, FALSE);
         } else if (literal == FNull.INSTANCE) {
             //return LLVMConstNull()
             //return LLVMConstPointerNull()
