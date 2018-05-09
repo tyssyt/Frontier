@@ -13,6 +13,7 @@ public class FIntN extends FPredefinedClass {
     //classes do not override equals, so we need to make sure we get the same object every time
     private static final ConcurrentMap<Integer, FIntN> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
+    public static final FIntN _8 = getIntN(8);
     public static final FIntN _32 = getIntN(32);
     public static final FIntN _64 = getIntN(64);
 

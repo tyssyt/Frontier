@@ -1,6 +1,8 @@
 package tys.frontier.backend.llvm;
 
+import com.google.common.collect.Iterables;
 import org.bytedeco.javacpp.BytePointer;
+import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
@@ -10,6 +12,7 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -96,6 +99,7 @@ class LLVMTransformer implements
         if (function.getType() == FVoid.INSTANCE)
             LLVMBuildRetVoid(builder);
         localVars.clear();
+        LLVMViewFunctionCFG(res);
         return res;
     }
 
@@ -196,7 +200,23 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitArrayAccess(FArrayAccess arrayAccess) {
-        throw new RuntimeException("no arrys, sorry"); //TODO
+        LLVMValueRef array = arrayAccess.getArray().accept(this);
+        LLVMValueRef index = arrayAccess.getIndex().accept(this);
+        PointerPointer<LLVMValueRef> indices = new PointerPointer<>(
+                LLVMConstInt(module.getLlvmType(FIntN._32), 0, FALSE),
+                LLVMConstInt(module.getLlvmType(FIntN._32), 1, FALSE),
+                index
+        );
+        LLVMValueRef address = LLVMBuildGEP(builder, array, indices, 3, "GEP_array");
+
+        switch (arrayAccess.getAccessType()) {
+            case LOAD:
+                return LLVMBuildLoad(builder, address, "load_array");
+            case STORE:
+                return address;
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override
@@ -303,13 +323,42 @@ class LLVMTransformer implements
         }
     }
 
+    private LLVMValueRef predefinedArray (FFunctionCall functionCall) {
+        FFunction function = functionCall.getFunction();
+        if (function.isConstructor()) {
+            if (((FArray) functionCall.getType()).getDepth() == 1) {
+                LLVMTypeRef arrayType = module.getLlvmType(functionCall.getType());
+
+                //compute the array size
+                LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
+                PointerPointer<LLVMValueRef> indices = new PointerPointer<>(
+                        LLVMConstInt(module.getLlvmType(FIntN._32), 0, FALSE),
+                        LLVMConstInt(module.getLlvmType(FIntN._32), 1, FALSE),
+                        sizeRef
+                );
+
+                LLVMValueRef nullr = LLVMConstNull(arrayType);
+                LLVMValueRef sizeAsPointer = LLVMBuildGEP(builder, nullr, indices, 3, "sizeAsPointer");
+                LLVMValueRef size = LLVMBuildPtrToInt(builder, sizeAsPointer, module.getLlvmType(FIntN._64), "size");
+                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.getLlvmType(FIntN._8), size, "arrayMalloc");
+                LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
+
+                //store size
+                LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, arrayRef, 0, "sizeAddress");
+                LLVMBuildStore(builder, sizeRef, sizeAddress);
+                return arrayRef;
+            } else
+                throw new RuntimeException("multidimensional arrays NYI"); //TODO support multidimensional constructors,
+        } else
+            throw new RuntimeException("unknown array function: " + function.headerToString());
+    }
+
     private LLVMValueRef predefinedIO (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function.getIdentifier() == IOClass.PUTCHAR_ID) {
             LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "putchar");
             LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
             return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
-
         } else {
             throw new RuntimeException("unknown IO function: " + function.headerToString());
         }
@@ -322,7 +371,9 @@ class LLVMTransformer implements
         } else if (function instanceof FBinaryOperator) {
             return predefinedBinary(functionCall);
         } else if (function.getClazz() instanceof FArray) {
-            throw new RuntimeException("yeah predef sucks and i need to clean up functions first :("); //TODO
+            return predefinedArray(functionCall);
+        } else if (function.getClazz() instanceof FArray) {
+                return predefinedArray(functionCall);
         } else if (function.getClazz() == IOClass.INSTANCE) {
             return predefinedIO(functionCall);
         } else {

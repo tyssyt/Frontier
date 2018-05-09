@@ -68,14 +68,21 @@ public class LLVMModule implements AutoCloseable {
     }
 
     LLVMTypeRef getLlvmType (FClass fType) {
-        if (fType instanceof FIntN) {
-            return LLVMIntTypeInContext(context, ((FIntN) fType).getN());
+        LLVMTypeRef res = llvmTypes.get(fType);
+        if (res != null) {
+            return res;
+        } else if (fType instanceof FIntN) {
+            res = LLVMIntTypeInContext(context, ((FIntN) fType).getN());
         } else if (fType instanceof FArray) {
-            //TODO
-            throw new RuntimeException("asd");
+            PointerPointer<LLVMTypeRef> types = new PointerPointer<>(getLlvmType(FIntN._32),
+                    LLVMArrayType(getLlvmType(((FArray) fType).getOneDimensionLess()), 0));
+            LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
+            res = LLVMPointerType(baseType, 0);
         } else {
-            return llvmTypes.get(fType);
+            throw new RuntimeException("can't compute corresponding LLVM type for: " + fType);
         }
+        llvmTypes.put(fType, res);
+        return res;
     }
 
     public int getFieldIndex(FField field) {

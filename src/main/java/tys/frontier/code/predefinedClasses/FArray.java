@@ -5,6 +5,7 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.IntPair;
 
@@ -23,7 +24,12 @@ public class FArray extends FPredefinedClass {
         this.baseClass = baseClass;
         this.depth = depth;
         addDefaultFunctions();
-        addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
+        //TODO add container equals, and prolly do something to equality once that is done
+        try {
+            addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
+        } catch (IdentifierCollision identifierCollision) {
+            throw new RuntimeException(identifierCollision);
+        }
         {
             //create constructors
             ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
@@ -37,7 +43,6 @@ public class FArray extends FPredefinedClass {
             }
 
         }
-
     }
 
     public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {
@@ -48,6 +53,10 @@ public class FArray extends FPredefinedClass {
 
     public FClass getBaseClass() {
         return baseClass;
+    }
+
+    public int getDepth() {
+        return depth;
     }
 
     public FClass getOneDimensionLess() {
