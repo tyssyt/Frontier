@@ -18,6 +18,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
+import tys.frontier.util.Utils;
 
 import java.util.*;
 
@@ -54,7 +55,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
             addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
         } catch (SignatureCollision e) {
-            throw new RuntimeException(e);
+            Utils.handleException(e);
         }
     }
 

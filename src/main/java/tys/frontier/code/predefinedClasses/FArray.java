@@ -8,6 +8,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.IntPair;
+import tys.frontier.util.Utils;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,7 +29,7 @@ public class FArray extends FPredefinedClass {
         try {
             addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
         } catch (IdentifierCollision identifierCollision) {
-            throw new RuntimeException(identifierCollision);
+            Utils.handleException(identifierCollision);
         }
         {
             //create constructors
@@ -38,7 +39,7 @@ public class FArray extends FPredefinedClass {
                 try {
                     addFunction(new FConstructor(FVisibilityModifier.EXPORT, this, builder.build()){{predefined=true;}});
                 } catch (SignatureCollision e) {
-                    throw new RuntimeException(e);
+                    Utils.handleException(e);
                 }
             }
 

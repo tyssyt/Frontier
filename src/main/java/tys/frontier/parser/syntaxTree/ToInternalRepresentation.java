@@ -454,7 +454,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 else
                     return new FFieldAccess(field, getThisExpr());
             } else {
-                throw new RuntimeException();
+                return Utils.cantHappen();
             }
         } catch (UndeclaredVariable e) {
             errors.add(e);

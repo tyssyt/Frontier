@@ -11,6 +11,7 @@ import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
 
 public class IOClass extends FPredefinedClass {
 
@@ -27,7 +28,7 @@ public class IOClass extends FPredefinedClass {
                             new FLocalVariable(new FVariableIdentifier("char"), FIntN._32)
                     )){{predefined = true;}});
         } catch (SignatureCollision signatureCollision) {
-            throw new RuntimeException(signatureCollision);
+            Utils.handleException(signatureCollision);
         }
     }
 }

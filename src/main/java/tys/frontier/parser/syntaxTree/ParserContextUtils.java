@@ -14,6 +14,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.ClassNotFound;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,7 @@ public final class ParserContextUtils {
             case FrontierParser.BOOL:
                 return FBool.INSTANCE;
             case FrontierParser.INT:
-                throw new RuntimeException("yeah dont use unbeounded int yet dude..."); //TODO unbounded int type
+                return Utils.NYI("unbounded int type");
             case FrontierParser.INT32:
                 return FIntN._32;
             case FrontierParser.INT64:
@@ -95,7 +96,7 @@ public final class ParserContextUtils {
         return new FLocalVariable(identifier, type);
     }
 
-    public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) {
+    public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) { //TODO why do we have res instead of just return (look at once all literals are done)
         ParseTree child = ctx.getChild(0);
         FLiteral res = null;
         if (child instanceof FrontierParser.BooleanLiteralContext) {
@@ -118,11 +119,11 @@ public final class ParserContextUtils {
                     res = FNull.INSTANCE;
                     break;
                 case FrontierParser.FloatingPointLiteral:
-                    throw new RuntimeException("no floating");
+                    return Utils.NYI("float literals");
                 case FrontierParser.CharacterLiteral:
-                    throw new RuntimeException("char literals not yet implemented, you fool!");
+                    return Utils.NYI("char literals");
                 case FrontierParser.StringLiteral:
-                    throw new RuntimeException("String literals not yet implemented, you fool!");
+                    return Utils.NYI("string literals");
             }
         }
         return res;

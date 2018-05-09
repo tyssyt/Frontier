@@ -5,6 +5,7 @@ import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.identifier.FIntIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -49,7 +50,7 @@ public class FIntN extends FPredefinedClass {
             addFunction(FBinaryOperator.Arith.DIVIDED.createPredefined(this));
             addFunction(FBinaryOperator.Arith.MODULO.createPredefined(this));
         } catch (SignatureCollision signatureCollision) {
-            throw new RuntimeException(signatureCollision);
+            Utils.handleException(signatureCollision);
         }
     }
 

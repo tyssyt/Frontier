@@ -14,6 +14,22 @@ import java.util.Map;
 public final class Utils {
     private Utils() {}
 
+    public static void handleException (Exception e) {
+        throw new RuntimeException(e);
+    }
+
+    public static void handleError(String s) {
+        throw new RuntimeException(s);
+    }
+
+    public static <T> T NYI(String s) {
+        throw new RuntimeException(s + "not yet implemented. ¯\\_(ツ)_/¯");
+    }
+
+    public static <T> T cantHappen() {
+        throw new RuntimeException("¯\\_(ツ)_/¯");
+    }
+
     public static Map<FVariableIdentifier, FLocalVariable> asMap (Collection<FLocalVariable> vars) {
         Map<FVariableIdentifier, FLocalVariable> map = new HashMap<>();
         for (FLocalVariable v : vars) {

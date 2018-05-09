@@ -5,6 +5,7 @@ import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
 
 public class FBool extends FPredefinedClass {
 
@@ -34,7 +35,7 @@ public class FBool extends FPredefinedClass {
             addFunction(FBinaryOperator.Arith.OR.createPredefined(this));
             addFunction(FBinaryOperator.Arith.XOR.createPredefined(this));
         } catch (SignatureCollision signatureCollision) {
-            throw new RuntimeException(signatureCollision);
+            Utils.handleException(signatureCollision);
         }
     }
 }

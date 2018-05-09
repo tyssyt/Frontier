@@ -9,6 +9,7 @@ import tys.frontier.code.*;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.modules.io.IOClass;
+import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,7 +80,7 @@ public class LLVMModule implements AutoCloseable {
             LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
             res = LLVMPointerType(baseType, 0);
         } else {
-            throw new RuntimeException("can't compute corresponding LLVM type for: " + fType);
+            Utils.NYI("LLVM type for: " + fType);
         }
         llvmTypes.put(fType, res);
         return res;
@@ -141,7 +142,7 @@ public class LLVMModule implements AutoCloseable {
         LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
         LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
         if (old != null)
-            throw new RuntimeException("type defined twice:" + clazz.getIdentifier());
+            Utils.cantHappen();
     }
 
     /**
@@ -272,9 +273,9 @@ public class LLVMModule implements AutoCloseable {
             return;
         BytePointer outMassage = new BytePointer();
         if (LLVMVerifyModule(module, 1, outMassage) == 1) {
-            RuntimeException e = new RuntimeException(outMassage.getString());
+            String s = outMassage.getString();
             LLVMDisposeMessage(outMassage);
-            throw e; //TODO error handling
+            Utils.handleError(s);
         }
         verificationNeeded = false;
     }
@@ -343,7 +344,7 @@ public class LLVMModule implements AutoCloseable {
                         Process p = Linker.buildCall(tempName, fileName).inheritIO().start();
                         p.waitFor();
                     } catch (IOException | InterruptedException e) {
-                        throw new RuntimeException(e); //TODO error handling
+                        Utils.handleException(e);
                     }
                 }
                 break;
@@ -351,7 +352,7 @@ public class LLVMModule implements AutoCloseable {
         if (errorId != 0) {
             String message = error.getString();
             LLVMDisposeMessage(error);
-            throw new RuntimeException(message); //TODO error handling
+            Utils.handleError(message);
         }
     }
 
@@ -361,9 +362,9 @@ public class LLVMModule implements AutoCloseable {
         BytePointer targetTriple = LLVMGetDefaultTargetTriple();
         LLVMTargetRef target = new LLVMTargetRef();
         if (LLVMGetTargetFromTriple(targetTriple, target, error) != 0) {
-            RuntimeException e = new RuntimeException(error.getString());
+            String message = error.getString();
             LLVMDisposeMessage(error);
-            throw new RuntimeException(e); //TODO error handling;
+            Utils.handleError(message);
         }
         String cpu = "generic"; //TODO is there any other useful value here?
         LLVMTargetMachineRef targetMachine = LLVMCreateTargetMachine(target, targetTriple.getString(), cpu, "", LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);

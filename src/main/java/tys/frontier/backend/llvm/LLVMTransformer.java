@@ -18,6 +18,7 @@ import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.modules.io.IOClass;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +62,7 @@ class LLVMTransformer implements
         LLVMValueRef res = LLVMBuildAlloca(entryBlockAllocaBuilder, module.getLlvmType(variable.getType()), variable.getIdentifier().name);
         LLVMValueRef old = localVars.put(variable, res);
         if (old != null)
-            throw new RuntimeException("variable was already declared, this should not happen"); //TODO error handling
+            Utils.cantHappen();
         return res;
     }
 
@@ -69,7 +70,7 @@ class LLVMTransformer implements
     public LLVMValueRef visitFunction(FFunction function) {
         LLVMValueRef res = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
         if (res.isNull()) {
-            throw new RuntimeException("no Prototype defined for: " + function.getIdentifier().name); //TODO when we have proper error handling, this needs tp be handled properly
+            Utils.cantHappen();
         }
 
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(res, "alloca");
@@ -161,7 +162,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitVarAssignment(FVarAssignment assignment) {
         if (assignment.getOperator() != FVarAssignment.Operator.ASSIGN) {
-            throw new RuntimeException("Operator " + assignment.getOperator() + " not supported yet"); //TODO
+            Utils.NYI("Operator " + assignment.getOperator());
         }
         LLVMValueRef value = assignment.getValue().accept(this);
         LLVMValueRef variableAddress = assignment.getVariableExpression().accept(this);
@@ -170,17 +171,17 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitWhile(FWhile fWhile) {
-        throw new RuntimeException("no loops, sorry"); //TODO
+        return Utils.NYI("while");
     }
 
     @Override
     public LLVMValueRef visitFor(FFor fFor) {
-        throw new RuntimeException("no loops, sorry"); //TODO
+        return Utils.NYI("for");
     }
 
     @Override
     public LLVMValueRef visitForEach(FForEach forEach) {
-        throw new RuntimeException("no loops, sorry"); //TODO
+        return Utils.NYI("for each");
     }
 
     @Override
@@ -190,12 +191,12 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitBreak(FBreak fBreak) {
-        throw new RuntimeException("no loops, sorry"); //TODO
+        return Utils.NYI("break");
     }
 
     @Override
     public LLVMValueRef visitContinue(FContinue fContinue) {
-        throw new RuntimeException("no loops, sorry"); //TODO
+        return Utils.NYI("continue");
     }
 
     @Override
@@ -215,7 +216,7 @@ class LLVMTransformer implements
             case STORE:
                 return address;
             default:
-                throw new RuntimeException();
+                return Utils.cantHappen();
         }
     }
 
@@ -236,9 +237,9 @@ class LLVMTransformer implements
             case INT_TO_FLOAT:
                 return LLVMBuildSIToFP(builder, toCast, targetType, "siToFP");
             case OBJECT_DEMOTION:
-                throw new RuntimeException("object demotion not yet implemented");
+                return Utils.NYI("object demotion");
             default:
-                throw new RuntimeException("unknown Cast Type: " + implicitCast.getCastType());
+                return Utils.cantHappen();
         }
     }
 
@@ -254,28 +255,26 @@ class LLVMTransformer implements
             case FLOAT_TO_INT:
                 return LLVMBuildFPToSI(builder, toCast, targetType, "fpToSI");
             case OBJECT_PROMOTION:
-                throw new RuntimeException("object promotion not yet implemented");
+                return Utils.NYI("object promotion");
             default:
-                throw new RuntimeException("unknown Cast Type: " + explicitCast.getCastType());
+                return Utils.cantHappen();
         }
     }
 
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall) {
         LLVMValueRef arg;
-        if (functionCall.getFunction().isStatic()) {
+        if (functionCall.getFunction().isStatic())
             arg = functionCall.getArguments().get(0).accept(this);
-        } else {
+        else
             arg = functionCall.getObject().accept(this);
-        }
 
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
-        if (id.equals(FUnaryOperator.Pre.NOT.identifier)) {
+        if (id.equals(FUnaryOperator.Pre.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
-        } else if (id.equals(FUnaryOperator.Pre.NEG.identifier)) {
+        else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
             return LLVMBuildNeg(builder, arg, "neg");
-        } else {
-            throw new RuntimeException("unknown predefined unary operator: " + functionCall.getFunction().headerToString());
-        }
+        else
+            return Utils.cantHappen();
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {
@@ -319,7 +318,7 @@ class LLVMTransformer implements
         } else if (id.equals(FBinaryOperator.Bool.NOT_EQUALS_ID.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntNE, left, right, "ne");
         } else {
-            throw new RuntimeException("unknown predefined binary operator: " + functionCall.getFunction().headerToString());
+            return Utils.cantHappen();
         }
     }
 
@@ -348,9 +347,9 @@ class LLVMTransformer implements
                 LLVMBuildStore(builder, sizeRef, sizeAddress);
                 return arrayRef;
             } else
-                throw new RuntimeException("multidimensional arrays NYI"); //TODO support multidimensional constructors,
+                return Utils.NYI("multidimensional array constructors");
         } else
-            throw new RuntimeException("unknown array function: " + function.headerToString());
+            return Utils.NYI(function.headerToString() + "in the backend");
     }
 
     private LLVMValueRef predefinedIO (FFunctionCall functionCall) {
@@ -360,7 +359,7 @@ class LLVMTransformer implements
             LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
             return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
         } else {
-            throw new RuntimeException("unknown IO function: " + function.headerToString());
+            return Utils.cantHappen();
         }
     }
 
@@ -377,7 +376,7 @@ class LLVMTransformer implements
         } else if (function.getClazz() == IOClass.INSTANCE) {
             return predefinedIO(functionCall);
         } else {
-            throw new RuntimeException("unknown predefined function: " + function.headerToString());
+            return Utils.cantHappen();
         }
     }
 
@@ -416,7 +415,7 @@ class LLVMTransformer implements
             case STORE:
                 return address;
             default:
-                throw new RuntimeException();
+                return Utils.cantHappen();
         }
     }
 
@@ -439,9 +438,9 @@ class LLVMTransformer implements
         } else if (literal == FNull.INSTANCE) {
             //return LLVMConstNull()
             //return LLVMConstPointerNull()
-            throw new RuntimeException("no null, im sorry"); //TODO
+            return Utils.NYI("null");
         } else {
-            throw new RuntimeException("unknown literal: " + literal);
+            return Utils.cantHappen();
         }
     }
 
@@ -454,7 +453,7 @@ class LLVMTransformer implements
             case STORE:
                 return address;
             default:
-                throw new RuntimeException();
+                return Utils.cantHappen();
         }
     }
 }
