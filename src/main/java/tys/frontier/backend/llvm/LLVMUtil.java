@@ -40,4 +40,8 @@ public class LLVMUtil {
         return "fun." + function.getClazz().getIdentifier().name + '.' + function.getIdentifier().name;
     }
 
+    public static String getConstantStringName(String s) {
+        return "const.String." + s;
+    }
+
 }

@@ -121,9 +121,19 @@ public final class ParserContextUtils {
                 case FrontierParser.FloatingPointLiteral:
                     return Utils.NYI("float literals");
                 case FrontierParser.CharacterLiteral:
-                    return Utils.NYI("char literals");
+                    assert text.charAt(0) == '\'';
+                    assert text.charAt(text.length()-1) == '\'';
+                    if (text.length() == 3)
+                        return new FCharLiteral(text.charAt(1));
+                    else if (text.length() == 4) {
+                        assert text.charAt(1) == '\\';
+                        return new FCharLiteral(text.charAt(2));
+                    } else
+                        assert false;
                 case FrontierParser.StringLiteral:
-                    return Utils.NYI("string literals");
+                    assert text.charAt(0) == '\"';
+                    assert text.charAt(text.length()-1) == '\"';
+                    return new FStringLiteral(text.substring(1,text.length()-1));
             }
         }
         return res;

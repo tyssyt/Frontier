@@ -6,6 +6,7 @@ import com.koloboke.collect.map.hash.HashObjIntMaps;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
+import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.modules.io.IOClass;
@@ -23,14 +24,39 @@ import static tys.frontier.backend.llvm.LLVMUtil.*;
 
 public class LLVMModule implements AutoCloseable {
 
+    private enum Linkage{
+        PRIVATE(LLVMPrivateLinkage),
+        EXTERNAL(LLVMExternalLinkage);
+
+        final int type;
+
+        Linkage(int type) {
+            this.type = type;
+        }
+
+        static Linkage fromVisibility(FVisibilityModifier visibility) {
+            switch (visibility) {
+                case EXPORT:
+                    return Linkage.EXTERNAL;
+                case NONE: case PRIVATE:
+                    return Linkage.PRIVATE;
+                default:
+                    return Utils.cantHappen();
+            }
+        }
+    }
+
+    private static final int CALLING_CONVENTION = LLVMFastCallConv;
+
+    private static final int TRUE = 1;
     private static final int FALSE = 0;
-    private static final int TRUE = 0;
 
     private boolean verificationNeeded = false;
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
     private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
     private List<FClass> todoTypeBodies = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
@@ -60,29 +86,50 @@ public class LLVMModule implements AutoCloseable {
             LLVMContextDispose(context);
     }
 
-    LLVMContextRef getContext() {
-        return context;
-    }
-
     LLVMModuleRef getModule() {
         return module;
     }
 
-    LLVMTypeRef getLlvmType (FClass fType) {
+    LLVMBuilderRef createBuilder() {
+        return LLVMCreateBuilderInContext(this.context);
+    }
+
+    LLVMTypeRef getLlvmType (FClass fType) { //TODO needs sync for multithreading
         LLVMTypeRef res = llvmTypes.get(fType);
         if (res != null) {
             return res;
         } else if (fType instanceof FIntN) {
             res = LLVMIntTypeInContext(context, ((FIntN) fType).getN());
         } else if (fType instanceof FArray) {
-            PointerPointer<LLVMTypeRef> types = new PointerPointer<>(getLlvmType(FIntN._32),
-                    LLVMArrayType(getLlvmType(((FArray) fType).getOneDimensionLess()), 0));
-            LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
-            res = LLVMPointerType(baseType, 0);
+            res = arrayType(((FArray) fType), 0);
         } else {
             Utils.NYI("LLVM type for: " + fType);
         }
         llvmTypes.put(fType, res);
+        return res;
+    }
+
+    private LLVMTypeRef arrayType(FArray type, int length) {
+        PointerPointer<LLVMTypeRef> types = new PointerPointer<>(getLlvmType(FIntN._32),
+                LLVMArrayType(getLlvmType(type.getOneDimensionLess()), length));
+        LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
+        return LLVMPointerType(baseType, 0);
+    }
+
+    LLVMValueRef constantString(String s) { //TODO needs sync for multithreading
+        //TODO make sure strings/string wrappers can be unified across modules etc..
+        LLVMValueRef res = constantStrings.get(s);
+        if (res == null) {
+            res = LLVMAddGlobal(this.module, LLVMGetElementType(arrayType(FStringLiteral.TYPE, s.length())), getConstantStringName(s));
+            setGlobalAttribs(res, Linkage.PRIVATE, true);
+            LLVMSetGlobalConstant(res, TRUE);
+
+            LLVMValueRef size = LLVMConstInt(getLlvmType(FIntN._32), s.length(), FALSE);
+            LLVMValueRef rawString = LLVMConstStringInContext(this.context, s, s.length(), TRUE);
+            LLVMValueRef string = LLVMConstStructInContext(context, new PointerPointer<>(size, rawString), 2, FALSE);
+            LLVMSetInitializer(res, string);
+            constantStrings.put(s, res);
+        }
         return res;
     }
 
@@ -165,6 +212,8 @@ public class LLVMModule implements AutoCloseable {
                     LLVMTypeRef type = getLlvmType(field.getType());
                     LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
                     LLVMSetInitializer(global, LLVMConstNull(type));
+                    setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
+                    //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
                 }
             }
             for (FFunction function : clazz.getFunctions().values()) {
@@ -184,6 +233,10 @@ public class LLVMModule implements AutoCloseable {
      */
     private LLVMValueRef addFunctionHeader(FFunction function) {
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
+        //set global attribs
+        setGlobalAttribs(res, Linkage.fromVisibility(function.getVisibility()), true);
+        LLVMSetFunctionCallConv(res, CALLING_CONVENTION);
+
         //set names for all arguments
         int offset = 0;
         if (!function.isStatic()) {
@@ -378,6 +431,11 @@ public class LLVMModule implements AutoCloseable {
         LLVMDisposeTargetMachine(targetMachine);
         LLVMDisposeMessage(targetTriple);
         return res;
+    }
+
+    private void setGlobalAttribs(LLVMValueRef global, Linkage linkage, boolean unnamedAddr) {
+        LLVMSetLinkage(global, linkage.type);
+        LLVMSetUnnamedAddr(global, unnamedAddr ? TRUE : FALSE);
     }
 
 }

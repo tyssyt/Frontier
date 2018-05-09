@@ -44,8 +44,8 @@ class LLVMTransformer implements
 
     public LLVMTransformer(LLVMModule module) {
         this.module = module;
-        this.builder = LLVMCreateBuilderInContext(module.getContext());
-        this.entryBlockAllocaBuilder = LLVMCreateBuilderInContext(module.getContext());
+        this.builder = module.createBuilder();
+        this.entryBlockAllocaBuilder = module.createBuilder();
     }
 
     @Override
@@ -100,7 +100,7 @@ class LLVMTransformer implements
         if (function.getType() == FVoid.INSTANCE)
             LLVMBuildRetVoid(builder);
         localVars.clear();
-        LLVMViewFunctionCFG(res);
+        //LLVMViewFunctionCFG(res);
         return res;
     }
 
@@ -430,7 +430,11 @@ class LLVMTransformer implements
         } else if (literal instanceof FFloat32Literal) {
             return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {
-            return LLVMConstRealOfString(type, ((FFloat64Literal)literal).originalString);
+            return LLVMConstRealOfString(type, ((FFloat64Literal) literal).originalString);
+        } else if (literal instanceof FCharLiteral) {
+            return LLVMConstInt(type, ((FCharLiteral) literal).value, FALSE);
+        } else if (literal instanceof FStringLiteral) {
+            return module.constantString(((FStringLiteral) literal).value);
         } else if (literal == FBoolLiteral.TRUE) {
             return LLVMConstInt(type, TRUE, FALSE);
         } if (literal == FBoolLiteral.FALSE) {
