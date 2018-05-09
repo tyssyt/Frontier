@@ -137,7 +137,7 @@ public class LLVMModule implements AutoCloseable {
     }
 
     private void parseType(FClass clazz) {
-        LLVMTypeRef baseType = LLVMStructCreateNamed(context, "class." + clazz.getIdentifier().name);
+        LLVMTypeRef baseType = LLVMStructCreateNamed(context, getClassName(clazz));
         LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
         LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
         if (old != null)
