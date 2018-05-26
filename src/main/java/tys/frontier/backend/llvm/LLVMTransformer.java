@@ -6,6 +6,7 @@ import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
@@ -85,7 +86,7 @@ class LLVMTransformer implements
             LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
             offset++;
         }
-        List<FLocalVariable> fParams = function.getParams();
+        List<FParameter> fParams = function.getParams();
         for (int i=0; i<fParams.size(); i++) {
             LLVMValueRef alloca = createEntryBlockAlloca(fParams.get(i));
             LLVMBuildStore(builder, LLVMGetParam(res, i+offset), alloca);
@@ -387,16 +388,19 @@ class LLVMTransformer implements
             return predefinedFunctionCall(functionCall);
 
         LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
-        int size = functionCall.getArguments().size();
         List<LLVMValueRef> args = new ArrayList<>();
-        if (!function.isStatic()) {
-            size++;
+        //this parameter for non-static
+        if (!function.isStatic())
             args.add(functionCall.getObject().accept(this));
-        }
+        //given arguments
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
+        List<FParameter> params = function.getParams();
+        //use default values for non specified parameters
+        for (int i=functionCall.getArguments().size(); i<params.size(); i++)
+            args.add(params.get(i).getDefaultValue().get().accept(this));
         String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
-        return LLVMBuildCall(builder, func, createPointerPointer(args), size, instructionName);
+        return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
     }
 
     @Override

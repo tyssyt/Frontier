@@ -20,13 +20,13 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
     private FVisibilityModifier modifier;
     private boolean statik;
     private FClass returnType;
-    private ImmutableList<FLocalVariable> params;
+    private ImmutableList<FParameter> params;
     private Signature signature;
     protected ImmutableList<FStatement> body;
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FLocalVariable> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = identifier;
         this.clazz = clazz;
         this.modifier = modifier;
@@ -36,7 +36,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
         this.signature = new Signature(this);
     }
 
-    protected FFunction(Signature signature, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FLocalVariable> params) {
+    protected FFunction(Signature signature, FClass clazz, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = signature.identifier;
         this.clazz = clazz;
         this.modifier = modifier;
@@ -60,7 +60,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
         return statik;
     }
 
-    public ImmutableList<FLocalVariable> getParams() {
+    public ImmutableList<FParameter> getParams() {
         return params;
     }
 
@@ -108,6 +108,35 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
                 && returnType == FVoid.INSTANCE;
     }
 
+    /**
+     * Compares if the source signature could call a method with this signature
+     * @param callingTypes types that want to call this signature
+     * @return an array the same size as the number of parameters. True means the parameter must be cast, false that it must be casted first
+     * @throws IncompatibleSignatures when the number of parameters differs
+     * @throws IncompatibleTypes when a parameter can't be casted
+     */
+    public boolean[] castSignatureFrom(List<FClass> callingTypes) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
+        if (callingTypes.size() > params.size()) {
+            throw new IncompatibleSignatures(this.getSignature(), callingTypes);
+        } else if (callingTypes.size() < params.size()) {
+            //the missing arguments might have default values, in which case the call is still valid
+            if (!params.get(callingTypes.size()).getDefaultValue().isPresent())
+                throw new IncompatibleSignatures(this.getSignature(), callingTypes);
+        }
+        boolean[] res = new boolean[callingTypes.size()];
+        for (int i = 0; i < callingTypes.size(); i++) {
+            FClass sourceType = callingTypes.get(i);
+            FClass targetType = params.get(i).getType();
+            if (sourceType == targetType)
+                res[i] = false;
+            else {
+                FImplicitCast.getCastType(targetType, sourceType);
+                res[i] = true;
+            }
+        }
+        return res;
+    }
+
     public String headerToString() {
         return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
     }
@@ -131,17 +160,18 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
     public static class Signature implements StringBuilderToString {
         private FFunctionIdentifier identifier;
         private List<FClass> paramTypes;
-
-        public Signature(FFunctionIdentifier identifier, List<FClass> paramTypes) {
-            this.identifier = identifier;
-            this.paramTypes = paramTypes;
-        }
+        private List<FClass> optionalTypes;
 
         public Signature(FFunction function) {
             this.identifier = function.getIdentifier();
-            this.paramTypes = new ArrayList<>(function.getParams().size());
-            for (FLocalVariable v : function.getParams())
-                paramTypes.add(v.getType());
+            this.paramTypes = new ArrayList<>();
+            this.optionalTypes = new ArrayList<>();
+            for (FParameter p : function.getParams()) {
+                if (p.hasDefaultValue())
+                    optionalTypes.add(p.getType());
+                else
+                    paramTypes.add(p.getType());
+            }
         }
 
         public FFunctionIdentifier getIdentifier() {
@@ -152,47 +182,51 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
             return paramTypes;
         }
 
-        public boolean isMain() {
-            return identifier.name.equals("main") && paramTypes.isEmpty();
+        public List<FClass> getOptionalTypes() {
+            return optionalTypes;
         }
 
-        /**
-         * Compares if the source signature could call a method with this signature
-         * @param source types that want to call this signature
-         * @return an array the same size as the number of parameters. True means the parameter must be cast, false that it must be casted first
-         * @throws IncompatibleSignatures when the number of parameters differs
-         * @throws IncompatibleTypes when a parameter can't be casted
-         */
-        public boolean[] castSignatureFrom(Signature source) throws IncompatibleSignatures, IncompatibleTypes {
-            if (source.paramTypes.size() != paramTypes.size())
-                throw new IncompatibleSignatures(this, source);
-            boolean[] res = new boolean[paramTypes.size()];
-            for (int i = 0; i < paramTypes.size(); i++) {
-                FClass sourceType = source.paramTypes.get(i);
-                FClass targetType = paramTypes.get(i);
-                if (sourceType == targetType)
-                    res[i] = false;
-                else {
-                    FImplicitCast.getCastType(targetType, sourceType);
-                    res[i] = true;
-                }
-            }
-            return res;
+        public boolean isMain() {
+            return identifier.name.equals("main") && paramTypes.isEmpty() && optionalTypes.isEmpty();
         }
+
+        public boolean collidesWith(Signature other) {
+            List<FClass> shorter;
+            List<FClass> longer;
+            if (this.paramTypes.size() <= other.paramTypes.size()) {
+                shorter = this.paramTypes;
+                longer = other.paramTypes;
+            } else {
+                shorter = other.paramTypes;
+                longer = this.paramTypes;
+            }
+
+            if (!shorter.equals(longer.subList(0, shorter.size())))
+                return false;
+            //TODO there are other non-colliding scenarios
+            return true;
+        }
+
+        //TODO castSig to here?
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof Signature)) return false;
 
             Signature signature = (Signature) o;
-            return this.identifier.equals(signature.identifier)
-                    && this.getParamTypes().equals(signature.paramTypes);
+
+            if (!identifier.equals(signature.identifier)) return false;
+            if (!paramTypes.equals(signature.paramTypes)) return false;
+            return optionalTypes.equals(signature.optionalTypes);
         }
 
         @Override
         public int hashCode() {
-            return  31 * identifier.hashCode() + paramTypes.hashCode();
+            int result = identifier.hashCode();
+            result = 31 * result + paramTypes.hashCode();
+            result = 31 * result + optionalTypes.hashCode();
+            return result;
         }
 
         @Override
@@ -206,6 +240,13 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
                     sb.append(',');
                 sb.append(type.getIdentifier());
             }
+            for (FClass type : optionalTypes) {
+                if (first)
+                    first = false;
+                else
+                    sb.append(',');
+                sb.append(type.getIdentifier()).append('=');
+            }
             return sb.append(')');
         }
 
@@ -216,12 +257,13 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Strin
     }
 
     public static class IncompatibleSignatures extends Exception {
-        public final Signature one, two;
+        public final Signature functionSignature;
+        public final ImmutableList<FClass> callingTypes;
 
-        public IncompatibleSignatures(Signature one, Signature two) {
-            super("Signatures " + one + " & " + two + " are not compatible.");
-            this.one = one;
-            this.two = two;
+        public IncompatibleSignatures(Signature functionSignature, List<FClass> callingTypes) {
+            super("Function " + functionSignature + " can't be called from " + callingTypes);
+            this.functionSignature = functionSignature;
+            this.callingTypes = ImmutableList.copyOf(callingTypes);
         }
     }
 }

@@ -2,7 +2,7 @@ package tys.frontier.modules.io;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -25,7 +25,7 @@ public class IOClass extends FPredefinedClass {
         try {
             addFunction(new FFunction(PUTCHAR_ID, this, FVisibilityModifier.EXPORT, true, FVoid.INSTANCE,
                     ImmutableList.of(
-                            new FLocalVariable(new FVariableIdentifier("char"), FIntN._32)
+                            new FParameter(new FVariableIdentifier("char"), FIntN._32)
                     )){{predefined = true;}});
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);

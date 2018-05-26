@@ -5,7 +5,7 @@ import tys.frontier.code.Operator.FOperator;
 
 public class FConstructor extends FFunction {
 
-    public FConstructor(FVisibilityModifier modifier, FClass clazz, ImmutableList<FLocalVariable> params) {
+    public FConstructor(FVisibilityModifier modifier, FClass clazz, ImmutableList<FParameter> params) {
         super(FOperator.CONSTRUCTOR, clazz, modifier, true, clazz, params);
     }
 

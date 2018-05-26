@@ -82,7 +82,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
         try {
-            ImmutableList<FLocalVariable> params = ParserContextUtils.getParams(ctx.formalParameters(), classes);
+            ImmutableList<FParameter> params = formalParameters(ctx.formalParameters());
             FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
@@ -94,25 +94,24 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         return null;
     }
 
-    @Override
-    public Object visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        //TODO better error would be nice, but this will change anyway when we restrict identifiers in the grammar
-        FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
-        if (!identifier.equals(currentClass.getIdentifier()))
-            errors.add(new SyntaxError("invalid Identifier for constuctor: " + identifier + " in " + currentClass));
-
-        try {
-            ImmutableList<FLocalVariable> params =ParserContextUtils.getParams(ctx.formalParameters(), classes);
-            FConstructor res = new FConstructor(visibilityModifier, currentClass, params);
-            currentClass.addFunction(res);
-            treeData.constructors.put(ctx, res);
-        } catch (SyntaxErrors es) {
-            errors.addAll(es.errors);
-        } catch (SignatureCollision e) {
-            errors.add(e);
+    public ImmutableList<FParameter> formalParameters(FrontierParser.FormalParametersContext ctx) throws SyntaxErrors {
+        List<FrontierParser.FormalParameterContext> cs = ctx.formalParameter();
+        if (cs.isEmpty())
+            return ImmutableList.of();
+        ImmutableList.Builder<FParameter> res = ImmutableList.builder();
+        List<ClassNotFound> errors = new ArrayList<>();
+        for (FrontierParser.FormalParameterContext c : cs) {
+            try {
+                FParameter param = ParserContextUtils.getParameter(c.typedIdentifier(), classes);
+                treeData.parameters.put(c, param);
+                res.add(param);
+            } catch (ClassNotFound e) {
+                errors.add(e);
+            }
         }
-        return null;
+        if (!errors.isEmpty())
+            throw SyntaxErrors.create(errors);
+        return res.build();
     }
 
     @Override

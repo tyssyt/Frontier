@@ -30,7 +30,7 @@ public final class Utils {
         throw new RuntimeException("¯\\_(ツ)_/¯");
     }
 
-    public static Map<FVariableIdentifier, FLocalVariable> asMap (Collection<FLocalVariable> vars) {
+    public static Map<FVariableIdentifier, FLocalVariable> asMap (Collection<? extends FLocalVariable> vars) {
         Map<FVariableIdentifier, FLocalVariable> map = new HashMap<>();
         for (FLocalVariable v : vars) {
             if (map.put(v.getIdentifier(), v) != null) {

@@ -81,17 +81,11 @@ visibilityModifier
 
 classBodyDeclaration
     :   methodDeclaration
-    |   constructorDeclaration
     |   fieldDeclaration
     ;
 
 methodDeclaration
     :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters
-        LBRACE statement* RBRACE
-    ;
-
-constructorDeclaration
-    :   visibilityModifier? TypeIdentifier formalParameters
         LBRACE statement* RBRACE
     ;
 
@@ -104,7 +98,11 @@ variableDeclarator
     ;
 
 formalParameters
-    :   LPAREN (typedIdentifier (COMMA typedIdentifier)*)? RPAREN
+    :   LPAREN (formalParameter (COMMA formalParameter)*)? RPAREN
+    ;
+
+formalParameter
+    : typedIdentifier (ASSIGN expression)?
     ;
 
 //types ------------------------------------------------------------------------------------

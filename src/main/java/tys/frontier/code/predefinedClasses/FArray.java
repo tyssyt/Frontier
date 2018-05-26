@@ -33,9 +33,9 @@ public class FArray extends FPredefinedClass {
         }
         {
             //create constructors
-            ImmutableList.Builder<FLocalVariable> builder = new ImmutableList.Builder<>();
+            ImmutableList.Builder<FParameter> builder = new ImmutableList.Builder<>();
             for (int i = 0; i < depth; i++) {
-                builder.add(new FLocalVariable(new FVariableIdentifier("i" + i), FIntN._32)); //TODO other int types, solved when we have promotion
+                builder.add(new FParameter(new FVariableIdentifier("i" + i), FIntN._32)); //TODO other int types, solved when we have promotion
                 try {
                     addFunction(new FConstructor(FVisibilityModifier.EXPORT, this, builder.build()){{predefined=true;}});
                 } catch (SignatureCollision e) {

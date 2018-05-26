@@ -88,26 +88,20 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return functions.get(identifier);
     }
 
-    public FFunction getFunction (FFunction.Signature signature) {
-        for (FFunction f : functions.get(signature.getIdentifier()))
-            if (f.getSignature().equals(signature))
-                return f;
-        return null;
-    }
-
     /**
      * Resolves a function call.
      * Will potentially implicitly cast the parameters to find a fitting function
      * TODO once we have class hiereachies, also check parents
-     * @param signature the signature of the function to resolve
+     * @param identifier the identifier of the function to resolve
+     * @param paramTypes the parameter Types of the function to resolve
      * @return the resolved function, and a boolean array where the i-th value is true if the i-th parameter must be cast
      */
-    public Pair<FFunction, boolean[]> resolveFunction (FFunction.Signature signature) throws FunctionNotFound {
+    public Pair<FFunction, boolean[]> resolveFunction (FFunctionIdentifier identifier, List<FClass> paramTypes) throws FunctionNotFound {
         int bestCost = Integer.MAX_VALUE;
         Pair<FFunction, boolean[]> res = new Pair<>();
-        for (FFunction f : functions.get(signature.getIdentifier())) {
+        for (FFunction f : functions.get(identifier)) {
             try {
-                boolean[] cost = f.getSignature().castSignatureFrom(signature);
+                boolean[] cost = f.castSignatureFrom(paramTypes);
                 int costSum = Booleans.countTrue(cost);
                 if (costSum < bestCost) {
                     bestCost = costSum;
@@ -121,7 +115,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
         }
         if (res.a == null)
-            throw new FunctionNotFound(signature);
+            throw new FunctionNotFound(identifier, paramTypes);
         return res;
     }
 
@@ -161,10 +155,15 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public void addFunction (FFunction function) throws SignatureCollision {
-        FFunction old = getFunction(function.getSignature());
-        if (old != null)
-            throw new SignatureCollision(function, old, this);
+        checkFunctionCollision(function);
         functions.put(function.getIdentifier(), function);
+    }
+
+    private void checkFunctionCollision (FFunction function) throws SignatureCollision {
+        for (FFunction other : getFunctions(function.getIdentifier())) {
+            if (function.getSignature().collidesWith(other.getSignature()))
+                throw new SignatureCollision(function, other, this);
+        }
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {

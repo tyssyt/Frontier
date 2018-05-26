@@ -235,7 +235,7 @@ public class LLVMModule implements AutoCloseable {
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set global attribs
         setGlobalAttribs(res, Linkage.fromVisibility(function.getVisibility()), true);
-        LLVMSetFunctionCallConv(res, CALLING_CONVENTION);
+        //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work...
 
         //set names for all arguments
         int offset = 0;
@@ -243,7 +243,7 @@ public class LLVMModule implements AutoCloseable {
             LLVMSetValueName(LLVMGetParam(res, 0), "this");
             offset = 1;
         }
-        List<FLocalVariable> fParams = function.getParams();
+        List<FParameter> fParams = function.getParams();
         for (int i=0; i<fParams.size(); i++)
             LLVMSetValueName(LLVMGetParam(res, i + offset), fParams.get(i).getIdentifier().name);
         return res;
@@ -254,7 +254,7 @@ public class LLVMModule implements AutoCloseable {
      * @return the LLVM-Function-Type corresponding to the FFunction
      */
     private LLVMTypeRef getLLVMFunctionType(FFunction function) {
-        List<FLocalVariable> fParams = function.getParams();
+        List<FParameter> fParams = function.getParams();
         int size = fParams.size();
         if (!function.isStatic())
             size++;

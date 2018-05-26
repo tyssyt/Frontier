@@ -1,11 +1,11 @@
 package tys.frontier.parser.syntaxTree;
 
-import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -13,11 +13,8 @@ import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.ClassNotFound;
-import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public final class ParserContextUtils {
@@ -96,6 +93,13 @@ public final class ParserContextUtils {
         return new FLocalVariable(identifier, type);
     }
 
+    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
+            throws ClassNotFound{
+        FClass type = getType(ctx.typeType(), possibleTypes);
+        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        return new FParameter(identifier, type);
+    }
+
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) { //TODO why do we have res instead of just return (look at once all literals are done)
         ParseTree child = ctx.getChild(0);
         FLiteral res = null;
@@ -138,24 +142,4 @@ public final class ParserContextUtils {
         }
         return res;
     }
-
-    public static ImmutableList<FLocalVariable> getParams (FrontierParser.FormalParametersContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
-            throws SyntaxErrors {
-        List<FrontierParser.TypedIdentifierContext> cs = ctx.typedIdentifier();
-        if (cs.isEmpty())
-            return ImmutableList.of();
-        ImmutableList.Builder<FLocalVariable> res = ImmutableList.builder();
-        List<ClassNotFound> errors = new ArrayList<>();
-        for (FrontierParser.TypedIdentifierContext c : cs) {
-            try {
-                res.add(getVariable(c, possibleTypes));
-            } catch (ClassNotFound e) {
-                errors.add(e);
-            }
-        }
-        if (!errors.isEmpty())
-            throw SyntaxErrors.create(errors);
-        return res.build();
-    }
-
 }

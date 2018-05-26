@@ -1,13 +1,19 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.FFunction;
+import com.google.common.collect.ImmutableList;
+import tys.frontier.code.FClass;
+import tys.frontier.code.identifier.FFunctionIdentifier;
+
+import java.util.List;
 
 public class FunctionNotFound extends SyntaxError {
 
-    public final FFunction.Signature signature;
+    public final FFunctionIdentifier identifier;
+    public final ImmutableList<FClass> paramTypes;
 
-    public FunctionNotFound(FFunction.Signature signature) {
-        super(signature.toString());
-        this.signature = signature;
+    public FunctionNotFound(FFunctionIdentifier identifier, List<FClass> paramTypes) {
+        super("" + identifier + paramTypes);
+        this.identifier = identifier;
+        this.paramTypes = ImmutableList.copyOf(paramTypes);
     }
 }

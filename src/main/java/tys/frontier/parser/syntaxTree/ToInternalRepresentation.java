@@ -149,6 +149,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         currentFunction = f;
         declaredVars.push(Utils.asMap(f.getParams()));
         try {
+            //parse default values of parameters
+            ctx.formalParameters().accept(this);
+
+            //parse function body
             if (!f.isStatic()) {
                 FLocalVariable thiz = currentClass.getThis();
                 declaredVars.put(thiz.getIdentifier(), thiz);
@@ -162,19 +166,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FConstructor visitConstructorDeclaration(FrontierParser.ConstructorDeclarationContext ctx) {
-        FConstructor f = treeData.constructors.get(ctx);
-        currentFunction = f;
-        declaredVars.push(Utils.asMap(f.getParams()));
-        try {
-            FLocalVariable thiz = currentClass.getThis();
-            declaredVars.put(thiz.getIdentifier(), thiz);
-            f.setBody(statementsFromList(ctx.statement()));
-            return f;
-        } finally {
-            currentFunction = null;
-            declaredVars.pop();
+    public Object visitFormalParameter(FrontierParser.FormalParameterContext ctx) {
+        FrontierParser.ExpressionContext c = ctx.expression();
+        if (c != null) {
+            treeData.parameters.get(ctx).setDefaultValue(visitExpression(c));
         }
+        return null;
     }
 
     //statements
@@ -602,8 +599,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FFunctionCall functionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
-        FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
-        FFunction f = object.getType().resolveFunction(signature).a;
+        FFunction f = object.getType().resolveFunction(identifier, paramTypes).a;
         if (currentClass != object.getType() && f.getVisibility() == FVisibilityModifier.PRIVATE) {
             errors.add(new AccessForbidden(f));
             throw new Failed();
@@ -614,8 +610,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FFunctionCall staticFunctionCall (FClass clazz, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound {
         List<FClass> paramTypes = typesFromExpressionList(params);
-        FFunction.Signature signature = new FFunction.Signature(identifier, paramTypes);
-        FFunction f = clazz.resolveFunction(signature).a;
+        FFunction f = clazz.resolveFunction(identifier, paramTypes).a;
         if (currentClass != clazz && f.getVisibility() == FVisibilityModifier.PRIVATE) {
             errors.add(new AccessForbidden(f));
             throw new Failed();
@@ -649,8 +644,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             return functionCall(getThisExpr(), identifier, params);
         } catch (FunctionNotFound | UndeclaredVariable e) {
-            errors.add(e);
-            throw new Failed();
+            //instance method not found, check for static method
+            try {
+                return staticFunctionCall(currentClass, identifier, params);
+            } catch (FunctionNotFound functionNotFound) {
+                errors.add(e);
+                throw new Failed();
+            }
         }
     }
 
