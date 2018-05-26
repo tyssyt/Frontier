@@ -2,6 +2,8 @@
     "keywords": {
         "import":       "import",
         "class":        "class",
+
+        "constructors": "constructors",
         
         "export":       "export",
         "private":      "private",

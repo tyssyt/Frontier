@@ -2,8 +2,11 @@ package tys.frontier.code.predefinedClasses;
 
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.literal.FBoolLiteral;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
@@ -16,6 +19,11 @@ public class FBool extends FPredefinedClass {
     private FBool() {
         super(FClassIdentifier.BOOL);
         addFunctionsInstance();
+    }
+
+    @Override
+    public FExpression getDefaultValue() {
+        return new FLiteralExpression(FBoolLiteral.FALSE);
     }
 
     public static void addFunctions() {

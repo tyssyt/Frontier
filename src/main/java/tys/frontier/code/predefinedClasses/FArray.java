@@ -1,8 +1,10 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.*;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FConstructor;
+import tys.frontier.code.FField;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
@@ -31,18 +33,11 @@ public class FArray extends FPredefinedClass {
         } catch (IdentifierCollision identifierCollision) {
             Utils.handleException(identifierCollision);
         }
-        {
-            //create constructors
-            ImmutableList.Builder<FParameter> builder = new ImmutableList.Builder<>();
-            for (int i = 0; i < depth; i++) {
-                builder.add(new FParameter(new FVariableIdentifier("i" + i), FIntN._32)); //TODO other int types, solved when we have promotion
-                try {
-                    addFunction(new FConstructor(FVisibilityModifier.EXPORT, this, builder.build()){{predefined=true;}});
-                } catch (SignatureCollision e) {
-                    Utils.handleException(e);
-                }
-            }
-
+        //create constructor
+        try {
+            addFunction(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
+        } catch (SignatureCollision e) {
+            Utils.handleException(e);
         }
     }
 

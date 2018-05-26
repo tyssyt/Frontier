@@ -1,6 +1,9 @@
 package tys.frontier.code.predefinedClasses;
 
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.literal.FFloat32Literal;
 
 public class FFloat32 extends FPredefinedClass {
 
@@ -10,4 +13,8 @@ public class FFloat32 extends FPredefinedClass {
         super(FClassIdentifier.FLOAT32);
     }
 
+    @Override
+    public FExpression getDefaultValue() {
+        return new FLiteralExpression(new FFloat32Literal(0, "0.0f"));
+    }
 }

@@ -3,7 +3,10 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FIntIdentifier;
+import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
@@ -56,5 +59,10 @@ public class FIntN extends FPredefinedClass {
 
     public static FIntN getIntN(int n) {
         return existing.computeIfAbsent(n, FIntN::new);
+    }
+
+    @Override
+    public FExpression getDefaultValue() {
+        return new FLiteralExpression(new FIntNLiteral(0, n, "0"));
     }
 }

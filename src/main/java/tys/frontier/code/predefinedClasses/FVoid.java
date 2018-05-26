@@ -9,5 +9,4 @@ public class FVoid extends FPredefinedClass {
     private FVoid () {
         super(FClassIdentifier.VOID);
     }
-
 }

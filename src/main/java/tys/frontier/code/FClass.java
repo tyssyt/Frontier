@@ -5,10 +5,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.primitives.Booleans;
 import tys.frontier.code.Operator.FBinaryOperator;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.literal.FNull;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
@@ -27,6 +30,8 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
 
+    private FVisibilityModifier constructorVisibility;
+
     private FLocalVariable thiz;
 
     protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
@@ -36,13 +41,6 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private FBlock staticInitializer;
 
     public FClass (FClassIdentifier identifier, FVisibilityModifier visibility) {
-        this.identifier = identifier;
-        this.visibility = visibility;
-        thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
-        addDefaultFunctions();
-    }
-
-    protected FClass(FClassIdentifier identifier, FVisibilityModifier visibility, boolean b) {
         this.identifier = identifier;
         this.visibility = visibility;
         thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
@@ -57,6 +55,23 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }
+    }
+
+    public void generateConstructor() {
+        FVisibilityModifier visibility = constructorVisibility == null ? FVisibilityModifier.PRIVATE : constructorVisibility;
+        try {
+            addFunction(FConstructor.create(visibility, this));
+        } catch (SignatureCollision signatureCollision) {
+            Utils.handleException(signatureCollision);
+        }
+    }
+
+    public FVisibilityModifier getConstructorVisibility() {
+        return constructorVisibility;
+    }
+
+    public void setConstructorVisibility(FVisibilityModifier constructorVisibility) {
+        this.constructorVisibility = constructorVisibility;
     }
 
     public Map<FVariableIdentifier, FField> getFields() {
@@ -76,8 +91,12 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return visibility;
     }
 
-    public FLocalVariable getThis () {
+    public FLocalVariable getThis() {
         return thiz;
+    }
+
+    public FExpression getDefaultValue() {
+        return new FLiteralExpression(FNull.INSTANCE);
     }
 
     public FField getField (FVariableIdentifier identifier) {

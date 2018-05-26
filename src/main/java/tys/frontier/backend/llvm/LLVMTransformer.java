@@ -92,6 +92,13 @@ class LLVMTransformer implements
             LLVMBuildStore(builder, LLVMGetParam(res, i+offset), alloca);
         }
 
+        //for constructors, allocate the this object
+        if (function.isConstructor()) {
+            LLVMValueRef alloca = createEntryBlockAlloca(function.getClazz().getThis());
+            LLVMValueRef malloc = LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(function.getClazz())), "malloc_" + function.getClazz().getIdentifier());
+            LLVMBuildStore(builder, malloc, alloca);
+        }
+
         //do the body
         for (FStatement statement : function.getBody())
             statement.accept(this);
@@ -427,10 +434,8 @@ class LLVMTransformer implements
     public LLVMValueRef visitLiteral(FLiteralExpression expression) {
         FLiteral literal = expression.getLiteral();
         LLVMTypeRef type = module.getLlvmType(literal.getType());
-        if (literal instanceof FInt32Literal) {
-            return LLVMConstInt(type, ((FInt32Literal)literal).value, TRUE);
-        } else if (literal instanceof FInt64Literal) {
-            return LLVMConstInt(type, ((FInt64Literal) literal).value, TRUE);
+        if (literal instanceof FIntNLiteral) {
+            return LLVMConstInt(type, ((FIntNLiteral)literal).value.longValue(), TRUE);
         } else if (literal instanceof FFloat32Literal) {
             return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {

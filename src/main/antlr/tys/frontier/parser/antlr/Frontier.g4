@@ -27,6 +27,7 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 tokens {
     IMPORT,
     CLASS,
+    CONSTRUCTORS,
     EXPORT,
     PRIVATE,
     STATIC,
@@ -67,7 +68,18 @@ importStatement
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier LBRACE classBodyDeclaration* RBRACE
+    :   visibilityModifier? CLASS TypeIdentifier LBRACE
+        classDeclaratives
+        classBodyDeclaration*
+        RBRACE
+    ;
+
+classDeclaratives
+    :   constructorsDeclarative?
+    ;
+
+constructorsDeclarative
+    :   visibilityModifier? CONSTRUCTORS SEMI
     ;
 
 modifier

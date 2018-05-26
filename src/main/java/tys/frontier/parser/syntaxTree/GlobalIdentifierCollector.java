@@ -56,9 +56,18 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
-        for (FrontierParser.ClassBodyDeclarationContext c : ctx.classBodyDeclaration()) {
-            c.accept(this);
+        try {
+            visitChildren(ctx);
+            currentClass.generateConstructor(); //to generate the constructor we need to know the fields, so this goes after
+            return null;
+        } finally {
+            currentClass = null;
         }
+    }
+
+    @Override
+    public Object visitConstructorsDeclarative(FrontierParser.ConstructorsDeclarativeContext ctx) {
+        currentClass.setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
         return null;
     }
 

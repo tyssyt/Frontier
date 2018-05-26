@@ -115,9 +115,9 @@ public final class ParserContextUtils {
             switch (token.getType()) {
                 case FrontierParser.IntegerLiteral:
                     if (text.endsWith("L") || text.endsWith("l"))
-                        res = new FInt64Literal(Long.parseLong(text.substring(0,text.length()-1)), text);
+                        res = new FIntNLiteral(Long.parseLong(text.substring(0,text.length()-1)), 64, text);
                     else
-                        res = new FInt32Literal(Integer.parseInt(text), text);
+                        res = new FIntNLiteral(Integer.parseInt(text), 32, text);
                     break;
                 case FrontierParser.NULL:
                     res = FNull.INSTANCE;
