@@ -10,7 +10,7 @@ public class SyntaxErrors extends Exception {
     public final Collection<? extends SyntaxError> errors;
 
     private SyntaxErrors(Collection<? extends SyntaxError> errors, String message) {
-        super(message);
+        super(message, errors.iterator().next());
         this.errors = errors;
     }
 
