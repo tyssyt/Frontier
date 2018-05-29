@@ -31,6 +31,11 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
     }
 
     @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        return Optional.of(function);
+    }
+
+    @Override
     public void checkTypes() throws IncompatibleTypes {
         FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
         if (function.getType() != expressionType)

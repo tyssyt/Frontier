@@ -26,6 +26,11 @@ public class FVarDeclaration implements FStatement {
     }
 
     @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        return Optional.empty();
+    }
+
+    @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterVarDeclaration(this);
         return visitor.exitVarDeclaration(this, getAssignment().map(assignment -> assignment.accept(visitor)));

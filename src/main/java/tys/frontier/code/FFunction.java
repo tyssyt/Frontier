@@ -5,6 +5,7 @@ import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //TODO the FFunction hierachy is so messy with constructors and predefined and stuff...
-public class FFunction implements FClassMember, IdentifierNameable, Typed, StringBuilderToString {
+public class FFunction implements FClassMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
     private FClass clazz;

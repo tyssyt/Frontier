@@ -49,6 +49,8 @@ public final class ParserContextUtils {
                 return FBool.INSTANCE;
             case FrontierParser.INT:
                 return Utils.NYI("unbounded int type");
+            case FrontierParser.CHAR:
+                return FIntN._8;
             case FrontierParser.INT32:
                 return FIntN._32;
             case FrontierParser.INT64:

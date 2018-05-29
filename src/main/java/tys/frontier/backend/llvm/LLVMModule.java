@@ -59,6 +59,7 @@ public class LLVMModule implements AutoCloseable {
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
     private List<FClass> todoTypeBodies = new ArrayList<>();
+    private List<FField> todoFieldInitilizers = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
 
     public LLVMModule(String name) {
@@ -211,9 +212,10 @@ public class LLVMModule implements AutoCloseable {
                     //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
                     LLVMTypeRef type = getLlvmType(field.getType());
                     LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
-                    LLVMSetInitializer(global, LLVMConstNull(type));
+
                     setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
                     //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
+                    todoFieldInitilizers.add(field);
                 }
             }
             for (FFunction function : clazz.getFunctions().values()) {
@@ -290,6 +292,9 @@ public class LLVMModule implements AutoCloseable {
         }
 
         try (LLVMTransformer trans = new LLVMTransformer(this)) {
+            for (FField field : todoFieldInitilizers) {
+                trans.visitField(field);
+            }
             //last are bodies for fields
             for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);

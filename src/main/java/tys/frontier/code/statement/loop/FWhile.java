@@ -8,35 +8,23 @@ import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FWhile implements FLoop, NeedsTypeCheck {
+public class FWhile extends FLoop implements NeedsTypeCheck {
 
-    private FLoopIdentifier identifier;
     private FExpression condition;
-    private FStatement body;
 
-    public FWhile(FLoopIdentifier identifier, FExpression condition, FStatement body) {
-        this.identifier = identifier;
+    public FWhile(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FStatement body) {
+        super(nestedDepth, identifier, body);
         this.condition = condition;
-        this.body = body;
-    }
-
-    @Override
-    public FLoopIdentifier getIdentifier() {
-        return identifier;
     }
 
     public FExpression getCondition() {
         return condition;
     }
 
-    public FStatement getBody() {
-        return body;
-    }
-
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterWhile(this);
-        return visitor.exitWhile(this, condition.accept(visitor), body.accept(visitor));
+        return visitor.exitWhile(this, condition.accept(visitor), getBody().accept(visitor));
     }
 
     @Override
@@ -54,7 +42,7 @@ public class FWhile implements FLoop, NeedsTypeCheck {
     public StringBuilder toString(StringBuilder sb) {
         sb.append("while (");
         condition.toString(sb).append(") ");
-        return body.toString(sb);
+        return getBody().toString(sb);
     }
     @Override
     public String toString() {

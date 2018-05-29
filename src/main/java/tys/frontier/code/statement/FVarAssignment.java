@@ -9,6 +9,7 @@ import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
@@ -35,6 +36,11 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
     public FExpression getValue() {
         return value;
+    }
+
+    @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        return Optional.empty();
     }
 
     @Override

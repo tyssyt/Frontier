@@ -24,6 +24,7 @@ public class Keywords {
             .put("void", FrontierParser.VOID)
             .put("bool", FrontierParser.BOOL)
             .put("int", FrontierParser.INT)
+            .put("char", FrontierParser.CHAR)
             .put("int32", FrontierParser.INT32)
             .put("int64", FrontierParser.INT64)
             .put("float32", FrontierParser.FLOAT32)

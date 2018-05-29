@@ -1,7 +1,9 @@
 package tys.frontier.code.statement;
 
+import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.statement.loop.FLoop;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -31,6 +33,28 @@ public class FIf implements FStatement, NeedsTypeCheck {
 
     public Optional<FStatement> getElse() {
         return Optional.ofNullable(elze);
+    }
+
+    @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        if (elze != null) {
+            return then.redirectsControlFlow().flatMap(
+                    t -> elze.redirectsControlFlow().map(
+                    e -> {
+                        if (t instanceof FFunction)
+                            return e;
+                        if (e instanceof FFunction)
+                            return t;
+                        FLoop tL = ((FLoop) t);
+                        FLoop eL = ((FLoop) e);
+                        if (tL.getNestedDepth() < eL.getNestedDepth())
+                            return eL;
+                        else
+                            return tL;
+                    }
+                    )); //this is obviously by far the most readable way to write this ;)
+        }
+        return Optional.empty(); //the obvious way to make this more readable is to reduce it to a one liner with getElse and more Optionals :)
     }
 
     @Override

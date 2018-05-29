@@ -49,8 +49,9 @@ public class LLVMBackend implements Backend {
                 module.emitToFile(fileType, out);
                 return;
             }
-            System.out.println(module.emitToString());
+            System.out.println("generated Module: " + module.emitToString());
             module.optimize(3);
+            //System.out.println("optimized Module: " + module.emitToString());
             module.emitToFile(fileType, out);
         }
     }
@@ -70,7 +71,6 @@ public class LLVMBackend implements Backend {
             res.parseClassMembers(file);
         res.fillInBodies();
         fModule.getEntryPoint().ifPresent(res::generateMain);
-        res.verify();
         return res;
     }
 

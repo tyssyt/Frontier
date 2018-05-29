@@ -37,6 +37,7 @@ tokens {
     VOID,
     BOOL,
     INT,
+    CHAR,
     INT32,
     INT64,
     FLOAT32,
@@ -135,6 +136,7 @@ basicType
 predefinedType
     :   BOOL
     |   INT
+    |   CHAR
     |   INT32
     |   INT64
     |   FLOAT32

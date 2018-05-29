@@ -9,23 +9,15 @@ import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FForEach implements FLoop, NeedsTypeCheck {
+public class FForEach extends FLoop implements NeedsTypeCheck {
 
-    private FLoopIdentifier identifier;
     private FVariable iterator;
     private FExpression container;
-    private FStatement body;
 
-    public FForEach(FLoopIdentifier identifier, FVariable iterator, FExpression container, FStatement body) {
-        this.identifier = identifier;
+    public FForEach(int nestedDepth, FLoopIdentifier identifier, FVariable iterator, FExpression container, FStatement body) {
+        super(nestedDepth, identifier, body);
         this.iterator = iterator;
         this.container = container;
-        this.body = body;
-    }
-
-    @Override
-    public FLoopIdentifier getIdentifier() {
-        return identifier;
     }
 
     public FVariable getIterator() {
@@ -36,14 +28,10 @@ public class FForEach implements FLoop, NeedsTypeCheck {
         return container;
     }
 
-    public FStatement getBody() {
-        return body;
-    }
-
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterForEach(this);
-        return visitor.exitForEach(this, container.accept(visitor), body.accept(visitor));
+        return visitor.exitForEach(this, container.accept(visitor), getBody().accept(visitor));
     }
 
     @Override
@@ -61,7 +49,7 @@ public class FForEach implements FLoop, NeedsTypeCheck {
     public StringBuilder toString(StringBuilder sb) {
         sb.append("for (").append(iterator).append(" : ");
         container.toString(sb).append(") ");
-        return body.toString(sb);
+        return getBody().toString(sb);
     }
     @Override
     public String toString() {

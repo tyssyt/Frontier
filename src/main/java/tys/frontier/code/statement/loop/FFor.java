@@ -11,25 +11,17 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import java.util.Optional;
 
-public class FFor implements FLoop, NeedsTypeCheck {
+public class FFor extends FLoop implements NeedsTypeCheck {
 
-    private FLoopIdentifier identifier;
     private FVarDeclaration declaration; //optional
     private FExpression condition; //optional
     private FExpression increment; //optional
-    private FStatement body;
 
-    public FFor(FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FStatement body) {
-        this.identifier = identifier;
+    public FFor(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FStatement body) {
+        super(nestedDepth, identifier, body);
         this.declaration = declaration;
         this.condition = condition;
         this.increment = increment;
-        this.body = body;
-    }
-
-    @Override
-    public FLoopIdentifier getIdentifier() {
-        return identifier;
     }
 
     public Optional<FVarDeclaration> getDeclaration() {
@@ -44,17 +36,13 @@ public class FFor implements FLoop, NeedsTypeCheck {
         return Optional.ofNullable(increment);
     }
 
-    public FStatement getBody() {
-        return body;
-    }
-
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterFor(this);
         Optional<S> decl = getDeclaration().map(declaration -> declaration.accept(visitor));
         Optional<E> cond = getCondition().map(condition -> condition.accept(visitor));
         Optional<E> incr = getIncrement().map(increment -> increment.accept(visitor));
-        return visitor.exitFor(this, decl, cond, incr, body.accept(visitor));
+        return visitor.exitFor(this, decl, cond, incr, getBody().accept(visitor));
     }
 
     @Override
@@ -77,7 +65,7 @@ public class FFor implements FLoop, NeedsTypeCheck {
         sb.append("; ");
         getIncrement().ifPresent(i -> i.toString(sb));
         sb.append(") ");
-        return body.toString(sb);
+        return getBody().toString(sb);
     }
     @Override
     public String toString() {

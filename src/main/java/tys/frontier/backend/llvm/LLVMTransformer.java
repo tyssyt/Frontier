@@ -13,12 +13,14 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.modules.io.IOClass;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ class LLVMTransformer implements
     private LLVMBuilderRef entryBlockAllocaBuilder;
     private Map<FField, LLVMValueRef> fields = new HashMap<>(); //TODO why this not used?
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
+    private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
 
     public LLVMTransformer(LLVMModule module) {
         this.module = module;
@@ -65,6 +68,24 @@ class LLVMTransformer implements
         if (old != null)
             Utils.cantHappen();
         return res;
+    }
+
+    @Override
+    public LLVMValueRef visitField(FField field) {
+        LLVMValueRef res = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
+        if (res.isNull()) {
+            Utils.cantHappen();
+        }
+
+        LLVMTypeRef type = module.getLlvmType(field.getType());
+        LLVMValueRef val = field.getAssignment()
+                .map(FVarAssignment::getValue)
+                .filter(v -> v instanceof FLiteralExpression)
+                .map(v -> (FLiteralExpression)v)
+                .map(lit -> lit.accept(this))
+                .orElse(LLVMConstNull(type));
+        LLVMSetInitializer(res, val);
+        return null;
     }
 
     @Override
@@ -127,7 +148,7 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitIf(FIf fIf) {
-        //TODO some analysis if blocks have flow control at the end (aka whether we need the branch) would be nice
+        //TODO there might be a bug where the after_if block gets appended but bever used because if.redirectsControlFlow is true
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef ifBlock = LLVMAppendBasicBlock(currentFunction, "if");
         LLVMBasicBlockRef thenBlock = LLVMAppendBasicBlock(currentFunction, "then");
@@ -142,12 +163,14 @@ class LLVMTransformer implements
 
         LLVMPositionBuilderAtEnd(builder, thenBlock);
         fIf.getThen().accept(this);
-        LLVMBuildBr(builder, continueBlock);
+        if (!fIf.getThen().redirectsControlFlow().isPresent())
+            LLVMBuildBr(builder, continueBlock);
 
         fIf.getElse().ifPresent(elze -> {
             LLVMPositionBuilderAtEnd(builder, elseBlock);
             elze.accept(this);
-            LLVMBuildBr(builder, continueBlock);
+            if (!elze.redirectsControlFlow().isPresent())
+                LLVMBuildBr(builder, continueBlock);
         });
 
         LLVMPositionBuilderAtEnd(builder, continueBlock);
@@ -179,17 +202,59 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitWhile(FWhile fWhile) {
-        return Utils.NYI("while");
+        LLVMValueRef currentFunction = getCurrentFunction();
+        LLVMBasicBlockRef condBlock = LLVMAppendBasicBlock(currentFunction, "while_cond");
+        LLVMBasicBlockRef bodyBlock = LLVMAppendBasicBlock(currentFunction, "while_body");
+        LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after_while");
+        loopJumpPoints.put(fWhile, new Pair<>(condBlock, afterBlock));
+
+        LLVMBuildBr(builder, condBlock);
+
+        LLVMPositionBuilderAtEnd(builder, condBlock);
+        LLVMValueRef condition = fWhile.getCondition().accept(this);
+        LLVMBuildCondBr(builder, condition, bodyBlock, afterBlock);
+
+        LLVMPositionBuilderAtEnd(builder, bodyBlock);
+        fWhile.getBody().accept(this);
+        if (!fWhile.getBody().redirectsControlFlow().isPresent())
+            LLVMBuildBr(builder, condBlock);
+
+        LLVMPositionBuilderAtEnd(builder, afterBlock);
+        return null;
     }
 
     @Override
     public LLVMValueRef visitFor(FFor fFor) {
-        return Utils.NYI("for");
+        LLVMValueRef currentFunction = getCurrentFunction();
+        LLVMBasicBlockRef condBlock = LLVMAppendBasicBlock(currentFunction, "for_cond");
+        LLVMBasicBlockRef bodyBlock = LLVMAppendBasicBlock(currentFunction, "for_body");
+        LLVMBasicBlockRef incBlock = LLVMAppendBasicBlock(currentFunction, "for_inc");
+        LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after_for");
+        loopJumpPoints.put(fFor, new Pair<>(incBlock, afterBlock));
+
+        fFor.getDeclaration().ifPresent(decl -> decl.accept(this));
+        LLVMBuildBr(builder, condBlock);
+
+        LLVMPositionBuilderAtEnd(builder, condBlock);
+        LLVMValueRef condition = fFor.getCondition().map( c -> c.accept(this)).orElse(boolLiteral(true));
+        LLVMBuildCondBr(builder, condition, bodyBlock, afterBlock);
+
+        LLVMPositionBuilderAtEnd(builder, bodyBlock);
+        fFor.getBody().accept(this);
+        if (!fFor.getBody().redirectsControlFlow().isPresent())
+            LLVMBuildBr(builder, incBlock);
+
+        LLVMPositionBuilderAtEnd(builder, incBlock);
+        fFor.getIncrement().ifPresent(inc -> inc.accept(this));
+        LLVMBuildBr(builder, condBlock);
+
+        LLVMPositionBuilderAtEnd(builder, afterBlock);
+        return null;
     }
 
     @Override
     public LLVMValueRef visitForEach(FForEach forEach) {
-        return Utils.NYI("for each");
+        return Utils.cantHappen();
     }
 
     @Override
@@ -199,12 +264,18 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitBreak(FBreak fBreak) {
-        return Utils.NYI("break");
+        LLVMBasicBlockRef target = loopJumpPoints.get(fBreak.getLoop().getLoop()).b;
+        LLVMValueRef res = LLVMBuildBr(builder, target);
+        LLVMPositionBuilderAtEnd(builder, target);
+        return res;
     }
 
     @Override
     public LLVMValueRef visitContinue(FContinue fContinue) {
-        return Utils.NYI("continue");
+        LLVMBasicBlockRef target = loopJumpPoints.get(fContinue.getLoop().getLoop()).a;
+        LLVMValueRef res = LLVMBuildBr(builder, target);
+        LLVMPositionBuilderAtEnd(builder, target);
+        return res;
     }
 
     @Override
@@ -443,11 +514,10 @@ class LLVMTransformer implements
         } else if (literal instanceof FCharLiteral) {
             return LLVMConstInt(type, ((FCharLiteral) literal).value, FALSE);
         } else if (literal instanceof FStringLiteral) {
-            return module.constantString(((FStringLiteral) literal).value);
-        } else if (literal == FBoolLiteral.TRUE) {
-            return LLVMConstInt(type, TRUE, FALSE);
-        } if (literal == FBoolLiteral.FALSE) {
-            return LLVMConstInt(type, FALSE, FALSE);
+            LLVMValueRef res = module.constantString(((FStringLiteral) literal).value);
+            return LLVMBuildBitCast(builder, res, type, ""); //cast to get rid of the explicit length in the array type to make LLVM happy
+        } else if (literal instanceof  FBoolLiteral) {
+            return boolLiteral(((FBoolLiteral) literal).value);
         } else if (literal == FNull.INSTANCE) {
             //return LLVMConstNull()
             //return LLVMConstPointerNull()
@@ -455,6 +525,10 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef boolLiteral(boolean b) {
+        return LLVMConstInt(module.getLlvmType(FBool.INSTANCE), b ? TRUE : FALSE, FALSE);
     }
 
     @Override

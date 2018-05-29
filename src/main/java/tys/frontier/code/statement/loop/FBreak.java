@@ -1,8 +1,11 @@
 package tys.frontier.code.statement.loop;
 
+import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+
+import java.util.Optional;
 
 public class FBreak implements FStatement {
 
@@ -14,6 +17,11 @@ public class FBreak implements FStatement {
 
     public FLoopIdentifier getLoop() {
         return loop;
+    }
+
+    @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        return Optional.of(loop.getLoop());
     }
 
     @Override

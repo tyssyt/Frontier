@@ -15,7 +15,10 @@ import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.*;
+import tys.frontier.parser.warnings.UnreachableStatements;
+import tys.frontier.parser.warnings.Warning;
 import tys.frontier.util.MapStack;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -24,6 +27,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFile file;
     private SyntaxTreeData treeData;
+    private List<Warning> warnings = new ArrayList<>();
     private List<SyntaxError> errors = new ArrayList<>();
     private List<NeedsTypeCheck> typeChecks = new ArrayList<>();
 
@@ -42,12 +46,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         knownClasses.putAll(file.getClasses());
     }
 
-    public static List<NeedsTypeCheck> toInternal(SyntaxTreeData syntaxTreeData, FFile file, Map<FClassIdentifier, FClass> importedClasses) throws SyntaxErrors {
+    public static Pair<List<NeedsTypeCheck>, List<Warning>> toInternal(SyntaxTreeData syntaxTreeData, FFile file, Map<FClassIdentifier, FClass> importedClasses) throws SyntaxErrors {
         ToInternalRepresentation visitor = new ToInternalRepresentation(file, syntaxTreeData, importedClasses);
         visitor.visitFile(syntaxTreeData.root);
         if (!visitor.errors.isEmpty())
             throw SyntaxErrors.create(visitor.errors);
-        return visitor.typeChecks;
+        return new Pair<>(visitor.typeChecks, visitor.warnings);
     }
 
 
@@ -123,6 +127,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             assign = new FVarAssignment(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, val);
             typeChecks.add(assign);
         }
+
+        if (declaredVars.contains(var.getIdentifier())) {
+            errors.add(new TwiceDefinedLocalVariable(var.getIdentifier()));
+            throw new Failed();
+        }
+        declaredVars.put(var.getIdentifier(), var);
+
         return new FVarDeclaration(var, assign);
     }
 
@@ -220,14 +231,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FVarDeclaration visitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
-        FVarDeclaration res = visitVariableDeclarator(ctx.variableDeclarator());
-        FVariableIdentifier identifier = res.getVar().getIdentifier();
-        if (declaredVars.contains(identifier)) {
-            errors.add(new TwiceDefinedLocalVariable(identifier));
-            throw new Failed();
-        }
-        declaredVars.put(res.getVar().getIdentifier(), res.getVar());
-        return res;
+        return visitVariableDeclarator(ctx.variableDeclarator());
     }
 
     @Override
@@ -235,10 +239,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         declaredVars.push();
         try {
             ImmutableList<FStatement> statements = statementsFromList(ctx.statement());
+            //TODO the following lines very likely should move to FBlock in a create function or similar
             if (statements.size() == 0)
                 return new FEmptyStatement();
             if (statements.size() == 1)
                 return statements.get(0);
+            for (int i = 0; i < statements.size()-1; i++) {
+                FStatement statement = statements.get(i);
+                if (statement.redirectsControlFlow().isPresent()) {
+                    warnings.add(new UnreachableStatements(statements.subList(i+1, statements.size())));
+                    statements = statements.subList(0, i+1);
+                    break;
+                }
+            }
             return new FBlock(statements);
         } finally {
             declaredVars.pop();
@@ -288,7 +301,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 throw f;
             }
             FStatement body = visitStatement(ctx.statement());
-            FWhile res = new FWhile(identifier, cond, body);
+            FWhile res = new FWhile(loops.size(), identifier, cond, body);
             typeChecks.add(res);
             return res;
         } finally {
@@ -340,7 +353,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             if (failed)
                 throw new Failed();
 
-            FFor res = new FFor(identifier, decl, cond, inc, body);
+            FFor res = new FFor(loops.size(), identifier, decl, cond, inc, body);
             typeChecks.add(res);
             return res;
         } finally {
@@ -385,7 +398,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             if (failed)
                 throw new Failed();
 
-            FForEach res = new FForEach(identifier, it, container, body);
+            FForEach res = new FForEach(loops.size(), identifier, it, container, body);
             typeChecks.add(res);
             return res;
         } finally {
@@ -604,7 +617,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(new AccessForbidden(f));
             throw new Failed();
         }
-        return new FFunctionCall(object, f, params);
+        FFunctionCall res = new FFunctionCall(object, f, params);
+        typeChecks.add(res);
+        return res;
     }
 
     private FFunctionCall staticFunctionCall (FClass clazz, FFunctionIdentifier identifier, List<FExpression> params)
@@ -615,7 +630,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(new AccessForbidden(f));
             throw new Failed();
         }
-        return new FFunctionCall(f, params);
+        FFunctionCall res = new FFunctionCall(f, params);
+        typeChecks.add(res);
+        return res;
     }
 
     @Override

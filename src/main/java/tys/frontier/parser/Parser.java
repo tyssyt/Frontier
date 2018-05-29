@@ -17,7 +17,9 @@ import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
+import tys.frontier.parser.warnings.Warning;
 import tys.frontier.style.Style;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -88,14 +90,17 @@ public class Parser {
             }
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
-            List<NeedsTypeCheck> typeChecks = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
+            Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
             {
                 Log.info(this, "parsed classes");
                 Log.debug(this, file.toString());
+                if (!typeChecksAndWarnings.b.isEmpty()) {
+                    Log.warning(this, typeChecksAndWarnings.b.toString());
+                }
             }
 
             stage = Stage.TYPE_CHECKS;
-            NeedsTypeCheck.checkAll(typeChecks);
+            NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
             Log.info(this, "typecheck passed");
 
             stage = Stage.FINISHED;

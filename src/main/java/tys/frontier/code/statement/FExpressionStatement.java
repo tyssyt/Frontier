@@ -4,6 +4,8 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 
+import java.util.Optional;
+
 public class FExpressionStatement implements FStatement {
 
     private FExpression expression;
@@ -14,6 +16,11 @@ public class FExpressionStatement implements FStatement {
 
     public FExpression getExpression() {
         return expression;
+    }
+
+    @Override
+    public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
+        return Optional.empty();
     }
 
     @Override
