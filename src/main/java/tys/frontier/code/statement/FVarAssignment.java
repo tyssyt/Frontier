@@ -23,7 +23,7 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
         this.variableExpression = variable;
         this.operator = operator;
         this.value = value;
-        variable.setStore();
+        variable.setAccessType(FVariableExpression.AccessType.STORE);
     }
 
     public FVariableExpression getVariableExpression() {

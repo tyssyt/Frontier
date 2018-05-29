@@ -352,8 +352,23 @@ class LLVMTransformer implements
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
             return LLVMBuildNeg(builder, arg, "neg");
+        else if (id.equals(FUnaryOperator.Pre.INC.identifier))
+            return incDec(arg, LLVMAdd, true);
+        else if (id.equals(FUnaryOperator.Pre.DEC.identifier))
+            return incDec(arg, LLVMSub, true);
+        else if (id.equals(FUnaryOperator.Post.INC.identifier))
+            return incDec(arg, LLVMAdd, false);
+        else if (id.equals(FUnaryOperator.Post.DEC.identifier))
+            return incDec(arg, LLVMSub, false);
         else
             return Utils.cantHappen();
+    }
+
+    private LLVMValueRef incDec(LLVMValueRef addr, int op, boolean pre) {
+        LLVMValueRef load = LLVMBuildLoad(builder, addr, "load_incdec");
+        LLVMValueRef modified = LLVMBuildBinOp(builder, op, load, LLVMConstInt(LLVMTypeOf(load), 1, TRUE), "incdec");
+        LLVMBuildStore(builder, modified, addr);
+        return pre ? load : modified;
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {
@@ -367,6 +382,7 @@ class LLVMTransformer implements
             right = functionCall.getArguments().get(0).accept(this);
         }
 
+        //TODO create an enum that maps Id to the llvm op and actually make this all a 1 liner...
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
         if (id.equals(FBinaryOperator.Arith.PLUS.identifier)) {
             return LLVMBuildAdd(builder, left, right, "add");
@@ -506,13 +522,13 @@ class LLVMTransformer implements
         FLiteral literal = expression.getLiteral();
         LLVMTypeRef type = module.getLlvmType(literal.getType());
         if (literal instanceof FIntNLiteral) {
-            return LLVMConstInt(type, ((FIntNLiteral)literal).value.longValue(), TRUE);
+            return intLiteral(((FIntNLiteral) literal).value.longValue(), ((FIntNLiteral) literal).type.getN());
         } else if (literal instanceof FFloat32Literal) {
             return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {
             return LLVMConstRealOfString(type, ((FFloat64Literal) literal).originalString);
         } else if (literal instanceof FCharLiteral) {
-            return LLVMConstInt(type, ((FCharLiteral) literal).value, FALSE);
+            return intLiteral(((FCharLiteral) literal).value, 8);
         } else if (literal instanceof FStringLiteral) {
             LLVMValueRef res = module.constantString(((FStringLiteral) literal).value);
             return LLVMBuildBitCast(builder, res, type, ""); //cast to get rid of the explicit length in the array type to make LLVM happy
@@ -527,6 +543,10 @@ class LLVMTransformer implements
         }
     }
 
+    private LLVMValueRef intLiteral(long i, int bits) {
+        return LLVMConstInt(module.getLlvmType(FIntN.getIntN(bits)), i, TRUE);
+    }
+
     private LLVMValueRef boolLiteral(boolean b) {
         return LLVMConstInt(module.getLlvmType(FBool.INSTANCE), b ? TRUE : FALSE, FALSE);
     }
@@ -537,7 +557,7 @@ class LLVMTransformer implements
         switch (expression.getAccessType()) {
             case LOAD:
                 return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
-            case STORE:
+            case STORE: case LOAD_AND_STORE:
                 return address;
             default:
                 return Utils.cantHappen();

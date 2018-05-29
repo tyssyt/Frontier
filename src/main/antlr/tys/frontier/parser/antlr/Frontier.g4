@@ -189,7 +189,8 @@ expression
     |   expression (EQUAL_CONTAINER|NOTEQUAL_CONTAINER) expression #binaryOp
     |   expression (XOR|AND|OR|AAND|AOR) expression             #binaryOp
     |   expression (LE|GE|LT|GT) expression                     #binaryOp
-    |   SUB expression                                          #preUnaryOp
+    |   (SUB|INC|DEC) expression                                #preUnaryOp
+    |   expression (INC|DEC)                                    #postUnaryOp
     |   expression (MUL|DIV|MOD|ADD|SUB) expression             #binaryOp
     |   expression LBRACK expression RBRACK                     #arrayAccess
     |   expression DOT Identifier                               #fieldAccess

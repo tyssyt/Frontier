@@ -40,9 +40,9 @@ public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
     }
 
     @Override
-    public void setStore() {
-        assert accessType == AccessType.LOAD : "access type set twice: " + this;
-        accessType = AccessType.STORE;
+    public void setAccessType(AccessType accessType) {
+        assert this.accessType == AccessType.LOAD && accessType != AccessType.LOAD;
+        this.accessType = accessType;
     }
 
     @Override

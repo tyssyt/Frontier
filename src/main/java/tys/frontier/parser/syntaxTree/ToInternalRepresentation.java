@@ -3,12 +3,14 @@ package tys.frontier.parser.syntaxTree;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.FOperator;
+import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -480,10 +482,45 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FFunctionCall visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         FExpression expression = visitExpression(ctx.expression());
-        FFunctionIdentifier identifier = new FFunctionIdentifier('_' + ctx.getChild(0).getText());
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(0).getText() + '_');
+
+        if(expression.getType() instanceof FPredefinedClass &&
+                (identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier))) {
+            //special case for inc and dec on predefined types, they are both write and read
+            if ((expression instanceof FVariableExpression)) {
+                ((FVariableExpression) expression).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
+            } else {
+                errors.add(new NonAssignableExpression(expression));
+                throw new Failed();
+            }
+        }
 
         try {
-            return staticFunctionCall(expression.getType(), identifier, ImmutableList.of(expression));
+            return functionCall(expression, identifier, ImmutableList.of());
+        } catch (FunctionNotFound e) {
+            errors.add(e);
+            throw new Failed();
+        }
+    }
+
+    @Override
+    public Object visitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
+        FExpression expression = visitExpression(ctx.expression());
+        FFunctionIdentifier identifier = new FFunctionIdentifier('_' + ctx.getChild(1).getText());
+
+        if(expression.getType() instanceof FPredefinedClass &&
+                (identifier.equals(FUnaryOperator.Post.INC.identifier) || identifier.equals(FUnaryOperator.Post.DEC.identifier))) {
+            //special case for inc and dec on predefined types, they are both write and read
+            if ((expression instanceof FVariableExpression)) {
+                ((FVariableExpression) expression).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
+            } else {
+                errors.add(new NonAssignableExpression(expression));
+                throw new Failed();
+            }
+        }
+
+        try {
+            return functionCall(expression, identifier, ImmutableList.of());
         } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
