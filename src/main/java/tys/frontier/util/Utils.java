@@ -23,7 +23,7 @@ public final class Utils {
     }
 
     public static <T> T NYI(String s) {
-        throw new RuntimeException(s + "not yet implemented. ¯\\_(ツ)_/¯");
+        throw new RuntimeException(s + " not yet implemented. ¯\\_(ツ)_/¯");
     }
 
     public static <T> T cantHappen() {
