@@ -64,7 +64,7 @@ public class FBinaryOperator extends FOperator {
         }
 
         public FBinaryOperator createPredefined(FClass clazz) {
-            return new FBinaryOperator(identifier, clazz, clazz,
+            return new FBinaryOperator(identifier, clazz, FBool.INSTANCE,
                     new FParameter(new FVariableIdentifier("first"), clazz),
                     new FParameter(new FVariableIdentifier("second"), clazz)) {
                 {predefined = true;}
