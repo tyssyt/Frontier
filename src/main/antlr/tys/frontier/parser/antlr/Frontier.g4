@@ -179,28 +179,28 @@ expressionList
     ;
 
 expression
-    :   LPAREN expression RPAREN                                #bracketsExpr
-    |   THIS                                                    #thisExpr
-    |   literal                                                 #literalExpr
-    |   Identifier                                              #variableExpr
-    |   NOT expression                                          #preUnaryOp
-    |   expression (EQUAL|NOTEQUAL) expression                  #binaryOp
-    |   expression (EQUAL_ID|NOTEQUAL_ID) expression            #binaryOp
+    :   LPAREN expression RPAREN                                   #bracketsExpr
+    |   expression LBRACK expression RBRACK                        #arrayAccess
+    |   expression DOT Identifier                                  #fieldAccess
+    |   typeType DOT Identifier                                    #staticFieldAccess
+    |   expression DOT Identifier LPAREN expressionList? RPAREN    #externalFunctionCall
+    |   typeType DOT Identifier LPAREN expressionList RPAREN       #staticFunctionCall
+    |   Identifier LPAREN expressionList? RPAREN                   #internalFunctionCall
+    |   NEW basicType LPAREN expressionList? RPAREN                #newObject
+    |   NEW basicType (LBRACK expression RBRACK)+ (Array)*         #newArray
+    |   expression (INC|DEC)                                       #postUnaryOp
+    |   (NOT|SUB|INC|DEC) expression                               #preUnaryOp
+    |   LPAREN typeType RPAREN expression                          #cast
+    |   expression (MUL|DIV|MOD) expression                        #binaryOp
+    |   expression (ADD|SUB) expression                            #binaryOp
+    |   expression (LE|GE|LT|GT) expression                        #binaryOp
+    |   expression (EQUAL|NOTEQUAL) expression                     #binaryOp
+    |   expression (EQUAL_ID|NOTEQUAL_ID) expression               #binaryOp
     |   expression (EQUAL_CONTAINER|NOTEQUAL_CONTAINER) expression #binaryOp
-    |   expression (XOR|AND|OR|AAND|AOR) expression             #binaryOp
-    |   expression (LE|GE|LT|GT) expression                     #binaryOp
-    |   (SUB|INC|DEC) expression                                #preUnaryOp
-    |   expression (INC|DEC)                                    #postUnaryOp
-    |   expression (MUL|DIV|MOD|ADD|SUB) expression             #binaryOp
-    |   expression LBRACK expression RBRACK                     #arrayAccess
-    |   expression DOT Identifier                               #fieldAccess
-    |   typeType DOT Identifier                                 #staticFieldAccess
-    |   expression DOT Identifier LPAREN expressionList? RPAREN #externalFunctionCall
-    |   typeType DOT Identifier LPAREN expressionList RPAREN    #staticFunctionCall
-    |   Identifier LPAREN expressionList? RPAREN                #internalFunctionCall
-    |   NEW basicType LPAREN expressionList? RPAREN             #newObject
-    |   NEW basicType (LBRACK expression RBRACK)+ (Array)*      #newArray
-    |   LPAREN typeType RPAREN expression                       #cast
+    |   expression (AAND|AOR|XOR|AND|OR) expression                #binaryOp
+    |   THIS                                                       #thisExpr
+    |   literal                                                    #literalExpr
+    |   Identifier                                                 #variableExpr
     ;
 
 expression2
