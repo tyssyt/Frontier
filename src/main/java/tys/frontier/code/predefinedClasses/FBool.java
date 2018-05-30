@@ -12,22 +12,22 @@ import tys.frontier.util.Utils;
 
 public class FBool extends FPredefinedClass {
 
-    public static final FBool INSTANCE = new FBool();
-
     public static final FFunctionIdentifier NOT = new FFunctionIdentifier("!");
+    public static final FBool INSTANCE;
+
+    static { //adding the functions needs the INSTANCE field to be initialised, so we ensure proper order of instructions here
+        INSTANCE = new FBool();
+        INSTANCE.addFunctionsInstance();
+    }
+
 
     private FBool() {
         super(FClassIdentifier.BOOL);
-        addFunctionsInstance();
     }
 
     @Override
     public FExpression getDefaultValue() {
         return new FLiteralExpression(FBoolLiteral.FALSE);
-    }
-
-    public static void addFunctions() {
-        INSTANCE.addFunctionsInstance();
     }
 
     private void addFunctionsInstance() {
