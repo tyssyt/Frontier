@@ -372,18 +372,25 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {
-        LLVMValueRef left;
-        LLVMValueRef right;
+        FExpression l;
+        FExpression r;
         if (functionCall.getFunction().isStatic()) {
-            left = functionCall.getArguments().get(0).accept(this);
-            right = functionCall.getArguments().get(1).accept(this);
+            l = functionCall.getArguments().get(0);
+            r = functionCall.getArguments().get(1);
         } else {
-            left = functionCall.getObject().accept(this);
-            right = functionCall.getArguments().get(0).accept(this);
+            l = functionCall.getObject();
+            r = functionCall.getArguments().get(0);
         }
 
-        //TODO create an enum that maps Id to the llvm op and actually make this all a 1 liner...
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
+        if (id.equals(FBinaryOperator.Bool.AND.identifier))
+            return shortCircuitLogic(l, r, true);
+        else if (id.equals(FBinaryOperator.Bool.OR.identifier))
+            return shortCircuitLogic(l, r, false);
+
+        LLVMValueRef left = l.accept(this);
+        LLVMValueRef right = r.accept(this);
+        //TODO create an enum that maps Id to the llvm op and actually make this all a 1 liner... (or not)
         if (id.equals(FBinaryOperator.Arith.PLUS.identifier)) {
             return LLVMBuildAdd(builder, left, right, "add");
         } else if (id.equals(FBinaryOperator.Arith.MINUS.identifier)) {
@@ -415,6 +422,29 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef shortCircuitLogic(FExpression first, FExpression second, boolean isAnd) {
+        LLVMValueRef currentFunction = getCurrentFunction();
+        LLVMBasicBlockRef startBlock = LLVMGetInsertBlock(builder);
+        LLVMBasicBlockRef otherBlock = LLVMAppendBasicBlock(currentFunction, "other");
+        LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after");
+
+        LLVMValueRef f = first.accept(this);
+        if (isAnd)
+            LLVMBuildCondBr(builder, f, otherBlock, afterBlock);
+        else
+            LLVMBuildCondBr(builder, f, afterBlock, otherBlock);
+
+        LLVMPositionBuilderAtEnd(builder, otherBlock);
+        LLVMValueRef s = second.accept(this);
+        LLVMBuildBr(builder, afterBlock);
+
+        LLVMPositionBuilderAtEnd(builder, afterBlock);
+        LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(FBool.INSTANCE), "ss_logic");
+        LLVMAddIncoming(phi, f, startBlock, 1);
+        LLVMAddIncoming(phi, s, otherBlock, 1);
+        return phi;
     }
 
     private LLVMValueRef predefinedArray (FFunctionCall functionCall) {
