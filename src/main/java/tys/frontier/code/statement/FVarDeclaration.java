@@ -1,6 +1,8 @@
 package tys.frontier.code.statement;
 
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 
@@ -9,12 +11,16 @@ import java.util.Optional;
 public class FVarDeclaration implements FStatement {
 
     private FLocalVariable var;
-    private FVarAssignment assignment; //optional TODO this is messy bit works for now
+    private FVarAssignment assignment; //optional TODO this is messy but works for now
 
     public FVarDeclaration(FLocalVariable var, FVarAssignment assignment) {
         this.var = var;
         this.assignment = assignment;
         assert assignment == null || var == assignment.getVariableExpression().getVariable();
+    }
+
+    public FVarDeclaration(FLocalVariable var, FExpression initialValue) {
+        this(var, new FVarAssignment(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, initialValue));
     }
 
     public FLocalVariable getVar() {
