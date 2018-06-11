@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FArray extends FPredefinedClass {
 
+    public static final FVariableIdentifier SIZE = new FVariableIdentifier("size");
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<IntPair<FClass>, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
@@ -29,7 +30,7 @@ public class FArray extends FPredefinedClass {
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
         try {
-            addField(new FField(FVariableIdentifier.SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
+            addField(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
         } catch (IdentifierCollision identifierCollision) {
             Utils.handleException(identifierCollision);
         }
