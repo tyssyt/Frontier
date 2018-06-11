@@ -580,12 +580,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throw f;
         }
         FExpression index = visitExpression(ctx.expression(1));
-        try {
-            return new FArrayAccess(array, index);
-        } catch (IncompatibleTypes e) {
-            errors.add(e);
-            throw new Failed();
-        }
+        FArrayAccess res = new FArrayAccess(array, index);
+        typeChecks.add(res);
+        return res;
     }
 
     @Override

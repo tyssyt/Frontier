@@ -15,10 +15,9 @@ public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
     private FExpression index;
     private AccessType accessType = AccessType.LOAD;
 
-    public FArrayAccess(FExpression array, FExpression index) throws IncompatibleTypes {
+    public FArrayAccess(FExpression array, FExpression index) {
         this.array = array;
         this.index = index;
-        checkTypes();
     }
 
     public FExpression getArray() {
