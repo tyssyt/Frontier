@@ -15,6 +15,14 @@ public class FIntNLiteral implements FLiteral {
         this(BigInteger.valueOf(value), bitWidth, originalString);
     }
 
+    public FIntNLiteral(long value, int bitWidth) {
+        this(value, bitWidth, "" + value);
+    }
+
+    public FIntNLiteral(BigInteger value, int bitWidth) {
+        this(value, bitWidth, value.toString());
+    }
+
     public FIntNLiteral(BigInteger value, int bitWidth, String originalString) {
         this.value = value;
         this.type = FIntN.getIntN(bitWidth);

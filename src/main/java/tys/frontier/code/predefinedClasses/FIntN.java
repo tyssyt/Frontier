@@ -63,6 +63,6 @@ public class FIntN extends FPredefinedClass {
 
     @Override
     public FExpression getDefaultValue() {
-        return new FLiteralExpression(new FIntNLiteral(0, n, "0"));
+        return new FLiteralExpression(new FIntNLiteral(0, n));
     }
 }
