@@ -3,11 +3,13 @@ package tys.frontier.code;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.ArrayList;
@@ -107,6 +109,12 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
                 && modifier == FVisibilityModifier.EXPORT
                 && clazz.getVisibility() == FVisibilityModifier.EXPORT
                 && returnType == FVoid.INSTANCE;
+    }
+
+    private NameGenerator freshVariableNames = new NameGenerator("?", "");
+    public FLocalVariable getFreshVariable(FClass type) {
+        //TODO maybe be tryhards and try to find good names? like using the type as prefix?
+        return new FLocalVariable(new FVariableIdentifier(freshVariableNames.next()), type);
     }
 
     /**
