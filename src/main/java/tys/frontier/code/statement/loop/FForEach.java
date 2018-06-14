@@ -1,6 +1,6 @@
 package tys.frontier.code.statement.loop;
 
-import tys.frontier.code.FVariable;
+import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.statement.FStatement;
@@ -11,16 +11,16 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 public class FForEach extends FLoop implements NeedsTypeCheck {
 
-    private FVariable iterator;
+    private FLocalVariable iterator;
     private FExpression container;
 
-    public FForEach(int nestedDepth, FLoopIdentifier identifier, FVariable iterator, FExpression container, FStatement body) {
+    public FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FStatement body) {
         super(nestedDepth, identifier, body);
         this.iterator = iterator;
         this.container = container;
     }
 
-    public FVariable getIterator() {
+    public FLocalVariable getIterator() {
         return iterator;
     }
 
