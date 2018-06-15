@@ -3,7 +3,6 @@ package tys.frontier.code.visitor;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.statement.FStatement;
 
 public interface ClassWalker<Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
 
@@ -21,8 +20,7 @@ public interface ClassWalker<Class, Field, Function, Statement, Expression> exte
     }
 
     default Function visitFunction(FFunction function) {
-        for (FStatement statement : function.getBody())
-            statement.accept(this);
+        function.getBody().accept(this);
         return null;
     }
 }

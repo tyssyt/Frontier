@@ -194,10 +194,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         List<Fu> functions = new ArrayList<>(this.functions.values().size());
         for (FFunction f : this.functions.values()) {
             visitor.enterFunction(f);
-            List<S> body = new ArrayList<>(f.getBody().size());
-            for (FStatement s : f.getBody())
-                body.add(s.accept(visitor));
-            functions.add(visitor.exitFunction(f, body));
+            functions.add(visitor.exitFunction(f, f.getBody().accept(visitor)));
         }
         return visitor.exitClass(this, fields, functions);
     }
