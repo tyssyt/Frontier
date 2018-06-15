@@ -4,6 +4,6 @@ public class FFunctionIdentifier extends FIdentifier {
 
     public FFunctionIdentifier(String name) {
         super(name);
-        assert (name.startsWith(name.substring(0,1).toLowerCase()));
+        assert (this.name.startsWith(this.name.substring(0,1).toLowerCase()));
     }
 }

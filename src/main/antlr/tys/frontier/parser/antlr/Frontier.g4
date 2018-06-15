@@ -534,7 +534,7 @@ ZeroToThree
 
 //Identifiers-------------------------------------------------------------------------------
 Identifier
-    :   LowerCaseLetter LetterOrDigit*
+    :   '_'* LowerCaseLetter LetterOrDigit*
     {
         String text = getText();
         Integer type = keywords.get(text);
@@ -545,7 +545,7 @@ Identifier
     ;
 
 TypeIdentifier //Class names
-    :   UpperCaseLetter LetterOrDigit*
+    :   '_'* UpperCaseLetter LetterOrDigit*
     {
         String text = getText();
         Integer type = keywords.get(text);
@@ -556,7 +556,7 @@ TypeIdentifier //Class names
     ;
 
 fragment LetterOrDigit   : [a-zA-Z0-9_];
-fragment LowerCaseLetter : [a-z_];
+fragment LowerCaseLetter : [a-z];
 fragment UpperCaseLetter : [A-Z];
 
 

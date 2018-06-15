@@ -6,6 +6,6 @@ public class FVariableIdentifier extends FIdentifier {
 
     public FVariableIdentifier(String name) {
         super(name);
-        assert (name.startsWith(name.substring(0,1).toLowerCase()));
+        assert (this.name.startsWith(this.name.substring(0,1).toLowerCase()));
     }
 }

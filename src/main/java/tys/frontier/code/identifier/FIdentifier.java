@@ -1,10 +1,12 @@
 package tys.frontier.code.identifier;
 
+import tys.frontier.util.Utils;
+
 public abstract class FIdentifier {
     public final String name;
 
     protected FIdentifier(String name) {
-        this.name = name;
+        this.name = Utils.removeLeadingUnderscores(name);
     }
 
     @Override

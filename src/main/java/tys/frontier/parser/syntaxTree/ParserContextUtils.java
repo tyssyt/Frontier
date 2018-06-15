@@ -91,7 +91,7 @@ public final class ParserContextUtils {
     public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
             throws ClassNotFound{
         FClass type = getType(ctx.typeType(), possibleTypes);
-        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        FVariableIdentifier identifier = new FVariableIdentifier((ctx.Identifier().getText()));
         return new FLocalVariable(identifier, type);
     }
 

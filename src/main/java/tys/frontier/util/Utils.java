@@ -30,6 +30,16 @@ public final class Utils {
         throw new RuntimeException("¯\\_(ツ)_/¯");
     }
 
+    public static String removeLeadingUnderscores(String in) {
+        int i=0;
+        while (i<in.length()) {
+            if (in.charAt(i) != '_')
+                break;
+            i++;
+        }
+        return in.substring(i);
+    }
+
     public static Map<FVariableIdentifier, FLocalVariable> asMap (Collection<? extends FLocalVariable> vars) {
         Map<FVariableIdentifier, FLocalVariable> map = new HashMap<>();
         for (FLocalVariable v : vars) {
