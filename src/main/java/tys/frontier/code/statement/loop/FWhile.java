@@ -2,7 +2,7 @@ package tys.frontier.code.statement.loop;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
-import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -12,7 +12,7 @@ public class FWhile extends FLoop implements NeedsTypeCheck {
 
     private FExpression condition;
 
-    public FWhile(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FStatement body) {
+    public FWhile(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FBlock body) {
         super(nestedDepth, identifier, body);
         this.condition = condition;
     }

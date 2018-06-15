@@ -1,7 +1,6 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.primitives.Booleans;
 import tys.frontier.code.Operator.FBinaryOperator;
@@ -141,11 +140,11 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     public FBlock getInstanceInitializer() {
         if (instanceInitializer == null) {
             //TODO order fields that depend on others so they can be initialzed in a nice order, error on cyclic dependencies
-            ImmutableList.Builder<FStatement> statements = ImmutableList.builder();
+            List<FStatement> statements = new ArrayList<>();
             for (FField field : fields.values())
                 if (!field.isStatic())
                     field.getAssignment().ifPresent(statements::add);
-            instanceInitializer = new FBlock(statements.build());
+            instanceInitializer = FBlock.from(statements);
         }
         return instanceInitializer;
     }
@@ -153,11 +152,11 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     public FBlock getStaticInitializer() {
         if (staticInitializer == null) {
             //TODO order fields that depend on others so they can be initialzed in a nice order, error on cyclic dependencies
-            ImmutableList.Builder<FStatement> statements = ImmutableList.builder();
+            List<FStatement> statements = new ArrayList<>();
             for (FField field : fields.values())
                 if (field.isStatic())
                     field.getAssignment().ifPresent(statements::add);
-            staticInitializer = new FBlock(statements.build());
+            staticInitializer = FBlock.from(statements);
         }
         return staticInitializer;
     }

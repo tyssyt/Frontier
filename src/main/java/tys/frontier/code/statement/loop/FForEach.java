@@ -3,7 +3,7 @@ package tys.frontier.code.statement.loop;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -14,7 +14,7 @@ public class FForEach extends FLoop implements NeedsTypeCheck {
     private FLocalVariable iterator;
     private FExpression container;
 
-    public FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FStatement body) {
+    public FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) {
         super(nestedDepth, identifier, body);
         this.iterator = iterator;
         this.container = container;

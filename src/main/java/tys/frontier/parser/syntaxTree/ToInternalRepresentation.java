@@ -141,19 +141,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     //methods enter & exitArrayAccess
 
-    private ImmutableList<FStatement> statementsFromList (List<FrontierParser.StatementContext> contexts) {
-        ImmutableList.Builder<FStatement> builder = new ImmutableList.Builder<>();
+    private List<FStatement> statementsFromList (List<FrontierParser.StatementContext> contexts) {
+        List<FStatement> res = new ArrayList<>(contexts.size());
         for (FrontierParser.StatementContext c : contexts) {
             try {
                 FStatement statement = visitStatement(c);
-                if (statement instanceof FEmptyStatement)
+                if (statement instanceof FBlock && ((FBlock) statement).isEmpty())
                     continue;
-                builder.add(statement);
+                res.add(statement);
             } catch (Failed f) {
                 //this is fine, failed statements are not added to the list, they will have raised errors
             }
         }
-        return builder.build();
+        return res;
     }
 
     @Override
@@ -170,7 +170,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 FLocalVariable thiz = currentClass.getThis();
                 declaredVars.put(thiz.getIdentifier(), thiz);
             }
-            f.setBody(statementsFromList(ctx.statement()));
+            f.setBody(visitBlock(ctx.block()));
             return f;
         } finally {
             currentFunction = null;
@@ -193,8 +193,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FEmptyStatement visitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
-        return new FEmptyStatement();
+    public FBlock visitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
+        return FBlock.empty();
     }
 
     @Override
@@ -237,15 +237,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FStatement visitBlockStatement(FrontierParser.BlockStatementContext ctx) {
+    public FBlock visitBlock(FrontierParser.BlockContext ctx) {
         declaredVars.push();
         try {
-            ImmutableList<FStatement> statements = statementsFromList(ctx.statement());
-            //TODO the following lines very likely should move to FBlock in a create function or similar
-            if (statements.size() == 0)
-                return new FEmptyStatement();
-            if (statements.size() == 1)
-                return statements.get(0);
+            List<FStatement> statements = statementsFromList(ctx.statement());
             for (int i = 0; i < statements.size()-1; i++) {
                 FStatement statement = statements.get(i);
                 if (statement.redirectsControlFlow().isPresent()) {
@@ -254,17 +249,22 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                     break;
                 }
             }
-            return new FBlock(statements);
+            return FBlock.from(statements);
         } finally {
             declaredVars.pop();
         }
     }
 
     @Override
+    public FBlock visitBlockStatement(FrontierParser.BlockStatementContext ctx) {
+        return visitBlock(ctx.block());
+    }
+
+    @Override
     public FIf visitIfStatement(FrontierParser.IfStatementContext ctx) {
         FExpression cond = null;
-        FStatement then = null;
-        FStatement elze = null;
+        FBlock then = null;
+        FBlock elze = null;
         boolean failed = false;
         try {
             cond = visitExpression(ctx.expression());
@@ -272,13 +272,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             failed = true;
         }
         try {
-            then = visitStatement(ctx.statement(0));
+            then = visitBlock(ctx.block(0));
         } catch (Failed f) {
             failed = true;
         }
-        FrontierParser.StatementContext sc = ctx.statement(1);
+        FrontierParser.BlockContext sc = ctx.block(1);
         try {
-            elze = sc == null ? null : visitStatement(sc);
+            elze = sc == null ? null : visitBlock(sc);
         } catch (Failed f) {
             failed = true;
         }
@@ -299,10 +299,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             try {
                 cond = visitExpression(ctx.expression());
             } catch (Failed f) {
-                visitStatement(ctx.statement()); //still visit the body to find more errors
+                visitBlock(ctx.block()); //still visit the body to find more errors
                 throw f;
             }
-            FStatement body = visitStatement(ctx.statement());
+            FBlock body = visitBlock(ctx.block());
             FWhile res = new FWhile(loops.size(), identifier, cond, body);
             typeChecks.add(res);
             return res;
@@ -321,7 +321,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FVarDeclaration decl = null;
             FExpression cond = null;
             FExpression inc = null;
-            FStatement body = null;
+            FBlock body = null;
             boolean failed = false;
 
             FrontierParser.VariableDeclaratorContext dc = ctx.variableDeclarator();
@@ -345,9 +345,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 failed = true;
             }
 
-            FrontierParser.StatementContext sc = ctx.statement();
             try {
-                body = sc == null ? null : visitStatement(sc);
+                body = visitBlock(ctx.block());
             } catch (Failed f) {
                 failed = true;
             }
@@ -372,7 +371,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             FLocalVariable it = null;
             FExpression container = null;
-            FStatement body = null;
+            FBlock body = null;
             boolean failed = false;
 
             try {
@@ -392,7 +391,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 declaredVars.put(it.getIdentifier(), it);
             }
             try {
-                body = visitStatement(ctx.statement());
+                body = visitBlock(ctx.block());
             } catch (Failed f) {
                 failed = true;
             }

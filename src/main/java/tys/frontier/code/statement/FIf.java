@@ -14,10 +14,10 @@ import java.util.Optional;
 public class FIf implements FStatement, NeedsTypeCheck {
 
     private FExpression condition;
-    private FStatement then;
-    private FStatement elze; //Optional
+    private FBlock then;
+    private FBlock elze; //Optional
 
-    public FIf(FExpression condition, FStatement then, FStatement elze) {
+    public FIf(FExpression condition, FBlock then, FBlock elze) {
         this.condition = condition;
         this.then = then;
         this.elze = elze;
@@ -27,11 +27,11 @@ public class FIf implements FStatement, NeedsTypeCheck {
         return condition;
     }
 
-    public FStatement getThen() {
+    public FBlock getThen() {
         return then;
     }
 
-    public Optional<FStatement> getElse() {
+    public Optional<FBlock> getElse() {
         return Optional.ofNullable(elze);
     }
 

@@ -2,7 +2,7 @@ package tys.frontier.code.statement.loop;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
-import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
@@ -17,7 +17,7 @@ public class FFor extends FLoop implements NeedsTypeCheck {
     private FExpression condition; //optional
     private FExpression increment; //optional
 
-    public FFor(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FStatement body) {
+    public FFor(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FBlock body) {
         super(nestedDepth, identifier, body);
         this.declaration = declaration;
         this.condition = condition;

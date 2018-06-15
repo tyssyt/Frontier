@@ -18,6 +18,8 @@ import tys.frontier.code.statement.loop.FFor;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.util.Utils;
 
+import java.util.Arrays;
+
 public class FForEachLowering {
 
     public FStatement replace (FForEach forEach, FFunction function) {
@@ -49,13 +51,13 @@ public class FForEachLowering {
         FArrayAccess arrayAccess = new FArrayAccess(new FLocalVariableExpression(arrayVar), new FLocalVariableExpression(counter));
         FVarDeclaration itDecl = new FVarDeclaration(iterator, arrayAccess);
 
-        FBlock body = new FBlock(ImmutableList.of(itDecl, forEach.getBody()));
+        FBlock body = FBlock.from(Arrays.asList(itDecl, forEach.getBody()));
 
         //create for and update loop identifier
         FFor ffor = new FFor(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
         forEach.getIdentifier().setLoop(ffor);
 
-        return new FBlock(ImmutableList.of(arrayDecl, ffor));
+        return FBlock.from(Arrays.asList(arrayDecl, ffor));
     }
 
 

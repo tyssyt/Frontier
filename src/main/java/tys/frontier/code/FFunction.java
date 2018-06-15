@@ -7,6 +7,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.NameGenerator;
@@ -25,7 +26,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
     private FClass returnType;
     private ImmutableList<FParameter> params;
     private Signature signature;
-    protected ImmutableList<FStatement> body;
+    protected FBlock body;
 
     protected boolean predefined = false;
 
@@ -67,11 +68,11 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
         return params;
     }
 
-    public ImmutableList<FStatement> getBody() {
+    public FBlock getBody() {
         return body;
     }
 
-    public void setBody(ImmutableList<FStatement> body) {
+    public void setBody(FBlock body) {
         assert this.body==null;
         this.body = body;
     }

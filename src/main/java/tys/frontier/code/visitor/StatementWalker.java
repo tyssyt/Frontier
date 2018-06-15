@@ -7,7 +7,7 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
 
     //Top Down
     default Statement visitBlock(FBlock block) {
-        for (FStatement statement : block.getStatements())
+        for (FStatement statement : block)
             statement.accept(this);
         return null;
     }
@@ -54,10 +54,6 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
     default Statement visitForEach(FForEach forEach) {
         forEach.getContainer().accept(this);
         return forEach.getBody().accept(this);
-    }
-
-    default Statement visitEmpty(FEmptyStatement statement) {
-        return null;
     }
 
     default Statement visitBreak(FBreak fBreak) {

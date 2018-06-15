@@ -50,9 +50,6 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     }
 
     //Leaves
-    default Statement visitEmpty(FEmptyStatement statement) {
-        return null;
-    }
     default Statement visitBreak(FBreak fBreak) {
         return null;
     }

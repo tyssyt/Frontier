@@ -5,10 +5,14 @@ import tys.frontier.code.Operator.FOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.style.order.Alphabetical;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class FConstructor extends FFunction {
 
@@ -47,13 +51,13 @@ public class FConstructor extends FFunction {
     }
 
     private void generateBody() {
-        ImmutableList.Builder<FStatement> statements = ImmutableList.builder();
+        List<FStatement> statements = new ArrayList<>();
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(getClazz().getThis());
             FField field = getClazz().getField(param.getIdentifier());
             statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
         statements.add(new FReturn(new FLocalVariableExpression(getClazz().getThis()), this));
-        setBody(statements.build());
+        setBody(FBlock.from(statements));
     }
 }

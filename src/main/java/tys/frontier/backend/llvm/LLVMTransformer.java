@@ -136,7 +136,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitBlock(FBlock block) {
         LLVMValueRef last = null;
-        for (FStatement statement : block.getStatements())
+        for (FStatement statement : block)
             last = statement.accept(this);
         return last;
     }
@@ -255,11 +255,6 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitForEach(FForEach forEach) {
         return Utils.cantHappen();
-    }
-
-    @Override
-    public LLVMValueRef visitEmpty(FEmptyStatement statement) {
-        return null;
     }
 
     @Override

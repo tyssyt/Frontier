@@ -1,6 +1,7 @@
 package tys.frontier.code.statement.loop;
 
 import tys.frontier.code.statement.ControlFlowIDontKnow;
+import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 
 import java.util.Optional;
@@ -9,9 +10,9 @@ public abstract class FLoop implements FStatement, ControlFlowIDontKnow {
 
     private int nestedDepth;
     private FLoopIdentifier identifier;
-    private FStatement body;
+    private FBlock body;
 
-    public FLoop(int nestedDepth, FLoopIdentifier identifier, FStatement body) {
+    public FLoop(int nestedDepth, FLoopIdentifier identifier, FBlock body) {
         this.nestedDepth = nestedDepth;
         this.identifier = identifier;
         this.body = body;
@@ -25,7 +26,7 @@ public abstract class FLoop implements FStatement, ControlFlowIDontKnow {
         return identifier;
     }
 
-    public FStatement getBody() {
+    public FBlock getBody() {
         return body;
     }
 

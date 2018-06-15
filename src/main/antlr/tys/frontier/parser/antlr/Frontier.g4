@@ -98,8 +98,7 @@ classBodyDeclaration
     ;
 
 methodDeclaration
-    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters
-        LBRACE statement* RBRACE
+    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters block
     ;
 
 fieldDeclaration
@@ -145,18 +144,22 @@ predefinedType
 
 
 // STATEMENTS / BLOCKS ---------------------------------------------------------------------
+block
+    :   LBRACE statement* RBRACE
+    ;
+
 statement
-    :   LBRACE statement* RBRACE                                                            #blockStatement
-    |   variableDeclarator SEMI                                                             #localVariableDeclarationStatement
-    |   IF LPAREN expression RPAREN statement (ELSE statement)?                             #ifStatement
-    |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN statement  #forStatement
-    |   FOR LPAREN typedIdentifier COLON expression RPAREN statement                        #foreachStatement
-    |   WHILE LPAREN expression RPAREN statement                                            #whileStatement
-    |   RETURN expression? SEMI                                                             #returnStatement
-    |   BREAK SEMI                                                                          #breakStatement
-    |   CONTINUE SEMI                                                                       #continueStatement
-    |   SEMI                                                                                #emptyStatement
-    |   expression SEMI                                                                     #expressionStatement
+    :   block                                                                           #blockStatement
+    |   variableDeclarator SEMI                                                         #localVariableDeclarationStatement
+    |   IF LPAREN expression RPAREN block (ELSE block)?                                 #ifStatement
+    |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN block  #forStatement
+    |   FOR LPAREN typedIdentifier COLON expression RPAREN block                        #foreachStatement
+    |   WHILE LPAREN expression RPAREN block                                            #whileStatement
+    |   RETURN expression? SEMI                                                         #returnStatement
+    |   BREAK SEMI                                                                      #breakStatement
+    |   CONTINUE SEMI                                                                   #continueStatement
+    |   SEMI                                                                            #emptyStatement
+    |   expression SEMI                                                                 #expressionStatement
     |   <assoc=right> expression
         (   ASSIGN
         |   ADD_ASSIGN
@@ -168,7 +171,7 @@ statement
         |   XOR_ASSIGN
         |   MOD_ASSIGN
         )
-        expression                                              #assignment
+        expression                                                                      #assignment
     ;
 
 
