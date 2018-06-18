@@ -12,15 +12,16 @@ import java.io.IOException;
 
 public class Main {
 
-    public static final String in = "D:/Frontier/test/asd.front";
-    public static final String out = "D:/Frontier/test/asd";
     private static final LLVMBackend.OutputFileType outputType =
             LLVMBackend.OutputFileType.EXECUTABLE;
 
     public static void main(String[] args) {
         try {
+            String input = args[0];
+            String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
+
             //FrontEnd
-            FrontierModule module = new Parser(in, Style.DEFAULT_STYLE).parse();
+            FrontierModule module = new Parser(input, Style.DEFAULT_STYLE).parse();
 
             //Lowering Passes
             for (FFile file : module.getFiles()) {
@@ -28,7 +29,7 @@ public class Main {
             }
 
             //Backend
-            LLVMBackend.runBackend(module, out, outputType);
+            LLVMBackend.runBackend(module, output, outputType);
         } catch (IOException | SyntaxErrors e) {
             e.printStackTrace();
         }
