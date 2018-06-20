@@ -431,7 +431,7 @@ public class LLVMModule implements AutoCloseable {
         LLVMSetModuleDataLayout(module, dataLayout);
         LLVMSetTarget(module, targetTriple);
 
-        int res = LLVMTargetMachineEmitToFile(targetMachine, module, new BytePointer(file), LLVMObjectFile, error);
+        int res = LLVMTargetMachineEmitToFile(targetMachine, module, new BytePointer(file), fileType, error);
         LLVMDisposeTargetData(dataLayout);
         LLVMDisposeTargetMachine(targetMachine);
         LLVMDisposeMessage(targetTriple);
