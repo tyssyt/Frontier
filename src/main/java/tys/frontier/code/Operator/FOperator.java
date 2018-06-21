@@ -8,9 +8,6 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 
 public abstract class FOperator extends FFunction {
 
-    public static final FFunctionIdentifier CONSTRUCTOR = new FFunctionIdentifier("!new"); //take a name that would be invalid for the parser to avoid clashing with user defined functions
-
-
     public FOperator(FFunctionIdentifier identifier, FClass clazz, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         super(identifier, clazz, clazz.getVisibility(), statik, returnType, params);
     }

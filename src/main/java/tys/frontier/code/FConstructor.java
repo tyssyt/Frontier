@@ -1,10 +1,10 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.Operator.FOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
@@ -16,8 +16,11 @@ import java.util.List;
 
 public class FConstructor extends FFunction {
 
+    public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
+
+
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(FOperator.CONSTRUCTOR, fClass, modifier, true, fClass, params);
+        super(IDENTIFIER, fClass, modifier, true, fClass, params);
     }
 
     @Override

@@ -2,7 +2,6 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
-import tys.frontier.code.Operator.FOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FClassIdentifier;
@@ -737,7 +736,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            return staticFunctionCall(clazz, FOperator.CONSTRUCTOR, params);
+            return staticFunctionCall(clazz, FConstructor.IDENTIFIER, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
@@ -772,7 +771,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FArray array = FArray.getArrayFrom(baseClass, initialisedDepth+uninitialisedDepth);
         try {
-            return staticFunctionCall(array, FOperator.CONSTRUCTOR, params);
+            return staticFunctionCall(array, FConstructor.IDENTIFIER, params);
         } catch (FunctionNotFound e) {
             errors.add(e);
             throw new Failed();
