@@ -8,7 +8,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FFieldAccess implements FVariableExpression, NeedsTypeCheck {
+public class FFieldAccess implements FVariableExpression, NeedsTypeCheck<FFieldAccess> {
 
     private final FField field;
     private FExpression object; //null for static fields
@@ -74,6 +74,7 @@ public class FFieldAccess implements FVariableExpression, NeedsTypeCheck {
     }
 
     @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         if (object == null)
             sb.append(field.getClazz().getIdentifier());

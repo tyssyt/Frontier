@@ -167,16 +167,16 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
         return tS();
     }
 
-    public static class Signature implements StringBuilderToString {
+    public static class Signature implements StringBuilderToString { //TODO the castSignature from is implemented outside of this, and the rest prolly takes more space then it is worth?
         private FFunctionIdentifier identifier;
-        private List<FClass> paramTypes;
-        private List<FClass> optionalTypes;
+        private List<FClass> paramTypes = new ArrayList<>();
+        private List<FClass> optionalTypes = new ArrayList<>();
+        private List<FClass> allTypes = new ArrayList<>();
 
         public Signature(FFunction function) {
             this.identifier = function.getIdentifier();
-            this.paramTypes = new ArrayList<>();
-            this.optionalTypes = new ArrayList<>();
             for (FParameter p : function.getParams()) {
+                allTypes.add(p.getType());
                 if (p.hasDefaultValue())
                     optionalTypes.add(p.getType());
                 else
@@ -194,6 +194,10 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
 
         public List<FClass> getOptionalTypes() {
             return optionalTypes;
+        }
+
+        public List<FClass> getAllParamTypes() {
+            return allTypes;
         }
 
         public boolean isMain() {

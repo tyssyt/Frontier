@@ -9,7 +9,9 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.style.order.Alphabetical;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,7 @@ public class FConstructor extends FFunction {
     }
 
     private static ImmutableList<FParameter> getParameters(FClass fClass) {
-        return fClass.getFields().values().stream()
+        return fClass.getAllFields().stream()
                 .filter(field -> !field.isStatic())
                 .sorted(Alphabetical.INSTANCE) //TODO alphabetical order is far from a good choice here, but for now...
                 .map(field -> new FParameter(field.getIdentifier(), field.getType(), field.getType().getDefaultValue()))
@@ -57,8 +59,13 @@ public class FConstructor extends FFunction {
         List<FStatement> statements = new ArrayList<>();
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(getClazz().getThis());
-            FField field = getClazz().getFields().get(param.getIdentifier());
-            statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
+            FField field = null;
+            try {
+                field = getClazz().resolveField(param.getIdentifier());
+            } catch (FieldNotFound fieldNotFound) {
+                Utils.cantHappen();
+            }
+            statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr).castArgsTrusted(), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
         statements.add(new FReturn(new FLocalVariableExpression(getClazz().getThis()), this));
         setBody(FBlock.from(statements));

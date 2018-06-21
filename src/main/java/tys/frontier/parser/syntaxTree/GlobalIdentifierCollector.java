@@ -59,7 +59,6 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         currentClass = treeData.classes.get(ctx);
         try {
             visitChildren(ctx);
-            currentClass.generateConstructor(); //to generate the constructor we need to know the fields, so this goes after
             return null;
         } finally {
             currentClass = null;

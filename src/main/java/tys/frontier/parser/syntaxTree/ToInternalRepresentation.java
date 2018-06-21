@@ -49,10 +49,29 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     public static Pair<List<NeedsTypeCheck>, List<Warning>> toInternal(SyntaxTreeData syntaxTreeData, FFile file, Map<FClassIdentifier, FClass> importedClasses) throws SyntaxErrors {
         ToInternalRepresentation visitor = new ToInternalRepresentation(file, syntaxTreeData, importedClasses);
+        visitor.generateConstructors();
         visitor.visitFile(syntaxTreeData.root);
         if (!visitor.errors.isEmpty())
             throw SyntaxErrors.create(visitor.errors);
         return new Pair<>(visitor.typeChecks, visitor.warnings);
+    }
+
+
+    public void generateConstructors() {
+        Set<FClass> done = new HashSet<>();
+        for (FClass fClass : treeData.classes.values()) {
+            generateConstructor(fClass, done);
+        }
+    }
+
+    private void generateConstructor(FClass fClass, Set<FClass> done) {
+        if (done.contains(fClass))
+            return;
+        for (FClass parentClass : fClass.getParentClasses()) {
+            generateConstructor(parentClass, done);
+        }
+        fClass.generateConstructor();
+        done.add(fClass);
     }
 
 

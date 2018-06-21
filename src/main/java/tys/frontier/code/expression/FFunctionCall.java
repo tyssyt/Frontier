@@ -50,7 +50,7 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
     public void checkTypes() throws IncompatibleTypes {
         if (object != null && object.getType() != function.getClazz())
             object = new FImplicitCast(function.getClazz(), object);
-        List<FClass> paramTypes = function.getSignature().getParamTypes();
+        List<FClass> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i).getType() != paramTypes.get(i))
                 arguments.set(i, new FImplicitCast(paramTypes.get(i), arguments.get(i)));
@@ -73,6 +73,7 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
     }
 
     @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         if (object == null)
             sb.append(function.getClazz().getIdentifier());

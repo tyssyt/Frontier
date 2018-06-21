@@ -1,6 +1,8 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Multimap;
 import com.google.common.primitives.Booleans;
 import tys.frontier.code.Operator.FBinaryOperator;
@@ -15,6 +17,7 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
+import tys.frontier.util.DisjunctUnionSetView;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
@@ -33,7 +36,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
 
     private FLocalVariable thiz;
 
-    protected Map<FVariableIdentifier, FField> fields = new LinkedHashMap<>();
+    protected BiMap<FVariableIdentifier, FField> fields = HashBiMap.create();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
     private FBlock instanceInitializer;
@@ -66,8 +69,14 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public boolean addParentClass(FClass parentClass) {
+        invalidateCachedChildData();
         parentClass.childClasses.add(this);
         return parentClasses.add(parentClass);
+    }
+
+    private void invalidateCachedChildData() {
+        cachedInheritedTypes = null;
+        cachedAllFields = null;
     }
 
     public Set<FClass> getParentClasses() {
@@ -100,7 +109,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         this.constructorVisibility = constructorVisibility;
     }
 
-    public Map<FVariableIdentifier, FField> getFields() {
+    public BiMap<FVariableIdentifier, FField> getFields() {
         return fields;
     }
 
@@ -228,6 +237,30 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             if (function.getSignature().collidesWith(other.getSignature()))
                 throw new SignatureCollision(function, other, this);
         }
+    }
+
+    private Set<FClass> cachedInheritedTypes;
+    public Set<FClass> getAllInheritedTypes() {
+        if (cachedInheritedTypes == null) {
+            cachedInheritedTypes = new HashSet<>();
+            cachedInheritedTypes.add(this);
+            for (FClass parentClass : parentClasses) {
+                cachedInheritedTypes.addAll(parentClass.getAllInheritedTypes());
+            }
+        }
+        return cachedInheritedTypes;
+    }
+
+    private Set<FField> cachedAllFields;
+    public Set<FField> getAllFields() {
+        if (cachedAllFields == null) {
+            Collection<Set<FField>> fieldSets = new ArrayList<>();
+            for (FClass fClass : getAllInheritedTypes()) {
+                fieldSets.add(fClass.getFields().values());
+            }
+            cachedAllFields = DisjunctUnionSetView.of(fieldSets);
+        }
+        return cachedAllFields;
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
