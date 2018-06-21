@@ -7,6 +7,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import static tys.frontier.code.expression.FImplicitCast.CastType.INTEGER_PROMOTION;
+import static tys.frontier.code.expression.FImplicitCast.CastType.OBJECT_DEMOTION;
 
 public class FImplicitCast extends FCast {
 
@@ -26,11 +27,12 @@ public class FImplicitCast extends FCast {
 
     public static CastType getCastType(FClass targetType, FClass baseType) throws IncompatibleTypes {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
-                ((FIntN) targetType).getN() > ((FIntN) baseType).getN()) {
+                ((FIntN) targetType).getN() > ((FIntN) baseType).getN())
             return INTEGER_PROMOTION;
-        }
         //TODO int to float cast
         //TODO upwards float cast
+        if (baseType.isSubType(targetType))
+            return OBJECT_DEMOTION;
 
         throw new IncompatibleTypes(targetType, baseType);
     }

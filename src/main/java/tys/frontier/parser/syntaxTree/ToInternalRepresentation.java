@@ -102,10 +102,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FVariable findVar(FVariableIdentifier identifier) throws UndeclaredVariable {
         FVariable var = declaredVars.get(identifier); //first check local vars
         if (var == null) {
-            var = currentClass.getField(identifier);  //then try fields
-        }
-        if (var == null) {
-            throw new UndeclaredVariable(identifier);
+            try {
+                var = currentClass.resolveField(identifier);  //then try fields
+            } catch (FieldNotFound fieldNotFound) {
+                throw new UndeclaredVariable(identifier);
+            }
         }
         return var;
     }
@@ -460,10 +461,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 return new FLocalVariableExpression((FLocalVariable) var);
             else if (var instanceof FField) {
                 FField field = ((FField) var);
+                FFieldAccess res;
                 if (field.isStatic())
-                    return new FFieldAccess(field);
+                    res = new FFieldAccess(field);
                 else
-                    return new FFieldAccess(field, getThisExpr());
+                    res = new FFieldAccess(field, getThisExpr());
+                typeChecks.add(res);
+                return res;
             } else {
                 return Utils.cantHappen();
             }
@@ -588,16 +592,20 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFieldAccess visitFieldAccess(FrontierParser.FieldAccessContext ctx) {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         FExpression object = visitExpression(ctx.expression());
-        FField f = object.getType().getField(identifier);
-        if (f == null) {
-            errors.add(new FieldNotFound(identifier));
+        FField f;
+        try {
+            f = object.getType().resolveField(identifier);
+        } catch (FieldNotFound fieldNotFound) {
+            errors.add(fieldNotFound);
             throw new Failed();
         }
         if (currentClass != object.getType() && f.getVisibility() == FVisibilityModifier.PRIVATE) {
             errors.add(new AccessForbidden(f));
             throw new Failed();
         }
-        return new FFieldAccess(f, object);
+        FFieldAccess res = new FFieldAccess(f, object);
+        typeChecks.add(res);
+        return res;
     }
 
     @Override
@@ -605,7 +613,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         try {
             FClass clazz = ParserContextUtils.getType(ctx.typeType(), knownClasses);
-            FField f = clazz.getField(identifier);
+            FField f = clazz.resolveField(identifier);
             if (f == null)
                 throw new FieldNotFound(identifier);
             if (currentClass != clazz && f.getVisibility() == FVisibilityModifier.PRIVATE)

@@ -14,10 +14,7 @@ import tys.frontier.code.literal.FNull;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.ClassVisitor;
-import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.parser.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
@@ -81,6 +78,20 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return childClasses;
     }
 
+    public boolean isSubType(FClass other) {
+        if (parentClasses.contains(other))
+            return true;
+        for (FClass parentClass : parentClasses) {
+            if (parentClass.isSubType(other))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isSuperType(FClass other) {
+        return other.isSubType(this);
+    }
+
     public FVisibilityModifier getConstructorVisibility() {
         return constructorVisibility;
     }
@@ -114,12 +125,20 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return new FLiteralExpression(FNull.INSTANCE);
     }
 
-    public FField getField (FVariableIdentifier identifier) {
-        return fields.get(identifier);
-    }
-
     public Collection<FFunction> getFunctions (FFunctionIdentifier identifier) {
         return functions.get(identifier);
+    }
+
+    public FField resolveField(FVariableIdentifier identifier) throws FieldNotFound {
+        FField field = fields.get(identifier);
+        if (field != null)
+            return field;
+        for (FClass parentClass : parentClasses) {
+            try {
+                return parentClass.resolveField(identifier);
+            } catch (FieldNotFound ignored) {}
+        }
+        throw new FieldNotFound(identifier);
     }
 
     /**
@@ -142,12 +161,23 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
                     res.a = f;
                     res.b = cost;
                     if (bestCost == 0)
-                        break;
+                        return res;
                 } else if (costSum == bestCost) {
                     res.a = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
                 }
             } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
         }
+
+        for (FClass parentClass : parentClasses) {
+            try {
+                Pair<FFunction, boolean[]> parentRes = parentClass.resolveFunction(identifier, paramTypes);
+                if (Booleans.countTrue(parentRes.b) == 0)
+                    return parentRes;
+                if (res.a == null)
+                    res = parentRes;
+            } catch (FunctionNotFound ignored) {}
+        }
+
         if (res.a == null)
             throw new FunctionNotFound(identifier, paramTypes);
         return res;

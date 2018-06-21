@@ -5,11 +5,13 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FFieldAccess implements FVariableExpression {
+public class FFieldAccess implements FVariableExpression, NeedsTypeCheck {
 
     private final FField field;
-    private final FExpression object; //null for static fields
+    private FExpression object; //null for static fields
     private AccessType accessType = AccessType.LOAD;
 
     //for instance fields
@@ -51,6 +53,12 @@ public class FFieldAccess implements FVariableExpression {
     @Override
     public FClass getType() {
         return field.getType();
+    }
+
+    @Override
+    public void checkTypes() throws IncompatibleTypes {
+        if (object != null && object.getType() != field.getClazz())
+            object = new FImplicitCast(field.getClazz(), object);
     }
 
     @Override

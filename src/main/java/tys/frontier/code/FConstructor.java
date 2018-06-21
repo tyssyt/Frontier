@@ -54,7 +54,7 @@ public class FConstructor extends FFunction {
         List<FStatement> statements = new ArrayList<>();
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(getClazz().getThis());
-            FField field = getClazz().getField(param.getIdentifier());
+            FField field = getClazz().getFields().get(param.getIdentifier());
             statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
         statements.add(new FReturn(new FLocalVariableExpression(getClazz().getThis()), this));

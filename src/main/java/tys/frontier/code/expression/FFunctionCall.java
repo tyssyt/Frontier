@@ -48,6 +48,8 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
+        if (object != null && object.getType() != function.getClazz())
+            object = new FImplicitCast(function.getClazz(), object);
         List<FClass> paramTypes = function.getSignature().getParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i).getType() != paramTypes.get(i))

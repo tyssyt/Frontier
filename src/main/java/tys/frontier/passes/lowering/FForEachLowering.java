@@ -52,7 +52,7 @@ public class FForEachLowering extends StatementReplacer {
 
         //condition
         FFunction less = Iterables.getOnlyElement(FIntN._32.getFunctions(FBinaryOperator.Bool.LESS.identifier));
-        FFieldAccess size = new FFieldAccess(array.getType().getField(FArray.SIZE), array);
+        FFieldAccess size = new FFieldAccess(array.getType().getFields().get(FArray.SIZE), array);
         FExpression cond = new FFunctionCall(less, ImmutableList.of(new FLocalVariableExpression(counter), size));
 
         //increment
