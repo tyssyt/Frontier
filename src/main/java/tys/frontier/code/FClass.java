@@ -29,6 +29,9 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
 
+    private Set<FClass> parentClasses = new LinkedHashSet<>();
+    private Set<FClass> childClasses = new HashSet<>();
+
     private FVisibilityModifier constructorVisibility;
 
     private FLocalVariable thiz;
@@ -63,6 +66,19 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);
         }
+    }
+
+    public boolean addParentClass(FClass parentClass) {
+        parentClass.childClasses.add(this);
+        return parentClasses.add(parentClass);
+    }
+
+    public Set<FClass> getParentClasses() {
+        return parentClasses;
+    }
+
+    public Set<FClass> getChildClasses() {
+        return childClasses;
     }
 
     public FVisibilityModifier getConstructorVisibility() {

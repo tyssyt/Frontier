@@ -41,6 +41,11 @@ public class ParserTest {
         assertTrue(e instanceof StatementOutsideLoop);
     }
     @Test
+    public void parseClassExtendedTwice() throws Exception {
+        SyntaxError e = parseSyntaxError("ClassExtendedTwice.front");
+        assertTrue(e instanceof ClassExtendedTwice);
+    }
+    @Test
     public void parseClassIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("ClassIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);
@@ -57,6 +62,11 @@ public class ParserTest {
     public void parseContinueOutsideLoop() throws Exception {
         SyntaxError e = parseSyntaxError("ContinueOutsideLoop.front");
         assertTrue(e instanceof StatementOutsideLoop);
+    }
+    @Test
+    public void parseCyclicClassHierachy() throws Exception {
+        SyntaxError e = parseSyntaxError("CyclicClassHierachy.front");
+        assertTrue(e instanceof CyclicClassHierachy);
     }
     @Test
     public void parseFieldIdentifierCollision() throws Exception {

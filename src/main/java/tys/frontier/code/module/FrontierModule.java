@@ -11,6 +11,8 @@ public class FrontierModule extends Module {
 
     private List<FFile> files = new ArrayList<>();
 
+    private ClassHierachy internalClassHierachy = new ClassHierachy();
+
     public FrontierModule(String name, String version, String subversion_or_versionSuffix) {
         super(name, version, subversion_or_versionSuffix);
     }
@@ -22,9 +24,14 @@ public class FrontierModule extends Module {
     public void addFile (FFile toAdd) {
         files.add(toAdd);
         for (FClass fClass : toAdd.getClasses().values()) {
+            internalClassHierachy.add(fClass);
             if (fClass.getVisibility() == FVisibilityModifier.EXPORT) {
                 addExportedClass(fClass);
             }
         }
+    }
+
+    public ClassHierachy getInternalClassHierachy() {
+        return internalClassHierachy;
     }
 }

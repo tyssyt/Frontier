@@ -2,6 +2,7 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -63,6 +64,22 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         } finally {
             currentClass = null;
         }
+    }
+
+    @Override
+    public Object visitParentClasses(FrontierParser.ParentClassesContext ctx) {
+        for (TerminalNode parentClassCtx : ctx.TypeIdentifier()) {
+            try {
+                FClass parentClass = ParserContextUtils.getNonPredefined(parentClassCtx.getText(), classes);
+                boolean changed = currentClass.addParentClass(parentClass);
+                if (!changed) {
+                    errors.add(new ClassExtendedTwice(currentClass, parentClass));
+                }
+            } catch (ClassNotFound classNotFound) {
+                errors.add(classNotFound);
+            }
+        }
+        return null;
     }
 
     @Override

@@ -69,12 +69,16 @@ importStatement
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier LBRACE
+    :   visibilityModifier? CLASS TypeIdentifier parentClasses?
+        LBRACE
         classDeclaratives
         classBodyDeclaration*
         RBRACE
     ;
 
+parentClasses
+    :   COLON TypeIdentifier (COMMA TypeIdentifier)*
+    ;
 classDeclaratives
     :   constructorsDeclarative?
     ;

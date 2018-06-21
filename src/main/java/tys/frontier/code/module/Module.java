@@ -1,5 +1,7 @@
 package tys.frontier.code.module;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FClass;
@@ -21,9 +23,11 @@ public abstract class Module {
 
     protected FFunction entryPoint = null;
 
-    protected Map<FClassIdentifier, FClass> exportedClasses = new HashMap<>();
+    protected BiMap<FClassIdentifier, FClass> exportedClasses = HashBiMap.create();
     protected Multimap<FClass, FField> exportedFields = HashMultimap.create(); //TODO maybe we just don't need these fields
     protected Multimap<FClass, FFunction> exportedFunctions = HashMultimap.create(); //TODO maybe we just don't need these fields
+
+    protected ClassHierachy externalClassHierachy = new ClassHierachy(exportedClasses.values());
 
     public Module(String name, String version, String subversion_or_versionSuffix) {
         assert Character.isUpperCase(name.charAt(0));
@@ -58,6 +62,10 @@ public abstract class Module {
 
     public Multimap<FClass, FFunction> getExportedFunctions() {
         return exportedFunctions;
+    }
+
+    public ClassHierachy getExternalClassHierachy() {
+        return externalClassHierachy;
     }
 
     public Optional<FFunction> getEntryPoint() {

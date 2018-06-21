@@ -11,6 +11,7 @@ import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportResolver;
+import tys.frontier.parser.semanticAnalysis.CyclicClassHierachyCheck;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -37,7 +38,7 @@ public class Parser {
         IMPORT_RESOLVING,
         IDENTIFIER_COLLECTION,
         TO_INTERNAL_REPRESENTATION,
-        TYPE_CHECKS,
+        CHECKS,
         FINISHED;
 
         @Override
@@ -99,12 +100,13 @@ public class Parser {
                 }
             }
 
-            stage = Stage.TYPE_CHECKS;
+            stage = Stage.CHECKS;
+            res.addFile(file);
+            CyclicClassHierachyCheck.check(res.getInternalClassHierachy());
             NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
-            Log.info(this, "typecheck passed");
+            Log.info(this, "checks passed");
 
             stage = Stage.FINISHED;
-            res.addFile(file);
             //search for entry Point
             try {
                 FFunction entryPoint = res.getExportedFunctions().values().stream()
