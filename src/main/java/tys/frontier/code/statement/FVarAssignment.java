@@ -2,6 +2,7 @@ package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
@@ -57,7 +58,7 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
     @Override
     public void checkTypes() throws IncompatibleTypes {
         if (variableExpression.getType() != value.getType())
-            throw new IncompatibleTypes(variableExpression.getType(), value.getType());
+            value = new FImplicitCast(variableExpression.getType(), value);
     }
 
     @Override
