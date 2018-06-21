@@ -30,9 +30,10 @@ public class FExplicitCast extends FCast implements NeedsTypeCheck {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() < ((FIntN) baseType).getN())
             return CastType.INTEGER_DEMOTION;
-
         //TODO float to int
         //TODO downwards float cast
+        if (targetType.isSubType(baseType))
+            return CastType.OBJECT_PROMOTION;
 
         throw new IncompatibleTypes(targetType, baseType);
     }
