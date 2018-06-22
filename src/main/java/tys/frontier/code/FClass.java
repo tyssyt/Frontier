@@ -60,6 +60,9 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public void generateConstructor() {
+        if (this.isAbstract())
+            return; //TODO this assume the current constructor that does not call super class
+                    //TODO if this stays this way we should error when construtorVisbility is set!
         FVisibilityModifier visibility = constructorVisibility == null ? FVisibilityModifier.PRIVATE : constructorVisibility;
         try {
             addFunction(FConstructor.create(visibility, this));
@@ -124,6 +127,22 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
+    }
+
+    public boolean isAbstract() {
+        return !getNonImplementedFunctions().isEmpty();
+    }
+
+    public BiMap<FFunction.Signature, FFunction> getNonImplementedFunctions() {
+        BiMap<FFunction.Signature, FFunction> res = HashBiMap.create();
+        for (FClass superClass : superClasses)
+            res.putAll(superClass.getNonImplementedFunctions());
+        for (FFunction function : functions.values())
+            if (function.isAbstract())
+                res.put(function.getSignature(), function);
+            else
+                res.remove(function.getSignature());
+        return res;
     }
 
     public FLocalVariable getThis() {
