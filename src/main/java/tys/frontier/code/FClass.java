@@ -29,8 +29,8 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private FClassIdentifier identifier;
     private FVisibilityModifier visibility;
 
-    private Set<FClass> parentClasses = new LinkedHashSet<>();
-    private Set<FClass> childClasses = new HashSet<>();
+    private Set<FClass> superClasses = new LinkedHashSet<>();
+    private Set<FClass> subClasses = new HashSet<>();
 
     private FVisibilityModifier constructorVisibility;
 
@@ -68,10 +68,10 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         }
     }
 
-    public boolean addParentClass(FClass parentClass) {
+    public boolean addSuperClass(FClass parentClass) {
         invalidateCachedChildData();
-        parentClass.childClasses.add(this);
-        return parentClasses.add(parentClass);
+        parentClass.subClasses.add(this);
+        return superClasses.add(parentClass);
     }
 
     private void invalidateCachedChildData() {
@@ -79,18 +79,18 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         cachedAllFields = null;
     }
 
-    public Set<FClass> getParentClasses() {
-        return parentClasses;
+    public Set<FClass> getSuperClasses() {
+        return superClasses;
     }
 
-    public Set<FClass> getChildClasses() {
-        return childClasses;
+    public Set<FClass> getSubClasses() {
+        return subClasses;
     }
 
     public boolean isSubType(FClass other) {
-        if (parentClasses.contains(other))
+        if (superClasses.contains(other))
             return true;
-        for (FClass parentClass : parentClasses) {
+        for (FClass parentClass : superClasses) {
             if (parentClass.isSubType(other))
                 return true;
         }
@@ -142,7 +142,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         FField field = fields.get(identifier);
         if (field != null)
             return field;
-        for (FClass parentClass : parentClasses) {
+        for (FClass parentClass : superClasses) {
             try {
                 return parentClass.resolveField(identifier);
             } catch (FieldNotFound ignored) {}
@@ -177,7 +177,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
         }
 
-        for (FClass parentClass : parentClasses) {
+        for (FClass parentClass : superClasses) {
             try {
                 Pair<FFunction, boolean[]> parentRes = parentClass.resolveFunction(identifier, paramTypes);
                 if (Booleans.countTrue(parentRes.b) == 0)
@@ -244,7 +244,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         if (cachedInheritedTypes == null) {
             cachedInheritedTypes = new HashSet<>();
             cachedInheritedTypes.add(this);
-            for (FClass parentClass : parentClasses) {
+            for (FClass parentClass : superClasses) {
                 cachedInheritedTypes.addAll(parentClass.getAllInheritedTypes());
             }
         }

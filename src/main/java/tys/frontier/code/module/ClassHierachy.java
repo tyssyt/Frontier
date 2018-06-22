@@ -48,16 +48,16 @@ public class ClassHierachy extends AbstractGraph<FClass> {
 
     @Override
     public Set<FClass> adjacentNodes(FClass node) {
-        return DisjunctUnionSetView.of(node.getParentClasses(), node.getChildClasses());
+        return DisjunctUnionSetView.of(node.getSuperClasses(), node.getSubClasses());
     }
 
     @Override
     public Set<FClass> predecessors(FClass node) {
-        return node.getParentClasses();
+        return node.getSuperClasses();
     }
 
     @Override
     public Set<FClass> successors(FClass node) {
-        return node.getChildClasses();
+        return node.getSubClasses();
     }
 }

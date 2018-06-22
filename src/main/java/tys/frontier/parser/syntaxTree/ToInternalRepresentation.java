@@ -67,7 +67,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private void generateConstructor(FClass fClass, Set<FClass> done) {
         if (done.contains(fClass))
             return;
-        for (FClass parentClass : fClass.getParentClasses()) {
+        for (FClass parentClass : fClass.getSuperClasses()) {
             generateConstructor(parentClass, done);
         }
         fClass.generateConstructor();

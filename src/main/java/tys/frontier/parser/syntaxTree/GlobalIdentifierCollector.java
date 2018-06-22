@@ -70,7 +70,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         for (TerminalNode parentClassCtx : ctx.TypeIdentifier()) {
             try {
                 FClass parentClass = ParserContextUtils.getNonPredefined(parentClassCtx.getText(), classes);
-                boolean changed = currentClass.addParentClass(parentClass);
+                boolean changed = currentClass.addSuperClass(parentClass);
                 if (!changed) {
                     errors.add(new ClassExtendedTwice(currentClass, parentClass));
                 }
