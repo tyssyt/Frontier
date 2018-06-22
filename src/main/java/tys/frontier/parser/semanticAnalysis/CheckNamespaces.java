@@ -43,26 +43,13 @@ public class CheckNamespaces {
                         continue; //the function is overridden, it is supposed to clash
                     if (function.isStatic())
                         continue; //static functions can't clash
-                    nextOld: for (FFunction oldFunction : seenFunctions.get(function.getIdentifier())) {
-                        int max = Math.max(
-                                function.getSignature().getParamTypes().size(),
-                                oldFunction.getSignature().getParamTypes().size()
-                        );
-                        List<FClass> paramTypes = function.getSignature().getAllParamTypes();
-                        List<FClass> oldParamTypes = oldFunction.getSignature().getAllParamTypes();
-                        if (paramTypes.size() < max || oldParamTypes.size() < max)
-                            continue nextOld;
-                        for (int i = 0; i < max; i++) {
-                            if (paramTypes.get(i) != oldParamTypes.get(i))
-                                continue nextOld;
-                        }
-                        errors.add(new IdentifierCollision(function, oldFunction));
+                    for (FFunction oldFunction : seenFunctions.get(function.getIdentifier())) {
+                        if (function.getSignature().collidesWith(oldFunction.getSignature()))
+                            errors.add(new IdentifierCollision(function, oldFunction));
                     }
                     seenFunctions.put(function.getIdentifier(), function);
                 }
             }
-
-
         }
 
         if (!errors.isEmpty())

@@ -228,20 +228,13 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
         }
 
         public boolean collidesWith(Signature other) {
-            List<FClass> shorter;
-            List<FClass> longer;
-            if (this.paramTypes.size() <= other.paramTypes.size()) {
-                shorter = this.paramTypes;
-                longer = other.paramTypes;
-            } else {
-                shorter = other.paramTypes;
-                longer = this.paramTypes;
-            }
-
-            if (!shorter.equals(longer.subList(0, shorter.size())))
+            int max = Math.max(
+                    this.getParamTypes().size(),
+                    other.getParamTypes().size()
+            );
+            if (this.getAllParamTypes().size() < max || other.getAllParamTypes().size() < max)
                 return false;
-            //TODO there are other non-colliding scenarios
-            return true;
+            return this.getAllParamTypes().subList(0, max).equals(other.getAllParamTypes().subList(0, max));
         }
 
         //TODO castSig to here?
