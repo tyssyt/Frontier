@@ -39,7 +39,10 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
     public void checkTypes() throws IncompatibleTypes {
         FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
         if (function.getType() != expressionType)
-            expression = new FImplicitCast(function.getType(), expression);
+            if (expression == null)
+                throw new IncompatibleTypes(function.getType(), FVoid.INSTANCE);
+            else
+                expression = new FImplicitCast(function.getType(), expression);
     }
 
     @Override
@@ -54,6 +57,7 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
     }
 
     @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         sb.append("return ");
         getExpression().ifPresent(e -> e.toString(sb));

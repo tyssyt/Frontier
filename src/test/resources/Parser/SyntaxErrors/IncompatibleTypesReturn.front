@@ -1,5 +1,5 @@
 class A {
-    int test () {
+    float64 test () {
         return;
     }
 }
