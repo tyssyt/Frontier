@@ -11,6 +11,7 @@ import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportResolver;
+import tys.frontier.parser.semanticAnalysis.CheckNamespaces;
 import tys.frontier.parser.semanticAnalysis.CyclicClassHierachyCheck;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
@@ -37,6 +38,7 @@ public class Parser {
         INITIALIZING,
         IMPORT_RESOLVING,
         IDENTIFIER_COLLECTION,
+        IDENTIFIER_CHECKS,
         TO_INTERNAL_REPRESENTATION,
         CHECKS,
         FINISHED;
@@ -90,6 +92,11 @@ public class Parser {
                 Log.debug(this, file.summary());
             }
 
+            stage= Stage.IDENTIFIER_CHECKS;
+            res.addFile(file);
+            CyclicClassHierachyCheck.check(res.getInternalClassHierachy());
+            CheckNamespaces.check(res.getInternalClassHierachy()); //TODO namespace check should extend past local class hierachy
+
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
             {
@@ -101,8 +108,6 @@ public class Parser {
             }
 
             stage = Stage.CHECKS;
-            res.addFile(file);
-            CyclicClassHierachyCheck.check(res.getInternalClassHierachy());
             NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
             Log.info(this, "checks passed");
 
