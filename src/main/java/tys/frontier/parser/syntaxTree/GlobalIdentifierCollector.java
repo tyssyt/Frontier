@@ -88,7 +88,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     }
 
     @Override
-    public Object visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
+    public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         //return type

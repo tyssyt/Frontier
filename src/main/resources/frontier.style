@@ -8,6 +8,9 @@
         "export":       "export",
         "private":      "private",
         "static":       "static",
+
+        "abstract":     "abstract",
+        "override":     "override",
         
         "new":          "new",
         "this":         "this",

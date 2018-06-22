@@ -18,6 +18,8 @@ public class Keywords {
             .put("export", FrontierParser.EXPORT)
             .put("private", FrontierParser.PRIVATE)
             .put("static", FrontierParser.STATIC)
+            .put("abstract", FrontierParser.ABSTRACT)
+            .put("override", FrontierParser.OVERRIDE)
             .put("new", FrontierParser.NEW)
             .put("this", FrontierParser.THIS)
             .put("null", FrontierParser.NULL)

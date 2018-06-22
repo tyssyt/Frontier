@@ -177,24 +177,53 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FFunction visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
-        FFunction f = treeData.functions.get(ctx);
+        FFunction f = treeData.functions.get(ctx.methodHeader());
         currentFunction = f;
         declaredVars.push(Utils.asMap(f.getParams()));
         try {
-            //parse default values of parameters
-            ctx.formalParameters().accept(this);
+            ctx.methodHeader().accept(this);
 
             //parse function body
             if (!f.isStatic()) {
                 FLocalVariable thiz = currentClass.getThis();
                 declaredVars.put(thiz.getIdentifier(), thiz);
             }
+
             f.setBody(visitBlock(ctx.block()));
             return f;
         } finally {
             currentFunction = null;
             declaredVars.pop();
         }
+    }
+
+    @Override
+    public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
+        //parse default values of parameters
+        ctx.formalParameters().accept(this);
+        if (ctx.OVERRIDE() != null) {
+
+            //find all the methods we override, must be > 0
+            boolean foundOverride = false;
+            for (FClass fClass : currentClass.getAllInheritedTypes()) {
+                if (fClass == currentClass)
+                    continue;
+                for (FFunction function : fClass.getFunctions(currentFunction.getIdentifier())) {
+                    if (currentFunction.getSignature().equals(function.getSignature())) {
+                        try {
+                            currentFunction.addOverwrites(function);
+                        } catch (OverridesWithLessVisibility overridesWithLessVisibility) {
+                            errors.add(overridesWithLessVisibility);
+                        }
+                        foundOverride = true;
+                    }
+                }
+            }
+            if (!foundOverride) {
+                errors.add(new NoOverride(currentFunction));
+            }
+        }
+        return null;
     }
 
     @Override

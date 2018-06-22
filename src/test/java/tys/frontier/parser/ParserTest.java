@@ -117,6 +117,16 @@ public class ParserTest {
         assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
+    public void parseNoOverride() throws Exception {
+        SyntaxError e = parseSyntaxError("NoOverride.front");
+        assertTrue(e instanceof NoOverride);
+    }
+    @Test
+    public void parseOverridesWithLessVisibility() throws Exception {
+        SyntaxError e = parseSyntaxError("OverridesWithLessVisibility.front");
+        assertTrue(e instanceof OverridesWithLessVisibility);
+    }
+    @Test
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
         assertTrue(e instanceof SignatureCollision);

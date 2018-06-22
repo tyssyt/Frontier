@@ -20,7 +20,7 @@ public interface ClassWalker<Class, Field, Function, Statement, Expression> exte
     }
 
     default Function visitFunction(FFunction function) {
-        function.getBody().accept(this);
+        function.getBody().ifPresent(body -> body.accept(this));
         return null;
     }
 }

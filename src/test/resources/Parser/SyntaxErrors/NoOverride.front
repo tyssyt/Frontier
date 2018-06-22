@@ -1,0 +1,7 @@
+class A {
+    void typo() {}
+}
+
+class B : A {
+    void tpyo() override {}
+}

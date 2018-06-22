@@ -10,11 +10,13 @@ import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.OverridesWithLessVisibility;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 //TODO the FFunction hierachy is so messy with constructors and predefined and stuff...
 public class FFunction implements FClassMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
@@ -22,6 +24,8 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
     private FFunctionIdentifier identifier;
     private FClass clazz;
     private FVisibilityModifier modifier;
+    private List<FFunction> overrides = new ArrayList<>();
+    private List<FFunction> overwrittenBy = new ArrayList<>();
     private boolean statik;
     private FClass returnType;
     private ImmutableList<FParameter> params;
@@ -64,12 +68,31 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
         return statik;
     }
 
+    public boolean isAbstract() {
+        return body == null;
+    }
+
     public ImmutableList<FParameter> getParams() {
         return params;
     }
 
-    public FBlock getBody() {
-        return body;
+    public void addOverwrites(FFunction other) throws OverridesWithLessVisibility {
+        this.overrides.add(other);
+        other.overwrittenBy.add(this);
+        if (this.getVisibility().compareTo(other.getVisibility()) < 0)
+            throw new OverridesWithLessVisibility(other, this);
+    }
+
+    public List<FFunction> getOverrides() {
+        return overrides;
+    }
+
+    public List<FFunction> getOverwrittenBy() {
+        return overwrittenBy;
+    }
+
+    public Optional<FBlock> getBody() {
+        return Optional.ofNullable(body);
     }
 
     public void setBody(FBlock body) {
@@ -148,7 +171,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
     }
 
     public String headerToString() {
-        return modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
+        return (body==null ? "abstract " : "") + modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
     }
 
     @Override
@@ -156,7 +179,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
         sb.append(headerToString()).append(" {\n");
         if (predefined)
             sb.append("predefined");
-        else
+        else if (body != null)
             for (FStatement statement : body)
                 statement.toString(sb).append('\n');
         return sb.append('}');

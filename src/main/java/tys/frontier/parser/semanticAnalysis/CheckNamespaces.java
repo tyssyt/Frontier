@@ -39,6 +39,10 @@ public class CheckNamespaces {
                 }
                 //functions TODO when we introduce function calls with named params this needs major rework
                 for (FFunction function : c.getFunctions().values()) {
+                    if (!function.getOverwrittenBy().isEmpty())
+                        continue; //the function is overridden, it is supposed to clash
+                    if (function.isStatic())
+                        continue; //static functions can't clash
                     nextOld: for (FFunction oldFunction : seenFunctions.get(function.getIdentifier())) {
                         int max = Math.max(
                                 function.getSignature().getParamTypes().size(),

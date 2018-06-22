@@ -21,7 +21,7 @@ public interface FClassVisitor extends FStatementVisitor, ClassVisitor<FClass, F
     }
 
     @Override
-    default FFunction exitFunction(FFunction function, FStatement body) {
+    default FFunction exitFunction(FFunction function, Optional<FStatement> body) {
         return function;
     }
 }

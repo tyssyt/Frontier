@@ -94,8 +94,8 @@ public class Parser {
 
             stage= Stage.IDENTIFIER_CHECKS;
             res.addFile(file);
+            //check this early because cyclic class hierachies would create nontermination in function resolving etc.
             CyclicClassHierachyCheck.check(res.getInternalClassHierachy());
-            CheckNamespaces.check(res.getInternalClassHierachy()); //TODO namespace check should extend past local class hierachy
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
@@ -109,6 +109,7 @@ public class Parser {
 
             stage = Stage.CHECKS;
             NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
+            CheckNamespaces.check(res.getInternalClassHierachy()); //TODO namespace check should extend past local class hierachy
             Log.info(this, "checks passed");
 
             stage = Stage.FINISHED;

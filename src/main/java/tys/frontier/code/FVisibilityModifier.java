@@ -3,9 +3,9 @@ package tys.frontier.code;
 import tys.frontier.parser.antlr.FrontierParser;
 
 public enum FVisibilityModifier {
-    EXPORT ("export", FrontierParser.EXPORT),
+    PRIVATE ("private", FrontierParser.PRIVATE),
     NONE("", 0),
-    PRIVATE ("private", FrontierParser.PRIVATE);
+    EXPORT ("export", FrontierParser.EXPORT);
 
     public final String text;
     public final int tokenId;

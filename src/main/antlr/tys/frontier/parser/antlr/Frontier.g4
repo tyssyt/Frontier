@@ -31,6 +31,8 @@ tokens {
     EXPORT,
     PRIVATE,
     STATIC,
+    ABSTRACT,
+    OVERRIDE,
     NEW,
     THIS,
     NULL,
@@ -97,12 +99,21 @@ visibilityModifier
     ;
 
 classBodyDeclaration
-    :   methodDeclaration
+    :   abstractMethodDeclaration
+    |   methodDeclaration
     |   fieldDeclaration
     ;
 
+abstractMethodDeclaration
+    :   ABSTRACT methodHeader SEMI
+    ;
+
 methodDeclaration
-    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters block
+    :   methodHeader block
+    ;
+
+methodHeader
+    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters OVERRIDE?
     ;
 
 fieldDeclaration

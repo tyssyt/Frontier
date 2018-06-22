@@ -1,0 +1,7 @@
+class A {
+    export void a() {}
+}
+
+class B : A {
+    void a() override {}
+}

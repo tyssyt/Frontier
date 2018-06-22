@@ -8,7 +8,7 @@ public class IdentifierCollision extends SyntaxError {
     public final IdentifierNameable b;
 
     public IdentifierCollision(IdentifierNameable a, IdentifierNameable b) {
-        super("between" + a + " and " + b);
+        super("between " + a.getIdentifier() + " and " + b.getIdentifier());
         this.a = a;
         this.b = b;
     }
