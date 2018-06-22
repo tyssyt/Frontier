@@ -1,8 +1,7 @@
 class A {
 
-    void test () {
-        bool[][] b = new bool[2][2];
-        while(b[1]);
+    void test (bool[][] b) {
+        while(b[1]){}
     }
 
 }

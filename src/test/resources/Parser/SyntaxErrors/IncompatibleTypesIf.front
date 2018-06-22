@@ -1,5 +1,5 @@
 class A {
     void test() {
-        if (this);
+        if (this){}
     }
 }

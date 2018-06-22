@@ -1,6 +1,6 @@
 class A {
 
-    void test(int i) {
+    void test(A[] i) {
         int32 i = 0;
     }
 
