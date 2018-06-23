@@ -10,6 +10,7 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.modules.io.IOClass;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -57,6 +58,7 @@ public class LLVMModule implements AutoCloseable {
     private LLVMModuleRef module;
     private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
+    private HashObjIntMap<Pair<FClass, FClass>> superClassIndices = HashObjIntMaps.newMutableMap(); //TODO I am not happy with the way I handle storing indices
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
     private List<FClass> todoTypeBodies = new ArrayList<>();
     private List<FField> todoFieldInitilizers = new ArrayList<>();
@@ -134,7 +136,11 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    public int getFieldIndex(FField field) {
+    int getSuperClassIndex(FClass type, FClass superType) {
+        return superClassIndices.getInt(new Pair<>(type, superType));
+    }
+
+    int getFieldIndex(FField field) {
         return fieldIndices.getInt(field);
     }
 
@@ -219,7 +225,7 @@ public class LLVMModule implements AutoCloseable {
                 }
             }
             for (FFunction function : clazz.getFunctions().values()) {
-                if (function.isPredefined())
+                if (function.isPredefined() || function.isAbstract())
                     continue;
                 addFunctionHeader(function);
                 todoFunctionBodies.add(function);
@@ -282,6 +288,10 @@ public class LLVMModule implements AutoCloseable {
         for (FClass type : todoTypeBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
+            for (FClass superType : type.getSuperClasses()) {
+                subtypes.add(LLVMGetElementType(getLlvmType(superType)));
+                superClassIndices.put(new Pair<>(type, superType), index++);
+            }
             for (FField field : type.getFields().values()) {
                 if (field.isStatic())
                     continue;

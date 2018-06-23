@@ -46,10 +46,15 @@ class LLVMTransformer implements
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
     private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
 
+    private final LLVMTypeRef byteType;
+    private final LLVMTypeRef indexType;
+
     public LLVMTransformer(LLVMModule module) {
         this.module = module;
         this.builder = module.createBuilder();
         this.entryBlockAllocaBuilder = module.createBuilder();
+        byteType = module.getLlvmType(FIntN._8);
+        indexType = module.getLlvmType(FIntN._32);
     }
 
     @Override
@@ -121,7 +126,8 @@ class LLVMTransformer implements
         }
 
         //do the body
-        for (FStatement statement : function.getBody())
+        //noinspection ConstantConditions
+        for (FStatement statement : function.getBody().get())
             statement.accept(this);
 
         //finish
@@ -277,12 +283,7 @@ class LLVMTransformer implements
     public LLVMValueRef visitArrayAccess(FArrayAccess arrayAccess) {
         LLVMValueRef array = arrayAccess.getArray().accept(this);
         LLVMValueRef index = arrayAccess.getIndex().accept(this);
-        PointerPointer<LLVMValueRef> indices = new PointerPointer<>(
-                LLVMConstInt(module.getLlvmType(FIntN._32), 0, FALSE),
-                LLVMConstInt(module.getLlvmType(FIntN._32), 1, FALSE),
-                index
-        );
-        LLVMValueRef address = LLVMBuildGEP(builder, array, indices, 3, "GEP_array");
+        LLVMValueRef address = arrayGep(array, index);
 
         switch (arrayAccess.getAccessType()) {
             case LOAD:
@@ -305,13 +306,15 @@ class LLVMTransformer implements
         LLVMTypeRef targetType = module.getLlvmType(implicitCast.getType());
         switch (implicitCast.getCastType()) {
             case INTEGER_PROMOTION:
-                return LLVMBuildSExt(builder, toCast, targetType, "sExt");
+                return LLVMBuildSExt(builder, toCast, targetType, "cast_int_prom");
             case FLOAT_PROMOTION:
-                return LLVMBuildFPExt(builder, toCast, targetType, "fpExt");
+                return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
             case INT_TO_FLOAT:
-                return LLVMBuildSIToFP(builder, toCast, targetType, "siToFP");
+                return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
             case OBJECT_DEMOTION:
-                return Utils.NYI("object demotion");
+                int superClassIndex = module.getSuperClassIndex(implicitCast.getCastedExpression().getType(), implicitCast.getType());
+                LLVMValueRef startOfSuperType = LLVMBuildStructGEP(builder, toCast, superClassIndex, "GEP_subType");
+                return LLVMBuildBitCast(builder, startOfSuperType, targetType, "cast_obj_dem");
             default:
                 return Utils.cantHappen();
         }
@@ -323,13 +326,19 @@ class LLVMTransformer implements
         LLVMTypeRef targetType = module.getLlvmType(explicitCast.getType());
         switch (explicitCast.getCastType()) {
             case INTEGER_DEMOTION:
-                return LLVMBuildTrunc(builder, toCast, targetType, "trunc");
+                return LLVMBuildTrunc(builder, toCast, targetType, "cast_int_dem");
             case FLOAT_DEMOTION:
-                return LLVMBuildFPTrunc(builder, toCast, targetType, "fpTrunc");
+                return LLVMBuildFPTrunc(builder, toCast, targetType, "cast_float_dem");
             case FLOAT_TO_INT:
-                return LLVMBuildFPToSI(builder, toCast, targetType, "fpToSI");
+                return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
             case OBJECT_PROMOTION:
-                return Utils.NYI("object promotion");
+                //TODO some check if the cast is valid (ideally compile time, otherwise at runtime)
+                LLVMValueRef asBytePointer = LLVMBuildBitCast(builder, toCast, LLVMPointerType(byteType, 0), "asBytePointer");
+                int index = module.getSuperClassIndex(explicitCast.getType(), explicitCast.getCastedExpression().getType());
+                LLVMValueRef offSet = offsetOf(targetType, index);
+                LLVMValueRef negOffset = LLVMBuildMul(builder, LLVMConstInt(LLVMTypeOf(offSet), -1, TRUE), offSet, "negOffset");
+                LLVMValueRef tagetAsBytePointer = LLVMBuildInBoundsGEP(builder, asBytePointer, new PointerPointer(1).put(negOffset), 1, "subAsBytePointer");
+                return LLVMBuildBitCast(builder, tagetAsBytePointer, targetType, "cast_obj_prom");
             default:
                 return Utils.cantHappen();
         }
@@ -450,16 +459,9 @@ class LLVMTransformer implements
 
                 //compute the array size
                 LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
-                PointerPointer<LLVMValueRef> indices = new PointerPointer<>(
-                        LLVMConstInt(module.getLlvmType(FIntN._32), 0, FALSE),
-                        LLVMConstInt(module.getLlvmType(FIntN._32), 1, FALSE),
-                        sizeRef
-                );
 
-                LLVMValueRef nullr = LLVMConstNull(arrayType);
-                LLVMValueRef sizeAsPointer = LLVMBuildGEP(builder, nullr, indices, 3, "sizeAsPointer");
-                LLVMValueRef size = LLVMBuildPtrToInt(builder, sizeAsPointer, module.getLlvmType(FIntN._64), "size");
-                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.getLlvmType(FIntN._8), size, "arrayMalloc");
+                LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
+                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, byteType, size, "arrayMalloc");
                 LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
 
                 //store size
@@ -517,6 +519,7 @@ class LLVMTransformer implements
         List<FParameter> params = function.getParams();
         //use default values for non specified parameters
         for (int i=functionCall.getArguments().size(); i<params.size(); i++)
+            //noinspection ConstantConditions
             args.add(params.get(i).getDefaultValue().get().accept(this));
         String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
         return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
@@ -547,18 +550,18 @@ class LLVMTransformer implements
         FLiteral literal = expression.getLiteral();
         LLVMTypeRef type = module.getLlvmType(literal.getType());
         if (literal instanceof FIntNLiteral) {
-            return intLiteral(((FIntNLiteral) literal).value.longValue(), ((FIntNLiteral) literal).type.getN());
+            return LLVMConstInt(type, ((FIntNLiteral) literal).value.longValue(), TRUE);
         } else if (literal instanceof FFloat32Literal) {
             return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
         } else if (literal instanceof FFloat64Literal) {
             return LLVMConstRealOfString(type, ((FFloat64Literal) literal).originalString);
         } else if (literal instanceof FCharLiteral) {
-            return intLiteral(((FCharLiteral) literal).value, 8);
+            return LLVMConstInt(type, ((FCharLiteral) literal).value, TRUE);
         } else if (literal instanceof FStringLiteral) {
             LLVMValueRef res = module.constantString(((FStringLiteral) literal).value);
             return LLVMBuildBitCast(builder, res, type, ""); //cast to get rid of the explicit length in the array type to make LLVM happy
         } else if (literal instanceof  FBoolLiteral) {
-            return boolLiteral(((FBoolLiteral) literal).value);
+            return LLVMConstInt(type, ((FBoolLiteral) literal).value ? TRUE : FALSE, FALSE);
         } else if (literal == FNull.INSTANCE) {
             //return LLVMConstNull()
             //return LLVMConstPointerNull()
@@ -566,14 +569,6 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
-    }
-
-    private LLVMValueRef intLiteral(long i, int bits) {
-        return LLVMConstInt(module.getLlvmType(FIntN.getIntN(bits)), i, TRUE);
-    }
-
-    private LLVMValueRef boolLiteral(boolean b) {
-        return LLVMConstInt(module.getLlvmType(FBool.INSTANCE), b ? TRUE : FALSE, FALSE);
     }
 
     @Override
@@ -587,5 +582,32 @@ class LLVMTransformer implements
             default:
                 return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef intLiteral(long i, int bits) {
+        return LLVMConstInt(module.getLlvmType(FIntN.getIntN(bits)), i, TRUE);
+    }
+
+    private LLVMValueRef boolLiteral(boolean b) {
+        return LLVMConstInt(module.getLlvmType(FBool.INSTANCE), b ? TRUE : FALSE, FALSE);
+    }
+
+    private LLVMValueRef indexLiteral(int i) {
+        return LLVMConstInt(indexType, i, FALSE);
+    }
+
+    private LLVMValueRef arrayGep(LLVMValueRef value, LLVMValueRef index) {
+        PointerPointer<LLVMValueRef> indices = new PointerPointer<>(indexLiteral(0), indexLiteral(1), index);
+        return LLVMBuildGEP(builder, value, indices, 3, "GEP_array");
+    }
+
+    private LLVMValueRef offsetOf(LLVMTypeRef type, int index) {
+        LLVMValueRef asPointer = LLVMBuildStructGEP(builder, LLVMConstNull(type), index, "GEP");
+        return LLVMBuildPtrToInt(builder, asPointer, module.getLlvmType(FIntN._64), "offsetOf");
+    }
+
+    private LLVMValueRef arrayOffsetOf(LLVMTypeRef type, LLVMValueRef index) {
+        LLVMValueRef asPointer = arrayGep(LLVMConstNull(type), index);
+        return LLVMBuildPtrToInt(builder, asPointer, module.getLlvmType(FIntN._64), "offsetOf_array");
     }
 }

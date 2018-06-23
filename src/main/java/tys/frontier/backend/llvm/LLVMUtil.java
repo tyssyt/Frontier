@@ -6,11 +6,17 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class LLVMUtil {
 
     private LLVMUtil() {} //no instances
+
+    @SafeVarargs
+    public static <P extends Pointer> PointerPointer<P> createPointerPointer (P... list) {
+        return createPointerPointer(Arrays.asList(list));
+    }
 
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (List<P> list) {
         PointerPointer<P> res = new PointerPointer<>(list.size());
