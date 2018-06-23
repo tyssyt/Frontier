@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -26,6 +27,7 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
     private FVisibilityModifier modifier;
     private List<FFunction> overrides = new ArrayList<>();
     private List<FFunction> overwrittenBy = new ArrayList<>();
+    private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean statik;
     private FClass returnType;
     private ImmutableList<FParameter> params;
@@ -89,6 +91,14 @@ public class FFunction implements FClassMember, IdentifierNameable, Typed, Contr
 
     public List<FFunction> getOverwrittenBy() {
         return overwrittenBy;
+    }
+
+    public boolean addCall(FFunctionCall call) {
+        return calledBy.add(call);
+    }
+
+    public List<FFunctionCall> getCalledBy() {
+        return calledBy;
     }
 
     public Optional<FBlock> getBody() {

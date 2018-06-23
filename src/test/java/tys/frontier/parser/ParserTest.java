@@ -36,6 +36,17 @@ public class ParserTest {
     }
 
     @Test
+    public void parseAbstractClassConstructorCall() throws Exception {
+        SyntaxError e = parseSyntaxError("AbstractClassConstructorCall.front");
+        assertTrue(e instanceof AbstractClassConstructorCall);
+    }
+    @Test
+    public void parseAccessForbidden() throws Exception {
+        SyntaxError e = parseSyntaxError("AccessForbidden.front");
+        assertTrue(e instanceof AccessForbidden);
+        assertTrue(((AccessForbidden) e).accessed instanceof FField);
+    }
+    @Test
     public void parseBreakOutsideLoop() throws Exception {
         SyntaxError e = parseSyntaxError("BreakOutsideLoop.front");
         assertTrue(e instanceof StatementOutsideLoop);
@@ -140,12 +151,6 @@ public class ParserTest {
     public void parseUndeclaredVariable() throws Exception {
         SyntaxError e = parseSyntaxError("UndeclaredVariable.front");
         assertTrue(e instanceof UndeclaredVariable);
-    }
-    @Test
-    public void parseAccessForbidden() throws Exception {
-        SyntaxError e = parseSyntaxError("AccessForbidden.front");
-        assertTrue(e instanceof AccessForbidden);
-        assertTrue(((AccessForbidden) e).accessed instanceof FField);
     }
 
 }

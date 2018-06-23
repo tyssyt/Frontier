@@ -21,12 +21,14 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
         this.object = object;
         this.function = function;
         this.arguments = arguments;
+        function.addCall(this);
     }
 
     public FFunctionCall(FFunction function, List<FExpression> arguments) {
         assert (function.isStatic());
         this.function = function;
         this.arguments = arguments;
+        function.addCall(this);
     }
 
     public FExpression getObject() {
@@ -44,6 +46,20 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
     @Override
     public FClass getType() {
         return function.getType();
+    }
+
+    public boolean isVirtual() {
+        int foundImplementations = 0;
+        if (!function.isAbstract())
+            foundImplementations++;
+        for (FFunction fFunction : function.getOverwrittenBy()) {
+            if (!fFunction.isAbstract()) {
+                foundImplementations++;
+                if (foundImplementations>1)
+                    return true;
+            }
+        }
+        return false;
     }
 
     @Override

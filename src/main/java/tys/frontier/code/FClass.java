@@ -60,9 +60,6 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public void generateConstructor() {
-        if (this.isAbstract())
-            return; //TODO this assume the current constructor that does not call super class
-                    //TODO if this stays this way we should error when construtorVisbility is set!
         FVisibilityModifier visibility = constructorVisibility == null ? FVisibilityModifier.PRIVATE : constructorVisibility;
         try {
             addFunction(FConstructor.create(visibility, this));
@@ -196,14 +193,16 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
         }
 
-        for (FClass parentClass : superClasses) {
-            try {
-                Pair<FFunction, boolean[]> parentRes = parentClass.resolveFunction(identifier, paramTypes);
-                if (Booleans.countTrue(parentRes.b) == 0)
-                    return parentRes;
-                if (res.a == null)
-                    res = parentRes;
-            } catch (FunctionNotFound ignored) {}
+        if (!identifier.equals(FConstructor.IDENTIFIER)) { //do not search parent classes for constructors
+            for (FClass parentClass : superClasses) {
+                try {
+                    Pair<FFunction, boolean[]> parentRes = parentClass.resolveFunction(identifier, paramTypes);
+                    if (Booleans.countTrue(parentRes.b) == 0)
+                        return parentRes;
+                    if (res.a == null)
+                        res = parentRes;
+                } catch (FunctionNotFound ignored) {}
+            }
         }
 
         if (res.a == null)

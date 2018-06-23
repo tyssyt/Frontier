@@ -1,0 +1,10 @@
+class A {
+    constructors;
+    abstract void do();
+}
+
+class B {
+    void do() {
+        A a = new A();
+    }
+}

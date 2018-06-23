@@ -17,6 +17,7 @@ import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
+import tys.frontier.parser.syntaxTree.RemoveAbstractConstructors;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.parser.warnings.Warning;
@@ -99,6 +100,7 @@ public class Parser {
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
+            RemoveAbstractConstructors.remove(res.getInternalClassHierachy());
             {
                 Log.info(this, "parsed classes");
                 Log.debug(this, file.toString());
