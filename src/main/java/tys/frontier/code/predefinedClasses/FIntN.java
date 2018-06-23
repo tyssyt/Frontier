@@ -29,6 +29,7 @@ public class FIntN extends FPredefinedClass {
 
     private FIntN(int n) {
         super(new FIntIdentifier(n));
+        assert n>=4;
         this.n = n;
 
         try {
