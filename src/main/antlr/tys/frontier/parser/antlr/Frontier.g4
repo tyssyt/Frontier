@@ -186,7 +186,7 @@ statement
         |   XOR_ASSIGN
         |   MOD_ASSIGN
         )
-        expression                                                                      #assignment
+        expression SEMI                                                                 #assignment
     ;
 
 
@@ -202,7 +202,7 @@ expression
     |   expression DOT Identifier                                  #fieldAccess
     |   typeType DOT Identifier                                    #staticFieldAccess
     |   expression DOT Identifier LPAREN expressionList? RPAREN    #externalFunctionCall
-    |   typeType DOT Identifier LPAREN expressionList RPAREN       #staticFunctionCall
+    |   typeType DOT Identifier LPAREN expressionList? RPAREN       #staticFunctionCall
     |   Identifier LPAREN expressionList? RPAREN                   #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)+ (Array)*         #newArray
