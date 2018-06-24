@@ -13,6 +13,7 @@ import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportResolver;
 import tys.frontier.parser.semanticAnalysis.CheckNamespaces;
 import tys.frontier.parser.semanticAnalysis.CyclicClassHierachyCheck;
+import tys.frontier.parser.semanticAnalysis.MultiExtendCheck;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -112,6 +113,7 @@ public class Parser {
             stage = Stage.CHECKS;
             NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
             CheckNamespaces.check(res.getInternalClassHierachy()); //TODO namespace check should extend past local class hierachy
+            MultiExtendCheck.check(res.getInternalClassHierachy());
             Log.info(this, "checks passed");
 
             stage = Stage.FINISHED;

@@ -54,7 +54,7 @@ public class ParserTest {
     @Test
     public void parseClassExtendedTwice() throws Exception {
         SyntaxError e = parseSyntaxError("ClassExtendedTwice.front");
-        assertTrue(e instanceof ClassExtendedTwice);
+        assertTrue(e instanceof MultiExtend);
     }
     @Test
     public void parseClassIdentifierCollision() throws Exception {
@@ -126,6 +126,11 @@ public class ParserTest {
     public void parseIncompatibleTypesWhile() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesWhile.front");
         assertTrue(e instanceof IncompatibleTypes);
+    }
+    @Test
+    public void parseMultiExtend() throws Exception {
+        SyntaxError e = parseSyntaxError("MultiExtend.front");
+        assertTrue(e instanceof MultiExtend);
     }
     @Test
     public void parseNoOverride() throws Exception {
