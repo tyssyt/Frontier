@@ -753,7 +753,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             try {
                 return staticFunctionCall(currentClass, identifier, params);
             } catch (FunctionNotFound functionNotFound) {
-                errors.add(e);
+                errors.add(functionNotFound);
                 throw new Failed();
             }
         }
