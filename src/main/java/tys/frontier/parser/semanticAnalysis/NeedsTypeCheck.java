@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public interface NeedsTypeCheck<T> {
+public interface NeedsTypeCheck {
 
     void checkTypes() throws IncompatibleTypes;
 
     @SuppressWarnings("unchecked")
-    default T castArgsTrusted() {
+    default <T> T castArgsTrusted() {
         try {
             checkTypes();
         } catch (IncompatibleTypes incompatibleTypes) {

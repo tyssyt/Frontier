@@ -15,6 +15,11 @@ public class FLocalVariableExpression implements FVariableExpression {
     }
 
     @Override
+    public FLocalVariableExpression copy() {
+        return new FLocalVariableExpression(variable);
+    }
+
+    @Override
     public FLocalVariable getVariable() {
         return variable;
     }

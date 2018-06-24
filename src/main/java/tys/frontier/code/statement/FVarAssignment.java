@@ -1,9 +1,13 @@
 package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -13,6 +17,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static tys.frontier.code.Operator.FBinaryOperator.Arith.*;
 
 public class FVarAssignment implements FStatement, NeedsTypeCheck {
 
@@ -72,23 +77,29 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
     }
 
     public enum Operator { //TODO type restrictions of operators
-        ASSIGN("="),
-        ADD_ASSIGN("+="),
-        SUB_ASSIGN("-="),
-        MUL_ASSIGN("*="),
-        DIV_ASSIGN("/="),
-        AND_ASSIGN("&="),
-        OR_ASSIGN("|="),
-        XOR_ASSIGN("^="),
-        MOD_ASSIGN("%=");
+        ASSIGN("=", null),
+        ADD_ASSIGN("+=", PLUS.identifier),
+        SUB_ASSIGN("-=", MINUS.identifier),
+        MUL_ASSIGN("*=", TIMES.identifier),
+        DIV_ASSIGN("/=", DIVIDED.identifier),
+        AND_ASSIGN("&=", AND.identifier),
+        OR_ASSIGN("|=", OR.identifier),
+        XOR_ASSIGN("^=", XOR.identifier),
+        MOD_ASSIGN("%=", MODULO.identifier);
 
         private static ImmutableMap<String, Operator> stringMap =
                 Arrays.stream(values()).collect(toImmutableMap(o -> o.stringRepresentation, o -> o));
 
         public final String stringRepresentation;
+        public final FFunctionIdentifier identifier;
 
-        Operator(String s) {
+        Operator(String s, FFunctionIdentifier id) {
             stringRepresentation = s;
+            identifier = id;
+        }
+
+        public FFunction getOperator(FClass type) {
+            return Iterables.getOnlyElement(type.getFunctions(identifier));
         }
 
         public static Operator fromString (String string) {

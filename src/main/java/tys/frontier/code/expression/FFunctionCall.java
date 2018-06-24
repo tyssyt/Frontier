@@ -6,12 +6,13 @@ import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FFunctionCall implements FExpression, NeedsTypeCheck {
+public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeCheck {
     private FExpression object; //null if the function is static
     private FFunction function;
     private List<FExpression> arguments;
@@ -31,8 +32,19 @@ public class FFunctionCall implements FExpression, NeedsTypeCheck {
         function.addCall(this);
     }
 
+    @Override
+    public HasInstanceObject copy() {
+        return Utils.cantHappen();
+    }
+
+    @Override
     public FExpression getObject() {
         return object;
+    }
+
+    @Override
+    public void setObject(FExpression object) {
+        this.object = object;
     }
 
     public FFunction getFunction() {

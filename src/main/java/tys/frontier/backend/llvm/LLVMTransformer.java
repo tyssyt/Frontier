@@ -281,7 +281,7 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitArrayAccess(FArrayAccess arrayAccess) {
-        LLVMValueRef array = arrayAccess.getArray().accept(this);
+        LLVMValueRef array = arrayAccess.getObject().accept(this);
         LLVMValueRef index = arrayAccess.getIndex().accept(this);
         LLVMValueRef address = arrayGep(array, index);
 

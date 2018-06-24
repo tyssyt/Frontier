@@ -8,7 +8,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FFieldAccess implements FVariableExpression, NeedsTypeCheck<FFieldAccess> {
+public class FFieldAccess implements FVariableExpression, HasInstanceObject, NeedsTypeCheck {
 
     private final FField field;
     private FExpression object; //null for static fields
@@ -26,6 +26,11 @@ public class FFieldAccess implements FVariableExpression, NeedsTypeCheck<FFieldA
         this.object = null;
     }
 
+    @Override
+    public FFieldAccess copy() {
+        return new FFieldAccess(field, object);
+    }
+
     public FField getField() {
         return field;
     }
@@ -35,8 +40,14 @@ public class FFieldAccess implements FVariableExpression, NeedsTypeCheck<FFieldA
         return field;
     }
 
+    @Override
     public FExpression getObject() {
         return object;
+    }
+
+    @Override
+    public void setObject(FExpression object) {
+        this.object = object;
     }
 
     @Override

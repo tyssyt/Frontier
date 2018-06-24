@@ -5,7 +5,7 @@ import tys.frontier.code.expression.*;
 public interface ExpressionWalker<Expression> {
 
     default Expression visitArrayAccess(FArrayAccess arrayAccess) {
-        arrayAccess.getArray().accept(this);
+        arrayAccess.getObject().accept(this);
         arrayAccess.getIndex().accept(this);
         return null;
     }

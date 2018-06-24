@@ -6,6 +6,7 @@ import tys.frontier.code.module.FrontierModule;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.lowering.FForEachLowering;
+import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class Main {
             //Lowering Passes
             for (FFile file : module.getFiles()) {
                 FForEachLowering.lower(file);
+                OperatorAssignmentLowering.lower(file);
             }
 
             //Backend

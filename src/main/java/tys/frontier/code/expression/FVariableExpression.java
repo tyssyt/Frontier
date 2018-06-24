@@ -14,4 +14,10 @@ public interface FVariableExpression extends FExpression {
     AccessType getAccessType();
     void setAccessType(AccessType accessType);
 
+    /**
+     * Does not copy the access type
+     * @return a fresh (not deep) copy of this
+     */
+    FVariableExpression copy();
+
 }

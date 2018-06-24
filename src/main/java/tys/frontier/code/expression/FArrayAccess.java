@@ -9,9 +9,9 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
+public class FArrayAccess implements FVariableExpression, HasInstanceObject, NeedsTypeCheck {
 
-    private final FExpression array;
+    private FExpression array;
     private FExpression index;
     private AccessType accessType = AccessType.LOAD;
 
@@ -20,8 +20,19 @@ public class FArrayAccess implements FVariableExpression, NeedsTypeCheck {
         this.index = index;
     }
 
-    public FExpression getArray() {
+    @Override
+    public FArrayAccess copy() {
+        return new FArrayAccess(array, index);
+    }
+
+    @Override
+    public FExpression getObject() {
         return array;
+    }
+
+    @Override
+    public void setObject(FExpression object) {
+        array = object;
     }
 
     public FExpression getIndex() {
