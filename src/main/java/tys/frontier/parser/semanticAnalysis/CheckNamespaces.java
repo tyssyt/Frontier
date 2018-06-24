@@ -39,8 +39,8 @@ public class CheckNamespaces {
                 }
                 //functions TODO when we introduce function calls with named params this needs major rework
                 for (FFunction function : c.getFunctions().values()) {
-                    if (!function.getOverwrittenBy().isEmpty())
-                        continue; //the function is overridden, it is supposed to clash
+                    if (!function.getOverrides().isEmpty())
+                        continue; //only look at base methods, not their overrides
                     if (function.isStatic())
                         continue; //static functions can't clash
                     for (FFunction oldFunction : seenFunctions.get(function.getIdentifier())) {
