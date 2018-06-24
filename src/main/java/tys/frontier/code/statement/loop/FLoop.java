@@ -16,6 +16,7 @@ public abstract class FLoop implements FStatement, ControlFlowIDontKnow {
         this.nestedDepth = nestedDepth;
         this.identifier = identifier;
         this.body = body;
+        identifier.setLoop(this);
     }
 
     public int getNestedDepth() {
