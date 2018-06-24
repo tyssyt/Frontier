@@ -591,10 +591,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(1).getText());
 
         try {
-            return staticFunctionCall(first.getType(), identifier, ImmutableList.of(first, second));
+            return staticFunctionCall(first.getType(), identifier, Arrays.asList(first, second));
         } catch (FunctionNotFound e1) {
             try {
-                return staticFunctionCall(second.getType(), identifier, ImmutableList.of(first, second));
+                return staticFunctionCall(second.getType(), identifier, Arrays.asList(first, second));
             } catch (FunctionNotFound e2) {
                 errors.add(e1);
                 errors.add(e2);
