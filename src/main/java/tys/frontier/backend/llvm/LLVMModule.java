@@ -172,6 +172,7 @@ public class LLVMModule implements AutoCloseable {
         for (FClass clazz : fModule.getImportedClasses().values()) {
             if (clazz == IOClass.INSTANCE) {
                 LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getFunctions(IOClass.PUTCHAR_ID))));
+                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getFunctions(IOClass.GETCHAR_ID))));
             }
         }
 

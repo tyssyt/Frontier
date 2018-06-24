@@ -480,6 +480,9 @@ class LLVMTransformer implements
             LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "putchar");
             LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
             return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
+        } else if (function.getIdentifier() == IOClass.GETCHAR_ID) {
+                LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "getchar");
+                return LLVMBuildCall(builder, func, new PointerPointer(), 0, "");
         } else {
             return Utils.cantHappen();
         }

@@ -17,6 +17,7 @@ public class IOClass extends FPredefinedClass {
 
     public static final FClassIdentifier IDENTIFIER = new FClassIdentifier("IO");
     public static final FFunctionIdentifier PUTCHAR_ID = new FFunctionIdentifier("putchar");
+    public static final FFunctionIdentifier GETCHAR_ID = new FFunctionIdentifier("getchar");
 
     public static final IOClass INSTANCE = new IOClass();
 
@@ -27,6 +28,9 @@ public class IOClass extends FPredefinedClass {
                     ImmutableList.of(
                             new FParameter(new FVariableIdentifier("char"), FIntN._32)
                     )){{predefined = true;}});
+            addFunction(
+                    new FFunction(GETCHAR_ID, this, FVisibilityModifier.EXPORT, true, FIntN._32, ImmutableList.of())
+            {{predefined = true;}});
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);
         }
