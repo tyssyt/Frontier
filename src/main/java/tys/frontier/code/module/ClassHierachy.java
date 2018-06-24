@@ -5,6 +5,7 @@ import com.google.common.graph.ElementOrder;
 import tys.frontier.code.FClass;
 import tys.frontier.util.DisjunctUnionSetView;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class ClassHierachy extends AbstractGraph<FClass> {
 
     @Override
     public boolean isDirected() {
-        return false;
+        return true;
     }
 
     @Override
@@ -47,16 +48,19 @@ public class ClassHierachy extends AbstractGraph<FClass> {
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public Set<FClass> adjacentNodes(FClass node) {
         return DisjunctUnionSetView.of(node.getSuperClasses(), node.getSubClasses());
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public Set<FClass> predecessors(FClass node) {
         return node.getSuperClasses();
     }
 
     @Override
+    @ParametersAreNonnullByDefault
     public Set<FClass> successors(FClass node) {
         return node.getSubClasses();
     }
