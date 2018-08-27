@@ -108,8 +108,13 @@ class LLVMTransformer implements
         //fill in parameters
         int offset = 0;
         if (!function.isStatic()) {
-            LLVMValueRef alloca = createEntryBlockAlloca(function.getClazz().getThis());
-            LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
+            LLVMValueRef alloca = createEntryBlockAlloca(function.getMemberOf().getThis());
+            FFunction rootDefinition = function.getRootDefinition();
+            if (rootDefinition == function) {
+                LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
+            } else {
+                //TODO
+            }
             offset++;
         }
         List<FParameter> fParams = function.getParams();
@@ -120,8 +125,8 @@ class LLVMTransformer implements
 
         //for constructors, allocate the this object
         if (function.isConstructor()) {
-            LLVMValueRef alloca = createEntryBlockAlloca(function.getClazz().getThis());
-            LLVMValueRef malloc = LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(function.getClazz())), "malloc_" + function.getClazz().getIdentifier());
+            LLVMValueRef alloca = createEntryBlockAlloca(function.getMemberOf().getThis());
+            LLVMValueRef malloc = LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(function.getMemberOf())), "malloc_" + function.getMemberOf().getIdentifier());
             LLVMBuildStore(builder, malloc, alloca);
         }
 
@@ -312,9 +317,7 @@ class LLVMTransformer implements
             case INT_TO_FLOAT:
                 return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
             case OBJECT_DEMOTION:
-                int superClassIndex = module.getSuperClassIndex(implicitCast.getCastedExpression().getType(), implicitCast.getType());
-                LLVMValueRef startOfSuperType = LLVMBuildStructGEP(builder, toCast, superClassIndex, "GEP_subType");
-                return LLVMBuildBitCast(builder, startOfSuperType, targetType, "cast_obj_dem");
+                return LLVMBuildBitCast(builder, toCast, targetType, "cast_obj_dem");
             default:
                 return Utils.cantHappen();
         }
@@ -333,12 +336,7 @@ class LLVMTransformer implements
                 return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
             case OBJECT_PROMOTION:
                 //TODO some check if the cast is valid (ideally compile time, otherwise at runtime)
-                LLVMValueRef asBytePointer = LLVMBuildBitCast(builder, toCast, LLVMPointerType(byteType, 0), "asBytePointer");
-                int index = module.getSuperClassIndex(explicitCast.getType(), explicitCast.getCastedExpression().getType());
-                LLVMValueRef offSet = offsetOf(targetType, index);
-                LLVMValueRef negOffset = LLVMBuildMul(builder, LLVMConstInt(LLVMTypeOf(offSet), -1, TRUE), offSet, "negOffset");
-                LLVMValueRef tagetAsBytePointer = LLVMBuildInBoundsGEP(builder, asBytePointer, new PointerPointer(1).put(negOffset), 1, "subAsBytePointer");
-                return LLVMBuildBitCast(builder, tagetAsBytePointer, targetType, "cast_obj_prom");
+                return LLVMBuildBitCast(builder, toCast, targetType, "cast_obj_prom");
             default:
                 return Utils.cantHappen();
         }
@@ -494,11 +492,11 @@ class LLVMTransformer implements
             return predefinedUnary(functionCall);
         } else if (function instanceof FBinaryOperator) {
             return predefinedBinary(functionCall);
-        } else if (function.getClazz() instanceof FArray) {
+        } else if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall);
-        } else if (function.getClazz() instanceof FArray) {
+        } else if (function.getMemberOf() instanceof FArray) {
                 return predefinedArray(functionCall);
-        } else if (function.getClazz() == IOClass.INSTANCE) {
+        } else if (function.getMemberOf() == IOClass.INSTANCE) {
             return predefinedIO(functionCall);
         } else {
             return Utils.cantHappen();

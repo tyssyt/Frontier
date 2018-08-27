@@ -10,7 +10,6 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.modules.io.IOClass;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -35,7 +34,7 @@ public class LLVMModule implements AutoCloseable {
             this.type = type;
         }
 
-        static Linkage fromVisibility(FVisibilityModifier visibility) {
+        static Linkage fromVisibility(FVisibilityModifier visibility) { //TODO the goal would be to never generate something others need to link against, so nothing needs external linkage?
             switch (visibility) {
                 case EXPORT:
                     return Linkage.EXTERNAL;
@@ -56,11 +55,10 @@ public class LLVMModule implements AutoCloseable {
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
-    private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
-    private HashObjIntMap<Pair<FClass, FClass>> superClassIndices = HashObjIntMaps.newMutableMap(); //TODO I am not happy with the way I handle storing indices
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
-    private List<FClass> todoTypeBodies = new ArrayList<>();
+    private List<FClass> todoClassBodies = new ArrayList<>();
     private List<FField> todoFieldInitilizers = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
 
@@ -97,10 +95,13 @@ public class LLVMModule implements AutoCloseable {
         return LLVMCreateBuilderInContext(this.context);
     }
 
-    LLVMTypeRef getLlvmType (FClass fType) { //TODO needs sync for multithreading
+    LLVMTypeRef getLlvmType (FType fType) { //TODO needs sync for multithreading
         LLVMTypeRef res = llvmTypes.get(fType);
         if (res != null) {
             return res;
+        } else if (fType instanceof FInterface) {
+            //TODO return anonymous struct type with one vtable pointer that is the same for all interfaces
+            Utils.NYI("LLVM type for Interfaces");
         } else if (fType instanceof FIntN) {
             res = LLVMIntTypeInContext(context, ((FIntN) fType).getN());
         } else if (fType instanceof FArray) {
@@ -136,43 +137,37 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    int getSuperClassIndex(FClass type, FClass superType) {
-        return superClassIndices.getInt(new Pair<>(type, superType));
-    }
-
     int getFieldIndex(FField field) {
         return fieldIndices.getInt(field);
     }
 
     public void parseDependencies(Module fModule) {
         verificationNeeded = true;
-        for (FClass clazz : fModule.getImportedClasses().values()) {
-            //assert !(clazz instanceof FPredefinedClass);
-            if (clazz instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
+        for (FType fType : fModule.getImportedClasses().values()) {
+            //assert !(fType instanceof FPredefinedClass);
+            if (fType instanceof FPredefinedClass || !(fType instanceof FClass)) //TODO this is a hack that needs to stay until we have binary modules
                 continue;
-            parseType(clazz);
+            parseClass(((FClass) fType));
         }
 
-        for (FClass clazz : fModule.getImportedClasses().values()) {
-            if (clazz instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
+        for (FType fType : fModule.getImportedClasses().values()) {
+            if (fType instanceof FPredefinedClass || !(fType instanceof FClass)) //TODO this is a hack that needs to stay until we have binary modules
                 continue;
-            for (FField field : clazz.getFields().values()) {
-                if (field.isStatic()) {
-                    LLVMTypeRef type = getLlvmType(field.getType());
-                    LLVMAddGlobal(module, type, getStaticFieldName(field));
-                }
+            for (FField field : fType.getStaticFields().values()) {
+                LLVMTypeRef type = getLlvmType(field.getType());
+                LLVMAddGlobal(module, type, getStaticFieldName(field));
             }
-            for (FFunction function : clazz.getFunctions().values()) {
+            for (FFunction function : fType.getFunctions()) {
                 assert !function.isPredefined();
                 addFunctionHeader(function);
             }
         }
 
         //FIXME the hack part:
-        for (FClass clazz : fModule.getImportedClasses().values()) {
+        for (FType clazz : fModule.getImportedClasses().values()) {
             if (clazz == IOClass.INSTANCE) {
-                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getFunctions(IOClass.PUTCHAR_ID))));
-                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getFunctions(IOClass.GETCHAR_ID))));
+                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions(IOClass.PUTCHAR_ID))));
+                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions(IOClass.GETCHAR_ID))));
             }
         }
 
@@ -184,15 +179,15 @@ public class LLVMModule implements AutoCloseable {
      */
     public void parseTypes(FFile file) {
         verificationNeeded = true;
-        for (FClass clazz : file.getClasses().values()) {
-            if (clazz instanceof FPredefinedClass)
+        for (FType fType : file.getTypes().values()) {
+            if (fType instanceof FPredefinedClass || !(fType instanceof FClass))
                 continue;
-            parseType(clazz);
-            todoTypeBodies.add(clazz);
+            parseClass(((FClass) fType));
+            todoClassBodies.add(((FClass) fType));
         }
     }
 
-    private void parseType(FClass clazz) {
+    private void parseClass(FClass clazz) {
         LLVMTypeRef baseType = LLVMStructCreateNamed(context, getClassName(clazz));
         LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
         LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
@@ -208,24 +203,26 @@ public class LLVMModule implements AutoCloseable {
     public void parseClassMembers(FFile file) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FClass clazz : file.getClasses().values()) {
-            if (clazz instanceof FPredefinedClass)
+        for (FType fType : file.getTypes().values()) {
+            if (fType instanceof FPredefinedClass)
                 continue;
-            for (FField field : clazz.getFields().values()) {
-                if (field.isStatic()) {
-                    //TODO see if the initializer is a const and direclty init here instead of the block?
-                    //TODO see if something can be done for final?
-                    //TODO optimizer flags like we don't care bout the address and readonly
-                    //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
-                    LLVMTypeRef type = getLlvmType(field.getType());
-                    LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
+            if (fType instanceof FClass) {
+                for (FField field : fType.getStaticFields().values()) {
+                    if (field.isStatic()) {
+                        //TODO see if the initializer is a const and direclty init here instead of the block?
+                        //TODO see if something can be done for final?
+                        //TODO optimizer flags like we don't care bout the address and readonly
+                        //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
+                        LLVMTypeRef type = getLlvmType(field.getType());
+                        LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
 
-                    setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
-                    //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
-                    todoFieldInitilizers.add(field);
+                        setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
+                        //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
+                        todoFieldInitilizers.add(field);
+                    }
                 }
             }
-            for (FFunction function : clazz.getFunctions().values()) {
+            for (FFunction function : fType.getFunctions()) {
                 if (function.isPredefined() || function.isAbstract())
                     continue;
                 addFunctionHeader(function);
@@ -263,6 +260,7 @@ public class LLVMModule implements AutoCloseable {
      * @return the LLVM-Function-Type corresponding to the FFunction
      */
     private LLVMTypeRef getLLVMFunctionType(FFunction function) {
+        function = function.getRootDefinition(); //this changes the "this" type to that of the root definition
         List<FParameter> fParams = function.getParams();
         int size = fParams.size();
         if (!function.isStatic())
@@ -270,7 +268,7 @@ public class LLVMModule implements AutoCloseable {
 
         List<LLVMTypeRef> llvmParamTypes = new ArrayList<>(size);
         if (!function.isStatic())
-            llvmParamTypes.add(getLlvmType(function.getClazz())); //add 'this' as first param
+            llvmParamTypes.add(getLlvmType(function.getMemberOf())); //add 'this' as first param
         for (FLocalVariable param : fParams)
             llvmParamTypes.add(getLlvmType(param.getType()));
 
@@ -286,20 +284,17 @@ public class LLVMModule implements AutoCloseable {
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
-        for (FClass type : todoTypeBodies) {
+        for (FClass fClass : todoClassBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
-            for (FClass superType : type.getSuperClasses()) {
-                subtypes.add(LLVMGetElementType(getLlvmType(superType)));
-                superClassIndices.put(new Pair<>(type, superType), index++);
+            if (fClass.getSuperClass() != null) { //FIXME once we have always superclasses, this check is no longer necessary
+                subtypes.add(LLVMGetElementType(getLlvmType(fClass.getSuperClass())));
             }
-            for (FField field : type.getFields().values()) {
-                if (field.isStatic())
-                    continue;
+            for (FField field : fClass.getInstanceFields().values()) {
                 subtypes.add(getLlvmType(field.getType()));
                 fieldIndices.put(field, index++);
             }
-            LLVMStructSetBody(LLVMGetElementType(getLlvmType(type)), createPointerPointer(subtypes), subtypes.size(), FALSE);
+            LLVMStructSetBody(LLVMGetElementType(getLlvmType(fClass)), createPointerPointer(subtypes), subtypes.size(), FALSE);
         }
 
         try (LLVMTransformer trans = new LLVMTransformer(this)) {

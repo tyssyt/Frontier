@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
+import tys.frontier.code.FType;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -62,14 +62,14 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject, Nee
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return field.getType();
     }
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (object != null && object.getType() != field.getClazz())
-            object = new FImplicitCast(field.getClazz(), object);
+        if (object != null && object.getType() != field.getMemberOf())
+            object = new FImplicitCast(field.getMemberOf(), object);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject, Nee
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         if (object == null)
-            sb.append(field.getClazz().getIdentifier());
+            sb.append(field.getMemberOf().getIdentifier());
         else
             object.toString(sb);
         return sb.append('.').append(field.getIdentifier());

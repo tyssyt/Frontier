@@ -1,13 +1,13 @@
 package tys.frontier.style.order;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FClassMember;
-import tys.frontier.code.FClassMember.MemberType;
+import tys.frontier.code.FTypeMember;
+import tys.frontier.code.FTypeMember.MemberType;
 import tys.frontier.util.EnumComparator;
 
 import java.util.Comparator;
 
-public class ByMemberType implements Comparator<FClassMember> {
+public class ByMemberType implements Comparator<FTypeMember> {
 
     public static final ByMemberType DEFAULT = new ByMemberType(new EnumComparator<>(MemberType.class,
             ImmutableList.<MemberType>builder()
@@ -25,7 +25,7 @@ public class ByMemberType implements Comparator<FClassMember> {
     }
 
     @Override
-    public int compare(FClassMember o1, FClassMember o2) {
+    public int compare(FTypeMember o1, FTypeMember o2) {
         return memberOrder.compare(o1.getMemberType(), o2.getMemberType());
     }
 }

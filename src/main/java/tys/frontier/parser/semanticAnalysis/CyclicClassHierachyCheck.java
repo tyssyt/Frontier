@@ -1,7 +1,7 @@
 package tys.frontier.parser.semanticAnalysis;
 
 import com.google.common.graph.Graphs;
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.module.ClassHierachy;
 import tys.frontier.parser.syntaxErrors.CyclicClassHierachy;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
@@ -20,9 +20,9 @@ public class CyclicClassHierachyCheck {
         //cycles
         if (Graphs.hasCycle(hierachy)) {
             //this is rather costly and should be a return result form the above call, but we won't finish compiling anyway
-            for (FClass fClass : hierachy.nodes())
-                if (Graphs.reachableNodes(hierachy, fClass).contains(fClass))
-                    errors.add(new CyclicClassHierachy(fClass));
+            for (FType fType : hierachy.nodes())
+                if (Graphs.reachableNodes(hierachy, fType).contains(fType))
+                    errors.add(new CyclicClassHierachy(fType));
         }
 
         if (!errors.isEmpty())

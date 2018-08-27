@@ -3,8 +3,8 @@ package tys.frontier.parser;
 import com.google.common.collect.Iterables;
 import org.junit.Before;
 import org.junit.Test;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
+import tys.frontier.code.FType;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
@@ -52,22 +52,12 @@ public class ParserTest {
         assertTrue(e instanceof StatementOutsideLoop);
     }
     @Test
-    public void parseClassExtendedTwice() throws Exception {
-        SyntaxError e = parseSyntaxError("ClassExtendedTwice.front");
-        assertTrue(e instanceof MultiExtend);
-    }
-    @Test
     public void parseClassIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("ClassIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);
         IdentifierCollision c = ((IdentifierCollision) e);
-        assertTrue(c.a instanceof FClass);
-        assertTrue(c.b instanceof FClass);
-    }
-    @Test
-    public void parseClassNotFound() throws Exception {
-        SyntaxError e = parseSyntaxError("ClassNotFound.front");
-        assertTrue(e instanceof ClassNotFound);
+        assertTrue(c.a instanceof FType);
+        assertTrue(c.b instanceof FType);
     }
     @Test
     public void parseContinueOutsideLoop() throws Exception {
@@ -128,8 +118,18 @@ public class ParserTest {
         assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
+    public void parseInterfaceInstanceField() throws Exception {
+        SyntaxError e = parseSyntaxError("InterfaceInstanceField.front");
+        assertTrue(e instanceof InterfaceInstanceField);
+    }
+    @Test
+    public void parseInterfaceSuperClass() throws Exception {
+        SyntaxError e = parseSyntaxError("InterfaceSuperClass.front");
+        assertTrue(e instanceof InterfaceSuperClass);
+    }
+    @Test
     public void parseMultiExtend() throws Exception {
-        SyntaxError e = parseSyntaxError("MultiExtend.front");
+        SyntaxError e = parseSyntaxError("ClassExtendedTwice.front");
         assertTrue(e instanceof MultiExtend);
     }
     @Test
@@ -143,6 +143,11 @@ public class ParserTest {
         assertTrue(e instanceof OverridesWithLessVisibility);
     }
     @Test
+    public void parsePrivateInterface() throws Exception {
+        SyntaxError e = parseSyntaxError("PrivateInterface.front");
+        assertTrue(e instanceof PrivateInterface);
+    }
+    @Test
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
         assertTrue(e instanceof SignatureCollision);
@@ -151,6 +156,16 @@ public class ParserTest {
     public void parseTwiceDefinedLocalVariable() throws Exception {
         SyntaxError e = parseSyntaxError("TwiceDefinedLocalVariable.front");
         assertTrue(e instanceof TwiceDefinedLocalVariable);
+    }
+    @Test
+    public void parseTwoSuperClasses() throws Exception {
+        SyntaxError e = parseSyntaxError("TwoSuperClasses.front");
+        assertTrue(e instanceof TwoSuperClasses);
+    }
+    @Test
+    public void parseTypeNotFound() throws Exception {
+        SyntaxError e = parseSyntaxError("TypeNotFound.front");
+        assertTrue(e instanceof TypeNotFound);
     }
     @Test
     public void parseUndeclaredVariable() throws Exception {

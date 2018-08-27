@@ -27,6 +27,7 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 tokens {
     IMPORT,
     CLASS,
+    INTERFACE,
     CONSTRUCTORS,
     EXPORT,
     PRIVATE,
@@ -63,7 +64,9 @@ tokens {
 // starting point -------------------------------------------------------
 
 file
-    :   importStatement* classDeclaration* EOF
+    :   importStatement*
+        (classDeclaration|interfaceDeclaration)*
+        EOF
     ;
 
 importStatement
@@ -74,7 +77,14 @@ classDeclaration
     :   visibilityModifier? CLASS TypeIdentifier parentClasses?
         LBRACE
         classDeclaratives
-        classBodyDeclaration*
+        (abstractMethodDeclaration|methodDeclaration|fieldDeclaration)*
+        RBRACE
+    ;
+
+interfaceDeclaration
+    :   visibilityModifier? INTERFACE TypeIdentifier parentClasses?
+        LBRACE
+        (abstractMethodDeclaration|methodDeclaration)*
         RBRACE
     ;
 
@@ -96,12 +106,6 @@ modifier
 visibilityModifier
     :   EXPORT
     |   PRIVATE
-    ;
-
-classBodyDeclaration
-    :   abstractMethodDeclaration
-    |   methodDeclaration
-    |   fieldDeclaration
     ;
 
 abstractMethodDeclaration

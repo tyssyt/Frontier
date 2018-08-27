@@ -6,15 +6,15 @@ import tys.frontier.util.StringBuilderToString;
 
 import java.util.Optional;
 
-public class FField extends FVariable implements FClassMember, StringBuilderToString {
-    private FClass clazz;
+public class FField extends FVariable implements FTypeMember, StringBuilderToString {
+    private FType memberOf;
     private FVisibilityModifier visibility;
     private boolean statik;
     private FVarAssignment assignment; //TODO this assignment should not be part of the field, but part of an implicit static initializer block or some similar concept
 
-    public FField(FVariableIdentifier identifier, FClass type, FClass clazz, FVisibilityModifier visibility, boolean statik) {
+    public FField(FVariableIdentifier identifier, FType type, FType memberOf, FVisibilityModifier visibility, boolean statik) {
         super(identifier, type);
-        this.clazz = clazz;
+        this.memberOf = memberOf;
         this.visibility = visibility;
         this.statik = statik;
     }
@@ -29,8 +29,9 @@ public class FField extends FVariable implements FClassMember, StringBuilderToSt
         return statik;
     }
 
-    public FClass getClazz() {
-        return clazz;
+    @Override
+    public FType getMemberOf() {
+        return memberOf;
     }
 
     @Override

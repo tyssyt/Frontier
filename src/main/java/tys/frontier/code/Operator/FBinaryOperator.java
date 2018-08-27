@@ -1,8 +1,8 @@
 package tys.frontier.code.Operator;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.FType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FBool;
@@ -25,14 +25,14 @@ public class FBinaryOperator extends FOperator {
             this.identifier = identifier;
         }
 
-        public FBinaryOperator create(FClass clazz, FClass returnType, FParameter first, FParameter second) {
-            return new FBinaryOperator(identifier, clazz, returnType, first, second);
+        public FBinaryOperator create(FType fType, FType returnType, FParameter first, FParameter second) {
+            return new FBinaryOperator(identifier, fType, returnType, first, second);
         }
 
-        public FBinaryOperator createPredefined(FClass clazz) {
-            return new FBinaryOperator(identifier, clazz, clazz,
-                    new FParameter(new FVariableIdentifier("first"), clazz),
-                    new FParameter(new FVariableIdentifier("second"), clazz)) {
+        public FBinaryOperator createPredefined(FType fType) {
+            return new FBinaryOperator(identifier, fType, fType,
+                    new FParameter(new FVariableIdentifier("first"), fType),
+                    new FParameter(new FVariableIdentifier("second"), fType)) {
                 {predefined = true;}
             };
         }
@@ -59,22 +59,22 @@ public class FBinaryOperator extends FOperator {
             this.identifier = identifier;
         }
 
-        public FBinaryOperator create(FClass clazz, FParameter first, FParameter second) {
-            return new FBinaryOperator(identifier, clazz, FBool.INSTANCE, first, second);
+        public FBinaryOperator create(FType fType, FParameter first, FParameter second) {
+            return new FBinaryOperator(identifier, fType, FBool.INSTANCE, first, second);
         }
 
-        public FBinaryOperator createPredefined(FClass clazz) {
-            return new FBinaryOperator(identifier, clazz, FBool.INSTANCE,
-                    new FParameter(new FVariableIdentifier("first"), clazz),
-                    new FParameter(new FVariableIdentifier("second"), clazz)) {
+        public FBinaryOperator createPredefined(FType fType) {
+            return new FBinaryOperator(identifier, fType, FBool.INSTANCE,
+                    new FParameter(new FVariableIdentifier("first"), fType),
+                    new FParameter(new FVariableIdentifier("second"), fType)) {
                 {predefined = true;}
             };
         }
     }
 
-    private FBinaryOperator(FFunctionIdentifier identifier, FClass clazz, FClass returnType, FParameter first, FParameter second) {
-        super(identifier, clazz, true, returnType, ImmutableList.of(first, second));
-        assert clazz == first.getType();
-        assert clazz == second.getType();
+    private FBinaryOperator(FFunctionIdentifier identifier, FType fType, FType returnType, FParameter first, FParameter second) {
+        super(identifier, fType, true, returnType, ImmutableList.of(first, second));
+        assert fType == first.getType();
+        assert fType == second.getType();
     }
 }

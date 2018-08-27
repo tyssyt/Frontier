@@ -2,7 +2,7 @@ package tys.frontier.style;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import tys.frontier.code.FClassMember;
+import tys.frontier.code.FTypeMember;
 import tys.frontier.style.order.Order;
 
 import java.util.Comparator;
@@ -48,9 +48,9 @@ public class StyleOptions {
     public final boolean bracketsOnNewLineAfterConditional;
     public final boolean bracketsOnNewLineAfterLoop;
 
-    public final Comparator<FClassMember> order;
+    public final Comparator<FTypeMember> order;
 
-    StyleOptions(boolean useTabs, int indention, int maxCharsPerLine, int maxParamsPerLine, boolean paramsOnNewLine, boolean noBracketsForSingleStatementConditional, boolean noBracketsForSingleStatementLoop, boolean spaceAfterFunctionName, boolean spaceAfterConditional, boolean spaceAfterLoop, boolean spaceAfterMethodCall, boolean bracketsOnNewLineAfterClass, boolean bracketsOnNewLineAfterFunction, boolean bracketsOnNewLineAfterConditional, boolean bracketsOnNewLineAfterLoop, Comparator<FClassMember> order) {
+    StyleOptions(boolean useTabs, int indention, int maxCharsPerLine, int maxParamsPerLine, boolean paramsOnNewLine, boolean noBracketsForSingleStatementConditional, boolean noBracketsForSingleStatementLoop, boolean spaceAfterFunctionName, boolean spaceAfterConditional, boolean spaceAfterLoop, boolean spaceAfterMethodCall, boolean bracketsOnNewLineAfterClass, boolean bracketsOnNewLineAfterFunction, boolean bracketsOnNewLineAfterConditional, boolean bracketsOnNewLineAfterLoop, Comparator<FTypeMember> order) {
         this.useTabs = useTabs;
         this.indention = indention;
         this.maxCharsPerLine = maxCharsPerLine;

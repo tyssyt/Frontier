@@ -1,6 +1,6 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 
@@ -20,7 +20,7 @@ public class FStringLiteral implements FLiteral { //TODO make sure string litera
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return TYPE;
     }
 

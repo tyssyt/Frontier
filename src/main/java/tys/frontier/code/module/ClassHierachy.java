@@ -2,20 +2,20 @@ package tys.frontier.code.module;
 
 import com.google.common.graph.AbstractGraph;
 import com.google.common.graph.ElementOrder;
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.util.DisjunctUnionSetView;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ClassHierachy extends AbstractGraph<FClass> {
+public class ClassHierachy extends AbstractGraph<FType> {
 
-    private static final ElementOrder<FClass> nodeOrder = ElementOrder.unordered();
+    private static final ElementOrder<FType> nodeOrder = ElementOrder.unordered();
 
-    private Set<FClass> classes;
+    private Set<FType> classes;
 
-    public ClassHierachy(Set<FClass> classes) {
+    public ClassHierachy(Set<FType> classes) {
         this.classes = classes;
     }
 
@@ -23,12 +23,12 @@ public class ClassHierachy extends AbstractGraph<FClass> {
         this.classes = new HashSet<>();
     }
 
-    public boolean add(FClass fClass) {
-        return classes.add(fClass);
+    public boolean add(FType fType) {
+        return classes.add(fType);
     }
 
     @Override
-    public Set<FClass> nodes() {
+    public Set<FType> nodes() {
         return classes;
     }
 
@@ -43,25 +43,25 @@ public class ClassHierachy extends AbstractGraph<FClass> {
     }
 
     @Override
-    public ElementOrder<FClass> nodeOrder() {
+    public ElementOrder<FType> nodeOrder() {
         return nodeOrder;
     }
 
     @Override
     @ParametersAreNonnullByDefault
-    public Set<FClass> adjacentNodes(FClass node) {
-        return DisjunctUnionSetView.of(node.getSuperClasses(), node.getSubClasses());
+    public Set<FType> adjacentNodes(FType node) {
+        return DisjunctUnionSetView.of(node.getSuperTypes(), node.getSubTypes());
     }
 
     @Override
     @ParametersAreNonnullByDefault
-    public Set<FClass> predecessors(FClass node) {
-        return node.getSuperClasses();
+    public Set<FType> predecessors(FType node) {
+        return node.getSuperTypes();
     }
 
     @Override
     @ParametersAreNonnullByDefault
-    public Set<FClass> successors(FClass node) {
-        return node.getSubClasses();
+    public Set<FType> successors(FType node) {
+        return node.getSubTypes();
     }
 }

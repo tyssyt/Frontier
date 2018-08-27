@@ -1,7 +1,7 @@
 package tys.frontier.code.module;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFile;
+import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 
 import java.util.ArrayList;
@@ -23,10 +23,10 @@ public class FrontierModule extends Module {
 
     public void addFile (FFile toAdd) {
         files.add(toAdd);
-        for (FClass fClass : toAdd.getClasses().values()) {
-            internalClassHierachy.add(fClass);
-            if (fClass.getVisibility() == FVisibilityModifier.EXPORT) {
-                addExportedClass(fClass);
+        for (FType fType : toAdd.getTypes().values()) {
+            internalClassHierachy.add(fType);
+            if (fType.getVisibility() == FVisibilityModifier.EXPORT) {
+                addExportedType(fType);
             }
         }
     }

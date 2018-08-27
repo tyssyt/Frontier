@@ -3,8 +3,8 @@ package tys.frontier.style.order;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import tys.frontier.code.FClassMember;
-import tys.frontier.code.FClassMember.MemberType;
+import tys.frontier.code.FTypeMember;
+import tys.frontier.code.FTypeMember.MemberType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.util.EnumComparator;
 
@@ -12,17 +12,17 @@ import java.util.Comparator;
 
 public class Order {
 
-    public static final Comparator<FClassMember> DEFAULT =
+    public static final Comparator<FTypeMember> DEFAULT =
             ByMemberType.DEFAULT
                     .thenComparing(ByStatic.PREFER_STATIC)
                     .thenComparing(ByVisibility.DEFAULT)
                     .thenComparing(Alphabetical.INSTANCE);
 
-    public static Comparator<FClassMember> fromJSON(JSONArray order) {
-        Comparator<FClassMember> res = null;
+    public static Comparator<FTypeMember> fromJSON(JSONArray order) {
+        Comparator<FTypeMember> res = null;
         for(int i=0; i<order.length(); i++) {
             try {
-                Comparator<FClassMember> comp;
+                Comparator<FTypeMember> comp;
                 JSONObject o = order.getJSONObject(i);
                 String by = o.getString("by");
                 switch (by) {

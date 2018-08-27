@@ -6,9 +6,9 @@ import tys.frontier.code.identifier.IdentifierNameable;
 public abstract class FVariable implements IdentifierNameable, Typed {
 
     private FVariableIdentifier identifier;
-    private FClass type;
+    private FType type;
 
-    public FVariable(FVariableIdentifier identifier, FClass type) {
+    public FVariable(FVariableIdentifier identifier, FType type) {
         this.identifier = identifier;
         this.type = type;
     }
@@ -19,7 +19,7 @@ public abstract class FVariable implements IdentifierNameable, Typed {
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return type;
     }
 

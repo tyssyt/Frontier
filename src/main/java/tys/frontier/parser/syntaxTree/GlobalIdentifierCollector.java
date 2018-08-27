@@ -4,8 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
-import tys.frontier.code.identifier.FClassIdentifier;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -18,11 +18,11 @@ import java.util.Map;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
-    private Map<FClassIdentifier, FClass> classes;
+    private Map<FTypeIdentifier, FType> types;
     private SyntaxTreeData treeData;
     private List<SyntaxError> errors = new ArrayList<>();
 
-    private FClass currentClass;
+    private FType currentClass;
 
     private GlobalIdentifierCollector (FrontierParser.FileContext ctx) {
         treeData = new SyntaxTreeData(ctx);
@@ -31,7 +31,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
     public static SyntaxTreeData getIdentifiers(FrontierParser.FileContext ctx, FFile file) throws SyntaxErrors {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
-        file.setClasses(ImmutableMap.copyOf(collector.classes));
+        file.setTypes(ImmutableMap.copyOf(collector.types));
         if (!collector.errors.isEmpty())
             throw SyntaxErrors.create(collector.errors);
         return collector.treeData;
@@ -40,15 +40,29 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
     @Override
     public Object visitFile(FrontierParser.FileContext ctx) {
-        classes = new HashMap<>(ctx.children.size());
-        //first go over all classes once to know their names
+        types = new HashMap<>(ctx.children.size());
+        //first go over all types once to know their names
         for (FrontierParser.ClassDeclarationContext c : ctx.classDeclaration()) {
-            FClass clazz = ParserContextUtils.getClass(c);
-            FClass old = classes.put(clazz.getIdentifier(), clazz);
+            FClass fClass = ParserContextUtils.getClass(c);
+            FType old = types.put(fClass.getIdentifier(), fClass);
             if (old != null) {
-                errors.add(new IdentifierCollision(clazz, old));
+                errors.add(new IdentifierCollision(fClass, old));
             }
-            treeData.classes.put(c, clazz);
+            treeData.classes.put(c, fClass);
+        }
+        for (FrontierParser.InterfaceDeclarationContext i : ctx.interfaceDeclaration()) {
+            FInterface fInterface;
+            try {
+                fInterface = ParserContextUtils.getInterface(i);
+            } catch (PrivateInterface privateInterface) {
+                errors.add(privateInterface);
+                fInterface = privateInterface.fInterface;
+            }
+            FType old = types.put(fInterface.getIdentifier(), fInterface);
+            if (old != null) {
+                errors.add(new IdentifierCollision(fInterface, old));
+            }
+            treeData.interfaces.put(i, fInterface);
         }
         //in the second pass find fields and methods headers
         return visitChildren(ctx);
@@ -66,16 +80,27 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     }
 
     @Override
+    public Object visitInterfaceDeclaration(FrontierParser.InterfaceDeclarationContext ctx) {
+        currentClass = treeData.interfaces.get(ctx);
+        try {
+            visitChildren(ctx);
+            return null;
+        } finally {
+            currentClass = null;
+        }
+    }
+
+    @Override
     public Object visitParentClasses(FrontierParser.ParentClassesContext ctx) {
         for (TerminalNode parentClassCtx : ctx.TypeIdentifier()) {
             try {
-                FClass parentClass = ParserContextUtils.getNonPredefined(parentClassCtx.getText(), classes);
-                boolean changed = currentClass.addSuperClass(parentClass);
+                FType parentClass = ParserContextUtils.getNonPredefined(parentClassCtx.getText(), types);
+                boolean changed = currentClass.addSuperType(parentClass);
                 if (!changed) {
                     errors.add(new MultiExtend(currentClass, parentClass));
                 }
-            } catch (ClassNotFound classNotFound) {
-                errors.add(classNotFound);
+            } catch (SyntaxError syntaxError) {
+                errors.add(syntaxError);
             }
         }
         return null;
@@ -83,7 +108,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
     @Override
     public Object visitConstructorsDeclarative(FrontierParser.ConstructorsDeclarativeContext ctx) {
-        currentClass.setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
+        ((FClass) currentClass).setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
         return null;
     }
 
@@ -93,11 +118,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
-        FClass returnType;
+        FType returnType;
         if (c != null) {
             try {
-                returnType = ParserContextUtils.getType(c, classes);
-            } catch (ClassNotFound e) {
+                returnType = ParserContextUtils.getType(c, types);
+            } catch (TypeNotFound e) {
                 errors.add(e);
                 returnType = FVoid.INSTANCE; //TODO do we want some error related type here?
             }
@@ -124,13 +149,13 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         if (cs.isEmpty())
             return ImmutableList.of();
         ImmutableList.Builder<FParameter> res = ImmutableList.builder();
-        List<ClassNotFound> errors = new ArrayList<>();
+        List<TypeNotFound> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
-                FParameter param = ParserContextUtils.getParameter(c.typedIdentifier(), classes);
+                FParameter param = ParserContextUtils.getParameter(c.typedIdentifier(), types);
                 treeData.parameters.put(c, param);
                 res.add(param);
-            } catch (ClassNotFound e) {
+            } catch (TypeNotFound e) {
                 errors.add(e);
             }
         }
@@ -144,11 +169,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
-            FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), classes);
+            FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), types);
             FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
-        } catch (ClassNotFound | IdentifierCollision e) {
+        } catch (TypeNotFound | IdentifierCollision | InterfaceInstanceField e) {
             errors.add(e);
         }
         return null;

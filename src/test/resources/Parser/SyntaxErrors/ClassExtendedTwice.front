@@ -1,2 +1,2 @@
-class A {}
+interface A {}
 class B : A, A {}

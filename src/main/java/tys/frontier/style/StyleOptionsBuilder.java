@@ -1,6 +1,6 @@
 package tys.frontier.style;
 
-import tys.frontier.code.FClassMember;
+import tys.frontier.code.FTypeMember;
 import tys.frontier.style.order.Order;
 
 import java.util.Comparator;
@@ -21,7 +21,7 @@ public class StyleOptionsBuilder {
     private boolean bracketsOnNewLineAfterFunction = false;
     private boolean bracketsOnNewLineAfterConditional = false;
     private boolean bracketsOnNewLineAfterLoop = false;
-    private Comparator<FClassMember> order;
+    private Comparator<FTypeMember> order;
 
     public StyleOptionsBuilder setUseTabs(boolean useTabs) {
         this.useTabs = useTabs;
@@ -101,7 +101,7 @@ public class StyleOptionsBuilder {
         return this;
     }
 
-    public StyleOptionsBuilder appendOrder(Comparator<FClassMember> next) {
+    public StyleOptionsBuilder appendOrder(Comparator<FTypeMember> next) {
         if (order == null)
             order = next;
         else

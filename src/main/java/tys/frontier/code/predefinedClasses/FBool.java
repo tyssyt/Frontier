@@ -4,15 +4,13 @@ import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.identifier.FClassIdentifier;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.literal.FBoolLiteral;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
 public class FBool extends FPredefinedClass {
 
-    public static final FFunctionIdentifier NOT = new FFunctionIdentifier("!");
     public static final FBool INSTANCE;
 
     static { //adding the functions needs the INSTANCE field to be initialised, so we ensure proper order of instructions here
@@ -22,7 +20,7 @@ public class FBool extends FPredefinedClass {
 
 
     private FBool() {
-        super(FClassIdentifier.BOOL);
+        super(FTypeIdentifier.BOOL);
     }
 
     @Override

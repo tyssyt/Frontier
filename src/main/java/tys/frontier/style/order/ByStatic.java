@@ -1,10 +1,10 @@
 package tys.frontier.style.order;
 
-import tys.frontier.code.FClassMember;
+import tys.frontier.code.FTypeMember;
 
 import java.util.Comparator;
 
-public class ByStatic implements Comparator<FClassMember> {
+public class ByStatic implements Comparator<FTypeMember> {
 
     public static final ByStatic PREFER_STATIC = new ByStatic(true);
     public static final ByStatic PREFER_INSTANCE = new ByStatic(false);
@@ -16,11 +16,11 @@ public class ByStatic implements Comparator<FClassMember> {
     }
 
     @Override
-    public int compare(FClassMember o1, FClassMember o2) {
+    public int compare(FTypeMember o1, FTypeMember o2) {
         return value(o1) - value(o2);
     }
 
-    private int value(FClassMember m) {
+    private int value(FTypeMember m) {
         return m.isStatic() ^ preferStatic ? 0 : 1;
     }
 }

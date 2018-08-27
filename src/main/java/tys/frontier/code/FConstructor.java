@@ -25,16 +25,6 @@ public class FConstructor extends FFunction {
         super(IDENTIFIER, fClass, modifier, true, fClass, params);
     }
 
-    @Override
-    public MemberType getMemberType() {
-        return MemberType.CONSTRUCTOR;
-    }
-
-    @Override
-    public boolean isConstructor() {
-        return true;
-    }
-
     public static FConstructor create(FVisibilityModifier modifier, FClass fClass) {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
         res.generateBody();
@@ -45,6 +35,21 @@ public class FConstructor extends FFunction {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
         res.predefined = true;
         return res;
+    }
+
+    @Override
+    public MemberType getMemberType() {
+        return MemberType.CONSTRUCTOR;
+    }
+
+    @Override
+    public boolean isConstructor() {
+        return true;
+    }
+
+    @Override
+    public FClass getMemberOf() {
+        return ((FClass) super.getMemberOf());
     }
 
     private static ImmutableList<FParameter> getParameters(FClass fClass) {
@@ -58,16 +63,16 @@ public class FConstructor extends FFunction {
     private void generateBody() {
         List<FStatement> statements = new ArrayList<>();
         for (FParameter param : getParams()) {
-            FExpression thisExpr = new FLocalVariableExpression(getClazz().getThis());
+            FExpression thisExpr = new FLocalVariableExpression(getMemberOf().getThis());
             FField field = null;
             try {
-                field = getClazz().resolveField(param.getIdentifier());
+                field = getMemberOf().resolveField(param.getIdentifier());
             } catch (FieldNotFound fieldNotFound) {
                 Utils.cantHappen();
             }
             statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr).castArgsTrusted(), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
-        statements.add(new FReturn(new FLocalVariableExpression(getClazz().getThis()), this));
+        statements.add(new FReturn(new FLocalVariableExpression(getMemberOf().getThis()), this));
         setBody(FBlock.from(statements));
     }
 }

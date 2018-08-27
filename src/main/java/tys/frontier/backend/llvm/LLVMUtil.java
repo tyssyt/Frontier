@@ -39,11 +39,11 @@ public class LLVMUtil {
     }
 
     public static String getStaticFieldName(FField field) {
-        return "sf." + field.getClazz().getIdentifier().name + '.' + field.getIdentifier().name;
+        return "sf." + field.getMemberOf().getIdentifier().name + '.' + field.getIdentifier().name;
     }
 
     public static String getFunctionName(FFunction function) {
-        return "fun." + function.getClazz().getIdentifier().name + '.' + function.getIdentifier().name;
+        return "fun." + function.getMemberOf().getIdentifier().name + '.' + function.getIdentifier().name;
     }
 
     public static String getConstantStringName(String s) {

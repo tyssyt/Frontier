@@ -1,5 +1,0 @@
-class I {
-    private int32 i;
-}
-class A : I {}
-class B : A, I {}

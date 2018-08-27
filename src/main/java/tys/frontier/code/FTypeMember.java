@@ -2,7 +2,7 @@ package tys.frontier.code;
 
 import tys.frontier.code.identifier.IdentifierNameable;
 
-public interface FClassMember extends IdentifierNameable, HasVisibility {
+public interface FTypeMember extends IdentifierNameable, HasVisibility {
 
     enum MemberType {
         FIELD,
@@ -13,5 +13,6 @@ public interface FClassMember extends IdentifierNameable, HasVisibility {
 
     boolean isStatic();
     MemberType getMemberType();
+    FType getMemberOf();
 
 }

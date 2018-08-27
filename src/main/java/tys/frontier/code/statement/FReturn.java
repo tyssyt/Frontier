@@ -1,7 +1,7 @@
 package tys.frontier.code.statement;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.predefinedClasses.FVoid;
@@ -37,7 +37,7 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
+        FType expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
         if (function.getType() != expressionType)
             if (expression == null)
                 throw new IncompatibleTypes(function.getType(), FVoid.INSTANCE);

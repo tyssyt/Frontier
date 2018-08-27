@@ -1,13 +1,13 @@
 package tys.frontier.style.order;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FClassMember;
+import tys.frontier.code.FTypeMember;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.util.EnumComparator;
 
 import java.util.Comparator;
 
-public class ByVisibility implements Comparator<FClassMember> {
+public class ByVisibility implements Comparator<FTypeMember> {
 
     public static final ByVisibility DEFAULT = new ByVisibility(new EnumComparator<>(FVisibilityModifier.class,
             ImmutableList.<FVisibilityModifier>builder()
@@ -24,7 +24,7 @@ public class ByVisibility implements Comparator<FClassMember> {
     }
 
     @Override
-    public int compare(FClassMember o1, FClassMember o2) {
+    public int compare(FTypeMember o1, FTypeMember o2) {
         return memberOrder.compare(o1.getVisibility(), o2.getVisibility());
     }
 }

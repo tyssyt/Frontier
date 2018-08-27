@@ -12,7 +12,7 @@ public class IOModule extends Module {
 
     private IOModule(String name, String version, String subversion_or_versionSuffix) {
         super(name, version, subversion_or_versionSuffix);
-        addExportedClass(IOClass.INSTANCE);
+        addExportedType(IOClass.INSTANCE);
     }
 
 }

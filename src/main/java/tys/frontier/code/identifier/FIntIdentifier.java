@@ -1,6 +1,6 @@
 package tys.frontier.code.identifier;
 
-public class FIntIdentifier extends FClassIdentifier {
+public class FIntIdentifier extends FTypeIdentifier {
 
     public static final String INT_ID = "!Int";
     public final int n;

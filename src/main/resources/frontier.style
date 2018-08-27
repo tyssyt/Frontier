@@ -2,6 +2,7 @@
     "keywords": {
         "import":       "import",
         "class":        "class",
+        "interface":    "interface",
 
         "constructors": "constructors",
         

@@ -1,15 +1,15 @@
 package tys.frontier.code.visitor;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 
 public interface ClassWalker<Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
 
-    default Class visitClass(FClass clazz) {
-        for (FField field : clazz.getFields().values())
+    default Class visitType(FType fType) {
+        for (FField field : fType.getFields())
             visitField(field);
-        for (FFunction function : clazz.getFunctions().values())
+        for (FFunction function : fType.getFunctions())
             visitFunction(function);
         return null;
     }

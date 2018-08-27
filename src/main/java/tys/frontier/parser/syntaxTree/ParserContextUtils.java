@@ -3,16 +3,14 @@ package tys.frontier.parser.syntaxTree;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FParameter;
-import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.identifier.FClassIdentifier;
+import tys.frontier.code.*;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.ClassNotFound;
+import tys.frontier.parser.syntaxErrors.PrivateInterface;
+import tys.frontier.parser.syntaxErrors.TypeNotFound;
 import tys.frontier.util.Utils;
 
 import java.util.Map;
@@ -23,8 +21,14 @@ public final class ParserContextUtils {
 
     public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        FClassIdentifier identifier = new FClassIdentifier(ctx.TypeIdentifier().getText());
+        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         return new FClass(identifier, visibilityModifier);
+    }
+
+    public static FInterface getInterface (FrontierParser.InterfaceDeclarationContext ctx) throws PrivateInterface {
+        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
+        return new FInterface(identifier, visibilityModifier);
     }
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
@@ -43,7 +47,7 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static FClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
+    public static FPredefinedClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
             case FrontierParser.BOOL:
                 return FBool.INSTANCE;
@@ -59,45 +63,45 @@ public final class ParserContextUtils {
                 return FFloat32.INSTANCE;
             case FrontierParser.FLOAT64:
                 return FFloat64.INSTANCE;
+            default:
+                return Utils.NYI("Frontier type for: " + ((TerminalNode)ctx.children.get(0)).getSymbol().getText());
         }
-        return null;
     }
 
-    public static FClass getNonPredefined(String id, Map<FClassIdentifier, FClass> possibleTypes) throws ClassNotFound {
-        FClass type;
-        FClassIdentifier identifier = new FClassIdentifier(id);
-        type = possibleTypes.get(identifier);
+    public static FType getNonPredefined(String id, Map<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
+        FTypeIdentifier identifier = new FTypeIdentifier(id);
+        FType type = possibleTypes.get(identifier);
         if (type==null) {
-            throw new ClassNotFound(identifier);
+            throw new TypeNotFound(identifier);
         }
         return type;
     }
 
-    public static FClass getBasicType (FrontierParser.BasicTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
-            throws ClassNotFound {
+    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound {
         FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
         return predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
     }
 
-    public static FClass getType (FrontierParser.TypeTypeContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
-            throws ClassNotFound{
-        FClass res = getBasicType(ctx.basicType(), possibleTypes);
+    public static FType getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound {
+        FType res = getBasicType(ctx.basicType(), possibleTypes);
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
             res = FArray.getArrayFrom(res, arrayDepth);
         return res;
     }
 
-    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
-            throws ClassNotFound{
-        FClass type = getType(ctx.typeType(), possibleTypes);
+    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound {
+        FType type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier((ctx.Identifier().getText()));
         return new FLocalVariable(identifier, type);
     }
 
-    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FClassIdentifier, FClass> possibleTypes)
-            throws ClassNotFound{
-        FClass type = getType(ctx.typeType(), possibleTypes);
+    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound {
+        FType type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         return new FParameter(identifier, type);
     }

@@ -1,10 +1,10 @@
 package tys.frontier.code.identifier;
 
-public class FErrorIdentifier extends FClassIdentifier {
+public class FErrorIdentifier extends FTypeIdentifier {
 
-    public final FClassIdentifier identifier;
+    public final FTypeIdentifier identifier;
 
-    public FErrorIdentifier(FClassIdentifier identifier) {
+    public FErrorIdentifier(FTypeIdentifier identifier) {
         super("ERROR(" + identifier + ')');
         this.identifier = identifier;
     }

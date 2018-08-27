@@ -8,11 +8,11 @@ import java.util.Optional;
 public class FParameter extends FLocalVariable {
     private FExpression defaultValue; //optional
 
-    public FParameter(FVariableIdentifier identifier, FClass type) {
+    public FParameter(FVariableIdentifier identifier, FType type) {
         super(identifier, type);
     }
 
-    public FParameter(FVariableIdentifier identifier, FClass type, FExpression defaultValue) {
+    public FParameter(FVariableIdentifier identifier, FType type, FExpression defaultValue) {
         super(identifier, type);
         this.defaultValue = defaultValue;
     }

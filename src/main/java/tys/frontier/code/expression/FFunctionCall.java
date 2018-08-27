@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -56,7 +56,7 @@ public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeC
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return function.getType();
     }
 
@@ -76,9 +76,9 @@ public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeC
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
-        if (object != null && object.getType() != function.getClazz())
-            object = new FImplicitCast(function.getClazz(), object);
-        List<FClass> paramTypes = function.getSignature().getAllParamTypes();
+        if (object != null && object.getType() != function.getMemberOf())
+            object = new FImplicitCast(function.getMemberOf(), object);
+        List<FType> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i).getType() != paramTypes.get(i))
                 arguments.set(i, new FImplicitCast(paramTypes.get(i), arguments.get(i)));
@@ -104,7 +104,7 @@ public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeC
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         if (object == null)
-            sb.append(function.getClazz().getIdentifier());
+            sb.append(function.getMemberOf().getIdentifier());
         else
             object.toString(sb);
         sb.append('.').append(function.getIdentifier()).append('(');
