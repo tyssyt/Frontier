@@ -223,8 +223,12 @@ public abstract class FType implements IdentifierNameable, HasVisibility, String
                 bestCostArray = newCostArray;
                 if (bestCost == 0)
                     return true;
-            } else if (newCost == bestCost)
-                bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+            } else if (newCost == bestCost) {
+                if (bestFunction.getOverwrittenBy().contains(newFunction))
+                    bestFunction = newFunction;
+                else if (!bestFunction.getOverrides().contains(newFunction))
+                    bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+            }
             return false;
         }
     }
