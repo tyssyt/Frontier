@@ -15,7 +15,6 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.util.DisjunctUnionSetView;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
@@ -89,8 +88,8 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return staticFields;
     }
 
-    public Set<FField> getFields() {
-        return DisjunctUnionSetView.of(instanceFields.values(), staticFields.values());
+    public Iterable<FField> getFields() {
+        return Iterables.concat(instanceFields.values(), staticFields.values());
     }
 
     public Multimap<FFunctionIdentifier, FFunction> getInstanceFunctions() {
