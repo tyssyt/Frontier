@@ -46,14 +46,12 @@ class LLVMTransformer implements
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
     private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
 
-    private final LLVMTypeRef byteType;
     private final LLVMTypeRef indexType;
 
     public LLVMTransformer(LLVMModule module) {
         this.module = module;
         this.builder = module.createBuilder();
         this.entryBlockAllocaBuilder = module.createBuilder();
-        byteType = module.getLlvmType(FIntN._8);
         indexType = module.getLlvmType(FIntN._32);
     }
 
@@ -459,7 +457,7 @@ class LLVMTransformer implements
                 LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
 
                 LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
-                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, byteType, size, "arrayMalloc");
+                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
                 LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
 
                 //store size

@@ -51,6 +51,10 @@ public class LLVMModule implements AutoCloseable {
     private static final int TRUE = 1;
     private static final int FALSE = 0;
 
+    final LLVMTypeRef byteType;
+    final LLVMTypeRef bytePointer;
+    final LLVMTypeRef bytePointerPointer;
+
     private boolean verificationNeeded = false;
     private boolean ownsContext;
     private LLVMContextRef context;
@@ -71,6 +75,9 @@ public class LLVMModule implements AutoCloseable {
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
         fillInPredefinedTypes();
+        byteType = LLVMInt8TypeInContext(context);
+        bytePointer = LLVMPointerType(byteType, 0);
+        bytePointerPointer = LLVMPointerType(bytePointer, 0);
     }
 
     private void fillInPredefinedTypes() {
@@ -100,8 +107,7 @@ public class LLVMModule implements AutoCloseable {
         if (res != null) {
             return res;
         } else if (fType instanceof FInterface) {
-            //TODO return anonymous struct type with one vtable pointer that is the same for all interfaces
-            Utils.NYI("LLVM type for Interfaces");
+            return bytePointerPointer;
         } else if (fType instanceof FIntN) {
             res = LLVMIntTypeInContext(context, ((FIntN) fType).getN());
         } else if (fType instanceof FArray) {
