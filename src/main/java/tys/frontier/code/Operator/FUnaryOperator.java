@@ -1,7 +1,7 @@
 package tys.frontier.code.Operator;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 
 public class FUnaryOperator extends FOperator {
@@ -18,12 +18,12 @@ public class FUnaryOperator extends FOperator {
             this.identifier = identifier;
         }
 
-        public FUnaryOperator create(FType fType) {
-            return new FUnaryOperator(identifier, fType, fType);
+        public FUnaryOperator create(FClass fClass) {
+            return new FUnaryOperator(identifier, fClass, fClass);
         }
 
-        public FUnaryOperator createPredefined(FType fType) {
-            return new FUnaryOperator(identifier, fType, fType) {
+        public FUnaryOperator createPredefined(FClass fClass) {
+            return new FUnaryOperator(identifier, fClass, fClass) {
                 {predefined = true;}
             };
         }
@@ -39,18 +39,18 @@ public class FUnaryOperator extends FOperator {
             this.identifier = identifier;
         }
 
-        public FUnaryOperator create(FType fType) {
-            return new FUnaryOperator(identifier, fType, fType);
+        public FUnaryOperator create(FClass fClass) {
+            return new FUnaryOperator(identifier, fClass, fClass);
         }
 
-        public FUnaryOperator createPredefined(FType fType) {
-            return new FUnaryOperator(identifier, fType, fType) {
+        public FUnaryOperator createPredefined(FClass fClass) {
+            return new FUnaryOperator(identifier, fClass, fClass) {
                 {predefined = true;}
             };
         }
     }
 
-    private FUnaryOperator(FFunctionIdentifier identifier, FType fType, FType returnType) {
-        super(identifier, fType, false, returnType, ImmutableList.of());
+    private FUnaryOperator(FFunctionIdentifier identifier, FClass fClass, FClass returnType) {
+        super(identifier, fClass, false, returnType, ImmutableList.of());
     }
 }

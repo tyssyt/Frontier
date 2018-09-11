@@ -1,8 +1,8 @@
 package tys.frontier.passes.lowering;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FFile;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.FFileVisitor;
@@ -12,7 +12,7 @@ import java.util.List;
 public abstract class StatementReplacer implements FFileVisitor {
 
     protected FFile currentFile;
-    protected FType currentType;
+    protected FClass currentType;
     protected FFunction currentFunction;
 
     @Override
@@ -20,7 +20,7 @@ public abstract class StatementReplacer implements FFileVisitor {
         currentFile = file;
     }
     @Override
-    public void enterType(FType clazz) {
+    public void enterType(FClass clazz) {
         currentType = clazz;
     }
 

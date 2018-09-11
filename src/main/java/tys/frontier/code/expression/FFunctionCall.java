@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
@@ -56,29 +56,15 @@ public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeC
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return function.getType();
-    }
-
-    public boolean isVirtual() {
-        int foundImplementations = 0;
-        if (!function.isAbstract())
-            foundImplementations++;
-        for (FFunction fFunction : function.getOverwrittenBy()) {
-            if (!fFunction.isAbstract()) {
-                foundImplementations++;
-                if (foundImplementations>1)
-                    return true;
-            }
-        }
-        return false;
     }
 
     @Override
     public void checkTypes() throws IncompatibleTypes {
         if (object != null && object.getType() != function.getMemberOf())
             object = new FImplicitCast(function.getMemberOf(), object);
-        List<FType> paramTypes = function.getSignature().getAllParamTypes();
+        List<FClass> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i).getType() != paramTypes.get(i))
                 arguments.set(i, new FImplicitCast(paramTypes.get(i), arguments.get(i)));

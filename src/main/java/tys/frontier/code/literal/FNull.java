@@ -1,6 +1,6 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FVoid;
 
 public class FNull implements FLiteral {
@@ -10,7 +10,7 @@ public class FNull implements FLiteral {
     private FNull () {}
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return FVoid.INSTANCE;
     }
 

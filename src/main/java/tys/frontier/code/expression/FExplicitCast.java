@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -12,13 +12,12 @@ public class FExplicitCast extends FCast implements NeedsTypeCheck {
     public enum CastType {
         INTEGER_DEMOTION,
         FLOAT_DEMOTION,
-        FLOAT_TO_INT,
-        OBJECT_PROMOTION
+        FLOAT_TO_INT
     }
 
     private CastType castType;
 
-    public FExplicitCast(FType type, FExpression castedExpression) {
+    public FExplicitCast(FClass type, FExpression castedExpression) {
         super(type, castedExpression);
     }
 
@@ -26,14 +25,12 @@ public class FExplicitCast extends FCast implements NeedsTypeCheck {
         return castType;
     }
 
-    public static CastType getCastType(FType targetType, FType baseType) throws IncompatibleTypes {
+    public static CastType getCastType(FClass targetType, FClass baseType) throws IncompatibleTypes {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() < ((FIntN) baseType).getN())
             return CastType.INTEGER_DEMOTION;
         //TODO float to int
         //TODO downwards float cast
-        if (targetType.getAllInheritedTypes().contains(baseType))
-            return CastType.OBJECT_PROMOTION;
 
         throw new IncompatibleTypes(targetType, baseType);
     }

@@ -51,12 +51,12 @@ public class FForEachLowering extends StatementReplacer {
         FVarDeclaration decl = new FVarDeclaration(counter, zero);
 
         //condition
-        FFunction less = Iterables.getOnlyElement(FIntN._32.getStaticFunctions(FBinaryOperator.Bool.LESS.identifier));
+        FFunction less = Iterables.getOnlyElement(FIntN._32.getStaticFunctions().get(FBinaryOperator.Bool.LESS.identifier));
         FFieldAccess size = new FFieldAccess(array.getType().getInstanceFields().get(FArray.SIZE), array);
         FExpression cond = new FFunctionCall(less, ImmutableList.of(new FLocalVariableExpression(counter), size));
 
         //increment
-        FFunction inc = Iterables.getOnlyElement(FIntN._32.getInstanceFunctions(FUnaryOperator.Pre.INC.identifier));
+        FFunction inc = Iterables.getOnlyElement(FIntN._32.getInstanceFunctions().get(FUnaryOperator.Pre.INC.identifier));
         FLocalVariableExpression invVarExpre = new FLocalVariableExpression(counter);
         invVarExpre.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE); //TODO setting this here explicitly is ugly, but fine for now
         FExpression incCall = new FFunctionCall(invVarExpre, inc, ImmutableList.of());

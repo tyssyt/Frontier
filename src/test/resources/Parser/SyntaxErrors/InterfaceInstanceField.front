@@ -1,3 +1,0 @@
-interface I : A {
-    int32 i;
-}

@@ -4,9 +4,9 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 
@@ -23,11 +23,9 @@ public abstract class Module {
 
     protected FFunction entryPoint = null;
 
-    protected BiMap<FTypeIdentifier, FType> exportedClasses = HashBiMap.create();
-    protected Multimap<FType, FField> exportedFields = HashMultimap.create(); //TODO maybe we just don't need these fields
-    protected Multimap<FType, FFunction> exportedFunctions = HashMultimap.create(); //TODO maybe we just don't need these functions
-
-    protected ClassHierachy externalClassHierachy = new ClassHierachy(exportedClasses.values());
+    protected BiMap<FTypeIdentifier, FClass> exportedClasses = HashBiMap.create();
+    protected Multimap<FClass, FField> exportedFields = HashMultimap.create(); //TODO maybe we just don't need these fields
+    protected Multimap<FClass, FFunction> exportedFunctions = HashMultimap.create(); //TODO maybe we just don't need these functions
 
     public Module(String name, String version, String subversion_or_versionSuffix) {
         assert Character.isUpperCase(name.charAt(0));
@@ -52,20 +50,16 @@ public abstract class Module {
         return importedModules;
     }
 
-    public Map<FTypeIdentifier, FType> getExportedClasses() {
+    public Map<FTypeIdentifier, FClass> getExportedClasses() {
         return exportedClasses;
     }
 
-    public Multimap<FType, FField> getExportedFields() {
+    public Multimap<FClass, FField> getExportedFields() {
         return exportedFields;
     }
 
-    public Multimap<FType, FFunction> getExportedFunctions() {
+    public Multimap<FClass, FFunction> getExportedFunctions() {
         return exportedFunctions;
-    }
-
-    public ClassHierachy getExternalClassHierachy() {
-        return externalClassHierachy;
     }
 
     public Optional<FFunction> getEntryPoint() {
@@ -84,15 +78,15 @@ public abstract class Module {
         importedModules.addAll(dependencies);
     }
 
-    public Map<FTypeIdentifier, FType> getImportedClasses () {
-        Map<FTypeIdentifier, FType> res = new LinkedHashMap<>();
+    public Map<FTypeIdentifier, FClass> getImportedClasses () {
+        Map<FTypeIdentifier, FClass> res = new LinkedHashMap<>();
         for (Module module : importedModules) {
             res.putAll(module.getExportedClasses());
         }
         return res;
     }
 
-    protected void addExportedType(FType toExport) {
+    protected void addExportedType(FClass toExport) {
         assert toExport.getVisibility() == FVisibilityModifier.EXPORT;
         exportedClasses.put(toExport.getIdentifier(), toExport);
         for (FField field : toExport.getFields()) {

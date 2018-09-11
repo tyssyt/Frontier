@@ -59,7 +59,7 @@ public class LLVMModule implements AutoCloseable {
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
-    private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
     private List<FClass> todoClassBodies = new ArrayList<>();
@@ -102,20 +102,18 @@ public class LLVMModule implements AutoCloseable {
         return LLVMCreateBuilderInContext(this.context);
     }
 
-    LLVMTypeRef getLlvmType (FType fType) { //TODO needs sync for multithreading
-        LLVMTypeRef res = llvmTypes.get(fType);
+    LLVMTypeRef getLlvmType (FClass fClass) { //TODO needs sync for multithreading
+        LLVMTypeRef res = llvmTypes.get(fClass);
         if (res != null) {
             return res;
-        } else if (fType instanceof FInterface) {
-            return bytePointerPointer;
-        } else if (fType instanceof FIntN) {
-            res = LLVMIntTypeInContext(context, ((FIntN) fType).getN());
-        } else if (fType instanceof FArray) {
-            res = arrayType(((FArray) fType), 0);
+        } else if (fClass instanceof FIntN) {
+            res = LLVMIntTypeInContext(context, ((FIntN) fClass).getN());
+        } else if (fClass instanceof FArray) {
+            res = arrayType(((FArray) fClass), 0);
         } else {
-            Utils.NYI("LLVM type for: " + fType);
+            Utils.NYI("LLVM type for: " + fClass);
         }
-        llvmTypes.put(fType, res);
+        llvmTypes.put(fClass, res);
         return res;
     }
 
@@ -149,31 +147,31 @@ public class LLVMModule implements AutoCloseable {
 
     public void parseDependencies(Module fModule) {
         verificationNeeded = true;
-        for (FType fType : fModule.getImportedClasses().values()) {
-            //assert !(fType instanceof FPredefinedClass);
-            if (fType instanceof FPredefinedClass || !(fType instanceof FClass)) //TODO this is a hack that needs to stay until we have binary modules
+        for (FClass fClass : fModule.getImportedClasses().values()) {
+            //assert !(fClass instanceof FPredefinedClass);
+            if (fClass instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
                 continue;
-            parseClass(((FClass) fType));
+            parseClass(fClass);
         }
 
-        for (FType fType : fModule.getImportedClasses().values()) {
-            if (fType instanceof FPredefinedClass || !(fType instanceof FClass)) //TODO this is a hack that needs to stay until we have binary modules
+        for (FClass fClass : fModule.getImportedClasses().values()) {
+            if (fClass instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
                 continue;
-            for (FField field : fType.getStaticFields().values()) {
+            for (FField field : fClass.getStaticFields().values()) {
                 LLVMTypeRef type = getLlvmType(field.getType());
                 LLVMAddGlobal(module, type, getStaticFieldName(field));
             }
-            for (FFunction function : fType.getFunctions()) {
+            for (FFunction function : fClass.getFunctions()) {
                 assert !function.isPredefined();
                 addFunctionHeader(function);
             }
         }
 
         //FIXME the hack part:
-        for (FType clazz : fModule.getImportedClasses().values()) {
+        for (FClass clazz : fModule.getImportedClasses().values()) {
             if (clazz == IOClass.INSTANCE) {
-                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions(IOClass.PUTCHAR_ID))));
-                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions(IOClass.GETCHAR_ID))));
+                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions().get(IOClass.PUTCHAR_ID))));
+                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions().get(IOClass.GETCHAR_ID))));
             }
         }
 
@@ -185,11 +183,11 @@ public class LLVMModule implements AutoCloseable {
      */
     public void parseTypes(FFile file) {
         verificationNeeded = true;
-        for (FType fType : file.getTypes().values()) {
-            if (fType instanceof FPredefinedClass || !(fType instanceof FClass))
+        for (FClass fClass : file.getTypes().values()) {
+            if (fClass instanceof FPredefinedClass)
                 continue;
-            parseClass(((FClass) fType));
-            todoClassBodies.add(((FClass) fType));
+            parseClass(fClass);
+            todoClassBodies.add(fClass);
         }
     }
 
@@ -209,26 +207,24 @@ public class LLVMModule implements AutoCloseable {
     public void parseClassMembers(FFile file) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FType fType : file.getTypes().values()) {
-            if (fType instanceof FPredefinedClass)
+        for (FClass fClass : file.getTypes().values()) {
+            if (fClass instanceof FPredefinedClass)
                 continue;
-            if (fType instanceof FClass) {
-                for (FField field : fType.getStaticFields().values()) {
-                    if (field.isStatic()) {
-                        //TODO see if the initializer is a const and direclty init here instead of the block?
-                        //TODO see if something can be done for final?
-                        //TODO optimizer flags like we don't care bout the address and readonly
-                        //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
-                        LLVMTypeRef type = getLlvmType(field.getType());
-                        LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
 
-                        setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
-                        //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
-                        todoFieldInitilizers.add(field);
-                    }
-                }
+            for (FField field : fClass.getStaticFields().values()) {
+                //TODO see if the initializer is a const and direclty init here instead of the block?
+                //TODO see if something can be done for final?
+                //TODO optimizer flags like we don't care bout the address and readonly
+                //TODO for final and effective final fields of objects the pointer pointer could be lowered into a pointer...
+                LLVMTypeRef type = getLlvmType(field.getType());
+                LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
+
+                setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
+                //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
+                todoFieldInitilizers.add(field);
             }
-            for (FFunction function : fType.getFunctions()) {
+
+            for (FFunction function : fClass.getFunctions()) {
                 if (function.isPredefined() || function.isAbstract())
                     continue;
                 addFunctionHeader(function);
@@ -266,7 +262,6 @@ public class LLVMModule implements AutoCloseable {
      * @return the LLVM-Function-Type corresponding to the FFunction
      */
     private LLVMTypeRef getLLVMFunctionType(FFunction function) {
-        function = function.getRootDefinition(); //this changes the "this" type to that of the root definition
         List<FParameter> fParams = function.getParams();
         int size = fParams.size();
         if (!function.isStatic())
@@ -293,9 +288,6 @@ public class LLVMModule implements AutoCloseable {
         for (FClass fClass : todoClassBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
-            if (fClass.getSuperClass() != null) { //FIXME once we have always superclasses, this check is no longer necessary
-                subtypes.add(LLVMGetElementType(getLlvmType(fClass.getSuperClass())));
-            }
             for (FField field : fClass.getInstanceFields().values()) {
                 subtypes.add(getLlvmType(field.getType()));
                 fieldIndices.put(field, index++);

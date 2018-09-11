@@ -4,7 +4,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 
 public class FLocalVariable extends FVariable {
 
-    public FLocalVariable(FVariableIdentifier identifier, FType type) {
+    public FLocalVariable(FVariableIdentifier identifier, FClass type) {
         super(identifier, type);
     }
 }

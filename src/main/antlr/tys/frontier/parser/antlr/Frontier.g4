@@ -27,13 +27,10 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 tokens {
     IMPORT,
     CLASS,
-    INTERFACE,
     CONSTRUCTORS,
     EXPORT,
     PRIVATE,
     STATIC,
-    ABSTRACT,
-    OVERRIDE,
     NEW,
     THIS,
     NULL,
@@ -65,7 +62,7 @@ tokens {
 
 file
     :   importStatement*
-        (classDeclaration|interfaceDeclaration)*
+        classDeclaration*
         EOF
     ;
 
@@ -74,23 +71,13 @@ importStatement
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier parentClasses?
+    :   visibilityModifier? CLASS TypeIdentifier
         LBRACE
         classDeclaratives
-        (abstractMethodDeclaration|methodDeclaration|fieldDeclaration)*
+        (methodDeclaration|fieldDeclaration)*
         RBRACE
     ;
 
-interfaceDeclaration
-    :   visibilityModifier? INTERFACE TypeIdentifier parentClasses?
-        LBRACE
-        (abstractMethodDeclaration|methodDeclaration)*
-        RBRACE
-    ;
-
-parentClasses
-    :   COLON TypeIdentifier (COMMA TypeIdentifier)*
-    ;
 classDeclaratives
     :   constructorsDeclarative?
     ;
@@ -108,16 +95,12 @@ visibilityModifier
     |   PRIVATE
     ;
 
-abstractMethodDeclaration
-    :   ABSTRACT methodHeader SEMI
-    ;
-
 methodDeclaration
     :   methodHeader block
     ;
 
 methodHeader
-    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters OVERRIDE?
+    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters
     ;
 
 fieldDeclaration

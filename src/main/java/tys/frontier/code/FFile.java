@@ -12,7 +12,7 @@ public class FFile implements StringBuilderToString {
 
     private String name;
     //imports go here
-    private ImmutableMap<FTypeIdentifier, FType> types;
+    private ImmutableMap<FTypeIdentifier, FClass> types;
 
     public FFile(String name) {
         this.name = name;
@@ -22,15 +22,15 @@ public class FFile implements StringBuilderToString {
         return name;
     }
 
-    public FType getClass(FTypeIdentifier identifier) {
+    public FClass getClass(FTypeIdentifier identifier) {
         return types.get(identifier);
     }
 
-    public ImmutableMap<FTypeIdentifier, FType> getTypes() {
+    public ImmutableMap<FTypeIdentifier, FClass> getTypes() {
         return types;
     }
 
-    public void setTypes(ImmutableMap<FTypeIdentifier, FType> types) {
+    public void setTypes(ImmutableMap<FTypeIdentifier, FClass> types) {
         assert this.types == null;
         this.types = types;
     }
@@ -38,14 +38,14 @@ public class FFile implements StringBuilderToString {
     public <F,C,Fi,Fu,S,E> F accept(FileVisitor<F,C,Fi,Fu,S,E> visitor) {
         visitor.enterFile(this);
         List<C> classes = new ArrayList<>(this.types.size());
-        for (FType t : this.types.values()) {
+        for (FClass t : this.types.values()) {
             classes.add(t.accept(visitor));
         }
         return visitor.exitFile(this, classes);
     }
 
     public StringBuilder summary(StringBuilder sb) {
-        for (FType clazz : types.values()) {
+        for (FClass clazz : types.values()) {
             clazz.summary(sb).append("\n\n");
         }
         return sb;
@@ -56,7 +56,7 @@ public class FFile implements StringBuilderToString {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        for (FType clazz : types.values()) {
+        for (FClass clazz : types.values()) {
             clazz.toString(sb).append("\n\n");
         }
         return sb;

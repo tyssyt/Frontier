@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
@@ -56,7 +56,7 @@ public class FArrayAccess implements FVariableExpression, HasInstanceObject, Nee
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return ((FArray) array.getType()).getOneDimensionLess();
     }
 

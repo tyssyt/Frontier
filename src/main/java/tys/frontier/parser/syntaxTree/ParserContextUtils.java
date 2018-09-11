@@ -3,13 +3,15 @@ package tys.frontier.parser.syntaxTree;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tys.frontier.code.*;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.PrivateInterface;
 import tys.frontier.parser.syntaxErrors.TypeNotFound;
 import tys.frontier.util.Utils;
 
@@ -23,12 +25,6 @@ public final class ParserContextUtils {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         return new FClass(identifier, visibilityModifier);
-    }
-
-    public static FInterface getInterface (FrontierParser.InterfaceDeclarationContext ctx) throws PrivateInterface {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
-        return new FInterface(identifier, visibilityModifier);
     }
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
@@ -68,40 +64,40 @@ public final class ParserContextUtils {
         }
     }
 
-    public static FType getNonPredefined(String id, Map<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
+    public static FClass getNonPredefined(String id, Map<FTypeIdentifier, FClass> possibleTypes) throws TypeNotFound {
         FTypeIdentifier identifier = new FTypeIdentifier(id);
-        FType type = possibleTypes.get(identifier);
+        FClass type = possibleTypes.get(identifier);
         if (type==null) {
             throw new TypeNotFound(identifier);
         }
         return type;
     }
 
-    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FClass getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
         FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
         return predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
     }
 
-    public static FType getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FClass getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
-        FType res = getBasicType(ctx.basicType(), possibleTypes);
+        FClass res = getBasicType(ctx.basicType(), possibleTypes);
         int arrayDepth = ctx.Array().size();
         if (arrayDepth > 0)
             res = FArray.getArrayFrom(res, arrayDepth);
         return res;
     }
 
-    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
-        FType type = getType(ctx.typeType(), possibleTypes);
+        FClass type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier((ctx.Identifier().getText()));
         return new FLocalVariable(identifier, type);
     }
 
-    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
-        FType type = getType(ctx.typeType(), possibleTypes);
+        FClass type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
         return new FParameter(identifier, type);
     }

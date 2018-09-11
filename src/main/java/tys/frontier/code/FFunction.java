@@ -11,7 +11,6 @@ import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.OverridesWithLessVisibility;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
 
@@ -23,20 +22,18 @@ import java.util.Optional;
 public class FFunction implements FTypeMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
-    private FType memberOf;
+    private FClass memberOf;
     private FVisibilityModifier modifier;
-    private List<FFunction> overrides = new ArrayList<>();
-    private List<FFunction> overwrittenBy = new ArrayList<>();
     private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean statik;
-    private FType returnType;
+    private FClass returnType;
     private ImmutableList<FParameter> params;
     private Signature signature;
     protected FBlock body;
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean statik, FType returnType, ImmutableList<FParameter> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -46,7 +43,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         this.signature = new Signature(this);
     }
 
-    protected FFunction(Signature signature, FType memberOf, FVisibilityModifier modifier, boolean statik, FType returnType, ImmutableList<FParameter> params) {
+    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = signature.identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -57,7 +54,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     @Override
-    public FType getMemberOf() {
+    public FClass getMemberOf() {
         return memberOf;
     }
 
@@ -77,29 +74,6 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     public ImmutableList<FParameter> getParams() {
         return params;
-    }
-
-    public void addOverwrites(FFunction other) throws OverridesWithLessVisibility {
-        this.overrides.add(other);
-        other.overwrittenBy.add(this);
-        if (this.getVisibility().compareTo(other.getVisibility()) < 0)
-            throw new OverridesWithLessVisibility(other, this);
-    }
-
-    public List<FFunction> getOverrides() {
-        return overrides;
-    }
-
-    public List<FFunction> getOverwrittenBy() {
-        return overwrittenBy;
-    }
-
-    public FFunction getRootDefinition() {
-        for (FFunction function : overrides) {
-            if (function.overrides.isEmpty())
-                return function;
-        }
-        return this;
     }
 
     public boolean addCall(FFunctionCall call) {
@@ -125,7 +99,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return returnType;
     }
 
@@ -155,7 +129,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     private NameGenerator freshVariableNames = new NameGenerator("?", "");
-    public FLocalVariable getFreshVariable(FType type) {
+    public FLocalVariable getFreshVariable(FClass type) {
         //TODO maybe be tryhards and try to find good names? like using the type as prefix?
         return new FLocalVariable(new FVariableIdentifier(freshVariableNames.next()), type);
     }
@@ -167,7 +141,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
      * @throws IncompatibleSignatures when the number of parameters differs
      * @throws IncompatibleTypes when a parameter can't be casted
      */
-    public boolean[] castSignatureFrom(List<FType> callingTypes) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
+    public boolean[] castSignatureFrom(List<FClass> callingTypes) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
         if (callingTypes.size() > params.size()) {
             throw new IncompatibleSignatures(this.getSignature(), callingTypes);
         } else if (callingTypes.size() < params.size()) {
@@ -177,8 +151,8 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         }
         boolean[] res = new boolean[callingTypes.size()];
         for (int i = 0; i < callingTypes.size(); i++) {
-            FType sourceType = callingTypes.get(i);
-            FType targetType = params.get(i).getType();
+            FClass sourceType = callingTypes.get(i);
+            FClass targetType = params.get(i).getType();
             if (sourceType == targetType)
                 res[i] = false;
             else {
@@ -194,6 +168,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         sb.append(headerToString()).append(" {\n");
         if (predefined)
@@ -211,9 +186,9 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     public static class Signature implements StringBuilderToString { //TODO the castSignature from is implemented outside of this, and the rest prolly takes more space then it is worth?
         private FFunctionIdentifier identifier;
-        private List<FType> paramTypes = new ArrayList<>();
-        private List<FType> optionalTypes = new ArrayList<>();
-        private List<FType> allTypes = new ArrayList<>();
+        private List<FClass> paramTypes = new ArrayList<>();
+        private List<FClass> optionalTypes = new ArrayList<>();
+        private List<FClass> allTypes = new ArrayList<>();
 
         public Signature(FFunction function) {
             this.identifier = function.getIdentifier();
@@ -230,15 +205,15 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
             return identifier;
         }
 
-        public List<FType> getParamTypes() {
+        public List<FClass> getParamTypes() {
             return paramTypes;
         }
 
-        public List<FType> getOptionalTypes() {
+        public List<FClass> getOptionalTypes() {
             return optionalTypes;
         }
 
-        public List<FType> getAllParamTypes() {
+        public List<FClass> getAllParamTypes() {
             return allTypes;
         }
 
@@ -282,14 +257,14 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         public StringBuilder toString(StringBuilder sb) {
             sb.append(identifier).append('(');
             boolean first = true;
-            for (FType type : paramTypes) {
+            for (FClass type : paramTypes) {
                 if (first)
                     first = false;
                 else
                     sb.append(',');
                 sb.append(type.getIdentifier());
             }
-            for (FType type : optionalTypes) {
+            for (FClass type : optionalTypes) {
                 if (first)
                     first = false;
                 else
@@ -307,9 +282,9 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     public static class IncompatibleSignatures extends Exception {
         public final Signature functionSignature;
-        public final ImmutableList<FType> callingTypes;
+        public final ImmutableList<FClass> callingTypes;
 
-        public IncompatibleSignatures(Signature functionSignature, List<FType> callingTypes) {
+        public IncompatibleSignatures(Signature functionSignature, List<FClass> callingTypes) {
             super("Function " + functionSignature + " can't be called from " + callingTypes);
             this.functionSignature = functionSignature;
             this.callingTypes = ImmutableList.copyOf(callingTypes);

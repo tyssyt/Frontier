@@ -11,13 +11,10 @@ import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportResolver;
-import tys.frontier.parser.semanticAnalysis.CheckNamespaces;
-import tys.frontier.parser.semanticAnalysis.CyclicClassHierachyCheck;
 import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
-import tys.frontier.parser.syntaxTree.RemoveAbstractConstructors;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.parser.warnings.Warning;
@@ -95,12 +92,9 @@ public class Parser {
 
             stage= Stage.IDENTIFIER_CHECKS;
             res.addFile(file);
-            //check this early because cyclic class hierachies would create nontermination in function resolving etc.
-            CyclicClassHierachyCheck.check(res.getInternalClassHierachy());
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, file, res.getImportedClasses());
-            RemoveAbstractConstructors.remove(res.getInternalClassHierachy());
             {
                 Log.info(this, "parsed classes");
                 Log.debug(this, file.toString());
@@ -111,8 +105,6 @@ public class Parser {
 
             stage = Stage.CHECKS;
             NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
-            CheckNamespaces.check(res.getInternalClassHierachy()); //TODO namespace check should extend past local class hierachy
-            //TODO namespace check should ideally be between GlobalIdentifierCollector and toInternal, but it needs override info which is computet at the beginning of toInternal
             Log.info(this, "checks passed");
 
             stage = Stage.FINISHED;

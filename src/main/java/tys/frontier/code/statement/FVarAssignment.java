@@ -2,7 +2,7 @@ package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FImplicitCast;
@@ -98,8 +98,8 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
             identifier = id;
         }
 
-        public FBinaryOperator getOperator(FType type) {
-            return (FBinaryOperator) Iterables.getOnlyElement(type.getStaticFunctions(identifier));
+        public FBinaryOperator getOperator(FClass type) {
+            return (FBinaryOperator) Iterables.getOnlyElement(type.getStaticFunctions().get(identifier));
         }
 
         public static Operator fromString (String string) {

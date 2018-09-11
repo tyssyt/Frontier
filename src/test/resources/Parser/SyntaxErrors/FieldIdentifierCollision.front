@@ -1,6 +1,4 @@
 class A {
     A a;
-}
-class B : A {
-    A a;
+    int32 a;
 }

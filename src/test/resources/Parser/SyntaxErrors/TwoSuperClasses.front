@@ -1,3 +1,0 @@
-class Base : A, B {}
-class A {}
-class B {}

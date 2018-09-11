@@ -1,19 +1,19 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 
 public abstract class FCast implements FExpression {
 
-    private FType type;
+    private FClass type;
     private FExpression castedExpression;
 
-    public FCast(FType type, FExpression castedExpression) {
+    public FCast(FClass type, FExpression castedExpression) {
         this.type = type;
         this.castedExpression = castedExpression;
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return type;
     }
 

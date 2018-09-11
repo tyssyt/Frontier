@@ -107,12 +107,7 @@ class LLVMTransformer implements
         int offset = 0;
         if (!function.isStatic()) {
             LLVMValueRef alloca = createEntryBlockAlloca(function.getMemberOf().getThis());
-            FFunction rootDefinition = function.getRootDefinition();
-            if (rootDefinition == function) {
-                LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
-            } else {
-                //TODO
-            }
+            LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
             offset++;
         }
         List<FParameter> fParams = function.getParams();
@@ -314,8 +309,6 @@ class LLVMTransformer implements
                 return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
             case INT_TO_FLOAT:
                 return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
-            case OBJECT_DEMOTION:
-                return LLVMBuildBitCast(builder, toCast, targetType, "cast_obj_dem");
             default:
                 return Utils.cantHappen();
         }
@@ -332,9 +325,6 @@ class LLVMTransformer implements
                 return LLVMBuildFPTrunc(builder, toCast, targetType, "cast_float_dem");
             case FLOAT_TO_INT:
                 return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
-            case OBJECT_PROMOTION:
-                //TODO some check if the cast is valid (ideally compile time, otherwise at runtime)
-                return LLVMBuildBitCast(builder, toCast, targetType, "cast_obj_prom");
             default:
                 return Utils.cantHappen();
         }
@@ -492,8 +482,6 @@ class LLVMTransformer implements
             return predefinedBinary(functionCall);
         } else if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall);
-        } else if (function.getMemberOf() instanceof FArray) {
-                return predefinedArray(functionCall);
         } else if (function.getMemberOf() == IOClass.INSTANCE) {
             return predefinedIO(functionCall);
         } else {

@@ -1,8 +1,8 @@
 package tys.frontier.code.visitor;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,12 +11,12 @@ import java.util.Optional;
 public interface ClassVisitor<Class, Field, Function, Statement, Expression> extends StatementVisitor<Statement, Expression> {
 
     //Top down
-    default void enterType(FType fType) {}
+    default void enterType(FClass fClass) {}
     default void enterField(FField field) {}
     default void enterFunction(FFunction function) {}
 
     //Bottom Up
-    default Class exitType(FType fType, List<Field> fields, List<Function> functions) {return null;}
+    default Class exitType(FClass fClass, List<Field> fields, List<Function> functions) {return null;}
     default Field exitField(FField field, Optional<Statement> assign) {return null;}
     default Function exitFunction(FFunction function, Optional<Statement> body) {return null;}
 }

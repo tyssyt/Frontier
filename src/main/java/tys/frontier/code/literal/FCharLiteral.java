@@ -1,6 +1,6 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
 
 public class FCharLiteral implements FLiteral {
@@ -17,7 +17,7 @@ public class FCharLiteral implements FLiteral {
     }
 
     @Override
-    public FType getType() {
+    public FClass getType() {
         return FIntN._8;
     }
 

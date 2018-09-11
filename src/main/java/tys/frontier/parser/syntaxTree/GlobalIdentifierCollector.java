@@ -2,7 +2,6 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -18,11 +17,11 @@ import java.util.Map;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
-    private Map<FTypeIdentifier, FType> types;
+    private Map<FTypeIdentifier, FClass> types;
     private SyntaxTreeData treeData;
     private List<SyntaxError> errors = new ArrayList<>();
 
-    private FType currentClass;
+    private FClass currentClass;
 
     private GlobalIdentifierCollector (FrontierParser.FileContext ctx) {
         treeData = new SyntaxTreeData(ctx);
@@ -44,25 +43,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         //first go over all types once to know their names
         for (FrontierParser.ClassDeclarationContext c : ctx.classDeclaration()) {
             FClass fClass = ParserContextUtils.getClass(c);
-            FType old = types.put(fClass.getIdentifier(), fClass);
+            FClass old = types.put(fClass.getIdentifier(), fClass);
             if (old != null) {
                 errors.add(new IdentifierCollision(fClass, old));
             }
             treeData.classes.put(c, fClass);
-        }
-        for (FrontierParser.InterfaceDeclarationContext i : ctx.interfaceDeclaration()) {
-            FInterface fInterface;
-            try {
-                fInterface = ParserContextUtils.getInterface(i);
-            } catch (PrivateInterface privateInterface) {
-                errors.add(privateInterface);
-                fInterface = privateInterface.fInterface;
-            }
-            FType old = types.put(fInterface.getIdentifier(), fInterface);
-            if (old != null) {
-                errors.add(new IdentifierCollision(fInterface, old));
-            }
-            treeData.interfaces.put(i, fInterface);
         }
         //in the second pass find fields and methods headers
         return visitChildren(ctx);
@@ -80,35 +65,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     }
 
     @Override
-    public Object visitInterfaceDeclaration(FrontierParser.InterfaceDeclarationContext ctx) {
-        currentClass = treeData.interfaces.get(ctx);
-        try {
-            visitChildren(ctx);
-            return null;
-        } finally {
-            currentClass = null;
-        }
-    }
-
-    @Override
-    public Object visitParentClasses(FrontierParser.ParentClassesContext ctx) {
-        for (TerminalNode parentClassCtx : ctx.TypeIdentifier()) {
-            try {
-                FType parentClass = ParserContextUtils.getNonPredefined(parentClassCtx.getText(), types);
-                boolean changed = currentClass.addSuperType(parentClass);
-                if (!changed) {
-                    errors.add(new MultiExtend(currentClass, parentClass));
-                }
-            } catch (SyntaxError syntaxError) {
-                errors.add(syntaxError);
-            }
-        }
-        return null;
-    }
-
-    @Override
     public Object visitConstructorsDeclarative(FrontierParser.ConstructorsDeclarativeContext ctx) {
-        ((FClass) currentClass).setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
+        currentClass.setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
         return null;
     }
 
@@ -118,7 +76,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
-        FType returnType;
+        FClass returnType;
         if (c != null) {
             try {
                 returnType = ParserContextUtils.getType(c, types);
@@ -173,7 +131,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
-        } catch (TypeNotFound | IdentifierCollision | InterfaceInstanceField e) {
+        } catch (TypeNotFound | IdentifierCollision e) {
             errors.add(e);
         }
         return null;
