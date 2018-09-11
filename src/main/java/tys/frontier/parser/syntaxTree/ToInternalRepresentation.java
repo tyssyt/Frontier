@@ -290,12 +290,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } catch (Failed f) {
             failed = true;
         }
-        FrontierParser.BlockContext sc = ctx.block(1);
         try {
-            elze = sc == null ? null : visitBlock(sc);
+            FrontierParser.BlockContext bc = ctx.block(1);
+            if (bc != null) {
+                elze = visitBlock(ctx.block(1));
+            } else if (ctx.ifStatement() != null) {
+                elze = FBlock.from(Collections.singletonList(visitIfStatement(ctx.ifStatement())));
+            }
         } catch (Failed f) {
             failed = true;
         }
+
         if (failed)
             throw new Failed();
         FIf res = new FIf(cond, then, elze);

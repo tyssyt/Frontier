@@ -153,7 +153,7 @@ block
 statement
     :   block                                                                           #blockStatement
     |   variableDeclarator SEMI                                                         #localVariableDeclarationStatement
-    |   IF LPAREN expression RPAREN block (ELSE block)?                                 #ifStatement
+    |   ifStatement                                                                     #ifStatement_
     |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN block  #forStatement
     |   FOR LPAREN typedIdentifier COLON expression RPAREN block                        #foreachStatement
     |   WHILE LPAREN expression RPAREN block                                            #whileStatement
@@ -176,6 +176,9 @@ statement
         expression SEMI                                                                 #assignment
     ;
 
+ifStatement
+    :  IF LPAREN expression RPAREN block (ELSE block | ELSE ifStatement)?
+    ;
 
 // EXPRESSIONS -----------------------------------------------------------------------------
 
@@ -189,7 +192,7 @@ expression
     |   expression DOT Identifier                                  #fieldAccess
     |   typeType DOT Identifier                                    #staticFieldAccess
     |   expression DOT Identifier LPAREN expressionList? RPAREN    #externalFunctionCall
-    |   typeType DOT Identifier LPAREN expressionList? RPAREN       #staticFunctionCall
+    |   typeType DOT Identifier LPAREN expressionList? RPAREN      #staticFunctionCall
     |   Identifier LPAREN expressionList? RPAREN                   #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)+ (Array)*         #newArray
