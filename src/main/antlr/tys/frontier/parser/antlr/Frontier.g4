@@ -496,12 +496,7 @@ SingleCharacter
 
 //String Literals------------------------------------------------------------------------
 StringLiteral
-    :   '"' StringCharacters? '"'
-    ;
-
-fragment
-StringCharacters
-    :   StringCharacter+
+    :   '"' StringCharacter* '"'
     ;
 
 fragment
@@ -514,9 +509,7 @@ StringCharacter
 //Escape Sequences for Character and String Literals--------------------------------------
 fragment
 EscapeSequence
-    :   '\\' [btnfr"'\\]
-    |   OctalEscape
-    |   UnicodeEscape
+    :   '\\' [n'\\]
     ;
 
 fragment

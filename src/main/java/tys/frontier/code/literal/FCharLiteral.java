@@ -1,9 +1,16 @@
 package tys.frontier.code.literal;
 
+import com.koloboke.collect.map.hash.HashCharCharMap;
+import com.koloboke.collect.map.hash.HashCharCharMaps;
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
 
 public class FCharLiteral implements FLiteral {
+
+    public static final HashCharCharMap escapeLiterals = HashCharCharMaps.newImmutableMap(
+            new char[] {'n' ,'\\','\''},
+            new char[] {'\n','\\','\''}
+    );
 
     public final char value;
 

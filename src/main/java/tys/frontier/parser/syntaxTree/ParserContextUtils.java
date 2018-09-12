@@ -133,13 +133,25 @@ public final class ParserContextUtils {
                         return new FCharLiteral(text.charAt(1));
                     else if (text.length() == 4) {
                         assert text.charAt(1) == '\\';
-                        return new FCharLiteral(text.charAt(2));
+                        char escaped = FCharLiteral.escapeLiterals.get(text.charAt(2));
+                        assert escaped != 0;
+                        return new FCharLiteral(escaped);
                     } else
                         assert false;
                 case FrontierParser.StringLiteral:
                     assert text.charAt(0) == '\"';
                     assert text.charAt(text.length()-1) == '\"';
-                    return new FStringLiteral(text.substring(1,text.length()-1));
+                    StringBuilder sb = new StringBuilder();
+                    for (int i=1; i<text.length()-1; i++) {
+                        char c = text.charAt(i);
+                        if (c == '\\') {
+                            i++;
+                            c = FCharLiteral.escapeLiterals.get(text.charAt(i));
+                            assert c != 0;
+                        }
+                        sb.append(c);
+                    }
+                    return new FStringLiteral(sb.toString());
             }
         }
         return res;
