@@ -1,5 +1,5 @@
 class A {
-    A a = new B();
+    A a := new B();
 }
 class B {
     constructors;

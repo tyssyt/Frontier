@@ -113,7 +113,7 @@ fieldDeclaration
     ;
 
 variableDeclarator
-    :   typedIdentifier (ASSIGN expression)?
+    :   typedIdentifier (DECL expression)?
     ;
 
 formalParameters
@@ -121,7 +121,7 @@ formalParameters
     ;
 
 formalParameter
-    : typedIdentifier (ASSIGN expression)?
+    : typedIdentifier (DECL expression)?
     ;
 
 //types ------------------------------------------------------------------------------------
@@ -255,6 +255,7 @@ COLON           : ':';
 
 //Operators-----------------------------------------------------------------
 ASSIGN          : '=';
+DECL            : ':=';
 GT              : '>';
 LT              : '<';
 NOT             : '!';
