@@ -1,0 +1,6 @@
+export class Native {
+
+export native static void putchar(int32 chara);
+export native static int32 getchar();
+
+}

@@ -25,6 +25,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     private FClass memberOf;
     private FVisibilityModifier modifier;
     private List<FFunctionCall> calledBy = new ArrayList<>();
+    private boolean natiwe;
     private boolean statik;
     private FClass returnType;
     private ImmutableList<FParameter> params;
@@ -33,20 +34,22 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
+        this.natiwe = natiwe;
         this.statik = statik;
         this.returnType = returnType;
         this.params = params;
         this.signature = new Signature(this);
     }
 
-    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
+    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
         this.identifier = signature.identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
+        this.natiwe = natiwe;
         this.statik = statik;
         this.returnType = returnType;
         this.params = params;
@@ -63,13 +66,13 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         return modifier;
     }
 
+    public boolean isNative() {
+        return natiwe;
+    }
+
     @Override
     public boolean isStatic() {
         return statik;
-    }
-
-    public boolean isAbstract() {
-        return body == null;
     }
 
     public ImmutableList<FParameter> getParams() {
@@ -89,6 +92,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     public void setBody(FBlock body) {
+        assert !this.natiwe && !this.predefined;
         assert this.body==null;
         this.body = body;
     }

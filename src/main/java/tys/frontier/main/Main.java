@@ -1,8 +1,7 @@
 package tys.frontier.main;
 
 import tys.frontier.backend.llvm.LLVMBackend;
-import tys.frontier.code.FFile;
-import tys.frontier.code.module.FrontierModule;
+import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.lowering.FForEachLowering;
@@ -22,12 +21,12 @@ public class Main {
             String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
 
             //FrontEnd
-            FrontierModule module = new Parser(input, Style.DEFAULT_STYLE).parse();
+            Module module = new Parser(input, Style.DEFAULT_STYLE).parse();
 
             //Lowering Passes
-            for (FFile file : module.getFiles()) {
-                FForEachLowering.lower(file);
-                OperatorAssignmentLowering.lower(file);
+            for (Module m : module.getImportedModulesReflexiveTransitive()) {
+                FForEachLowering.lower(m);
+                OperatorAssignmentLowering.lower(m);
             }
 
             //Backend

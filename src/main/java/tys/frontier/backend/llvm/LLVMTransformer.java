@@ -1,7 +1,6 @@
 package tys.frontier.backend.llvm;
 
 import com.google.common.collect.Iterables;
-import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
@@ -19,7 +18,6 @@ import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
-import tys.frontier.modules.io.IOClass;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -28,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
@@ -460,20 +457,6 @@ class LLVMTransformer implements
             return Utils.NYI(function.headerToString() + "in the backend");
     }
 
-    private LLVMValueRef predefinedIO (FFunctionCall functionCall) {
-        FFunction function = functionCall.getFunction();
-        if (function.getIdentifier() == IOClass.PUTCHAR_ID) {
-            LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "putchar");
-            LLVMValueRef arg = getOnlyElement(functionCall.getArguments()).accept(this);
-            return LLVMBuildCall(builder, func, arg, 1, new BytePointer(""));
-        } else if (function.getIdentifier() == IOClass.GETCHAR_ID) {
-                LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), "getchar");
-                return LLVMBuildCall(builder, func, new PointerPointer(), 0, "");
-        } else {
-            return Utils.cantHappen();
-        }
-    }
-
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function instanceof FUnaryOperator) {
@@ -482,8 +465,6 @@ class LLVMTransformer implements
             return predefinedBinary(functionCall);
         } else if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall);
-        } else if (function.getMemberOf() == IOClass.INSTANCE) {
-            return predefinedIO(functionCall);
         } else {
             return Utils.cantHappen();
         }

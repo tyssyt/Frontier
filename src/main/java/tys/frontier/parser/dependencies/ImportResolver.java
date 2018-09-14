@@ -1,53 +1,45 @@
 package tys.frontier.parser.dependencies;
 
 import tys.frontier.code.module.Module;
-import tys.frontier.modules.io.IOModule;
-import tys.frontier.parser.antlr.FrontierBaseVisitor;
-import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.Parser;
+import tys.frontier.parser.syntaxErrors.CyclicModuleDependency;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxErrors.UnresolvableImport;
+import tys.frontier.style.Style;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class ImportResolver extends FrontierBaseVisitor {
+public class ImportResolver {
 
-    private List<Module> dependencies = new ArrayList<>();
-    private List<UnresolvableImport> unresolvableImports = new ArrayList<>();
+    private Style style;
+    private Map<String, Module> resolvedModules = new HashMap<>();
+    private Set<String> queuedRequests = new HashSet<>();
 
-    public static List<Module> resolve(FrontierParser.FileContext ctx) throws SyntaxErrors {
-        ImportResolver importResolver = new ImportResolver();
-        importResolver.visitFile(ctx);
-        if (!importResolver.unresolvableImports.isEmpty()) {
-            throw SyntaxErrors.create(importResolver.unresolvableImports);
+    public ImportResolver(Style style) {
+        this.style = style;
+    }
+
+    Module requestModule(String name) throws UnresolvableImport, CyclicModuleDependency, SyntaxErrors {
+        Module res = resolvedModules.get(name);
+        if (res == null) {
+            try {
+                if (queuedRequests.contains(name))
+                    throw new CyclicModuleDependency(name);
+                queuedRequests.add(name);
+                res = new Parser(name, style, this).parse(); //TODO are the libs present in the user style, are other files?
+            } catch (IOException e) {
+                throw new UnresolvableImport(name);
+            }
+
+            resolvedModules.put(name, res);
+            queuedRequests.remove(name);
         }
-        return importResolver.dependencies;
+        return res;
     }
 
-    private ImportResolver() {
-    }
-
-    @Override
-    public Object visitImportStatement(FrontierParser.ImportStatementContext ctx) {
-        String moduleName = ctx.TypeIdentifier().getText();
-        try {
-            dependencies.add(resolveImport(moduleName));
-        } catch (UnresolvableImport unresolvableImport) {
-            unresolvableImports.add(unresolvableImport);
-        }
-        return null;
-    }
-
-    @Override
-    public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
-        return null;
-    }
-
-    private Module resolveImport(String name) throws UnresolvableImport {
-        if (name.equals("IO")) { //super advanced resolving methods right here
-            return IOModule.INSTANCE;
-        }
-        throw new UnresolvableImport(name);
-    }
 
 }

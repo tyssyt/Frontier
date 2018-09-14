@@ -1,23 +1,23 @@
 package tys.frontier.passes.lowering;
 
 import tys.frontier.code.FClass;
-import tys.frontier.code.FFile;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.module.Module;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.visitor.FFileVisitor;
+import tys.frontier.code.visitor.FModuleVisitor;
 
 import java.util.List;
 
-public abstract class StatementReplacer implements FFileVisitor {
+public abstract class StatementReplacer implements FModuleVisitor {
 
-    protected FFile currentFile;
+    protected Module currentModule;
     protected FClass currentType;
     protected FFunction currentFunction;
 
     @Override
-    public void enterFile(FFile file) {
-        currentFile = file;
+    public void enterModule(Module module) {
+        currentModule = module;
     }
     @Override
     public void enterType(FClass clazz) {

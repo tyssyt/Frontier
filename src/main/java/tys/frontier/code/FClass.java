@@ -19,10 +19,7 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class FClass implements IdentifierNameable, HasVisibility, StringBuilderToString {
     protected FTypeIdentifier identifier;
@@ -35,7 +32,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     protected Multimap<FFunctionIdentifier, FFunction> instanceFunctions = ArrayListMultimap.create();
     protected Multimap<FFunctionIdentifier, FFunction> staticFunctions = ArrayListMultimap.create();
 
-    protected Set<FClass> subTypes = new HashSet<>();
+    protected Map<FFunction, String> uniqueFunctionNames;
 
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
@@ -214,6 +211,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             }
             instanceFunctions.put(function.getIdentifier(), function);
         }
+        uniqueFunctionNames = null;
     }
 
     public FConstructor getConstructor() {
@@ -231,6 +229,47 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
 
     public void removeConstructor() {
         staticFunctions.removeAll(FConstructor.IDENTIFIER);
+    }
+
+    public Map<FFunction, String> getUniqueFunctionNames() {
+        if (uniqueFunctionNames == null) {
+            uniqueFunctionNames = computeUniqueFunctionNames();
+        }
+        return uniqueFunctionNames;
+    }
+
+    private Map<FFunction, String> computeUniqueFunctionNames() {
+        Map<FFunction, String> res = new HashMap<>();
+        ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create();
+        allFuncs.putAll(instanceFunctions);
+        allFuncs.putAll(staticFunctions);
+        for (Collection<FFunction> coll : allFuncs.asMap().values()) {
+            List<FFunction> list = ((List<FFunction>) coll);
+            String name = list.get(0).getIdentifier().name;
+
+            if (list.size() == 1) {
+                res.put(list.get(0), name);
+                continue;
+            }
+
+            list.sort((f1, f2) -> {
+                int c = f1.getParams().size() - f2.getParams().size();
+                if (c != 0)
+                    return c;
+                for (int i=0; i<f1.getParams().size(); i++) {
+                    String id1 = f1.getParams().get(i).getType().getIdentifier().name;
+                    String id2 = f2.getParams().get(i).getType().getIdentifier().name;
+                    c = id1.compareTo(id2);
+                    if (c != 0)
+                        return c;
+                }
+                return 0;
+            });
+            for (int i=0; i<list.size(); i++) {
+                res.put(list.get(i), name + "#" + i);
+            }
+        }
+        return res;
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {

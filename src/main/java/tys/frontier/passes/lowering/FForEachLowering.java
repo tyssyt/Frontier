@@ -2,13 +2,13 @@ package tys.frontier.passes.lowering;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import tys.frontier.code.FFile;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.literal.FIntNLiteral;
+import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.statement.FBlock;
@@ -26,8 +26,8 @@ public class FForEachLowering extends StatementReplacer {
 
     private FForEachLowering() {}
 
-    public static void lower(FFile file) {
-        file.accept(INSTANCE);
+    public static void lower(Module module) {
+        module.accept(INSTANCE);
     }
 
     @Override

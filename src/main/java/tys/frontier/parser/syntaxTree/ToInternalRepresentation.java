@@ -7,6 +7,7 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
+import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.*;
@@ -25,7 +26,6 @@ import java.util.*;
 
 public class ToInternalRepresentation extends FrontierBaseVisitor {
 
-    private FFile file;
     private SyntaxTreeData treeData;
     private List<Warning> warnings = new ArrayList<>();
     private List<SyntaxError> errors = new ArrayList<>();
@@ -39,15 +39,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private Map<FTypeIdentifier, FClass> knownClasses;
 
 
-    private ToInternalRepresentation(FFile file, SyntaxTreeData syntaxTreeData, Map<FTypeIdentifier, FClass> importedClasses) {
-        this.file = file;
+    private ToInternalRepresentation(SyntaxTreeData syntaxTreeData, Module module) {
         this.treeData = syntaxTreeData;
-        knownClasses = new HashMap<>(importedClasses);
-        knownClasses.putAll(file.getTypes());
+        knownClasses = new HashMap<>(module.getClasses());
+        knownClasses.putAll(module.getImportedClasses());
     }
 
-    public static Pair<List<NeedsTypeCheck>, List<Warning>> toInternal(SyntaxTreeData syntaxTreeData, FFile file, Map<FTypeIdentifier, FClass> importedClasses) throws SyntaxErrors {
-        ToInternalRepresentation visitor = new ToInternalRepresentation(file, syntaxTreeData, importedClasses);
+    public static Pair<List<NeedsTypeCheck>, List<Warning>> toInternal(SyntaxTreeData syntaxTreeData, Module module) throws SyntaxErrors {
+        ToInternalRepresentation visitor = new ToInternalRepresentation(syntaxTreeData, module);
         visitor.generateConstructors();
         visitor.visitFile(syntaxTreeData.root);
         if (!visitor.errors.isEmpty())

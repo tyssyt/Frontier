@@ -2,17 +2,17 @@ package tys.frontier.code.module;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import tys.frontier.code.FClass;
-import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.visitor.ModuleVisitor;
+import tys.frontier.code.visitor.ModuleWalker;
+import tys.frontier.util.StringBuilderToString;
 
 import java.util.*;
 
-public abstract class Module {
+public class Module implements StringBuilderToString {
 
     protected String name;
     protected String version;
@@ -24,8 +24,7 @@ public abstract class Module {
     protected FFunction entryPoint = null;
 
     protected BiMap<FTypeIdentifier, FClass> exportedClasses = HashBiMap.create();
-    protected Multimap<FClass, FField> exportedFields = HashMultimap.create(); //TODO maybe we just don't need these fields
-    protected Multimap<FClass, FFunction> exportedFunctions = HashMultimap.create(); //TODO maybe we just don't need these functions
+    protected BiMap<FTypeIdentifier, FClass> classes = HashBiMap.create();
 
     public Module(String name, String version, String subversion_or_versionSuffix) {
         assert Character.isUpperCase(name.charAt(0));
@@ -50,16 +49,32 @@ public abstract class Module {
         return importedModules;
     }
 
+    public Set<Module> getImportedModulesReflexiveTransitive() {
+        Set<Module> res = new HashSet<>();
+        Queue<Module> todo = new ArrayDeque<>();
+        todo.add(this);
+        while (!todo.isEmpty()) {
+            Module cur = todo.remove();
+            if (res.contains(cur))
+                continue;
+            res.add(cur);
+            todo.addAll(cur.getImportedModules());
+        }
+        return res;
+    }
+
+    public BiMap<FTypeIdentifier, FClass> getClasses() {
+        return classes;
+    }
+
     public Map<FTypeIdentifier, FClass> getExportedClasses() {
         return exportedClasses;
     }
 
-    public Multimap<FClass, FField> getExportedFields() {
-        return exportedFields;
-    }
-
-    public Multimap<FClass, FFunction> getExportedFunctions() {
-        return exportedFunctions;
+    public void addClass(FClass fClass) {
+        classes.put(fClass.getIdentifier(), fClass);
+        if (fClass.getVisibility() == FVisibilityModifier.EXPORT)
+            exportedClasses.put(fClass.getIdentifier(), fClass);
     }
 
     public Optional<FFunction> getEntryPoint() {
@@ -70,14 +85,6 @@ public abstract class Module {
         this.entryPoint = entryPoint;
     }
 
-    public void addDependency (Module dependency) {
-        importedModules.add(dependency);
-    }
-
-    public void addDependencies (Collection<Module> dependencies) {
-        importedModules.addAll(dependencies);
-    }
-
     public Map<FTypeIdentifier, FClass> getImportedClasses () {
         Map<FTypeIdentifier, FClass> res = new LinkedHashMap<>();
         for (Module module : importedModules) {
@@ -86,18 +93,37 @@ public abstract class Module {
         return res;
     }
 
-    protected void addExportedType(FClass toExport) {
-        assert toExport.getVisibility() == FVisibilityModifier.EXPORT;
-        exportedClasses.put(toExport.getIdentifier(), toExport);
-        for (FField field : toExport.getFields()) {
-            if (field.getVisibility() != FVisibilityModifier.EXPORT)
-                continue;
-            exportedFields.put(toExport, field);
+    public <M,C,Fi,Fu,S,E> M accept(ModuleWalker<M,C,Fi,Fu,S,E> walker) {
+        return walker.enterModule(this);
+    }
+
+    public <M,C,Fi,Fu,S,E> M accept(ModuleVisitor<M,C,Fi,Fu,S,E> visitor) {
+        visitor.enterModule(this);
+        List<C> cs = new ArrayList<>(classes.size());
+        for (FClass fClass : classes.values()) {
+            cs.add(fClass.accept(visitor));
         }
-        for (FFunction function : toExport.getFunctions()) {
-            if (function.getVisibility() != FVisibilityModifier.EXPORT)
-                continue;
-            exportedFunctions.put(toExport, function);
+        return visitor.exitModule(this, cs);
+    }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        sb.append("Module: ").append(name).append(" v").append(version);
+        if (subversion_or_versionSuffix != null) {
+            sb.append('.').append(subversion_or_versionSuffix);
         }
+        if (entryPoint != null) {
+            sb.append('\n').append("entry: ").append(entryPoint.headerToString());
+        }
+        for (FClass fClass : classes.values()) {
+            sb.append('\n');
+            fClass.summary(sb);
+        }
+        return sb;
+    }
+
+    @Override
+    public String toString() {
+        return tS();
     }
 }

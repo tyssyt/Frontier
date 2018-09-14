@@ -31,6 +31,7 @@ tokens {
     EXPORT,
     PRIVATE,
     STATIC,
+    NATIVE,
     NEW,
     THIS,
     NULL,
@@ -74,7 +75,7 @@ classDeclaration
     :   visibilityModifier? CLASS TypeIdentifier
         LBRACE
         classDeclaratives
-        (methodDeclaration|fieldDeclaration)*
+        (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
         RBRACE
     ;
 
@@ -95,12 +96,16 @@ visibilityModifier
     |   PRIVATE
     ;
 
+nativeMethodDeclaration
+    :   methodHeader SEMI
+    ;
+
 methodDeclaration
     :   methodHeader block
     ;
 
 methodHeader
-    :   visibilityModifier? modifier? (typeType|VOID) Identifier formalParameters
+    :   visibilityModifier? NATIVE? STATIC? (typeType|VOID) Identifier formalParameters
     ;
 
 fieldDeclaration

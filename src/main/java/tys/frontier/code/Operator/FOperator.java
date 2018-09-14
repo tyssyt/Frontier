@@ -9,7 +9,7 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 public abstract class FOperator extends FFunction {
 
     public FOperator(FFunctionIdentifier identifier, FClass fClass, boolean statik, FClass returnType, ImmutableList<FParameter> params) {
-        super(identifier, fClass, fClass.getVisibility(), statik, returnType, params);
+        super(identifier, fClass, fClass.getVisibility(), false, statik, returnType, params);
     }
 
     @Override

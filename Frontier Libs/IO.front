@@ -1,0 +1,25 @@
+import Native;
+
+export class IO {
+
+    export static void print(int32 chara) {
+        Native.putchar(chara);
+    }
+
+    export static void print(char[] string) {
+        for (char c : string) {
+            print(c);
+        }
+    }
+
+    export static void printLine(char[] string) {
+        for (char c : string) {
+            print(c);
+        }
+        print('\n');
+    }
+
+    export static char getChar() {
+        return (char)Native.getchar();
+    }
+}

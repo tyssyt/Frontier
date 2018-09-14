@@ -1,7 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -28,9 +27,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         ctx.accept(this);
     }
 
-    public static SyntaxTreeData getIdentifiers(FrontierParser.FileContext ctx, FFile file) throws SyntaxErrors {
+    public static SyntaxTreeData getIdentifiers(FrontierParser.FileContext ctx) throws SyntaxErrors {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
-        file.setTypes(ImmutableMap.copyOf(collector.types));
         if (!collector.errors.isEmpty())
             throw SyntaxErrors.create(collector.errors);
         return collector.treeData;
@@ -73,7 +71,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     @Override
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        boolean statik = ParserContextUtils.isStatic(ctx.modifier());
+        boolean natiwe = ctx.NATIVE() != null;
+        boolean statik = ctx.STATIC() != null;
         //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
         FClass returnType;
@@ -91,7 +90,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
         try {
             ImmutableList<FParameter> params = formalParameters(ctx.formalParameters());
-            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, statik, returnType, params);
+            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, natiwe, statik, returnType, params);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
         } catch (SyntaxErrors e) {

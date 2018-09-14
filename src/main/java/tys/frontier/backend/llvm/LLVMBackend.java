@@ -1,8 +1,9 @@
 package tys.frontier.backend.llvm;
 
 import tys.frontier.backend.Backend;
-import tys.frontier.code.FFile;
-import tys.frontier.code.module.FrontierModule;
+import tys.frontier.code.module.Module;
+
+import java.util.Set;
 
 import static org.bytedeco.javacpp.LLVM.*;
 
@@ -38,7 +39,7 @@ public class LLVMBackend implements Backend {
         LLVMInitializeAllAsmPrinters();
     }
 
-    public static void runBackend(FrontierModule fModule, String out, OutputFileType fileType) {
+    public static void runBackend(Module fModule, String out, OutputFileType fileType) {
         //TODO a pass that transformes for each into for
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
@@ -62,13 +63,14 @@ public class LLVMBackend implements Backend {
      * @param fModule the frontier module
      * @return a LLVM Module
      */
-    public static LLVMModule createModule(FrontierModule fModule) {
+    public static LLVMModule createModule(Module fModule) {
         LLVMModule res = new LLVMModule(fModule.getName());
-        res.parseDependencies(fModule);
-        for (FFile file : fModule.getFiles())
-            res.parseTypes(file);
-        for (FFile file : fModule.getFiles())
-            res.parseClassMembers(file);
+        Set<Module> modules = fModule.getImportedModulesReflexiveTransitive();
+        for(Module m : modules) {
+            res.parseTypes(m);
+        }
+        for (Module m : modules)
+            res.parseClassMembers(m);
         res.fillInBodies();
         fModule.getEntryPoint().ifPresent(res::generateMain);
         return res;

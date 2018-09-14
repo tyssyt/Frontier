@@ -9,7 +9,6 @@ import tys.frontier.code.*;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
-import tys.frontier.modules.io.IOClass;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
@@ -145,46 +143,14 @@ public class LLVMModule implements AutoCloseable {
         return fieldIndices.getInt(field);
     }
 
-    public void parseDependencies(Module fModule) {
-        verificationNeeded = true;
-        for (FClass fClass : fModule.getImportedClasses().values()) {
-            //assert !(fClass instanceof FPredefinedClass);
-            if (fClass instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
-                continue;
-            parseClass(fClass);
-        }
-
-        for (FClass fClass : fModule.getImportedClasses().values()) {
-            if (fClass instanceof FPredefinedClass) //TODO this is a hack that needs to stay until we have binary modules
-                continue;
-            for (FField field : fClass.getStaticFields().values()) {
-                LLVMTypeRef type = getLlvmType(field.getType());
-                LLVMAddGlobal(module, type, getStaticFieldName(field));
-            }
-            for (FFunction function : fClass.getFunctions()) {
-                assert !function.isPredefined();
-                addFunctionHeader(function);
-            }
-        }
-
-        //FIXME the hack part:
-        for (FClass clazz : fModule.getImportedClasses().values()) {
-            if (clazz == IOClass.INSTANCE) {
-                LLVMAddFunction(module, "putchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions().get(IOClass.PUTCHAR_ID))));
-                LLVMAddFunction(module, "getchar", getLLVMFunctionType(getOnlyElement(clazz.getStaticFunctions().get(IOClass.GETCHAR_ID))));
-            }
-        }
-
-    }
-
     /**
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
-     * @param file file to parse
+     * @param fModule module to parse
      */
-    public void parseTypes(FFile file) {
+    public void parseTypes(Module fModule) {
         verificationNeeded = true;
-        for (FClass fClass : file.getTypes().values()) {
-            if (fClass instanceof FPredefinedClass)
+        for (FClass fClass : fModule.getClasses().values()) {
+            if (fClass instanceof FPredefinedClass || fClass.getConstructor().getCalledBy().isEmpty())
                 continue;
             parseClass(fClass);
             todoClassBodies.add(fClass);
@@ -201,15 +167,13 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Parses all function Headers found in the file, creating corresponding function prototypes in this module.
-     * Should be called after {@link #parseTypes(FFile)}.
-     * @param file input file
+     * Should be called after {@link #parseTypes(Module)}.
+     * @param fModule input module
      */
-    public void parseClassMembers(FFile file) {
+    public void parseClassMembers(Module fModule) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FClass fClass : file.getTypes().values()) {
-            if (fClass instanceof FPredefinedClass)
-                continue;
+        for (FClass fClass : fModule.getClasses().values()) {
 
             for (FField field : fClass.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?
@@ -225,10 +189,11 @@ public class LLVMModule implements AutoCloseable {
             }
 
             for (FFunction function : fClass.getFunctions()) {
-                if (function.isPredefined() || function.isAbstract())
+                if (function.getCalledBy().isEmpty() && !function.isMain())
                     continue;
                 addFunctionHeader(function);
-                todoFunctionBodies.add(function);
+                if (!function.isNative())
+                    todoFunctionBodies.add(function);
             }
         }
     }
@@ -243,7 +208,7 @@ public class LLVMModule implements AutoCloseable {
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set global attribs
         setGlobalAttribs(res, Linkage.fromVisibility(function.getVisibility()), true);
-        //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work...
+        //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
 
         //set names for all arguments
         int offset = 0;
@@ -279,7 +244,7 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Creates LLVM Code for all parsed Functions and Classes in this module.
-     * Should be called after {@link #parseClassMembers(FFile)}.
+     * Should be called after {@link #parseClassMembers(Module)}.
      */
     public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;

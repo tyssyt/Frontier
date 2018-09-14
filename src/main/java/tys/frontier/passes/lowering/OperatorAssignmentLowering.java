@@ -1,9 +1,9 @@
 package tys.frontier.passes.lowering;
 
-import tys.frontier.code.FFile;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
+import tys.frontier.code.module.Module;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
@@ -18,8 +18,8 @@ public class OperatorAssignmentLowering extends StatementReplacer {
 
     private OperatorAssignmentLowering() {}
 
-    public static void lower(FFile file) {
-        file.accept(INSTANCE);
+    public static void lower(Module module) {
+        module.accept(INSTANCE);
     }
 
 
@@ -38,8 +38,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
             FVariableExpression load = varExp.copy();
             FExpression newValue = new FFunctionCall(op, Arrays.asList(load, assignment.getValue())).castArgsTrusted();
             FVariableExpression store = varExp.copy();
-            FVarAssignment res = new FVarAssignment(store, FVarAssignment.Operator.ASSIGN, newValue).castArgsTrusted();
-            return res;
+            return new FVarAssignment(store, FVarAssignment.Operator.ASSIGN, newValue).castArgsTrusted();
         } else if (varExp instanceof HasInstanceObject) {
             HasInstanceObject oldExp = ((HasInstanceObject) varExp);
             FExpression container = oldExp.getObject();

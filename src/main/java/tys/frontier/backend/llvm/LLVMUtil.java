@@ -43,7 +43,9 @@ public class LLVMUtil {
     }
 
     public static String getFunctionName(FFunction function) {
-        return "fun." + function.getMemberOf().getIdentifier().name + '.' + function.getIdentifier().name;
+        return function.isNative()
+                ? function.getIdentifier().name
+                : "fun." + function.getMemberOf().getIdentifier().name + '.' + function.getMemberOf().getUniqueFunctionNames().get(function);
     }
 
     public static String getConstantStringName(String s) {

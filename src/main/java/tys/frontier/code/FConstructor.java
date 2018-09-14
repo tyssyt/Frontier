@@ -20,7 +20,7 @@ public class FConstructor extends FFunction {
 
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass, modifier, true, fClass, params);
+        super(IDENTIFIER, fClass, modifier, false, true, fClass, params);
     }
 
     public static FConstructor create(FVisibilityModifier modifier, FClass fClass) {
