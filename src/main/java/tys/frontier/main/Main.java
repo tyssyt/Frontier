@@ -7,6 +7,7 @@ import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
+import tys.frontier.util.Utils;
 
 import java.io.IOException;
 
@@ -19,21 +20,24 @@ public class Main {
         try {
             String input = args[0];
             String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
-
-            //FrontEnd
-            Module module = new Parser(input, Style.DEFAULT_STYLE).parse();
-
-            //Lowering Passes
-            for (Module m : module.getImportedModulesReflexiveTransitive()) {
-                FForEachLowering.lower(m);
-                OperatorAssignmentLowering.lower(m);
-            }
-
-            //Backend
-            LLVMBackend.runBackend(module, output, outputType);
+            main(input, output);
         } catch (IOException | SyntaxErrors e) {
-            e.printStackTrace();
+            Utils.handleException(e);
         }
+    }
+
+    public static void main(String input, String output) throws IOException, SyntaxErrors {
+        //FrontEnd
+        Module module = new Parser(input, Style.DEFAULT_STYLE).parse();
+
+        //Lowering Passes
+        for (Module m : module.getImportedModulesReflexiveTransitive()) {
+            FForEachLowering.lower(m);
+            OperatorAssignmentLowering.lower(m);
+        }
+
+        //Backend
+        LLVMBackend.runBackend(module, output, outputType);
     }
 
 }
