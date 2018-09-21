@@ -4,7 +4,6 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
@@ -12,24 +11,41 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeCheck {
+public class FFunctionCall implements FExpression, HasInstanceObject {
     private FExpression object; //null if the function is static
     private FFunction function;
     private List<FExpression> arguments;
 
-    public FFunctionCall(FExpression object, FFunction function, List<FExpression> arguments) {
-        assert (!function.isStatic());
+    private FFunctionCall(FExpression object, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
         this.object = object;
         this.function = function;
         this.arguments = arguments;
+        checkTypes();
         function.addCall(this);
     }
 
-    public FFunctionCall(FFunction function, List<FExpression> arguments) {
+    public static FFunctionCall createInstance(FExpression object, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
+        assert (!function.isStatic());
+        return new FFunctionCall(object, function, arguments);
+    }
+    public static FFunctionCall createInstanceTrusted(FExpression object, FFunction function, List<FExpression> arguments) {
+        try {
+            return createInstance(object, function, arguments);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
+    }
+
+    public static FFunctionCall createStatic(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
         assert (function.isStatic());
-        this.function = function;
-        this.arguments = arguments;
-        function.addCall(this);
+        return new FFunctionCall(null, function, arguments);
+    }
+    public static FFunctionCall createStaticTrusted(FFunction function, List<FExpression> arguments) {
+        try {
+            return createStatic(function, arguments);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     @Override
@@ -60,8 +76,7 @@ public class FFunctionCall implements FExpression, HasInstanceObject, NeedsTypeC
         return function.getType();
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (object != null && object.getType() != function.getMemberOf())
             object = new FImplicitCast(function.getMemberOf(), object);
         List<FClass> paramTypes = function.getSignature().getAllParamTypes();

@@ -12,7 +12,6 @@ import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportFinder;
 import tys.frontier.parser.dependencies.ImportResolver;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
@@ -20,7 +19,6 @@ import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.style.Style;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -109,18 +107,19 @@ public class Parser {
             stage = Stage.IDENTIFIER_CHECKS;
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
-            Pair<List<NeedsTypeCheck>, List<Warning>> typeChecksAndWarnings = ToInternalRepresentation.toInternal(treeData, res);
+            List<Warning> warnings = ToInternalRepresentation.toInternal(treeData, res);
             {
                 Log.info(this, "parsed classes");
                 Log.debug(this, res.toString());
-                if (!typeChecksAndWarnings.b.isEmpty()) {
-                    Log.warning(this, typeChecksAndWarnings.b.toString());
+                if (!warnings.isEmpty()) {
+                    Log.warning(this, warnings.toString());
                 }
             }
 
+            /*
             stage = Stage.CHECKS;
-            NeedsTypeCheck.checkAll(typeChecksAndWarnings.a);
             Log.info(this, "checks passed");
+            */
 
             stage = Stage.FINISHED;
             //search for entry Point

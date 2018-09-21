@@ -6,22 +6,34 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FFor extends FLoop implements NeedsTypeCheck {
+public class FFor extends FLoop {
 
     private FVarDeclaration declaration; //optional
     private FExpression condition; //optional
     private FExpression increment; //optional
 
-    public FFor(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FBlock body) {
+    private FFor(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FBlock body) throws IncompatibleTypes {
         super(nestedDepth, identifier, body);
         this.declaration = declaration;
         this.condition = condition;
         this.increment = increment;
+        checkTypes();
+    }
+
+    public static FFor create(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FBlock body) throws IncompatibleTypes {
+        return new FFor(nestedDepth, identifier, declaration, condition, increment, body);
+    }
+    public static FFor createTrusted(int nestedDepth, FLoopIdentifier identifier, FVarDeclaration declaration, FExpression condition, FExpression increment, FBlock body) {
+        try {
+            return create(nestedDepth, identifier, declaration, condition, increment, body);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public Optional<FVarDeclaration> getDeclaration() {
@@ -50,8 +62,7 @@ public class FFor extends FLoop implements NeedsTypeCheck {
         return walker.visitFor(this);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (condition != null && condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
     }

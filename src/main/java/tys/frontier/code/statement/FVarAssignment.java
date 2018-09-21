@@ -10,8 +10,8 @@ import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -19,17 +19,29 @@ import java.util.Optional;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static tys.frontier.code.Operator.FBinaryOperator.Arith.*;
 
-public class FVarAssignment implements FStatement, NeedsTypeCheck {
+public class FVarAssignment implements FStatement {
 
     private FVariableExpression variableExpression;
     private Operator operator;
     private FExpression value;
 
-    public FVarAssignment(FVariableExpression variable, Operator operator, FExpression value) {
+    private FVarAssignment(FVariableExpression variable, Operator operator, FExpression value) throws IncompatibleTypes {
         this.variableExpression = variable;
         this.operator = operator;
         this.value = value;
         variable.setAccessType(FVariableExpression.AccessType.STORE);
+        checkTypes();
+    }
+
+    public static FVarAssignment create(FVariableExpression variable, Operator operator, FExpression value) throws IncompatibleTypes {
+        return new FVarAssignment(variable, operator, value);
+    }
+    public static FVarAssignment createTrusted(FVariableExpression variable, Operator operator, FExpression value) {
+        try {
+            return create(variable, operator, value);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public FVariableExpression getVariableExpression() {
@@ -60,8 +72,7 @@ public class FVarAssignment implements FStatement, NeedsTypeCheck {
         return walker.visitVarAssignment(this);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (variableExpression.getType() != value.getType())
             value = new FImplicitCast(variableExpression.getType(), value);
     }

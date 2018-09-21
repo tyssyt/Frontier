@@ -57,9 +57,9 @@ public class FConstructor extends FFunction {
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(getMemberOf().getThis());
             FField field = getMemberOf().getInstanceFields().get(param.getIdentifier());
-            statements.add(new FVarAssignment(new FFieldAccess(field, thisExpr).castArgsTrusted(), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
+            statements.add(FVarAssignment.createTrusted(FFieldAccess.createInstanceTrusted(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
-        statements.add(new FReturn(new FLocalVariableExpression(getMemberOf().getThis()), this));
+        statements.add(FReturn.createTrusted(new FLocalVariableExpression(getMemberOf().getThis()), this));
         setBody(FBlock.from(statements));
     }
 }

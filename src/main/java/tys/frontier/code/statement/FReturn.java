@@ -7,19 +7,31 @@ import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FReturn  implements FStatement, NeedsTypeCheck {
+public class FReturn  implements FStatement {
 
     private FExpression expression; //optional, null if function is void
     private FFunction function;
 
-    public FReturn(FExpression expression, FFunction function) {
+    private FReturn(FExpression expression, FFunction function) throws IncompatibleTypes {
         this.expression = expression;
         this.function = function;
+        checkTypes();
+    }
+
+    public static FReturn create(FExpression expression, FFunction function) throws IncompatibleTypes {
+        return new FReturn(expression, function);
+    }
+    public static FReturn createTrusted(FExpression expression, FFunction function) {
+        try {
+            return create(expression, function);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public Optional<FExpression> getExpression() {
@@ -35,8 +47,7 @@ public class FReturn  implements FStatement, NeedsTypeCheck {
         return Optional.of(function);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
         if (function.getType() != expressionType)
             if (expression == null)

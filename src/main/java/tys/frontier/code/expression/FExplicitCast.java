@@ -4,10 +4,9 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FExplicitCast extends FCast implements NeedsTypeCheck {
+public class FExplicitCast extends FCast {
 
     public enum CastType {
         INTEGER_DEMOTION,
@@ -17,8 +16,9 @@ public class FExplicitCast extends FCast implements NeedsTypeCheck {
 
     private CastType castType;
 
-    public FExplicitCast(FClass type, FExpression castedExpression) {
+    public FExplicitCast(FClass type, FExpression castedExpression) throws IncompatibleTypes {
         super(type, castedExpression);
+        castType = getCastType(getType(), getCastedExpression().getType());
     }
 
     public CastType getCastType() {
@@ -33,11 +33,6 @@ public class FExplicitCast extends FCast implements NeedsTypeCheck {
         //TODO downwards float cast
 
         throw new IncompatibleTypes(targetType, baseType);
-    }
-
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
-        castType = getCastType(getType(), getCastedExpression().getType());
     }
 
     @Override

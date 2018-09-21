@@ -5,16 +5,28 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
-public class FWhile extends FLoop implements NeedsTypeCheck {
+public class FWhile extends FLoop {
 
     private FExpression condition;
 
-    public FWhile(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FBlock body) {
+    private FWhile(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FBlock body) throws IncompatibleTypes {
         super(nestedDepth, identifier, body);
         this.condition = condition;
+        checkTypes();
+    }
+
+    public static FWhile create(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FBlock body) throws IncompatibleTypes {
+        return new FWhile(nestedDepth, identifier, condition, body);
+    }
+    public static FWhile createTrusted(int nestedDepth, FLoopIdentifier identifier, FExpression condition, FBlock body) {
+        try {
+            return create(nestedDepth, identifier, condition, body);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public FExpression getCondition() {
@@ -32,8 +44,7 @@ public class FWhile extends FLoop implements NeedsTypeCheck {
         return walker.visitWhile(this);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
     }

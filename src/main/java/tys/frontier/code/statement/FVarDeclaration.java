@@ -5,6 +5,8 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
@@ -13,14 +15,26 @@ public class FVarDeclaration implements FStatement {
     private FLocalVariable var;
     private FVarAssignment assignment; //optional TODO this is messy but works for now
 
-    public FVarDeclaration(FLocalVariable var, FVarAssignment assignment) {
+    private FVarDeclaration(FLocalVariable var, FVarAssignment assignment) {
         this.var = var;
         this.assignment = assignment;
         assert assignment == null || var == assignment.getVariableExpression().getVariable();
     }
 
-    public FVarDeclaration(FLocalVariable var, FExpression initialValue) {
-        this(var, new FVarAssignment(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, initialValue));
+    public static FVarDeclaration create(FLocalVariable var, FVarAssignment assignment) {
+        return new FVarDeclaration(var, assignment);
+    }
+
+    public static FVarDeclaration create(FLocalVariable var, FExpression initialValue) throws IncompatibleTypes {
+        return new FVarDeclaration(var, FVarAssignment.create(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, initialValue));
+    }
+
+    public static FVarDeclaration createTrusted(FLocalVariable var, FExpression initialValue) {
+        try {
+            return create(var, FVarAssignment.create(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, initialValue));
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public FLocalVariable getVar() {

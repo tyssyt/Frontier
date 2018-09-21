@@ -6,21 +6,33 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.loop.FLoop;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FIf implements FStatement, NeedsTypeCheck {
+public class FIf implements FStatement {
 
     private FExpression condition;
     private FBlock then;
     private FBlock elze; //Optional
 
-    public FIf(FExpression condition, FBlock then, FBlock elze) {
+    private FIf(FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
         this.condition = condition;
         this.then = then;
         this.elze = elze;
+        checkTypes();
+    }
+
+    public static FIf create(FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
+        return new FIf(condition, then, elze);
+    }
+    public static FIf createTrusted(FExpression condition, FBlock then, FBlock elze) {
+        try {
+            return create(condition, then, elze);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public FExpression getCondition() {
@@ -57,8 +69,7 @@ public class FIf implements FStatement, NeedsTypeCheck {
         return Optional.empty(); //the obvious way to make this more readable is to reduce it to a one liner with getElse and more Optionals :)
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (condition.getType() != FBool.INSTANCE)
             throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
     }

@@ -36,23 +36,23 @@ public class OperatorAssignmentLowering extends StatementReplacer {
         if (varExp instanceof FLocalVariableExpression || varExp instanceof FFieldAccess && ((FFieldAccess) varExp).isStatic()) {
             FFunction op = assignment.getOperator().getOperator(varExp.getType());
             FVariableExpression load = varExp.copy();
-            FExpression newValue = new FFunctionCall(op, Arrays.asList(load, assignment.getValue())).castArgsTrusted();
+            FExpression newValue = FFunctionCall.createStaticTrusted(op, Arrays.asList(load, assignment.getValue()));
             FVariableExpression store = varExp.copy();
-            return new FVarAssignment(store, FVarAssignment.Operator.ASSIGN, newValue).castArgsTrusted();
+            return FVarAssignment.createTrusted(store, FVarAssignment.Operator.ASSIGN, newValue);
         } else if (varExp instanceof HasInstanceObject) {
             HasInstanceObject oldExp = ((HasInstanceObject) varExp);
             FExpression container = oldExp.getObject();
 
             FLocalVariable containerVar = function.getFreshVariable(container.getType());
-            FVarDeclaration containerDecl = new FVarDeclaration(containerVar, container);
+            FVarDeclaration containerDecl = FVarDeclaration.createTrusted(containerVar, container);
 
             FFunction op = assignment.getOperator().getOperator(varExp.getType());
             HasInstanceObject load = oldExp.copy();
             load.setObject(new FLocalVariableExpression(containerVar));
-            FExpression newValue = new FFunctionCall(op, Arrays.asList(load, assignment.getValue())).castArgsTrusted();
+            FExpression newValue = FFunctionCall.createStaticTrusted(op, Arrays.asList(load, assignment.getValue()));
             HasInstanceObject store = oldExp.copy();
             store.setObject(new FLocalVariableExpression(containerVar));
-            FVarAssignment res = new FVarAssignment((FVariableExpression) store, FVarAssignment.Operator.ASSIGN, newValue).castArgsTrusted();
+            FVarAssignment res = FVarAssignment.createTrusted((FVariableExpression) store, FVarAssignment.Operator.ASSIGN, newValue);
             return FBlock.from(Arrays.asList(containerDecl, res));
         } else {
             return Utils.cantHappen();

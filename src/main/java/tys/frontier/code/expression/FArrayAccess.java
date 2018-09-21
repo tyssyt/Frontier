@@ -6,18 +6,29 @@ import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
-public class FArrayAccess implements FVariableExpression, HasInstanceObject, NeedsTypeCheck {
+public class FArrayAccess implements FVariableExpression, HasInstanceObject {
 
     private FExpression array;
     private FExpression index;
     private AccessType accessType = AccessType.LOAD;
 
-    public FArrayAccess(FExpression array, FExpression index) {
+    private FArrayAccess(FExpression array, FExpression index) {
         this.array = array;
         this.index = index;
+    }
+
+    public static FArrayAccess create(FExpression array, FExpression index) throws IncompatibleTypes {
+        return new FArrayAccess(array, index).checkTypes();
+    }
+    public static FArrayAccess createTrusted(FExpression array, FExpression index) {
+        try {
+            return create(array, index);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     @Override
@@ -71,12 +82,12 @@ public class FArrayAccess implements FVariableExpression, HasInstanceObject, Nee
         return walker.visitArrayAccess(this);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private FArrayAccess checkTypes() throws IncompatibleTypes {
         if (!(index.getType() == FIntN._32))
             index = new FImplicitCast(FIntN._32, index);
         if (!(array.getType() instanceof FArray))
             throw new IncompatibleTypes(FArray.getArrayFrom(array.getType(), 1), array.getType());
+        return this;
     }
 
     @Override

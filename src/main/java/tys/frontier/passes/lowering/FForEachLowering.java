@@ -43,33 +43,33 @@ public class FForEachLowering extends StatementReplacer {
         //first store the array expression in a fresh variable
         FExpression array = forEach.getContainer();
         FLocalVariable arrayVar = function.getFreshVariable(array.getType());
-        FVarDeclaration arrayDecl = new FVarDeclaration(arrayVar, array);
+        FVarDeclaration arrayDecl = FVarDeclaration.createTrusted(arrayVar, array);
 
         //counter declatation
         FLocalVariable counter = function.getFreshVariable(FIntN._32);
         FLiteralExpression zero = new FLiteralExpression(new FIntNLiteral(0, 32));
-        FVarDeclaration decl = new FVarDeclaration(counter, zero);
+        FVarDeclaration decl = FVarDeclaration.createTrusted(counter, zero);
 
         //condition
         FFunction less = Iterables.getOnlyElement(FIntN._32.getStaticFunctions().get(FBinaryOperator.Bool.LESS.identifier));
-        FFieldAccess size = new FFieldAccess(array.getType().getInstanceFields().get(FArray.SIZE), array);
-        FExpression cond = new FFunctionCall(less, ImmutableList.of(new FLocalVariableExpression(counter), size));
+        FFieldAccess size = FFieldAccess.createInstanceTrusted(array.getType().getInstanceFields().get(FArray.SIZE), array);
+        FExpression cond = FFunctionCall.createStaticTrusted(less, ImmutableList.of(new FLocalVariableExpression(counter), size));
 
         //increment
         FFunction inc = Iterables.getOnlyElement(FIntN._32.getInstanceFunctions().get(FUnaryOperator.Pre.INC.identifier));
         FLocalVariableExpression invVarExpre = new FLocalVariableExpression(counter);
         invVarExpre.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE); //TODO setting this here explicitly is ugly, but fine for now
-        FExpression incCall = new FFunctionCall(invVarExpre, inc, ImmutableList.of());
+        FExpression incCall = FFunctionCall.createInstanceTrusted(invVarExpre, inc, ImmutableList.of());
 
         //as first statement of loop accessing the array and storing the result in the iterator var
         FLocalVariable iterator = forEach.getIterator();
-        FArrayAccess arrayAccess = new FArrayAccess(new FLocalVariableExpression(arrayVar), new FLocalVariableExpression(counter));
-        FVarDeclaration itDecl = new FVarDeclaration(iterator, arrayAccess);
+        FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(arrayVar), new FLocalVariableExpression(counter));
+        FVarDeclaration itDecl = FVarDeclaration.createTrusted(iterator, arrayAccess);
 
         FBlock body = FBlock.from(Arrays.asList(itDecl, forEach.getBody()));
 
         //create for and update loop identifier
-        FFor ffor = new FFor(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
+        FFor ffor = FFor.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
         forEach.getIdentifier().setLoop(ffor);
 
         return FBlock.from(Arrays.asList(arrayDecl, ffor));

@@ -6,18 +6,30 @@ import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
-public class FForEach extends FLoop implements NeedsTypeCheck {
+public class FForEach extends FLoop {
 
     private FLocalVariable iterator;
     private FExpression container;
 
-    public FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) {
+    private FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) throws IncompatibleTypes {
         super(nestedDepth, identifier, body);
         this.iterator = iterator;
         this.container = container;
+        checkTypes();
+    }
+
+    public static FForEach create(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) throws IncompatibleTypes {
+        return new FForEach(nestedDepth, identifier, iterator, container, body);
+    }
+    public static FForEach createTrusted(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) {
+        try {
+            return create(nestedDepth, identifier, iterator, container, body);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public FLocalVariable getIterator() {
@@ -39,8 +51,7 @@ public class FForEach extends FLoop implements NeedsTypeCheck {
         return walker.visitForEach(this);
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private void checkTypes() throws IncompatibleTypes {
         if (FArray.getArrayFrom(iterator.getType(), 1) != container.getType())
             throw new IncompatibleTypes(container.getType(), FArray.getArrayFrom(iterator.getType(), 1));
     }

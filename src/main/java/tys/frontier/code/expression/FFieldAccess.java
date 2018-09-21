@@ -5,25 +5,38 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
-import tys.frontier.parser.semanticAnalysis.NeedsTypeCheck;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
-public class FFieldAccess implements FVariableExpression, HasInstanceObject, NeedsTypeCheck {
+public class FFieldAccess implements FVariableExpression, HasInstanceObject {
 
     private final FField field;
     private FExpression object; //null for static fields
     private AccessType accessType = AccessType.LOAD;
 
-    //for instance fields
-    public FFieldAccess(FField field, FExpression object) {
+
+    private FFieldAccess(FField field, FExpression object) {
         this.field = field;
         this.object = object;
     }
 
+    //for instance fields
+    public static FFieldAccess createInstance(FField field, FExpression object) throws IncompatibleTypes {
+        assert !field.isStatic();
+        return new FFieldAccess(field, object).checkTypes();
+    }
+    public static FFieldAccess createInstanceTrusted(FField field, FExpression object) {
+        try {
+            return createInstance(field, object);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
+    }
+
     //for static fields
-    public FFieldAccess(FField field) {
-        this.field = field;
-        this.object = null;
+    public static FFieldAccess createStatic(FField field) {
+        assert field.isStatic();
+        return new FFieldAccess(field, null);
     }
 
     @Override
@@ -66,10 +79,10 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject, Nee
         return field.getType();
     }
 
-    @Override
-    public void checkTypes() throws IncompatibleTypes {
+    private FFieldAccess checkTypes() throws IncompatibleTypes {
         if (object != null && object.getType() != field.getMemberOf())
             object = new FImplicitCast(field.getMemberOf(), object);
+        return this;
     }
 
     @Override
