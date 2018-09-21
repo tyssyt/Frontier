@@ -4,7 +4,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FClass;
-import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -88,14 +87,7 @@ public final class ParserContextUtils {
         return res;
     }
 
-    public static FLocalVariable getVariable (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
-            throws TypeNotFound {
-        FClass type = getType(ctx.typeType(), possibleTypes);
-        FVariableIdentifier identifier = new FVariableIdentifier((ctx.Identifier().getText()));
-        return new FLocalVariable(identifier, type);
-    }
-
-    public static FParameter getParameter (FrontierParser.TypedIdentifierContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
+    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
         FClass type = getType(ctx.typeType(), possibleTypes);
         FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());

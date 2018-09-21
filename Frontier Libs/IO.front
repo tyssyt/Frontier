@@ -7,13 +7,13 @@ export class IO {
     }
 
     export static void print(char[] string) {
-        for (char c : string) {
+        for (c : string) {
             print(c);
         }
     }
 
     export static void printLine(char[] string) {
-        for (char c : string) {
+        for (c : string) {
             print(c);
         }
         print('\n');

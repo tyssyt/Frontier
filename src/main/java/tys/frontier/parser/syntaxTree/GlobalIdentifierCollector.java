@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -109,7 +110,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         List<TypeNotFound> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
-                FParameter param = ParserContextUtils.getParameter(c.typedIdentifier(), types);
+                FParameter param = ParserContextUtils.getParameter(c, types);
                 treeData.parameters.put(c, param);
                 res.add(param);
             } catch (TypeNotFound e) {
@@ -126,8 +127,9 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
-            FLocalVariable var = ParserContextUtils.getVariable(ctx.variableDeclarator().typedIdentifier(), types);
-            FField res = new FField(var.getIdentifier(), var.getType(), currentClass, visibilityModifier, statik);
+            FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+            FClass type = ParserContextUtils.getType(ctx.typeType(), types);
+            FField res = new FField(identifier, type, currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
         } catch (TypeNotFound | IdentifierCollision e) {

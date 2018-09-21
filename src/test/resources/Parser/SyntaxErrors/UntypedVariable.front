@@ -1,5 +1,5 @@
 class A {
     void test () {
-        for (A a : new char[1]){}
+        a;
     }
 }

@@ -88,11 +88,6 @@ public class ParserTest {
         assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
-    public void parseIncompatibleTypesForEach() throws Exception {
-        SyntaxError e = parseSyntaxError("IncompatibleTypesForEach.front");
-        assertTrue(e instanceof IncompatibleTypes);
-    }
-    @Test
     public void parseIncompatibleTypesIf() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesIf.front");
         assertTrue(e instanceof IncompatibleTypes);
@@ -126,6 +121,11 @@ public class ParserTest {
     public void parseUndeclaredVariable() throws Exception {
         SyntaxError e = parseSyntaxError("UndeclaredVariable.front");
         assertTrue(e instanceof UndeclaredVariable);
+    }
+    @Test
+    public void parseUntypedVariable() throws Exception {
+        SyntaxError e = parseSyntaxError("UntypedVariable.front");
+        assertTrue(e instanceof UntypedVariable);
     }
 
 }

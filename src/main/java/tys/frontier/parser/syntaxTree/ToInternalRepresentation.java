@@ -70,19 +70,25 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     //fields
     @Override
     public FField visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
-        FrontierParser.VariableDeclaratorContext c = ctx.variableDeclarator();
         FField field = treeData.fields.get(ctx);
-        if (c.expression() != null) {
+        if (ctx.expression() != null) {
             declaredVars.push();
-            if (!field.isStatic()) {
-                FLocalVariable thiz = currentType.getThis();
-                declaredVars.put(thiz.getIdentifier(), thiz);
-            }
             try {
-                FVarDeclaration decl = visitVariableDeclarator(c);
-                decl.getAssignment().ifPresent(field::setAssignment); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
+                FFieldAccess access;
+                if (field.isStatic()) {
+                    access = FFieldAccess.createStatic(field);
+                } else {
+                    FLocalVariable thiz = currentType.getThis();
+                    declaredVars.put(thiz.getIdentifier(), thiz);
+                    access = FFieldAccess.createInstanceTrusted(field, new FLocalVariableExpression(thiz));
+                }
+                FExpression expression = visitExpression(ctx.expression());
+                FVarAssignment assignment = FVarAssignment.create(access, FVarAssignment.Operator.ASSIGN, expression);
+                field.setAssignment(assignment); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
             } catch (Failed f) {
                 //do not allow Failed to propagate any further
+            } catch (IncompatibleTypes incompatibleTypes) {
+                errors.add(incompatibleTypes);
             } finally {
                 declaredVars.pop();
             }
@@ -118,39 +124,6 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throw new FieldNotFound(identifier);
         checkAccessForbidden(res);
         return res;
-    }
-
-    @Override
-    public FVarDeclaration visitVariableDeclarator(FrontierParser.VariableDeclaratorContext ctx) { //FIXME this is all bullshit and does not work with fields
-        FrontierParser.ExpressionContext c = ctx.expression();
-        FLocalVariable var;
-        try {
-            var = ParserContextUtils.getVariable(ctx.typedIdentifier(), knownClasses);
-        } catch (TypeNotFound e) {
-            errors.add(e);
-            if (c != null)
-                visitExpression(c); //still visit the expression to find more errors
-            throw new Failed();
-        }
-
-        FVarAssignment assign = null;
-        if (c != null) {
-            FExpression val = visitExpression(c);
-            try {
-                assign = FVarAssignment.create(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, val);
-            } catch (IncompatibleTypes incompatibleTypes) {
-                errors.add(incompatibleTypes);
-                throw new Failed();
-            }
-        }
-
-        if (declaredVars.contains(var.getIdentifier())) {
-            errors.add(new TwiceDefinedLocalVariable(var.getIdentifier()));
-            throw new Failed();
-        }
-        declaredVars.put(var.getIdentifier(), var);
-
-        return FVarDeclaration.create(var, assign);
     }
 
     //methods enter & exitArrayAccess
@@ -253,7 +226,64 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FVarDeclaration visitLocalVariableDeclarationStatement(FrontierParser.LocalVariableDeclarationStatementContext ctx) {
-        return visitVariableDeclarator(ctx.variableDeclarator());
+        return visitLocalVariableDeclaration(ctx.localVariableDeclaration());
+    }
+
+    @Override
+    public FVarDeclaration visitLocalVariableDeclaration(FrontierParser.LocalVariableDeclarationContext ctx) {
+        FrontierParser.TypeTypeContext tc = ctx.typeType();
+        FrontierParser.ExpressionContext ec = ctx.expression();
+
+        boolean failed = false;
+
+        //identifier
+        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+        if (declaredVars.contains(identifier)) {
+            errors.add(new TwiceDefinedLocalVariable(identifier));
+            failed = true;
+        }
+
+        //explicit type if present
+        FClass type = null;
+        if (tc != null) {
+            try {
+                type = ParserContextUtils.getType(tc, knownClasses);
+            } catch (TypeNotFound e) {
+                errors.add(e);
+                failed = true;
+            }
+        }
+
+        //expression if present
+        FExpression val = null;
+        if (ec != null) {
+            val = visitExpression(ec);
+
+            if (type == null)
+                type = val.getType();
+        }
+
+        if (type == null) { //type inference failed
+            errors.add(new UntypedVariable(identifier));
+            failed = true;
+        }
+
+        if (failed)
+            throw new Failed();
+
+        FLocalVariable var = new FLocalVariable(identifier, type);
+        FVarAssignment assign = null;
+        if (val != null) {
+            try {
+                assign = FVarAssignment.create(new FLocalVariableExpression(var), FVarAssignment.Operator.ASSIGN, val);
+            } catch (IncompatibleTypes incompatibleTypes) {
+                errors.add(incompatibleTypes);
+                throw new Failed();
+            }
+        }
+
+        declaredVars.put(identifier, var);
+        return FVarDeclaration.create(var, assign);
     }
 
     @Override
@@ -353,9 +383,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FBlock body = null;
             boolean failed = false;
 
-            FrontierParser.VariableDeclaratorContext dc = ctx.variableDeclarator();
+            FrontierParser.LocalVariableDeclarationContext dc = ctx.localVariableDeclaration();
             try {
-                decl = dc == null ? null : visitVariableDeclarator(dc);
+                decl = dc == null ? null : visitLocalVariableDeclaration(dc);
             } catch (Failed f) {
                 failed = true;
             }
@@ -399,40 +429,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         loops.push(identifier);
         declaredVars.push();
         try {
-            FLocalVariable it = null;
-            FExpression container = null;
-            FBlock body = null;
-            boolean failed = false;
-
-            try {
-                it = ParserContextUtils.getVariable(ctx.typedIdentifier(), knownClasses);
-            } catch (TypeNotFound e) {
-                errors.add(e);
-                failed = true;
+            FExpression container = visitExpression(ctx.expression());
+            FVariableIdentifier id = new FVariableIdentifier(ctx.Identifier().getText());
+            FClass varType;
+            if (container.getType() instanceof FArray) {
+                varType = ((FArray) container.getType()).getOneDimensionLess();
+            } else {
+                return Utils.NYI("non array for each");
             }
-
-            try {
-                container = visitExpression(ctx.expression());
-            } catch (Failed f) {
-                failed = true;
-            }
-
-            if (it != null) {
-                declaredVars.put(it.getIdentifier(), it);
-            }
-            try {
-                body = visitBlock(ctx.block());
-            } catch (Failed f) {
-                failed = true;
-            }
-
-            if (failed)
-                throw new Failed();
-
+            FLocalVariable it = new FLocalVariable(id, varType);
+            declaredVars.put(it.getIdentifier(), it);
+            FBlock body = visitBlock(ctx.block());
             return FForEach.create(loops.size(), identifier, it, container, body);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
-            throw new Failed();
         } finally {
             loops.pop();
             declaredVars.pop();

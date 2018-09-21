@@ -109,11 +109,7 @@ methodHeader
     ;
 
 fieldDeclaration
-    :   visibilityModifier? modifier? variableDeclarator SEMI
-    ;
-
-variableDeclarator
-    :   typedIdentifier (DECL expression)?
+    :   visibilityModifier? modifier? typeType Identifier (DECL expression)? SEMI
     ;
 
 formalParameters
@@ -121,14 +117,10 @@ formalParameters
     ;
 
 formalParameter
-    : typedIdentifier (DECL expression)?
+    : typeType Identifier (DECL expression)?
     ;
 
 //types ------------------------------------------------------------------------------------
-
-typedIdentifier
-    :   typeType Identifier
-    ;
 
 typeType
     :   basicType (Array)*
@@ -155,18 +147,19 @@ block
     :   LBRACE statement* RBRACE
     ;
 
+
 statement
-    :   block                                                                           #blockStatement
-    |   variableDeclarator SEMI                                                         #localVariableDeclarationStatement
-    |   ifStatement                                                                     #ifStatement_
-    |   FOR LPAREN variableDeclarator? SEMI expression? SEMI expression2? RPAREN block  #forStatement
-    |   FOR LPAREN typedIdentifier COLON expression RPAREN block                        #foreachStatement
-    |   WHILE LPAREN expression RPAREN block                                            #whileStatement
-    |   RETURN expression? SEMI                                                         #returnStatement
-    |   BREAK SEMI                                                                      #breakStatement
-    |   CONTINUE SEMI                                                                   #continueStatement
-    |   SEMI                                                                            #emptyStatement
-    |   expression SEMI                                                                 #expressionStatement
+    :   block                                                                               #blockStatement
+    |   localVariableDeclaration SEMI                                                       #localVariableDeclarationStatement
+    |   ifStatement                                                                         #ifStatement_
+    |   FOR LPAREN localVariableDeclaration? SEMI expression? SEMI expression2? RPAREN block #forStatement
+    |   FOR LPAREN Identifier COLON expression RPAREN block                                 #foreachStatement
+    |   WHILE LPAREN expression RPAREN block                                                #whileStatement
+    |   RETURN expression? SEMI                                                             #returnStatement
+    |   BREAK SEMI                                                                          #breakStatement
+    |   CONTINUE SEMI                                                                       #continueStatement
+    |   SEMI                                                                                #emptyStatement
+    |   expression SEMI                                                                     #expressionStatement
     |   <assoc=right> expression
         (   ASSIGN
         |   ADD_ASSIGN
@@ -179,6 +172,10 @@ statement
         |   MOD_ASSIGN
         )
         expression SEMI                                                                 #assignment
+    ;
+
+localVariableDeclaration
+    :  typeType? Identifier (DECL expression)?
     ;
 
 ifStatement
