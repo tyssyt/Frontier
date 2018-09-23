@@ -8,6 +8,7 @@ import tys.frontier.code.FFunction;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 public class LLVMUtil {
 
@@ -25,12 +26,10 @@ public class LLVMUtil {
         return res;
     }
 
-    public static <P extends Pointer> PointerPointer<P> createPointerPointer (P first, List<P> rest) {
-        int size = 1 + rest.size();
-        PointerPointer<P> res = new PointerPointer<>(size);
-        res.put(0, first);
-        for (int i=1; i<size; i++)
-            res.put(i, rest.get(i-1));
+    public static <P extends Pointer, L> PointerPointer<P> createPointerPointer (List<L> list, Function<L,P> function) {
+        PointerPointer<P> res = new PointerPointer<>(list.size());
+        for (int i=0; i<list.size(); i++)
+            res.put(i, function.apply(list.get(i)));
         return res;
     }
 
