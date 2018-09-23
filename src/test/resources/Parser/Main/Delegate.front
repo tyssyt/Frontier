@@ -1,0 +1,31 @@
+import IO;
+class A {
+    constructors;
+    char[] member;
+    char[] getString() {
+        return "this is from A";
+    }
+}
+
+class B {
+    constructors;
+    delegate * : A a;
+}
+
+class C {
+    constructors;
+    delegate * : B b;
+}
+
+export class Main {
+    static char[] testCast(A a) {
+        return a.member;
+    }
+
+    export static void main () {
+        C c := new C(new B(new A("castSuccessfull!")));
+        IO.print(c.getString());
+        IO.print(',');
+        IO.print(testCast(c));
+    }
+}

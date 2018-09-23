@@ -49,7 +49,6 @@ public class MainTest {
         String res = doMain("HelloWorld", null);
         assertEquals("Hello, World!\r\n", res); //TODO I wish I could fix whoever adds the \r in there...
     }
-
     @Test
     public void mainEcho() throws IOException, InterruptedException, SyntaxErrors {
         Random r = new Random();
@@ -62,5 +61,10 @@ public class MainTest {
 
         String res = doMain("Echo", test + '\n');
         assertEquals(test, res);
+    }
+    @Test
+    public void mainDelegate() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("Delegate", null);
+        assertEquals("this is from A,castSuccessfull!", res); //TODO I wish I could fix whoever adds the \r in there...
     }
 }
