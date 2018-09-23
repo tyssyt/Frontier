@@ -1,7 +1,6 @@
 package tys.frontier.parser;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.FExpression;
@@ -47,52 +46,27 @@ public class Delegates {
     public void createDelegatedFunctions() throws SyntaxErrors {
         List<SyntaxError> errors = new ArrayList<>();
         Set<FClass> toDo = new HashSet<>(delegateToMap.keySet());
+
         while (!toDo.isEmpty()) {
-            FClass cur = toDo.iterator().next();
-            createDelegatedFunctions(cur, toDo, errors);
-        }
-        if (!errors.isEmpty())
-            throw SyntaxErrors.create(errors);
-    }
-
-    private void createDelegatedFunctions(FClass start, Set<FClass> toDo, List<SyntaxError> errors) throws SyntaxErrors {
-        Stack<FClass> stack = new Stack<>();
-        Set<FClass> cyclicCheck = new HashSet<>();
-        stack.push(start);
-
-        while (!stack.isEmpty()) {
-            FClass cur = stack.peek();
-            if (!toDo.contains(cur)) //we can push dependencies multiple times on the stack, remove if already handled
-                continue;
-
-            if (cyclicCheck.contains(cur)) {
-                FField cause = null;
-                if (delegateToMap.get(cur).size() == 1) //TODO too tired to think of how to get the field if there is more then 1...
-                    cause = Iterables.getOnlyElement(delegateToMap.get(cur)).field;
-                throw SyntaxErrors.create(Collections.singleton(new CyclicDelegate(cause)));
-            }
-            cyclicCheck.add(cur);
-
-            //push dependencies
-            boolean hasDependency=false;
-            for (Delegate d : delegateToMap.get(cur)) {
-                FClass from = d.field.getType();
-                if (toDo.contains(from)) {
-                    stack.push(from);
-                    hasDependency = true;
+            boolean changed = false;
+            classLoop: for (Iterator<FClass> it = toDo.iterator(); it.hasNext();) {
+                FClass cur = it.next();
+                for (Delegate d : delegateToMap.get(cur)) {
+                    FClass from = d.field.getType();
+                    if (toDo.contains(from))
+                        continue classLoop; //dependency found, wait
                 }
-            }
-
-            if (!hasDependency) {//actually create the delegated functions
                 for (Delegate d : delegateToMap.get(cur)) {
                     createDelegatedFunctions(d, errors);
                 }
-                toDo.remove(cur);
-                cyclicCheck.remove(cur);
-                stack.pop();
+                it.remove();
+                changed = true;
             }
+            if (!changed)
+                throw SyntaxErrors.create(Collections.singleton(new CyclicDelegate(null)));
         }
-
+        if (!errors.isEmpty())
+            throw SyntaxErrors.create(errors);
     }
 
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
