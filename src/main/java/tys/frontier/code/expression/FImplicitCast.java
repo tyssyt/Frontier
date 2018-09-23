@@ -11,7 +11,8 @@ public class FImplicitCast extends FCast {
     public enum CastType {
         INTEGER_PROMOTION,
         FLOAT_PROMOTION,
-        INT_TO_FLOAT
+        INT_TO_FLOAT,
+        DELEGATE
     }
 
     private CastType castType;
@@ -27,6 +28,8 @@ public class FImplicitCast extends FCast {
             return CastType.INTEGER_PROMOTION;
         //TODO int to float cast
         //TODO upwards float cast
+        if (baseType.getDelegate(targetType) != null)
+            return CastType.DELEGATE;
 
         throw new IncompatibleTypes(targetType, baseType);
     }

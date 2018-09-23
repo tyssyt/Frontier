@@ -138,6 +138,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
             FrontierParser.NameSelectorContext c = ctx.nameSelector();
             if (c != null) {
+                if (c.STAR() != null && c.BACKSLASH() == null)
+                    currentClass.addDelegate(res);
                 delegates.add(res, ParserContextUtils.getNameSelector(c));
             }
 

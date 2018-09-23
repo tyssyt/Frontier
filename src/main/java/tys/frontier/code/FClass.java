@@ -27,6 +27,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private FVisibilityModifier constructorVisibility;
     protected FLocalVariable thiz;
 
+    private Map<FClass, FField> delegates = new HashMap<>();
     protected BiMap<FVariableIdentifier, FField> instanceFields = HashBiMap.create();
     protected BiMap<FVariableIdentifier, FField> staticFields = HashBiMap.create();
     protected Multimap<FFunctionIdentifier, FFunction> instanceFunctions = ArrayListMultimap.create();
@@ -72,6 +73,37 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     public FLocalVariable getThis() {
         return thiz;
     }
+
+    public void addDelegate(FField field) {
+        assert field.getMemberOf() == this;
+        if (field.getVisibility() != FVisibilityModifier.PRIVATE)
+            delegates.put(field.getType(), field);
+    }
+
+    public List<FField> getDelegate(FClass toType) {
+        List<FField> res = new ArrayList<>();
+        if (getDelegate(toType, res))
+            return res;
+        else
+            return null;
+    }
+
+    private boolean getDelegate(FClass toType, List<FField> res) {
+        FField f = delegates.get(toType);
+        if (f != null) {
+            res.add(f);
+            return true;
+        }
+
+        for (Map.Entry<FClass, FField> entry : delegates.entrySet()) {
+            res.add(entry.getValue());
+            if (entry.getKey().getDelegate(toType, res))
+                return true;
+            res.remove(res.size() - 1);
+        }
+        return false;
+    }
+
 
     public FExpression getDefaultValue() {
         return new FLiteralExpression(FNull.INSTANCE);
