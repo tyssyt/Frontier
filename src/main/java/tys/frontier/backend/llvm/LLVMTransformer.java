@@ -306,6 +306,14 @@ class LLVMTransformer implements
                 return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
             case INT_TO_FLOAT:
                 return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
+            case DELEGATE:
+                List<FField> path = implicitCast.getCastedExpression().getType().getDelegate(implicitCast.getType());
+                LLVMValueRef cur = toCast;
+                for (FField field : path) {
+                    LLVMValueRef addr = LLVMBuildStructGEP(builder, cur, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);
+                    cur = LLVMBuildLoad(builder, addr, "load_delegate_" + field.getIdentifier().name);
+                }
+                return cur;
             default:
                 return Utils.cantHappen();
         }
