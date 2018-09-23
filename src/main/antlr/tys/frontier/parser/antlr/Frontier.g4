@@ -32,6 +32,7 @@ tokens {
     PRIVATE,
     STATIC,
     NATIVE,
+    DELEGATE,
     NEW,
     THIS,
     NULL,
@@ -69,6 +70,7 @@ file
 
 importStatement
     :   IMPORT TypeIdentifier SEMI
+    |   IMPORT
     ;
 
 classDeclaration
@@ -109,7 +111,7 @@ methodHeader
     ;
 
 fieldDeclaration
-    :   visibilityModifier? modifier? typeType Identifier (DECL expression)? SEMI
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType Identifier (DECL expression)? SEMI
     ;
 
 formalParameters
@@ -118,6 +120,12 @@ formalParameters
 
 formalParameter
     : typeType Identifier (DECL expression)?
+    ;
+
+nameSelector
+    :   STAR
+    |   STAR BACKSLASH (Identifier (COMMA Identifier)*)?
+    |   Identifier (COMMA Identifier)*
     ;
 
 //types ------------------------------------------------------------------------------------
@@ -201,7 +209,7 @@ expression
     |   expression (INC|DEC)                                       #postUnaryOp
     |   (NOT|SUB|INC|DEC) expression                               #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
-    |   expression (MUL|DIV|MOD) expression                        #binaryOp
+    |   expression (STAR|DIV|MOD) expression                        #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp
     |   expression (EQUAL|NOTEQUAL) expression                     #binaryOp
@@ -248,6 +256,7 @@ SEMI            : ';';
 COMMA           : ',';
 DOT             : '.';
 COLON           : ':';
+BACKSLASH       : '\\';
 
 
 //Operators-----------------------------------------------------------------
@@ -273,7 +282,7 @@ INC             : '++';
 DEC             : '--';
 ADD             : '+';
 SUB             : '-';
-MUL             : '*';
+STAR            : '*';
 DIV             : '/';
 MOD             : '%';
 

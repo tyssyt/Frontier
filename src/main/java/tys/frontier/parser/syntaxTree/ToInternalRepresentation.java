@@ -181,7 +181,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FBlock visitEmptyStatement(FrontierParser.EmptyStatementContext ctx) {
-        return FBlock.empty();
+        return FBlock.from();
     }
 
     @Override
@@ -331,7 +331,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             if (bc != null) {
                 elze = visitBlock(ctx.block(1));
             } else if (ctx.ifStatement() != null) {
-                elze = FBlock.from(Collections.singletonList(visitIfStatement(ctx.ifStatement())));
+                elze = FBlock.from(visitIfStatement(ctx.ifStatement()));
             }
         } catch (Failed f) {
             failed = true;

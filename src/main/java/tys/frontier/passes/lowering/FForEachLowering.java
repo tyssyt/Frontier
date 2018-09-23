@@ -18,8 +18,6 @@ import tys.frontier.code.statement.loop.FFor;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.util.Utils;
 
-import java.util.Arrays;
-
 public class FForEachLowering extends StatementReplacer {
 
     private static FForEachLowering INSTANCE = new FForEachLowering();
@@ -66,13 +64,13 @@ public class FForEachLowering extends StatementReplacer {
         FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(arrayVar), new FLocalVariableExpression(counter));
         FVarDeclaration itDecl = FVarDeclaration.createTrusted(iterator, arrayAccess);
 
-        FBlock body = FBlock.from(Arrays.asList(itDecl, forEach.getBody()));
+        FBlock body = FBlock.from(itDecl, forEach.getBody());
 
         //create for and update loop identifier
         FFor ffor = FFor.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
         forEach.getIdentifier().setLoop(ffor);
 
-        return FBlock.from(Arrays.asList(arrayDecl, ffor));
+        return FBlock.from(arrayDecl, ffor);
     }
 
 

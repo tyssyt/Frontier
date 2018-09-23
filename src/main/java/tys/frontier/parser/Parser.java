@@ -19,6 +19,7 @@ import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.style.Style;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -95,7 +96,9 @@ public class Parser {
             res.getImportedModules().addAll(ImportFinder.resolve(context, importResolver));
 
             stage = Stage.IDENTIFIER_COLLECTION;
-            SyntaxTreeData treeData = GlobalIdentifierCollector.getIdentifiers(context);
+            Pair<SyntaxTreeData, Delegates> treeDataAndDelegates = GlobalIdentifierCollector.getIdentifiers(context);
+            SyntaxTreeData treeData = treeDataAndDelegates.a;
+            treeDataAndDelegates.b.createDelegatedFunctions();
             for (FClass fClass : treeData.classes.values()) {
                 res.addClass(fClass);
             }
@@ -108,6 +111,7 @@ public class Parser {
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
             List<Warning> warnings = ToInternalRepresentation.toInternal(treeData, res);
+            treeDataAndDelegates.b.createDelegatedFunctionBodies();
             {
                 Log.info(this, "parsed classes");
                 Log.debug(this, res.toString());

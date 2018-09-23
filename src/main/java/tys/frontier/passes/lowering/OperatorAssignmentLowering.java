@@ -53,7 +53,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
             HasInstanceObject store = oldExp.copy();
             store.setObject(new FLocalVariableExpression(containerVar));
             FVarAssignment res = FVarAssignment.createTrusted((FVariableExpression) store, FVarAssignment.Operator.ASSIGN, newValue);
-            return FBlock.from(Arrays.asList(containerDecl, res));
+            return FBlock.from(containerDecl, res);
         } else {
             return Utils.cantHappen();
         }

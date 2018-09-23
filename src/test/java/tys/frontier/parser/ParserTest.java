@@ -60,6 +60,16 @@ public class ParserTest {
         assertTrue(e instanceof StatementOutsideLoop);
     }
     @Test
+    public void parseCyclicDelegate() throws Exception {
+        SyntaxError e = parseSyntaxError("CyclicDelegate.front");
+        assertTrue(e instanceof CyclicDelegate);
+    }
+    @Test
+    public void parseCyclicDelegate2() throws Exception {
+        SyntaxError e = parseSyntaxError("CyclicDelegate2.front");
+        assertTrue(e instanceof CyclicDelegate);
+    }
+    @Test
     public void parseFieldIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("FieldIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);

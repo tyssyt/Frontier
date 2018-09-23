@@ -1,0 +1,9 @@
+class A{
+    delegate * : B b;
+}
+class B{
+    delegate * : C c;
+}
+class C{
+    delegate * : A a;
+}

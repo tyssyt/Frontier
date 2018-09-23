@@ -6,9 +6,11 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.parser.Delegates;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
+import tys.frontier.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +21,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
     private Map<FTypeIdentifier, FClass> types;
     private SyntaxTreeData treeData;
+    private Delegates delegates = new Delegates();
     private List<SyntaxError> errors = new ArrayList<>();
 
     private FClass currentClass;
@@ -28,11 +31,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         ctx.accept(this);
     }
 
-    public static SyntaxTreeData getIdentifiers(FrontierParser.FileContext ctx) throws SyntaxErrors {
+    public static Pair<SyntaxTreeData, Delegates> getIdentifiers(FrontierParser.FileContext ctx) throws SyntaxErrors {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx);
         if (!collector.errors.isEmpty())
             throw SyntaxErrors.create(collector.errors);
-        return collector.treeData;
+        return new Pair<>(collector.treeData, collector.delegates);
     }
 
 
@@ -132,6 +135,12 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
+
+            FrontierParser.NameSelectorContext c = ctx.nameSelector();
+            if (c != null) {
+                delegates.add(res, ParserContextUtils.getNameSelector(c));
+            }
+
         } catch (TypeNotFound | IdentifierCollision e) {
             errors.add(e);
         }

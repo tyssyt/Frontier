@@ -6,14 +6,18 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
+import tys.frontier.code.selector.Selector;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.TypeNotFound;
 import tys.frontier.util.Utils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public final class ParserContextUtils {
@@ -70,6 +74,20 @@ public final class ParserContextUtils {
             throw new TypeNotFound(identifier);
         }
         return type;
+    }
+
+    public static Selector<FFunctionIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
+        if (ctx.STAR() != null && ctx.BACKSLASH() == null)
+            return Selector.all();
+        List<TerminalNode> nodes = ctx.Identifier();
+        List<FFunctionIdentifier> res = new ArrayList<>(nodes.size());
+        for (TerminalNode node : nodes) {
+            res.add(new FFunctionIdentifier(node.getText()));
+        }
+        if (ctx.BACKSLASH() == null)
+            return Selector.in(res);
+        else
+            return Selector.notIn(res);
     }
 
     public static FClass getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)

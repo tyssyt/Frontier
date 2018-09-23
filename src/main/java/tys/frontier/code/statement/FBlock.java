@@ -14,12 +14,20 @@ public class FBlock implements FStatement, List<FStatement> {
 
     private List<FStatement> statements;
 
-    public static FBlock from(List<FStatement> statements) {
-        return new FBlock(statements);
+    public static FBlock from() {
+        return new FBlock(Collections.emptyList());
     }
 
-    public static FBlock empty() {
-        return new FBlock(Collections.emptyList());
+    public static FBlock from(FStatement statement) {
+        return new FBlock(Collections.singletonList(statement));
+    }
+
+    public static FBlock from(FStatement... statements) {
+        return new FBlock(Arrays.asList(statements));
+    }
+
+    public static FBlock from(List<FStatement> statements) {
+        return new FBlock(statements);
     }
 
     private FBlock(List<FStatement> statements) {
