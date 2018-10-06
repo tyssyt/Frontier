@@ -221,21 +221,34 @@ public class LLVMModule implements AutoCloseable {
      * @param function function to add
      * @return Reference to the LLVM function
      */
-    private LLVMValueRef addFunctionHeader(FFunction function) {
+    private LLVMValueRef addFunctionHeader(FFunction function) { //TODO find other good attributes to set for function and parameters
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set global attribs
         setGlobalAttribs(res, Linkage.fromVisibility(function.getVisibility()), true);
         //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
 
-        //set names for all arguments
+        //set names for all arguments, add parameter attributes
+        //TODO we can use dereferenceable<i> instead of nonNull, and use dereferenceable_or_null for all others, but we need the type sizes...
+        LLVMAttributeRef nonNullAttr = getEnumAttribute("nonnull");
         int offset = 0;
         if (!function.isStatic()) {
             LLVMSetValueName(LLVMGetParam(res, 0), "this");
+            LLVMAddAttributeAtIndex(res, 1, nonNullAttr);
             offset = 1;
         }
         List<FParameter> fParams = function.getParams();
-        for (int i=0; i<fParams.size(); i++)
-            LLVMSetValueName(LLVMGetParam(res, i + offset), fParams.get(i).getIdentifier().name);
+        for (int i=0; i<fParams.size(); i++) {
+            FParameter param = fParams.get(i);
+            LLVMSetValueName(LLVMGetParam(res, i + offset), param.getIdentifier().name);
+            if (LLVMGetTypeKind(getLlvmType(param.getType())) == LLVMPointerTypeKind && !(param.getType() instanceof FOptional))
+                LLVMAddAttributeAtIndex(res, 1+i+offset, nonNullAttr);
+        }
+
+        //set return type attributes
+        if (function.getType() != FVoid.INSTANCE
+                && LLVMGetTypeKind(getLlvmType(function.getType())) == LLVMPointerTypeKind
+                && !(function.getType() instanceof FOptional))
+            LLVMAddAttributeAtIndex(res, 0, nonNullAttr);
         return res;
     }
 
@@ -427,6 +440,19 @@ public class LLVMModule implements AutoCloseable {
     private void setGlobalAttribs(LLVMValueRef global, Linkage linkage, boolean unnamedAddr) {
         LLVMSetLinkage(global, linkage.type);
         LLVMSetUnnamedAddr(global, unnamedAddr ? TRUE : FALSE);
+    }
+
+    private LLVMAttributeRef getEnumAttribute(String name) {
+        return getEnumAttribute(name, 0);
+    }
+
+    private LLVMAttributeRef getEnumAttribute(String name, int value) {
+        int id = LLVMGetEnumAttributeKindForName(name, name.length());
+        return LLVMCreateEnumAttribute(context, id, value);
+    }
+
+    private LLVMAttributeRef getStringAttribute(String name, String value) {
+        return LLVMCreateStringAttribute(context, name, name.length(), value, value.length());
     }
 
 }
