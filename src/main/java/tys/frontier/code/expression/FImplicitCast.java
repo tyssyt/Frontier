@@ -1,10 +1,13 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
+import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 public class FImplicitCast extends FCast {
 
@@ -12,7 +15,9 @@ public class FImplicitCast extends FCast {
         INTEGER_PROMOTION,
         FLOAT_PROMOTION,
         INT_TO_FLOAT,
-        DELEGATE
+        TO_OPTIONAL,
+        OPTIONAL_TO_BOOL,
+        DELEGATE,
     }
 
     private CastType castType;
@@ -28,6 +33,10 @@ public class FImplicitCast extends FCast {
             return CastType.INTEGER_PROMOTION;
         //TODO int to float cast
         //TODO upwards float cast
+        if (targetType instanceof FOptional && baseType == ((FOptional) targetType).getBaseType())
+            return CastType.TO_OPTIONAL;
+        if (baseType instanceof FOptional && targetType == FBool.INSTANCE)
+            return CastType.OPTIONAL_TO_BOOL;
         if (baseType.getDelegate(targetType) != null)
             return CastType.DELEGATE;
 
@@ -36,6 +45,25 @@ public class FImplicitCast extends FCast {
 
     public CastType getCastType() {
         return castType;
+    }
+
+    public int getCost() {
+        switch (castType) {
+            case INTEGER_PROMOTION:
+                return ((FIntN) getType()).getN() - ((FIntN) getCastedExpression().getType()).getN();
+            case FLOAT_PROMOTION:
+                return 32;
+            case INT_TO_FLOAT:
+                return 64;
+            case TO_OPTIONAL:
+                return 32;
+            case OPTIONAL_TO_BOOL:
+                return 32;
+            case DELEGATE:
+                return 32*getCastedExpression().getType().getDelegate(getType()).size();
+            default:
+                return Utils.cantHappen();
+        }
     }
 
     @Override

@@ -68,7 +68,7 @@ public class FArrayAccess implements FVariableExpression, HasInstanceObject {
 
     @Override
     public FClass getType() {
-        return ((FArray) array.getType()).getOneDimensionLess();
+        return ((FArray) array.getType()).getBaseType();
     }
 
     @Override
@@ -83,10 +83,9 @@ public class FArrayAccess implements FVariableExpression, HasInstanceObject {
     }
 
     private FArrayAccess checkTypes() throws IncompatibleTypes {
-        if (!(index.getType() == FIntN._32))
-            index = new FImplicitCast(FIntN._32, index);
+        index = index.typeCheck(FIntN._32);
         if (!(array.getType() instanceof FArray))
-            throw new IncompatibleTypes(FArray.getArrayFrom(array.getType(), 1), array.getType());
+            throw new IncompatibleTypes(FArray.getArrayFrom(array.getType()), array.getType());
         return this;
     }
 

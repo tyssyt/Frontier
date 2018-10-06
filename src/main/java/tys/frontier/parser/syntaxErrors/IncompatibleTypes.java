@@ -7,6 +7,12 @@ public class IncompatibleTypes extends SyntaxError {
     public final FClass expected;
     public final FClass actual;
 
+    protected IncompatibleTypes(String message, FClass expected, FClass actual) {
+        super(message);
+        this.expected = expected;
+        this.actual = actual;
+    }
+
     public IncompatibleTypes(FClass expected, FClass actual) {
         super("expected: " + expected.getIdentifier() + ", got: " + actual.getIdentifier());
         this.expected = expected;

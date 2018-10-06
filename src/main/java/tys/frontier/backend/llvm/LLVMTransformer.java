@@ -11,10 +11,7 @@ import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
-import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FBool;
-import tys.frontier.code.predefinedClasses.FIntN;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.ClassWalker;
@@ -306,6 +303,12 @@ class LLVMTransformer implements
                 return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
             case INT_TO_FLOAT:
                 return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
+            case TO_OPTIONAL:
+                if (implicitCast.getCastedExpression().getType() == FBool.INSTANCE)
+                    return LLVMBuildZExt(builder, toCast, targetType, "cast_bool_opt");
+                return toCast;
+            case OPTIONAL_TO_BOOL:
+                return LLVMBuildICmp(builder, LLVMIntNE, toCast, module.getNull((FOptional) implicitCast.getCastedExpression().getType()), "ne");
             case DELEGATE:
                 List<FField> path = implicitCast.getCastedExpression().getType().getDelegate(implicitCast.getType());
                 LLVMValueRef cur = toCast;
@@ -330,6 +333,12 @@ class LLVMTransformer implements
                 return LLVMBuildFPTrunc(builder, toCast, targetType, "cast_float_dem");
             case FLOAT_TO_INT:
                 return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
+            case REMOVE_OPTIONAL:
+                //TODO when we have some sort of runtime errors, check before casting and throw errors (and then see if we can avoid checking next)
+                //return LLVMBuildICmp(builder, LLVMIntEQ, toCast, module.getNull((FOptional) explicitCast.getCastedExpression().getType()), "check_NPE");
+                if (explicitCast.getType() == FBool.INSTANCE)
+                    return LLVMBuildTrunc(builder, toCast, targetType, "bool!");
+                return toCast;
             default:
                 return Utils.cantHappen();
         }
@@ -445,24 +454,21 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedArray (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function.isConstructor()) {
-            if (((FArray) functionCall.getType()).getDepth() == 1) {
-                LLVMTypeRef arrayType = module.getLlvmType(functionCall.getType());
+            LLVMTypeRef arrayType = module.getLlvmType(functionCall.getType());
 
-                //compute the array size
-                LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
+            //compute the array size
+            LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
 
-                LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
-                LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
-                LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
+            LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
+            LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
+            LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
 
-                //store size
-                LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, arrayRef, 0, "sizeAddress");
-                LLVMBuildStore(builder, sizeRef, sizeAddress);
-                return arrayRef;
-            } else
-                return Utils.NYI("multidimensional array constructors");
+            //store size
+            LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, arrayRef, 0, "sizeAddress");
+            LLVMBuildStore(builder, sizeRef, sizeAddress);
+            return arrayRef;
         } else
-            return Utils.NYI(function.headerToString() + "in the backend");
+            return Utils.NYI(function.headerToString() + " in the backend");
     }
 
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
@@ -538,10 +544,8 @@ class LLVMTransformer implements
             return LLVMBuildBitCast(builder, res, type, ""); //cast to get rid of the explicit length in the array type to make LLVM happy
         } else if (literal instanceof  FBoolLiteral) {
             return LLVMConstInt(type, ((FBoolLiteral) literal).value ? TRUE : FALSE, FALSE);
-        } else if (literal == FNull.INSTANCE) {
-            //return LLVMConstNull()
-            //return LLVMConstPointerNull()
-            return Utils.NYI("null");
+        } else if (literal instanceof FNull) {
+            return module.getNull((FOptional)literal.getType());
         } else {
             return Utils.cantHappen();
         }

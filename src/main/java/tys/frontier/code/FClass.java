@@ -1,20 +1,18 @@
 package tys.frontier.code;
 
 import com.google.common.collect.*;
-import com.google.common.primitives.Booleans;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
-import tys.frontier.code.literal.FNull;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
@@ -104,11 +102,6 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return false;
     }
 
-
-    public FExpression getDefaultValue() {
-        return new FLiteralExpression(FNull.INSTANCE);
-    }
-
     public BiMap<FVariableIdentifier, FField> getInstanceFields() {
         return instanceFields;
     }
@@ -118,7 +111,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public Iterable<FField> getFields() {
-        return Iterables.concat(instanceFields.values(), staticFields.values());
+        return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
     }
 
     public Multimap<FFunctionIdentifier, FFunction> getInstanceFunctions() {
@@ -130,99 +123,83 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public Iterable<FFunction> getFunctions() {
-        return Iterables.concat(instanceFunctions.values(), staticFunctions.values());
+        return Iterables.concat(getInstanceFunctions().values(), getStaticFunctions().values());
     }
 
-    /**
-     * Resolves an instance function call.
-     * Will potentially implicitly cast the parameters to find a fitting function
-     * @param identifier the identifier of the function to resolve
-     * @param paramTypes the parameter Types of the function to resolve
-     * @return the resolved function, and a boolean array where the i-th value is true if the i-th parameter must be cast
-     */
-    public Pair<FFunction, boolean[]> resolveInstanceFunction (FFunctionIdentifier identifier, List<FClass> paramTypes) throws FunctionNotFound {
-        return new FunctionResolver(identifier, paramTypes).resolve();
+    public Pair<FFunction, IntIntPair> resolveInstanceFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
+        return new FunctionResolver(identifier, arguments).resolve();
     }
 
-    /**
-     * Resolves a static function call.
-     * Will potentially implicitly cast the parameters to find a fitting function
-     * @param identifier the identifier of the function to resolve
-     * @param paramTypes the parameter Types of the function to resolve
-     * @return the resolved function, and a boolean array where the i-th value is true if the i-th parameter must be cast
-     */
-    public Pair<FFunction, boolean[]> resolveStaticFunction (FFunctionIdentifier identifier, List<FClass> paramTypes) throws FunctionNotFound {
-        return new FunctionResolver(identifier, paramTypes).resolveStatic();
+    public Pair<FFunction, IntIntPair> resolveStaticFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
+        return new FunctionResolver(identifier, arguments).resolveStatic();
     }
 
     private class FunctionResolver {
-        private int bestCost = Integer.MAX_VALUE;
         private FFunction bestFunction;
-        private boolean[] bestCostArray;
+        private IntIntPair bestCosts;
 
         private FFunctionIdentifier identifier;
-        private List<FClass> paramTypes;
+        private List<FExpression> arguments;
 
-        FunctionResolver(FFunctionIdentifier identifier, List<FClass> paramTypes) {
+        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments) {
             this.identifier = identifier;
-            this.paramTypes = paramTypes;
+            this.arguments = arguments;
         }
 
-        Pair<FFunction, boolean[]> resolve () throws FunctionNotFound {
-            for (FFunction f : instanceFunctions.get(identifier)) {
+        Pair<FFunction, IntIntPair> resolve() throws FunctionNotFound {
+            for (FFunction f : getInstanceFunctions().get(identifier)) {
                 try {
-                    boolean[] cost = f.castSignatureFrom(paramTypes);
-                    if (updateCost(cost, f))
-                        return result();
+                    IntIntPair cost = f.castSignatureFrom(arguments);
+                    updateCost(cost, f);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
             }
 
             if (bestFunction == null)
-                throw new FunctionNotFound(identifier, paramTypes);
+                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
             return result();
         }
 
-        Pair<FFunction, boolean[]> resolveStatic () throws FunctionNotFound {
-            for (FFunction f : staticFunctions.get(identifier)) {
+        Pair<FFunction, IntIntPair> resolveStatic() throws FunctionNotFound {
+            for (FFunction f : getStaticFunctions().get(identifier)) {
                 try {
-                    boolean[] cost = f.castSignatureFrom(paramTypes);
-                    if (updateCost(cost, f))
-                        return result();
+                    IntIntPair cost = f.castSignatureFrom(arguments);
+                    updateCost(cost, f);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
             }
 
             if (bestFunction == null)
-                throw new FunctionNotFound(identifier, paramTypes);
+                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
             return result();
         }
 
-        private Pair<FFunction, boolean[]> result() {
-            return new Pair<>(bestFunction, bestCostArray);
+        private Pair<FFunction, IntIntPair> result() {
+            return new Pair<>(bestFunction, bestCosts);
         }
 
-        private boolean updateCost(boolean[] newCostArray, FFunction newFunction) {
-            int newCost = Booleans.countTrue(newCostArray);
-            if (newCost < bestCost) {
-                bestCost = newCost;
+        private void updateCost(IntIntPair newCosts, FFunction newFunction) {
+            if (bestCosts == null) {
+                bestCosts = newCosts;
                 bestFunction = newFunction;
-                bestCostArray = newCostArray;
-                if (bestCost == 0)
-                    return true;
-            } else if (newCost == bestCost) {
+                return;
+            }
+            int res = newCosts.compareTo(bestCosts);
+            if (res < 0) {
+                bestCosts = newCosts;
+                bestFunction = newFunction;
+            } else if (res == 0) {
                 bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
             }
-            return false;
         }
     }
 
     public void addField (FField field) throws IdentifierCollision {
         if (field.isStatic()) {
-            FField old = staticFields.put(field.getIdentifier(), field);
+            FField old = getStaticFields().put(field.getIdentifier(), field);
             if (old != null) {
                 throw new IdentifierCollision(field, old);
             }
         } else {
-            FField old = instanceFields.put(field.getIdentifier(), field);
+            FField old = getInstanceFields().put(field.getIdentifier(), field);
             if (old != null) {
                 throw new IdentifierCollision(field, old);
             }
@@ -231,23 +208,23 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
 
     public void addFunction (FFunction function) throws SignatureCollision {
         if (function.isStatic()) {
-            for (FFunction other : staticFunctions.get(function.getIdentifier())) {
+            for (FFunction other : getStaticFunctions().get(function.getIdentifier())) {
                 if (function.getSignature().collidesWith(other.getSignature()))
                     throw new SignatureCollision(function, other);
             }
-            staticFunctions.put(function.getIdentifier(), function);
+            getStaticFunctions().put(function.getIdentifier(), function);
         } else {
-            for (FFunction other : instanceFunctions.get(function.getIdentifier())) {
+            for (FFunction other : getInstanceFunctions().get(function.getIdentifier())) {
                 if (function.getSignature().collidesWith(other.getSignature()))
                     throw new SignatureCollision(function, other);
             }
-            instanceFunctions.put(function.getIdentifier(), function);
+            getInstanceFunctions().put(function.getIdentifier(), function);
         }
         uniqueFunctionNames = null;
     }
 
     public FConstructor getConstructor() {
-        return (FConstructor) Iterables.getOnlyElement(staticFunctions.get(FConstructor.IDENTIFIER));
+        return (FConstructor) Iterables.getOnlyElement(getStaticFunctions().get(FConstructor.IDENTIFIER));
     }
 
     public void generateConstructor() {
@@ -260,7 +237,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     }
 
     public void removeConstructor() {
-        staticFunctions.removeAll(FConstructor.IDENTIFIER);
+        getStaticFunctions().removeAll(FConstructor.IDENTIFIER);
     }
 
     public Map<FFunction, String> getUniqueFunctionNames() {
@@ -273,8 +250,8 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     private Map<FFunction, String> computeUniqueFunctionNames() {
         Map<FFunction, String> res = new HashMap<>();
         ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create();
-        allFuncs.putAll(instanceFunctions);
-        allFuncs.putAll(staticFunctions);
+        allFuncs.putAll(getInstanceFunctions());
+        allFuncs.putAll(getStaticFunctions());
         for (Collection<FFunction> coll : allFuncs.asMap().values()) {
             List<FFunction> list = ((List<FFunction>) coll);
             String name = list.get(0).getIdentifier().name;
@@ -306,21 +283,21 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
         visitor.enterType(this);
-        List<Fi> fields = new ArrayList<>(this.instanceFunctions.size() + this.staticFields.size());
-        for (FField f : this.instanceFields.values()) {
+        List<Fi> fields = new ArrayList<>(this.getInstanceFields().size() + this.getStaticFields().size());
+        for (FField f : this.getInstanceFields().values()) {
             visitor.enterField(f);
             fields.add(visitor.exitField(f, f.getAssignment().map(assignment -> assignment.accept(visitor))));
         }
-        for (FField f : this.staticFields.values()) {
+        for (FField f : this.getStaticFields().values()) {
             visitor.enterField(f);
             fields.add(visitor.exitField(f, f.getAssignment().map(assignment -> assignment.accept(visitor))));
         }
-        List<Fu> functions = new ArrayList<>(this.instanceFunctions.size() + this.staticFunctions.size());
-        for (FFunction f : this.instanceFunctions.values()) {
+        List<Fu> functions = new ArrayList<>(this.getInstanceFunctions().size() + this.getStaticFunctions().size());
+        for (FFunction f : this.getInstanceFunctions().values()) {
             visitor.enterFunction(f);
             functions.add(visitor.exitFunction(f, f.getBody().map(body -> body.accept(visitor))));
         }
-        for (FFunction f : this.staticFunctions.values()) {
+        for (FFunction f : this.getStaticFunctions().values()) {
             visitor.enterFunction(f);
             functions.add(visitor.exitFunction(f, f.getBody().map(body -> body.accept(visitor))));
         }
@@ -333,17 +310,17 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
 
     public StringBuilder summary(StringBuilder sb) {
         sb.append(headerToString()).append("{\n  ");
-        for (FField field : staticFields.values()) {
+        for (FField field : getStaticFields().values()) {
             field.toString(sb).append(", ");
         }
-        for (FField field : instanceFields.values()) {
+        for (FField field : getInstanceFields().values()) {
             field.toString(sb).append(", ");
         }
         sb.append("\n  ");
-        for (FFunction function : staticFunctions.values()) {
+        for (FFunction function : getStaticFunctions().values()) {
             sb.append(function.headerToString()).append(", ");
         }
-        for (FFunction function : instanceFunctions.values()) {
+        for (FFunction function : getInstanceFunctions().values()) {
             sb.append(function.headerToString()).append(", ");
         }
         return sb.append("\n}");
@@ -352,16 +329,16 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(headerToString()).append("{\n");
-        for (FField field : staticFields.values()) {
+        for (FField field : getStaticFields().values()) {
             field.toString(sb).append('\n');
         }
-        for (FField field : instanceFields.values()) {
+        for (FField field : getInstanceFields().values()) {
             field.toString(sb).append('\n');
         }
-        for (FFunction function : staticFunctions.values()) {
+        for (FFunction function : getStaticFunctions().values()) {
             function.toString(sb).append('\n');
         }
-        for (FFunction function : instanceFunctions.values()) {
+        for (FFunction function : getInstanceFunctions().values()) {
             function.toString(sb).append('\n');
         }
         return sb.append("\n}");

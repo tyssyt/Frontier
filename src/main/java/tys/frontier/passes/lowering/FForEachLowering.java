@@ -18,6 +18,8 @@ import tys.frontier.code.statement.loop.FFor;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.util.Utils;
 
+import java.util.Arrays;
+
 public class FForEachLowering extends StatementReplacer {
 
     private static FForEachLowering INSTANCE = new FForEachLowering();
@@ -45,13 +47,13 @@ public class FForEachLowering extends StatementReplacer {
 
         //counter declatation
         FLocalVariable counter = function.getFreshVariable(FIntN._32);
-        FLiteralExpression zero = new FLiteralExpression(new FIntNLiteral(0, 32));
+        FLiteralExpression zero = new FLiteralExpression(new FIntNLiteral(0));
         FVarDeclaration decl = FVarDeclaration.createTrusted(counter, zero);
 
         //condition
         FFunction less = Iterables.getOnlyElement(FIntN._32.getStaticFunctions().get(FBinaryOperator.Bool.LESS.identifier));
         FFieldAccess size = FFieldAccess.createInstanceTrusted(array.getType().getInstanceFields().get(FArray.SIZE), array);
-        FExpression cond = FFunctionCall.createStaticTrusted(less, ImmutableList.of(new FLocalVariableExpression(counter), size));
+        FExpression cond = FFunctionCall.createStaticTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), size));
 
         //increment
         FFunction inc = Iterables.getOnlyElement(FIntN._32.getInstanceFunctions().get(FUnaryOperator.Pre.INC.identifier));

@@ -3,7 +3,7 @@ import IO;
 export class HelloWorld {
     export static void main() {
         char c := IO.getChar();
-        while(c =!*= '\n') {
+        while(c =!*= "\n") {
             IO.print(c);
             c = IO.getChar();
         }

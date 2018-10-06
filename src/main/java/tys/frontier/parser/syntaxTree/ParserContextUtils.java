@@ -98,10 +98,17 @@ public final class ParserContextUtils {
 
     public static FClass getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
             throws TypeNotFound {
-        FClass res = getBasicType(ctx.basicType(), possibleTypes);
-        int arrayDepth = ctx.Array().size();
-        if (arrayDepth > 0)
-            res = FArray.getArrayFrom(res, arrayDepth);
+        FClass res;
+        FrontierParser.BasicTypeContext basic = ctx.basicType();
+        if (basic != null) {
+            res = getBasicType(basic, possibleTypes);
+        } else {
+            res = getType(ctx.typeType(), possibleTypes);
+            res = FArray.getArrayFrom(res);
+        }
+        if (ctx.QUESTION() != null) {
+            res = FOptional.from(res);
+        }
         return res;
     }
 
@@ -126,28 +133,13 @@ public final class ParserContextUtils {
             String text = token.getText();
             switch (token.getType()) {
                 case FrontierParser.IntegerLiteral:
-                    if (text.endsWith("L") || text.endsWith("l"))
-                        res = new FIntNLiteral(Long.parseLong(text.substring(0,text.length()-1)), 64, text);
-                    else
-                        res = new FIntNLiteral(Integer.parseInt(text), 32, text);
+                    res = new FIntNLiteral(Long.parseLong(text), text);
                     break;
                 case FrontierParser.NULL:
-                    res = FNull.INSTANCE;
+                    res = FNull.UNTYPED;
                     break;
                 case FrontierParser.FloatingPointLiteral:
                     return Utils.NYI("float literals");
-                case FrontierParser.CharacterLiteral:
-                    assert text.charAt(0) == '\'';
-                    assert text.charAt(text.length()-1) == '\'';
-                    if (text.length() == 3)
-                        return new FCharLiteral(text.charAt(1));
-                    else if (text.length() == 4) {
-                        assert text.charAt(1) == '\\';
-                        char escaped = FCharLiteral.escapeLiterals.get(text.charAt(2));
-                        assert escaped != 0;
-                        return new FCharLiteral(escaped);
-                    } else
-                        assert false;
                 case FrontierParser.StringLiteral:
                     assert text.charAt(0) == '\"';
                     assert text.charAt(text.length()-1) == '\"';

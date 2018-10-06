@@ -131,7 +131,8 @@ nameSelector
 //types ------------------------------------------------------------------------------------
 
 typeType
-    :   basicType (Array)*
+    :   typeType Array QUESTION?
+    |   basicType QUESTION?
     ;
 
 basicType
@@ -198,6 +199,7 @@ expressionList
 
 expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
+    |   expression EXMARK                                          #cast
     |   expression LBRACK expression RBRACK                        #arrayAccess
     |   expression DOT Identifier                                  #fieldAccess
     |   typeType DOT Identifier                                    #staticFieldAccess
@@ -205,11 +207,11 @@ expression
     |   typeType DOT Identifier LPAREN expressionList? RPAREN      #staticFunctionCall
     |   Identifier LPAREN expressionList? RPAREN                   #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
-    |   NEW basicType (LBRACK expression RBRACK)+ (Array)*         #newArray
+    |   NEW basicType (LBRACK expression RBRACK)                   #newArray
     |   expression (INC|DEC)                                       #postUnaryOp
     |   (NOT|SUB|INC|DEC) expression                               #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
-    |   expression (STAR|DIV|MOD) expression                        #binaryOp
+    |   expression (STAR|DIV|MOD) expression                       #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp
     |   expression (EQUAL|NOTEQUAL) expression                     #binaryOp
@@ -230,7 +232,6 @@ expression2
 literal
     :   IntegerLiteral
     |   FloatingPointLiteral
-    |   CharacterLiteral
     |   StringLiteral
     |   booleanLiteral
     |   NULL
@@ -244,6 +245,9 @@ booleanLiteral
 //-------------------------------------------------------------------------------------------
 //-------------------------------Lexer-------------------------------------------------------
 //-------------------------------------------------------------------------------------------
+
+QUESTION        : '?';
+EXMARK          : '!';
 
 //Separators--------------------------------------------------------------
 LPAREN          : '(';
@@ -305,35 +309,10 @@ ARROW           : '->';
 
 //Integer Literals--------------------------------------------------------------
 IntegerLiteral
-    :   DecimalIntegerLiteral
-    |   HexIntegerLiteral
-    |   OctalIntegerLiteral
-    |   BinaryIntegerLiteral
-    ;
-
-fragment
-DecimalIntegerLiteral
-    :   DecimalNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-HexIntegerLiteral
-    :   HexNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-OctalIntegerLiteral
-    :   OctalNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-BinaryIntegerLiteral
-    :   BinaryNumeral IntegerTypeSuffix?
-    ;
-
-fragment
-IntegerTypeSuffix
-    :   [lL]
+    :   DecimalNumeral
+    |   HexNumeral
+    |   OctalNumeral
+    |   BinaryNumeral
     ;
 
 fragment
@@ -492,19 +471,6 @@ fragment
 BinaryExponentIndicator
     :   [pP]
     ;
-
-
-//Character Literals--------------------------------------------------------------------
-CharacterLiteral
-    :   '\'' SingleCharacter '\''
-    |   '\'' EscapeSequence '\''
-    ;
-
-fragment
-SingleCharacter
-    :   ~['\\\r\n]
-    ;
-
 
 //String Literals------------------------------------------------------------------------
 StringLiteral

@@ -3,15 +3,18 @@ package tys.frontier.code;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.literal.FNull;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
-import tys.frontier.style.order.Alphabetical;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class FConstructor extends FFunction {
@@ -46,10 +49,21 @@ public class FConstructor extends FFunction {
     }
 
     private static ImmutableList<FParameter> getParameters(FClass fClass) {
-        return fClass.getInstanceFields().values().stream()
-                .sorted(Alphabetical.INSTANCE) //TODO alphabetical order is far from a good choice here, but for now...
-                .map(field -> new FParameter(field.getIdentifier(), field.getType(), field.getType().getDefaultValue()))
-                .collect(ImmutableList.toImmutableList());
+        List<FParameter> arguments = new ArrayList<>();
+        List<FParameter> defaultArguments = new ArrayList<>();
+
+        for (FField field : fClass.getInstanceFields().values()) {
+            if (field.getType() instanceof FOptional) {
+                FExpression defaultValue = new FLiteralExpression(new FNull((FOptional) field.getType()));
+                arguments.add(new FParameter(field.getIdentifier(), field.getType(), defaultValue));
+            } else {
+                arguments.add(new FParameter(field.getIdentifier(), field.getType()));
+            }
+        }
+
+        arguments.sort(Comparator.comparing(o -> o.getIdentifier().name)); //TODO alphabetical order is far from a good choice here, but for now...
+        defaultArguments.sort(Comparator.comparing(o -> o.getIdentifier().name));
+        return new ImmutableList.Builder<FParameter>().addAll(arguments).addAll(defaultArguments).build();
     }
 
     private void generateBody() {

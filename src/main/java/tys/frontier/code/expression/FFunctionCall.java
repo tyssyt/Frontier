@@ -77,12 +77,11 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (object != null && object.getType() != function.getMemberOf())
-            object = new FImplicitCast(function.getMemberOf(), object);
+        if (object != null)
+            object = object.typeCheck(function.getMemberOf());
         List<FClass> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
-            if (arguments.get(i).getType() != paramTypes.get(i))
-                arguments.set(i, new FImplicitCast(paramTypes.get(i), arguments.get(i)));
+            arguments.set(i, arguments.get(i).typeCheck(paramTypes.get(i)));
         }
     }
 

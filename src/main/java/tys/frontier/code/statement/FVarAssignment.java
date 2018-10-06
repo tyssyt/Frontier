@@ -5,7 +5,6 @@ import com.google.common.collect.Iterables;
 import tys.frontier.code.FClass;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.visitor.StatementVisitor;
@@ -73,8 +72,7 @@ public class FVarAssignment implements FStatement {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (variableExpression.getType() != value.getType())
-            value = new FImplicitCast(variableExpression.getType(), value);
+        value = value.typeCheck(variableExpression.getType());
     }
 
     @Override

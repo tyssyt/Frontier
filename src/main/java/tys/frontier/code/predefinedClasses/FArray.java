@@ -9,7 +9,6 @@ import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.util.IntPair;
 import tys.frontier.util.Utils;
 
 import java.util.concurrent.ConcurrentMap;
@@ -18,15 +17,13 @@ public class FArray extends FPredefinedClass {
 
     public static final FVariableIdentifier SIZE = new FVariableIdentifier("size");
     //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<IntPair<FClass>, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+    private static ConcurrentMap<FClass, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     private FClass baseType;
-    private int depth;
 
-    private FArray(FClass baseType, int depth) {
+    private FArray(FClass baseType) {
         super(new FArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;
-        this.depth = depth;
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
         try {
@@ -42,24 +39,11 @@ public class FArray extends FPredefinedClass {
         }
     }
 
-    public static FArray getArrayFrom(FClass baseClass, int arrayDepth) {
-        assert arrayDepth > 0;
-        IntPair<FClass> pair = new IntPair<>(baseClass, arrayDepth);
-        return existing.computeIfAbsent(pair, p -> new FArray(baseClass, arrayDepth));
+    public static FArray getArrayFrom(FClass baseClass) {
+        return existing.computeIfAbsent(baseClass, p -> new FArray(baseClass));
     }
 
     public FClass getBaseType() {
         return baseType;
     }
-
-    public int getDepth() {
-        return depth;
-    }
-
-    public FClass getOneDimensionLess() {
-        if (depth == 1)
-            return baseType;
-        return getArrayFrom(baseType, depth-1);
-    }
-
 }

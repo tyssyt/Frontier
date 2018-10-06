@@ -16,7 +16,7 @@ export class IO {
         for (c : string) {
             print(c);
         }
-        print('\n');
+        print("\n");
     }
 
     export static char getChar() {

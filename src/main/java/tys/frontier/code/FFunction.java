@@ -1,8 +1,10 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FImplicitCast;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
@@ -11,8 +13,10 @@ import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.IntIntPair;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,31 +144,35 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     /**
      * Compares if the source signature could call a method with this signature
-     * @param callingTypes types that want to call this signature
-     * @return an array the same size as the number of parameters. True means the parameter must be cast, false that it must be casted first
+     * @param arguments arguments calling a function of this signature
+     * @return a pair of ints, the first being the number of arguments that had to be casted, and the casting costs (bigger is worse, can be negative)
      * @throws IncompatibleSignatures when the number of parameters differs
      * @throws IncompatibleTypes when a parameter can't be casted
      */
-    public boolean[] castSignatureFrom(List<FClass> callingTypes) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
-        if (callingTypes.size() > params.size()) {
-            throw new IncompatibleSignatures(this.getSignature(), callingTypes);
-        } else if (callingTypes.size() < params.size()) {
+    public IntIntPair castSignatureFrom(List<FExpression> arguments) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
+        if (arguments.size() > params.size()) {
+            throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
+        } else if (arguments.size() < params.size()) {
             //the missing arguments might have default values, in which case the call is still valid
-            if (!params.get(callingTypes.size()).getDefaultValue().isPresent())
-                throw new IncompatibleSignatures(this.getSignature(), callingTypes);
+            if (!params.get(arguments.size()).getDefaultValue().isPresent())
+                throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
         }
-        boolean[] res = new boolean[callingTypes.size()];
-        for (int i = 0; i < callingTypes.size(); i++) {
-            FClass sourceType = callingTypes.get(i);
+
+        int casts = 0;
+        int cost = 0;
+        for (int i = 0; i < arguments.size(); i++) {
+            FExpression argument = arguments.get(i);
             FClass targetType = params.get(i).getType();
-            if (sourceType == targetType)
-                res[i] = false;
-            else {
-                FImplicitCast.getCastType(targetType, sourceType);
-                res[i] = true;
+
+            FExpression cast = argument.typeCheck(targetType);
+            if (cast instanceof FLiteralExpression) {
+                cost -= ((FLiteralExpression) argument).distance(((FLiteralExpression) cast));
+            } else if (cast instanceof FImplicitCast) {
+                casts++;
+                cost += 100* ((FImplicitCast) cast).getCost();
             }
         }
-        return res;
+        return new IntIntPair(casts, cost);
     }
 
     public String headerToString() {

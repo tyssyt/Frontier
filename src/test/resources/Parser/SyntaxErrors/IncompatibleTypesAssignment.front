@@ -3,5 +3,5 @@ class A {
 }
 class B {
     constructors;
-    bool b;
+    bool? b;
 }

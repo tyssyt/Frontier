@@ -3,13 +3,11 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
-import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.identifier.FIntIdentifier;
-import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
+import java.math.BigInteger;
 import java.util.concurrent.ConcurrentMap;
 
 public class FIntN extends FPredefinedClass {
@@ -22,10 +20,6 @@ public class FIntN extends FPredefinedClass {
     public static final FIntN _64 = getIntN(64);
 
     private int n;
-
-    public int getN() {
-        return n;
-    }
 
     private FIntN(int n) {
         super(new FIntIdentifier(n));
@@ -62,8 +56,19 @@ public class FIntN extends FPredefinedClass {
         return existing.computeIfAbsent(n, FIntN::new);
     }
 
-    @Override
-    public FExpression getDefaultValue() {
-        return new FLiteralExpression(new FIntNLiteral(0, n));
+    public int getN() {
+        return n;
+    }
+
+    public BigInteger minValue() {
+        return BigInteger.valueOf(2).pow(n-1).subtract(BigInteger.ONE).negate();
+    }
+
+    public BigInteger maxValue() {
+        return BigInteger.valueOf(2).pow(n-1).subtract(BigInteger.ONE);
+    }
+
+    public boolean canRepresent(BigInteger i) {
+        return maxValue().compareTo(i) >= 0 && i.compareTo(minValue()) >= 0;
     }
 }

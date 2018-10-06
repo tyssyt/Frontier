@@ -1,9 +1,7 @@
 package tys.frontier.code.statement;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FImplicitCast;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
@@ -48,12 +46,12 @@ public class FReturn  implements FStatement {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        FClass expressionType = getExpression().map(FExpression::getType).orElse(FVoid.INSTANCE);
-        if (function.getType() != expressionType)
-            if (expression == null)
+        if (expression == null) {
+            if (function.getType() != FVoid.INSTANCE)
                 throw new IncompatibleTypes(function.getType(), FVoid.INSTANCE);
-            else
-                expression = new FImplicitCast(function.getType(), expression);
+        } else {
+            expression = expression.typeCheck(function.getType());
+        }
     }
 
     @Override

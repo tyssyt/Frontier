@@ -12,6 +12,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +81,7 @@ public class LLVMModule implements AutoCloseable {
 
     private void fillInPredefinedTypes() {
         llvmTypes.put(FBool.INSTANCE, LLVMInt1TypeInContext(context));
+        llvmTypes.put(FOptional.from(FBool.INSTANCE), LLVMIntTypeInContext(context, 2));
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
@@ -108,6 +110,8 @@ public class LLVMModule implements AutoCloseable {
             res = LLVMIntTypeInContext(context, ((FIntN) fClass).getN());
         } else if (fClass instanceof FArray) {
             res = arrayType(((FArray) fClass), 0);
+        } else if (fClass instanceof FOptional) {
+            res = getLlvmType(((FOptional) fClass).getBaseType());
         } else {
             Utils.NYI("LLVM type for: " + fClass);
         }
@@ -117,9 +121,22 @@ public class LLVMModule implements AutoCloseable {
 
     private LLVMTypeRef arrayType(FArray type, int length) {
         PointerPointer<LLVMTypeRef> types = new PointerPointer<>(getLlvmType(FIntN._32),
-                LLVMArrayType(getLlvmType(type.getOneDimensionLess()), length));
+                LLVMArrayType(getLlvmType(type.getBaseType()), length));
         LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
         return LLVMPointerType(baseType, 0);
+    }
+
+    LLVMValueRef getNull(FOptional fOptional) {
+        FClass base = fOptional.getBaseType();
+        if (base == FBool.INSTANCE) {
+            return LLVMConstInt(LLVMIntTypeInContext(context, 2), 2, FALSE);
+        } else if (base instanceof FIntN) {
+            return LLVMConstInt(getLlvmType(base), ((FIntN) base).minValue().subtract(BigInteger.ONE).longValue(), FALSE);
+        } else if (base instanceof FFloat32 || base instanceof FFloat64) {
+            return Utils.NYI("null literal for floating point types");
+        } else {
+            return LLVMConstPointerNull(getLlvmType(base));
+        }
     }
 
     LLVMValueRef constantString(String s) { //TODO needs sync for multithreading

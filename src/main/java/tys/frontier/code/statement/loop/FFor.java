@@ -63,8 +63,8 @@ public class FFor extends FLoop {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (condition != null && condition.getType() != FBool.INSTANCE)
-            throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
+        if (condition != null)
+            condition = condition.typeCheck(FBool.INSTANCE);
     }
 
     @Override

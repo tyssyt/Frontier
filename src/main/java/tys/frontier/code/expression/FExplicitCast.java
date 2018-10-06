@@ -2,6 +2,7 @@ package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -11,7 +12,8 @@ public class FExplicitCast extends FCast {
     public enum CastType {
         INTEGER_DEMOTION,
         FLOAT_DEMOTION,
-        FLOAT_TO_INT
+        FLOAT_TO_INT,
+        REMOVE_OPTIONAL,
     }
 
     private CastType castType;
@@ -31,6 +33,8 @@ public class FExplicitCast extends FCast {
             return CastType.INTEGER_DEMOTION;
         //TODO float to int
         //TODO downwards float cast
+        if (baseType instanceof FOptional && targetType == ((FOptional) baseType).getBaseType())
+            return CastType.REMOVE_OPTIONAL;
 
         throw new IncompatibleTypes(targetType, baseType);
     }

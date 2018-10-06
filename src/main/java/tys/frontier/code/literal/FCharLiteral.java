@@ -4,6 +4,7 @@ import com.koloboke.collect.map.hash.HashCharCharMap;
 import com.koloboke.collect.map.hash.HashCharCharMaps;
 import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.util.Utils;
 
 public class FCharLiteral implements FLiteral {
 
@@ -26,6 +27,18 @@ public class FCharLiteral implements FLiteral {
     @Override
     public FClass getType() {
         return FIntN._8;
+    }
+
+    @Override
+    public int distance(FLiteral other) {
+        if (this==other)
+            return 0;
+        if (other instanceof FStringLiteral) {
+            FStringLiteral o = ((FStringLiteral) other);
+            if (this.getOriginalString().equals(o.getOriginalString()))
+                return -128;
+        }
+        return Utils.cantHappen();
     }
 
     @Override

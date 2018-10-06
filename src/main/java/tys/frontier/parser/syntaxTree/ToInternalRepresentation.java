@@ -9,6 +9,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -433,7 +434,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FVariableIdentifier id = new FVariableIdentifier(ctx.Identifier().getText());
             FClass varType;
             if (container.getType() instanceof FArray) {
-                varType = ((FArray) container.getType()).getOneDimensionLess();
+                varType = ((FArray) container.getType()).getBaseType();
             } else {
                 return Utils.NYI("non array for each");
             }
@@ -595,15 +596,22 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FExplicitCast visitCast(FrontierParser.CastContext ctx) {
-        FClass type;
-        try {
-            type = ParserContextUtils.getType(ctx.typeType(), knownClasses);
-        } catch (TypeNotFound typeNotFound) {
-            errors.add(typeNotFound);
-            visitExpression(ctx.expression());
-            throw new Failed();
-        }
         FExpression castedExpression = visitExpression(ctx.expression());
+        FClass type;
+        if (ctx.EXMARK() != null) {
+            if (!(castedExpression.getType() instanceof FOptional)) {
+                errors.add(new NonOptionalExMark(castedExpression));
+                throw new Failed();
+            }
+            type = ((FOptional) castedExpression.getType()).getBaseType();
+        } else {
+            try {
+                type = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            } catch (TypeNotFound typeNotFound) {
+                errors.add(typeNotFound);
+                throw new Failed();
+            }
+        }
         try {
             return new FExplicitCast(type, castedExpression);
         } catch (IncompatibleTypes incompatibleTypes) {
@@ -674,17 +682,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             throw new Failed();
         return res;
     }
-    private List<FClass> typesFromExpressionList (List<FExpression> exps) {
-        List<FClass> res = new ArrayList<>(exps.size());
-        for (FExpression exp : exps)
-            res.add(exp.getType());
-        return res;
-    }
 
     private FFunctionCall instanceFunctionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, AccessForbidden {
-        List<FClass> paramTypes = typesFromExpressionList(params);
-        FFunction f = object.getType().resolveInstanceFunction(identifier, paramTypes).a;
+        FFunction f = object.getType().resolveInstanceFunction(identifier, params).a;
         checkAccessForbidden(f);
         try {
             return FFunctionCall.createInstance(object, f, params);
@@ -696,8 +697,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFunctionCall staticFunctionCall (FClass clazz, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, AccessForbidden {
-        List<FClass> paramTypes = typesFromExpressionList(params);
-        FFunction f = clazz.resolveStaticFunction(identifier, paramTypes).a;
+        FFunction f = clazz.resolveStaticFunction(identifier, params).a;
         checkAccessForbidden(f);
         try {
             return FFunctionCall.createStatic(f, params);
@@ -777,19 +777,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FFunctionCall visitNewArray(FrontierParser.NewArrayContext ctx) {
-        List<FrontierParser.ExpressionContext> cs = ctx.expression();
-        int initialisedDepth = cs.size();
-        int uninitialisedDepth = ctx.Array().size();
-
-        List<FExpression> params = new ArrayList<>(initialisedDepth);
-        boolean failed = false;
-        for (FrontierParser.ExpressionContext c : cs) {
-            try {
-                params.add(visitExpression(c));
-            } catch (Failed f) {
-                failed = true;
-            }
-        }
+        FExpression expression = visitExpression(ctx.expression());
 
         FClass baseClass;
         try {
@@ -798,12 +786,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(e);
             throw new Failed();
         }
-        if (failed)
-            throw new Failed();
 
-        FArray array = FArray.getArrayFrom(baseClass, initialisedDepth+uninitialisedDepth);
+        FArray array = FArray.getArrayFrom(baseClass);
         try {
-            return staticFunctionCall(array, FConstructor.IDENTIFIER, params);
+            return staticFunctionCall(array, FConstructor.IDENTIFIER, Collections.singletonList(expression));
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();

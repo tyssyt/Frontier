@@ -1,15 +1,15 @@
 package tys.frontier.util;
 
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FVariableIdentifier;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public final class Utils {
     private Utils() {}
@@ -55,5 +55,12 @@ public final class Utils {
         if (input == null)
             input = new FileInputStream(file);
         return input;
+    }
+
+    public static List<FClass> typesFromExpressionList(List<FExpression> exps) {
+        List<FClass> res = new ArrayList<>(exps.size());
+        for (FExpression exp : exps)
+            res.add(exp.getType());
+        return res;
     }
 }

@@ -25,7 +25,7 @@ export class Main {
     export static void main () {
         C c := new C(new B(new A("castSuccessfull!")));
         IO.print(c.getString());
-        IO.print(',');
+        IO.print(",");
         IO.print(testCast(c));
     }
 }

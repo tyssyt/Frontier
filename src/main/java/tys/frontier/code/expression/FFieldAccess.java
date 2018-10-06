@@ -80,8 +80,8 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject {
     }
 
     private FFieldAccess checkTypes() throws IncompatibleTypes {
-        if (object != null && object.getType() != field.getMemberOf())
-            object = new FImplicitCast(field.getMemberOf(), object);
+        if (object != null)
+            object = object.typeCheck(field.getMemberOf());
         return this;
     }
 
