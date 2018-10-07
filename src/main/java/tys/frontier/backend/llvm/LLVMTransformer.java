@@ -118,7 +118,7 @@ class LLVMTransformer implements
         }
 
         //do the body
-        //noinspection ConstantConditions
+        //noinspection ConstantConditions,OptionalGetWithoutIsPresent
         for (FStatement statement : function.getBody().get())
             statement.accept(this);
 
@@ -471,6 +471,50 @@ class LLVMTransformer implements
             return Utils.NYI(function.headerToString() + " in the backend");
     }
 
+    private LLVMValueRef predefinedOptional (FFunctionCall functionCall) { //TODO this is copy & paste from if and call...
+        FFunction function = functionCall.getFunction();
+        FOptional optional = (FOptional) function.getMemberOf();
+        FFunction toCall = optional.getShimMap().inverse().get(function);
+        assert toCall != null;
+
+        LLVMValueRef currentFunction = getCurrentFunction();
+        LLVMBasicBlockRef originalBlock = LLVMGetInsertBlock(builder);
+        LLVMBasicBlockRef thenBlock = LLVMAppendBasicBlock(currentFunction, "call_nonnull");
+        LLVMBasicBlockRef continueBlock = LLVMAppendBasicBlock(currentFunction, "after_call");
+
+        LLVMValueRef This = functionCall.getObject().accept(this);
+        LLVMValueRef If = LLVMBuildICmp(builder, LLVMIntNE, This, module.getNull(optional), "checkNull");
+        LLVMBuildCondBr(builder, If, thenBlock, continueBlock);
+
+        LLVMPositionBuilderAtEnd(builder, thenBlock);
+        //call
+        LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(toCall));
+        List<LLVMValueRef> args = new ArrayList<>();
+        //this parameter
+        args.add(This);
+        //given arguments
+        for (FExpression arg : functionCall.getArguments())
+            args.add(arg.accept(this));
+        List<FParameter> params = toCall.getParams();
+        //use default values for non specified parameters
+        for (int i=functionCall.getArguments().size(); i<params.size(); i++)
+            //noinspection ConstantConditions,OptionalGetWithoutIsPresent
+            args.add(params.get(i).getDefaultValue().get().accept(this));
+        String instructionName = toCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
+        LLVMBuildBr(builder, continueBlock);
+
+        LLVMPositionBuilderAtEnd(builder, continueBlock);
+        if (function.getType() == FVoid.INSTANCE) {
+            return null;
+        } else {
+            LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(function.getType()), "phi_optcall");
+            LLVMAddIncoming(phi, call, thenBlock, 1);
+            LLVMAddIncoming(phi, module.getNull(optional), originalBlock, 1); //TODO not sure if I should return This or null, if any of them helps the optimizer?
+            return phi;
+        }
+    }
+
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
         FFunction function = functionCall.getFunction();
         if (function instanceof FUnaryOperator) {
@@ -479,6 +523,8 @@ class LLVMTransformer implements
             return predefinedBinary(functionCall);
         } else if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall);
+        } else if (function.getMemberOf() instanceof FOptional) {
+            return predefinedOptional(functionCall);
         } else {
             return Utils.cantHappen();
         }
@@ -501,7 +547,7 @@ class LLVMTransformer implements
         List<FParameter> params = function.getParams();
         //use default values for non specified parameters
         for (int i=functionCall.getArguments().size(); i<params.size(); i++)
-            //noinspection ConstantConditions
+            //noinspection ConstantConditions,OptionalGetWithoutIsPresent
             args.add(params.get(i).getDefaultValue().get().accept(this));
         String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
         return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
