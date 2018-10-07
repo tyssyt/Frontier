@@ -40,10 +40,16 @@ public class FForEachLowering extends StatementReplacer {
             Utils.NYI("non array for each");
         }
 
-        //first store the array expression in a fresh variable
+        //first store the array expression in a fresh variable, if necessary
         FExpression array = forEach.getContainer();
-        FLocalVariable arrayVar = function.getFreshVariable(array.getType());
-        FVarDeclaration arrayDecl = FVarDeclaration.createTrusted(arrayVar, array);
+        FLocalVariable arrayVar;
+        FVarDeclaration arrayDecl = null;
+        if (array instanceof FLocalVariableExpression) {
+            arrayVar = ((FLocalVariableExpression) array).getVariable();
+        } else {
+            arrayVar = function.getFreshVariable(array.getType());
+            arrayDecl = FVarDeclaration.createTrusted(arrayVar, array);
+        }
 
         //counter declatation
         FLocalVariable counter = function.getFreshVariable(FIntN._32);
@@ -72,7 +78,10 @@ public class FForEachLowering extends StatementReplacer {
         FFor ffor = FFor.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
         forEach.getIdentifier().setLoop(ffor);
 
-        return FBlock.from(arrayDecl, ffor);
+        if (arrayDecl == null)
+            return ffor;
+        else
+            return FBlock.from(arrayDecl, ffor);
     }
 
 
