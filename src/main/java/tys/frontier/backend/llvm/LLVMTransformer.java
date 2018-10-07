@@ -344,6 +344,20 @@ class LLVMTransformer implements
         }
     }
 
+    @Override
+    public LLVMValueRef visitOptElse(FOptElse optElse) {
+        LLVMValueRef optional = optElse.getOptional().accept(this);
+
+        LLVMValueRef cond = LLVMBuildICmp(builder, LLVMIntNE, optional, module.getNull((FOptional) optElse.getOptional().getType()), "checkNull");
+        LLVMValueRef then;
+        if (optElse.getType() == FBool.INSTANCE) //TODO this is copy paste from explicit cast
+            then = LLVMBuildTrunc(builder, optional, module.getLlvmType(FBool.INSTANCE), "bool!");
+        else
+            then = optional;
+        LLVMValueRef elze = optElse.getElse().accept(this);
+        return LLVMBuildSelect(builder, cond, then, elze, "ifExpr");
+    }
+
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall) {
         LLVMValueRef arg;
         if (functionCall.getFunction().isStatic())
@@ -477,12 +491,13 @@ class LLVMTransformer implements
         FFunction toCall = optional.getShimMap().inverse().get(function);
         assert toCall != null;
 
+        LLVMValueRef This = functionCall.getObject().accept(this);
+
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef originalBlock = LLVMGetInsertBlock(builder);
         LLVMBasicBlockRef thenBlock = LLVMAppendBasicBlock(currentFunction, "call_nonnull");
         LLVMBasicBlockRef continueBlock = LLVMAppendBasicBlock(currentFunction, "after_call");
 
-        LLVMValueRef This = functionCall.getObject().accept(this);
         LLVMValueRef If = LLVMBuildICmp(builder, LLVMIntNE, This, module.getNull(optional), "checkNull");
         LLVMBuildCondBr(builder, If, thenBlock, continueBlock);
 
@@ -510,7 +525,7 @@ class LLVMTransformer implements
         } else {
             LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(function.getType()), "phi_optcall");
             LLVMAddIncoming(phi, call, thenBlock, 1);
-            LLVMAddIncoming(phi, module.getNull(optional), originalBlock, 1); //TODO not sure if I should return This or null, if any of them helps the optimizer?
+            LLVMAddIncoming(phi, module.getNull((FOptional) function.getType()), originalBlock, 1); //TODO not sure if I should return This or null, if any of them helps the optimizer?
             return phi;
         }
     }

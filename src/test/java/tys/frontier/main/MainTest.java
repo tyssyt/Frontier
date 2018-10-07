@@ -65,6 +65,11 @@ public class MainTest {
     @Test
     public void mainDelegate() throws IOException, InterruptedException, SyntaxErrors {
         String res = doMain("Delegate", null);
-        assertEquals("this is from A,castSuccessfull!", res); //TODO I wish I could fix whoever adds the \r in there...
+        assertEquals("this is from A,castSuccessfull!", res);
+    }
+    @Test
+    public void mainOptional() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("Optional", null);
+        assertEquals("null pexists null qexists ", res);
     }
 }

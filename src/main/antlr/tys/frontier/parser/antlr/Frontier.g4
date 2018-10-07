@@ -218,6 +218,7 @@ expression
     |   expression (EQUAL_ID|NOTEQUAL_ID) expression               #binaryOp
     |   expression (EQUAL_CONTAINER|NOTEQUAL_CONTAINER) expression #binaryOp
     |   expression (AAND|AOR|XOR|AND|OR) expression                #binaryOp
+    |   expression COLON expression                                #optionalElse
     |   THIS                                                       #thisExpr
     |   literal                                                    #literalExpr
     |   Identifier                                                 #variableExpr

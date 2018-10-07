@@ -1,0 +1,26 @@
+import IO;
+
+export class Optional {
+
+    char c;
+
+    Optional print() {
+        IO.print(c);
+        return this;
+    }
+
+    char[] get() {
+        return "exists ";
+    }
+
+    export static void main () {
+        Optional? t := null;
+        IO.print(t.print().get() : "null ");
+        t = new Optional("p");
+        IO.print(t.print().get() : "null ");
+        t = null;
+        IO.print(t.print().get() : "null ");
+        t = new Optional("q");
+        IO.print(t.print().get() : "null ");
+    }
+}

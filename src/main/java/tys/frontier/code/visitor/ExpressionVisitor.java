@@ -13,6 +13,7 @@ public interface ExpressionVisitor<Expression>  {
     default void enterFieldAccess(FFieldAccess fieldAccess) {}
     default void enterImplicitCast(FImplicitCast implicitCast) {}
     default void enterExplicitCast(FExplicitCast explicitCast) {}
+    default void enterOptElse(FOptElse optElse) {}
 
     //Bottom Up
     default Expression exitArrayAccess(FArrayAccess arrayAccess, Expression array, Expression index) {
@@ -29,6 +30,7 @@ public interface ExpressionVisitor<Expression>  {
     }
     default Expression exitImplicitCast(FImplicitCast implicitCast, Expression castedExpression) {return null;}
     default Expression exitExplicitCast(FExplicitCast explicitCast, Expression castedExpression) {return null;}
+    default Expression exitOptElse(FOptElse optElse, Expression optional, Expression elze) {return null;}
 
     //Leaves
     default Expression visitLiteral(FLiteralExpression expression) {

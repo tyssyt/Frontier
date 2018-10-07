@@ -37,6 +37,12 @@ public interface ExpressionWalker<Expression> {
         return explicitCast.getCastedExpression().accept(this);
     }
 
+    default Expression visitOptElse(FOptElse optElse) {
+        optElse.getOptional().accept(this);
+        optElse.getElse().accept(this);
+        return null;
+    }
+
     default Expression visitLiteral(FLiteralExpression expression) {
         return null;
     }

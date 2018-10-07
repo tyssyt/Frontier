@@ -521,6 +521,21 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
+    public FOptElse visitOptionalElse(FrontierParser.OptionalElseContext ctx) {
+        try {
+            FExpression optional = visitExpression(ctx.expression(0));
+            FExpression orElse = visitExpression(ctx.expression(1));
+            return FOptElse.create(optional, orElse);
+        } catch (Failed f) {
+            visitExpression(ctx.expression(1));
+            throw f;
+        } catch (IncompatibleTypes incompatibleTypes) {
+            errors.add(incompatibleTypes);
+            throw new Failed();
+        }
+    }
+
+    @Override
     public FFunctionCall visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         FExpression expression = visitExpression(ctx.expression());
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(0).getText() + '_');
