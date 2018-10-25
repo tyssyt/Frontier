@@ -1,5 +1,5 @@
 class A {
     void test () {
-        for(;1;){}
+        for;1;{}
     }
 }

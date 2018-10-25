@@ -161,9 +161,9 @@ statement
     :   block                                                                               #blockStatement
     |   localVariableDeclaration SEMI                                                       #localVariableDeclarationStatement
     |   ifStatement                                                                         #ifStatement_
-    |   FOR LPAREN localVariableDeclaration? SEMI expression? SEMI expression2? RPAREN block #forStatement
-    |   FOR LPAREN Identifier COLON expression RPAREN block                                 #foreachStatement
-    |   WHILE LPAREN expression RPAREN block                                                #whileStatement
+    |   FOR  localVariableDeclaration? SEMI expression? SEMI expression2?  block            #forStatement
+    |   FOR  Identifier COLON expression  block                                             #foreachStatement
+    |   WHILE  expression  block                                                            #whileStatement
     |   RETURN expression? SEMI                                                             #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
     |   CONTINUE SEMI                                                                       #continueStatement
@@ -180,7 +180,7 @@ statement
         |   XOR_ASSIGN
         |   MOD_ASSIGN
         )
-        expression SEMI                                                                 #assignment
+        expression SEMI                                                                     #assignment
     ;
 
 localVariableDeclaration
@@ -188,7 +188,7 @@ localVariableDeclaration
     ;
 
 ifStatement
-    :  IF LPAREN expression RPAREN block (ELSE block | ELSE ifStatement)?
+    :  IF expression block (ELSE block | ELSE ifStatement)?
     ;
 
 // EXPRESSIONS -----------------------------------------------------------------------------
