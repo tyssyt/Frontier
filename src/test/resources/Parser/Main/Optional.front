@@ -1,10 +1,10 @@
 import IO;
 
-export class Optional {
+export class Test {
 
     char c;
 
-    Optional print() {
+    Test print() {
         IO.print(c);
         return this;
     }
@@ -14,13 +14,19 @@ export class Optional {
     }
 
     export static void main () {
-        Optional? t := null;
+        Test? t := null;
+        if t {
+            t!.print();
+        }
         IO.print(t.print().get() : "null ");
-        t = new Optional("p");
+        t = new Test("p");
         IO.print(t.print().get() : "null ");
         t = null;
         IO.print(t.print().get() : "null ");
-        t = new Optional("q");
+        t = new Test("q");
         IO.print(t.print().get() : "null ");
+        if t {
+            t!.print();
+        }
     }
 }

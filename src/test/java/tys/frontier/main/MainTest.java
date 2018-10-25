@@ -70,6 +70,6 @@ public class MainTest {
     @Test
     public void mainOptional() throws IOException, InterruptedException, SyntaxErrors {
         String res = doMain("Optional", null);
-        assertEquals("null pexists null qexists ", res);
+        assertEquals("null pexists null qexists q", res);
     }
 }
