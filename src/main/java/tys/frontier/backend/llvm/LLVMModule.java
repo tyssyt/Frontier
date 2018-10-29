@@ -73,10 +73,10 @@ public class LLVMModule implements AutoCloseable {
         this.context = context;
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
-        fillInPredefinedTypes();
         byteType = LLVMInt8TypeInContext(context);
         bytePointer = LLVMPointerType(byteType, 0);
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
+        fillInPredefinedTypes();
     }
 
     private void fillInPredefinedTypes() {
@@ -85,6 +85,7 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
+        llvmTypes.put(FType.INSTANCE, bytePointer);
     }
 
     @Override
