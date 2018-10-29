@@ -62,6 +62,8 @@ public final class ParserContextUtils {
                 return FFloat32.INSTANCE;
             case FrontierParser.FLOAT64:
                 return FFloat64.INSTANCE;
+            case FrontierParser.TYPE:
+                return FType.INSTANCE;
             default:
                 return Utils.NYI("Frontier type for: " + ((TerminalNode)ctx.children.get(0)).getSymbol().getText());
         }

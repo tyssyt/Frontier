@@ -44,6 +44,7 @@ tokens {
     INT64,
     FLOAT32,
     FLOAT64,
+    TYPE,
     IF,
     THEN,
     ELSE,
@@ -148,6 +149,7 @@ predefinedType
     |   INT64
     |   FLOAT32
     |   FLOAT64
+    |   TYPE
     ;
 
 
@@ -221,6 +223,7 @@ expression
     |   expression COLON expression                                #optionalElse
     |   THIS                                                       #thisExpr
     |   literal                                                    #literalExpr
+    |   typeType                                                   #typeTypeExpr
     |   Identifier                                                 #variableExpr
     ;
 

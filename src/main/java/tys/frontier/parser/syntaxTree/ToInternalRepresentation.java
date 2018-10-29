@@ -811,6 +811,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
+    @Override
+    public FClassExpression visitTypeTypeExpr(FrontierParser.TypeTypeExprContext ctx) {
+        try {
+            FClass fClass = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            return new FClassExpression(fClass);
+        } catch (TypeNotFound typeNotFound) {
+            errors.add(typeNotFound);
+            throw new Failed();
+        }
+    }
+
     //literals
     //TODO move literal processing steps from lexer to parser to properly deal with them
     //TODO store original representation as well to be able to reconstruct it

@@ -26,6 +26,7 @@
         "int64":        "int64",
         "float32":      "float32",
         "float64":      "float64",
+        "type":         "type",
 
         "if":           "if",
         "then":         "then",

@@ -24,6 +24,7 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
     protected FLocalVariable thiz;
+    private Set<FVariable> parameters;
 
     private Map<FClass, FField> delegates = new HashMap<>();
     protected BiMap<FVariableIdentifier, FField> instanceFields = HashBiMap.create();
@@ -34,8 +35,13 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
     protected Map<FFunction, String> uniqueFunctionNames;
 
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
+        this(identifier, visibility, Collections.emptySet());
+    }
+
+    public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility, Set<FVariable> parameters) {
         this.identifier = identifier;
         this.visibility = visibility;
+        this.parameters = parameters;
         thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
     }
 

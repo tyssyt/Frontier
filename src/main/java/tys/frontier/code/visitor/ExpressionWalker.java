@@ -50,4 +50,8 @@ public interface ExpressionWalker<Expression> {
     default Expression visitVariable(FLocalVariableExpression expression) {
         return null;
     }
+
+    default Expression visitClassExpr(FClassExpression expression) {
+        return null;
+    }
 }
