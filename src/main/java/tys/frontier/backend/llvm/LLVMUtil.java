@@ -2,9 +2,9 @@ package tys.frontier.backend.llvm;
 
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +33,7 @@ public class LLVMUtil {
         return res;
     }
 
-    public static String getClassName(FClass clazz) {
+    public static String getClassName(FType clazz) {
         return "class." + clazz.getIdentifier().name;
     }
 

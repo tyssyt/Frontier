@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -22,12 +23,12 @@ public class FImplicitCast extends FCast {
 
     private CastType castType;
 
-    public FImplicitCast(FClass type, FExpression castedExpression) throws IncompatibleTypes {
+    public FImplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
         super(type, castedExpression);
         castType = getCastType(type, castedExpression.getType());
     }
 
-    public static CastType getCastType(FClass targetType, FClass baseType) throws IncompatibleTypes {
+    public static CastType getCastType(FType targetType, FType baseType) throws IncompatibleTypes {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() > ((FIntN) baseType).getN())
             return CastType.INTEGER_PROMOTION;
@@ -37,7 +38,7 @@ public class FImplicitCast extends FCast {
             return CastType.TO_OPTIONAL;
         if (baseType instanceof FOptional && targetType == FBool.INSTANCE)
             return CastType.OPTIONAL_TO_BOOL;
-        if (baseType.getDelegate(targetType) != null)
+        if (baseType instanceof FClass && ((FClass) baseType).getDelegate(targetType) != null)
             return CastType.DELEGATE;
 
         throw new IncompatibleTypes(targetType, baseType);
@@ -60,7 +61,7 @@ public class FImplicitCast extends FCast {
             case OPTIONAL_TO_BOOL:
                 return 32;
             case DELEGATE:
-                return 32*getCastedExpression().getType().getDelegate(getType()).size();
+                return 32* ((FClass) getCastedExpression().getType()).getDelegate(getType()).size();
             default:
                 return Utils.cantHappen();
         }

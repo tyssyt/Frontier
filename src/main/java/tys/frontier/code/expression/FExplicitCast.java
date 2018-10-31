@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -18,7 +18,7 @@ public class FExplicitCast extends FCast {
 
     private CastType castType;
 
-    public FExplicitCast(FClass type, FExpression castedExpression) throws IncompatibleTypes {
+    public FExplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
         super(type, castedExpression);
         castType = getCastType(getType(), getCastedExpression().getType());
     }
@@ -27,7 +27,7 @@ public class FExplicitCast extends FCast {
         return castType;
     }
 
-    public static CastType getCastType(FClass targetType, FClass baseType) throws IncompatibleTypes {
+    public static CastType getCastType(FType targetType, FType baseType) throws IncompatibleTypes {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() < ((FIntN) baseType).getN())
             return CastType.INTEGER_DEMOTION;

@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -72,14 +72,14 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return function.getType();
     }
 
     private void checkTypes() throws IncompatibleTypes {
         if (object != null)
             object = object.typeCheck(function.getMemberOf());
-        List<FClass> paramTypes = function.getSignature().getAllParamTypes();
+        List<FType> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             arguments.set(i, arguments.get(i).typeCheck(paramTypes.get(i)));
         }

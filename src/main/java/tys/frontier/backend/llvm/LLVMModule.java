@@ -58,10 +58,10 @@ public class LLVMModule implements AutoCloseable {
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
-    private Map<FClass, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
-    private List<FClass> todoClassBodies = new ArrayList<>();
+    private List<FType> todoClassBodies = new ArrayList<>();
     private List<FField> todoFieldInitilizers = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
 
@@ -85,7 +85,7 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
-        llvmTypes.put(FType.INSTANCE, bytePointer);
+        llvmTypes.put(FTypeType.INSTANCE, bytePointer);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class LLVMModule implements AutoCloseable {
         return LLVMCreateBuilderInContext(this.context);
     }
 
-    LLVMTypeRef getLlvmType (FClass fClass) { //TODO needs sync for multithreading
+    LLVMTypeRef getLlvmType (FType fClass) { //TODO needs sync for multithreading
         LLVMTypeRef res = llvmTypes.get(fClass);
         if (res != null) {
             return res;
@@ -128,7 +128,7 @@ public class LLVMModule implements AutoCloseable {
     }
 
     LLVMValueRef getNull(FOptional fOptional) {
-        FClass base = fOptional.getBaseType();
+        FType base = fOptional.getBaseType();
         if (base == FBool.INSTANCE) {
             return LLVMConstInt(LLVMIntTypeInContext(context, 2), 2, FALSE);
         } else if (base instanceof FIntN) {
@@ -175,7 +175,7 @@ public class LLVMModule implements AutoCloseable {
         }
     }
 
-    private void parseClass(FClass clazz) {
+    private void parseClass(FType clazz) {
         LLVMTypeRef baseType = LLVMStructCreateNamed(context, getClassName(clazz));
         LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
         LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
@@ -191,7 +191,7 @@ public class LLVMModule implements AutoCloseable {
     public void parseClassMembers(Module fModule) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FClass fClass : fModule.getClasses().values()) {
+        for (FType fClass : fModule.getClasses().values()) {
 
             for (FField field : fClass.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?
@@ -281,7 +281,7 @@ public class LLVMModule implements AutoCloseable {
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
-        for (FClass fClass : todoClassBodies) {
+        for (FType fClass : todoClassBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
             for (FField field : fClass.getInstanceFields().values()) {

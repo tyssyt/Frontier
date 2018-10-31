@@ -1,10 +1,10 @@
 package tys.frontier.util;
 
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FType;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.IdentifierNameable;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,10 +40,10 @@ public final class Utils {
         return in.substring(i);
     }
 
-    public static Map<FVariableIdentifier, FLocalVariable> asMap (Collection<? extends FLocalVariable> vars) {
-        Map<FVariableIdentifier, FLocalVariable> map = new HashMap<>();
-        for (FLocalVariable v : vars) {
-            if (map.put(v.getIdentifier(), v) != null) {
+    public static <T extends IdentifierNameable> Map<FIdentifier, T> asMap (Collection<? extends T> vars) {
+        Map<FIdentifier, T> map = new HashMap<>();
+        for (T t : vars) {
+            if (map.put(t.getIdentifier(), t) != null) {
                 throw new IllegalStateException("Duplicate key");
             }
         }
@@ -57,8 +57,8 @@ public final class Utils {
         return input;
     }
 
-    public static List<FClass> typesFromExpressionList(List<FExpression> exps) {
-        List<FClass> res = new ArrayList<>(exps.size());
+    public static List<FType> typesFromExpressionList(List<FExpression> exps) {
+        List<FType> res = new ArrayList<>(exps.size());
         for (FExpression exp : exps)
             res.add(exp.getType());
         return res;

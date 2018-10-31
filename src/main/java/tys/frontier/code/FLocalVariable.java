@@ -1,10 +1,10 @@
 package tys.frontier.code;
 
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 public class FLocalVariable extends FVariable {
 
-    public FLocalVariable(FVariableIdentifier identifier, FClass type) {
+    public FLocalVariable(FIdentifier identifier, FType type) {
         super(identifier, type);
     }
 }

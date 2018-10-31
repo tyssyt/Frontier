@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -21,18 +21,18 @@ public class FLiteralExpression implements FExpression {
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return literal.getType();
     }
 
     @Override
-    public FExpression typeCheck(FClass targetType) throws IncompatibleTypes {
+    public FExpression typeCheck(FType targetType) throws IncompatibleTypes {
         if (this.getType() == targetType)
             return this;
         if (literal == FNull.UNTYPED && targetType instanceof FOptional) { //handle null literals here becasue they are special
             return new FLiteralExpression(new FNull((FOptional) targetType));
         }
-        FClass specifyTarget;
+        FType specifyTarget;
         if (targetType instanceof FOptional)
             specifyTarget = ((FOptional) targetType).getBaseType();
         else

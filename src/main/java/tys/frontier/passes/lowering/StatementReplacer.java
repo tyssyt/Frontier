@@ -1,7 +1,7 @@
 package tys.frontier.passes.lowering;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
@@ -12,7 +12,7 @@ import java.util.List;
 public abstract class StatementReplacer implements FModuleVisitor {
 
     protected Module currentModule;
-    protected FClass currentType;
+    protected FType currentType;
     protected FFunction currentFunction;
 
     @Override
@@ -20,7 +20,7 @@ public abstract class StatementReplacer implements FModuleVisitor {
         currentModule = module;
     }
     @Override
-    public void enterType(FClass clazz) {
+    public void enterType(FType clazz) {
         currentType = clazz;
     }
 

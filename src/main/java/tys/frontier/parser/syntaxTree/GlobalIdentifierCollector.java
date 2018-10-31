@@ -3,8 +3,8 @@ package tys.frontier.parser.syntaxTree;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.Delegates;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor {
 
-    private Map<FTypeIdentifier, FClass> types;
+    private Map<FTypeIdentifier, FType> types;
     private SyntaxTreeData treeData;
     private Delegates delegates = new Delegates();
     private List<SyntaxError> errors = new ArrayList<>();
@@ -44,13 +44,19 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         types = new HashMap<>(ctx.children.size());
         //first go over all types once to know their names
         for (FrontierParser.ClassDeclarationContext c : ctx.classDeclaration()) {
-            FClass fClass = ParserContextUtils.getClass(c);
-            FClass old = types.put(fClass.getIdentifier(), fClass);
-            if (old != null) {
-                errors.add(new IdentifierCollision(fClass, old));
+            try {
+                FClass fClass = ParserContextUtils.getClass(c);
+                FType old = types.put(fClass.getIdentifier(), fClass);
+                if (old != null) {
+                    errors.add(new IdentifierCollision(fClass, old));
+                }
+                treeData.classes.put(c, fClass);
+            } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
+                errors.add(twiceDefinedLocalVariable);
             }
-            treeData.classes.put(c, fClass);
         }
+        if (!errors.isEmpty())
+            return null;
         //in the second pass find fields and methods headers
         return visitChildren(ctx);
     }
@@ -58,10 +64,18 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
+        for (Map.Entry<FTypeIdentifier, FTypeVariable> entry : currentClass.getParameters().entrySet()) {
+            FType old = types.put(entry.getKey(), entry.getValue());
+            if (old != null)
+                errors.add(new IdentifierCollision(old, entry.getValue()));
+        }
         try {
             visitChildren(ctx);
             return null;
         } finally {
+            for (FTypeIdentifier identifier : currentClass.getParameters().keySet()) {
+                types.remove(identifier);
+            }
             currentClass = null;
         }
     }
@@ -79,11 +93,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         boolean statik = ctx.STATIC() != null;
         //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
-        FClass returnType;
+        FType returnType;
         if (c != null) {
             try {
                 returnType = ParserContextUtils.getType(c, types);
-            } catch (TypeNotFound e) {
+            } catch (SyntaxError e) {
                 errors.add(e);
                 returnType = FVoid.INSTANCE; //TODO do we want some error related type here?
             }
@@ -91,7 +105,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             returnType = FVoid.INSTANCE;
         }
 
-        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.Identifier().getText());
+        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         try {
             ImmutableList<FParameter> params = formalParameters(ctx.formalParameters());
             FFunction res = new FFunction(identifier, currentClass, visibilityModifier, natiwe, statik, returnType, params);
@@ -110,13 +124,13 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         if (cs.isEmpty())
             return ImmutableList.of();
         ImmutableList.Builder<FParameter> res = ImmutableList.builder();
-        List<TypeNotFound> errors = new ArrayList<>();
+        List<SyntaxError> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
                 FParameter param = ParserContextUtils.getParameter(c, types);
                 treeData.parameters.put(c, param);
                 res.add(param);
-            } catch (TypeNotFound e) {
+            } catch (SyntaxError e) {
                 errors.add(e);
             }
         }
@@ -130,8 +144,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
-            FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
-            FClass type = ParserContextUtils.getType(ctx.typeType(), types);
+            FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+            FType type = ParserContextUtils.getType(ctx.typeType(), types);
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
@@ -143,7 +157,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
                 delegates.add(res, ParserContextUtils.getNameSelector(c));
             }
 
-        } catch (TypeNotFound | IdentifierCollision e) {
+        } catch (SyntaxError e) {
             errors.add(e);
         }
         return null;

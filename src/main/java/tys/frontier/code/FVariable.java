@@ -1,25 +1,29 @@
 package tys.frontier.code;
 
+import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.predefinedClasses.FTypeType;
 
 public abstract class FVariable implements IdentifierNameable, Typed {
 
-    private FVariableIdentifier identifier;
-    private FClass type;
+    private FIdentifier identifier;
+    private FType type;
 
-    public FVariable(FVariableIdentifier identifier, FClass type) {
+    public FVariable(FIdentifier identifier, FType type) {
+        assert identifier instanceof FVariableIdentifier || (type == FTypeType.INSTANCE && identifier instanceof FTypeIdentifier); //TODO I thinks this should be a syntax error instead of an assertion
         this.identifier = identifier;
         this.type = type;
     }
 
     @Override
-    public FVariableIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return identifier;
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return type;
     }
 

@@ -2,7 +2,7 @@ package tys.frontier.code.statement;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
@@ -107,7 +107,7 @@ public class FVarAssignment implements FStatement {
             identifier = id;
         }
 
-        public FBinaryOperator getOperator(FClass type) {
+        public FBinaryOperator getOperator(FType type) {
             return (FBinaryOperator) Iterables.getOnlyElement(type.getStaticFunctions().get(identifier));
         }
 

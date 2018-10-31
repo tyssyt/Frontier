@@ -2,10 +2,7 @@ package tys.frontier.backend.llvm;
 
 import com.google.common.collect.Iterables;
 import org.bytedeco.javacpp.PointerPointer;
-import tys.frontier.code.FField;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FParameter;
+import tys.frontier.code.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
@@ -310,7 +307,7 @@ class LLVMTransformer implements
             case OPTIONAL_TO_BOOL:
                 return LLVMBuildICmp(builder, LLVMIntNE, toCast, module.getNull((FOptional) implicitCast.getCastedExpression().getType()), "ne");
             case DELEGATE:
-                List<FField> path = implicitCast.getCastedExpression().getType().getDelegate(implicitCast.getType());
+                List<FField> path = ((FClass) implicitCast.getCastedExpression().getType()).getDelegate(implicitCast.getType());
                 LLVMValueRef cur = toCast;
                 for (FField field : path) {
                     LLVMValueRef addr = LLVMBuildStructGEP(builder, cur, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);

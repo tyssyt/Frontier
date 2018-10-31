@@ -1,12 +1,12 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 public class TwiceDefinedLocalVariable extends SyntaxError {
 
-    public final FVariableIdentifier identifier;
+    public final FIdentifier identifier;
 
-    public TwiceDefinedLocalVariable(FVariableIdentifier identifier) {
+    public TwiceDefinedLocalVariable(FIdentifier identifier) {
         super(identifier.toString());
         this.identifier = identifier;
     }

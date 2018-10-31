@@ -4,8 +4,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -20,12 +20,12 @@ import java.util.concurrent.ConcurrentMap;
 public class FOptional extends FPredefinedClass {
 
     //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<FClass, FOptional> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+    private static ConcurrentMap<FType, FOptional> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
-    private FClass baseType;
+    private FType baseType;
     private BiMap<FFunction, FFunction> shimMap = HashBiMap.create();
 
-    private FOptional(FClass baseType) {
+    private FOptional(FType baseType) {
         super(new FOptionalIdentifier(baseType.getIdentifier()));
         assert !(baseType instanceof FOptional);
         assert baseType != FVoid.INSTANCE;
@@ -45,7 +45,7 @@ public class FOptional extends FPredefinedClass {
     }
 
     private FFunction createShim(FFunction original) {
-        FClass returnType = original.getType() == FVoid.INSTANCE ? FVoid.INSTANCE : FOptional.fromFlatten(original.getType());
+        FType returnType = original.getType() == FVoid.INSTANCE ? FVoid.INSTANCE : FOptional.fromFlatten(original.getType());
         return new FFunction(original.getIdentifier(), this, original.getVisibility(), true, false,
                 returnType, ImmutableList.copyOf(original.getParams())) {
             {predefined = true;}
@@ -57,17 +57,17 @@ public class FOptional extends FPredefinedClass {
         };
     }
 
-    public static FOptional from(FClass baseClass) {
+    public static FOptional from(FType baseClass) {
         return existing.computeIfAbsent(baseClass, p -> new FOptional(baseClass));
     }
 
-    public static FOptional fromFlatten(FClass baseClass) {
+    public static FOptional fromFlatten(FType baseClass) {
         if (baseClass instanceof FOptional)
             return (FOptional) baseClass;
         return existing.computeIfAbsent(baseClass, p -> new FOptional(baseClass));
     }
 
-    public FClass getBaseType() {
+    public FType getBaseType() {
         return baseType;
     }
 }

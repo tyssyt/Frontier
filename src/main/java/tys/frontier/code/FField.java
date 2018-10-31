@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.util.StringBuilderToString;
 
@@ -12,8 +13,9 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
     private boolean statik;
     private FVarAssignment assignment; //TODO this assignment should not be part of the field, but part of an implicit static initializer block or some similar concept
 
-    public FField(FVariableIdentifier identifier, FClass type, FClass memberOf, FVisibilityModifier visibility, boolean statik) {
+    public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik) {
         super(identifier, type);
+        assert type != FTypeType.INSTANCE;
         this.memberOf = memberOf;
         this.visibility = visibility;
         this.statik = statik;

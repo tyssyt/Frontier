@@ -1,25 +1,26 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FClass;
-import tys.frontier.code.predefinedClasses.FType;
+import tys.frontier.code.FType;
+import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 
 public class FClassExpression implements FExpression {
 
-    private FClass fClass;
+    private FType fClass;
 
-    public FClassExpression(FClass fClass) {
+    public FClassExpression(FType fClass) {
         this.fClass = fClass;
     }
 
-    public FClass getfClass() {
+    public FType getfClass() {
         return fClass;
     }
 
     @Override
     public FClass getType() {
-        return FType.INSTANCE;
+        return FTypeType.INSTANCE;
     }
 
     @Override

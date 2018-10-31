@@ -7,10 +7,10 @@ import java.util.Stack;
 
 public class MapStack<K,V> implements Iterable<Map<K,V>> {
 
-    private Stack<Map<K,V>> stack = new Stack<>();
+    private Stack<Map<K, V>> stack = new Stack<>();
 
     //basic stack operations
-    public Map<K,V> push(Map<K,V> map) {
+    public Map<K,V> push(Map<K, V> map) {
         return stack.push(map);
     }
 

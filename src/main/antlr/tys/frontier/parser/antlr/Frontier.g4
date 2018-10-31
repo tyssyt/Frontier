@@ -75,11 +75,15 @@ importStatement
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier
+    :   visibilityModifier? CLASS TypeIdentifier typeParameters?
         LBRACE
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
         RBRACE
+    ;
+
+typeParameters
+    :   LT TypeIdentifier (COMMA TypeIdentifier)* GT
     ;
 
 classDeclaratives
@@ -108,11 +112,11 @@ methodDeclaration
     ;
 
 methodHeader
-    :   visibilityModifier? NATIVE? STATIC? (typeType|VOID) Identifier formalParameters
+    :   visibilityModifier? NATIVE? STATIC? (typeType|VOID) LCIdentifier formalParameters
     ;
 
 fieldDeclaration
-    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType Identifier (DECL expression)? SEMI
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType identifier (DECL expression)? SEMI
     ;
 
 formalParameters
@@ -120,13 +124,13 @@ formalParameters
     ;
 
 formalParameter
-    : typeType Identifier (DECL expression)?
+    : typeType identifier (DECL expression)?
     ;
 
 nameSelector
     :   STAR
-    |   STAR BACKSLASH (Identifier (COMMA Identifier)*)?
-    |   Identifier (COMMA Identifier)*
+    |   STAR BACKSLASH (LCIdentifier (COMMA LCIdentifier)*)?
+    |   LCIdentifier (COMMA LCIdentifier)*
     ;
 
 //types ------------------------------------------------------------------------------------
@@ -137,8 +141,8 @@ typeType
     ;
 
 basicType
-    :   TypeIdentifier
-    |   predefinedType
+    :   (TypeIdentifier | predefinedType)
+        (LT typeType (COMMA typeType)* GT)?
     ;
 
 predefinedType
@@ -164,7 +168,7 @@ statement
     |   localVariableDeclaration SEMI                                                       #localVariableDeclarationStatement
     |   ifStatement                                                                         #ifStatement_
     |   FOR  localVariableDeclaration? SEMI expression? SEMI expression2?  block            #forStatement
-    |   FOR  Identifier COLON expression  block                                             #foreachStatement
+    |   FOR  LCIdentifier COLON expression  block                                           #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
     |   RETURN expression? SEMI                                                             #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
@@ -186,7 +190,7 @@ statement
     ;
 
 localVariableDeclaration
-    :  typeType? Identifier (DECL expression)?
+    :  typeType? identifier (DECL expression)?
     ;
 
 ifStatement
@@ -203,11 +207,11 @@ expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
     |   expression LBRACK expression RBRACK                        #arrayAccess
-    |   expression DOT Identifier                                  #fieldAccess
-    |   typeType DOT Identifier                                    #staticFieldAccess
-    |   expression DOT Identifier LPAREN expressionList? RPAREN    #externalFunctionCall
-    |   typeType DOT Identifier LPAREN expressionList? RPAREN      #staticFunctionCall
-    |   Identifier LPAREN expressionList? RPAREN                   #internalFunctionCall
+    |   expression DOT identifier                                  #fieldAccess
+    |   typeType DOT identifier                                    #staticFieldAccess
+    |   expression DOT LCIdentifier LPAREN expressionList? RPAREN  #externalFunctionCall
+    |   typeType DOT LCIdentifier LPAREN expressionList? RPAREN    #staticFunctionCall
+    |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)                   #newArray
     |   expression (INC|DEC)                                       #postUnaryOp
@@ -224,7 +228,7 @@ expression
     |   THIS                                                       #thisExpr
     |   literal                                                    #literalExpr
     |   typeType                                                   #typeTypeExpr
-    |   Identifier                                                 #variableExpr
+    |   identifier                                                 #variableExpr
     ;
 
 expression2
@@ -513,7 +517,11 @@ ZeroToThree
 
 
 //Identifiers-------------------------------------------------------------------------------
-Identifier
+identifier
+    :   (LCIdentifier | TypeIdentifier)
+    ;
+
+LCIdentifier
     :   '_'* LowerCaseLetter LetterOrDigit*
     {
         String text = getText();

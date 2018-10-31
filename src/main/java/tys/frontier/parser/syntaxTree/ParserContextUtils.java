@@ -3,20 +3,23 @@ package tys.frontier.parser.syntaxTree;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FParameter;
-import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.syntaxErrors.ParameterizedTypeVariable;
+import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
 import tys.frontier.parser.syntaxErrors.TypeNotFound;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,10 +27,22 @@ public final class ParserContextUtils {
 
     private ParserContextUtils() {}
 
-    public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) {
+    public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
-        return new FClass(identifier, visibilityModifier);
+        FrontierParser.TypeParametersContext c = ctx.typeParameters();
+        if (c == null) {
+            return new FClass(identifier, visibilityModifier);
+        }
+        Map<FTypeIdentifier, FTypeVariable> parameters = new LinkedHashMap<>();
+        for (TerminalNode node : c.TypeIdentifier()) {
+            FTypeIdentifier id = new FTypeIdentifier(node.getText());
+            if (parameters.containsKey(id))
+                throw new TwiceDefinedLocalVariable(id);
+            FLocalVariable var = new FLocalVariable(id, FTypeType.INSTANCE);
+            parameters.put(id, new FTypeVariable(var));
+        }
+        return new FClass(identifier, visibilityModifier, parameters);
     }
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
@@ -63,15 +78,15 @@ public final class ParserContextUtils {
             case FrontierParser.FLOAT64:
                 return FFloat64.INSTANCE;
             case FrontierParser.TYPE:
-                return FType.INSTANCE;
+                return FTypeType.INSTANCE;
             default:
                 return Utils.NYI("Frontier type for: " + ((TerminalNode)ctx.children.get(0)).getSymbol().getText());
         }
     }
 
-    public static FClass getNonPredefined(String id, Map<FTypeIdentifier, FClass> possibleTypes) throws TypeNotFound {
+    public static FType getNonPredefined(String id, Map<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
         FTypeIdentifier identifier = new FTypeIdentifier(id);
-        FClass type = possibleTypes.get(identifier);
+        FType type = possibleTypes.get(identifier);
         if (type==null) {
             throw new TypeNotFound(identifier);
         }
@@ -81,7 +96,7 @@ public final class ParserContextUtils {
     public static Selector<FFunctionIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
         if (ctx.STAR() != null && ctx.BACKSLASH() == null)
             return Selector.all();
-        List<TerminalNode> nodes = ctx.Identifier();
+        List<TerminalNode> nodes = ctx.LCIdentifier();
         List<FFunctionIdentifier> res = new ArrayList<>(nodes.size());
         for (TerminalNode node : nodes) {
             res.add(new FFunctionIdentifier(node.getText()));
@@ -92,15 +107,25 @@ public final class ParserContextUtils {
             return Selector.notIn(res);
     }
 
-    public static FClass getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
-            throws TypeNotFound {
+    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
-        return predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        FType base = predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        List<FType> parameters = new ArrayList<>();
+        for (FrontierParser.TypeTypeContext c : ctx.typeType()) {
+            parameters.add(getType(c, possibleTypes));
+        }
+        if (base instanceof FClass)
+            return ((FClass) base).specify(parameters);
+        else if (parameters.size() != 0)
+            throw new ParameterizedTypeVariable(null); //TODO
+        else
+            return base;
     }
 
-    public static FClass getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
-            throws TypeNotFound {
-        FClass res;
+    public static FType getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        FType res;
         FrontierParser.BasicTypeContext basic = ctx.basicType();
         if (basic != null) {
             res = getBasicType(basic, possibleTypes);
@@ -114,10 +139,10 @@ public final class ParserContextUtils {
         return res;
     }
 
-    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Map<FTypeIdentifier, FClass> possibleTypes)
-            throws TypeNotFound {
-        FClass type = getType(ctx.typeType(), possibleTypes);
-        FVariableIdentifier identifier = new FVariableIdentifier(ctx.Identifier().getText());
+    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        FType type = getType(ctx.typeType(), possibleTypes);
+        FIdentifier identifier = getVarIdentifier(ctx.identifier());
         return new FParameter(identifier, type);
     }
 
@@ -159,5 +184,16 @@ public final class ParserContextUtils {
             }
         }
         return res;
+    }
+
+    public static FIdentifier getVarIdentifier(FrontierParser.IdentifierContext ctx) {
+        String text = ctx.getText();
+        char start = text.charAt(0);
+        if (Character.isUpperCase(start))
+            return new FTypeIdentifier(text);
+        else if (Character.isLowerCase(start))
+            return new FVariableIdentifier(text);
+        else
+            return Utils.cantHappen();
     }
 }

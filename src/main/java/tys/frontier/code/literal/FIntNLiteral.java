@@ -1,6 +1,7 @@
 package tys.frontier.code.literal;
 
 import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.predefinedClasses.FFloat32;
 import tys.frontier.code.predefinedClasses.FFloat64;
 import tys.frontier.code.predefinedClasses.FIntN;
@@ -45,7 +46,7 @@ public class FIntNLiteral implements FLiteral {
     }
 
     @Override
-    public FLiteral specify(FClass targetType) throws IncompatibleTypes {
+    public FLiteral specify(FType targetType) throws IncompatibleTypes {
         if (getType() == targetType)
             return this;
         if (targetType instanceof FIntN) {

@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.Typed;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -12,7 +12,7 @@ public interface FExpression extends Typed, StringBuilderToString {
     <E> E accept(ExpressionVisitor<E> visitor);
     <E> E accept(ExpressionWalker<E> walker);
 
-    default FExpression typeCheck(FClass targetType) throws IncompatibleTypes {
+    default FExpression typeCheck(FType targetType) throws IncompatibleTypes {
         if (getType() == targetType)
             return this;
         return new FImplicitCast(targetType, this);

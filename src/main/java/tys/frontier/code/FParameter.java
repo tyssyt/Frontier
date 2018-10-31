@@ -1,18 +1,18 @@
 package tys.frontier.code;
 
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 import java.util.Optional;
 
 public class FParameter extends FLocalVariable {
     private FExpression defaultValue; //optional
 
-    public FParameter(FVariableIdentifier identifier, FClass type) {
+    public FParameter(FIdentifier identifier, FType type) {
         super(identifier, type);
     }
 
-    public FParameter(FVariableIdentifier identifier, FClass type, FExpression defaultValue) {
+    public FParameter(FIdentifier identifier, FType type, FExpression defaultValue) {
         super(identifier, type);
         this.defaultValue = defaultValue;
     }

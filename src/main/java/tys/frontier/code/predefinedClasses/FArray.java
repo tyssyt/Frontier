@@ -1,9 +1,9 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FConstructor;
 import tys.frontier.code.FField;
+import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -17,11 +17,11 @@ public class FArray extends FPredefinedClass {
 
     public static final FVariableIdentifier SIZE = new FVariableIdentifier("size");
     //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<FClass, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+    private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
-    private FClass baseType;
+    private FType baseType;
 
-    private FArray(FClass baseType) {
+    private FArray(FType baseType) {
         super(new FArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;
         addDefaultFunctions();
@@ -39,11 +39,11 @@ public class FArray extends FPredefinedClass {
         }
     }
 
-    public static FArray getArrayFrom(FClass baseClass) {
+    public static FArray getArrayFrom(FType baseClass) {
         return existing.computeIfAbsent(baseClass, p -> new FArray(baseClass));
     }
 
-    public FClass getBaseType() {
+    public FType getBaseType() {
         return baseType;
     }
 }

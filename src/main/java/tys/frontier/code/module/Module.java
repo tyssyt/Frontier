@@ -4,6 +4,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.visitor.ModuleVisitor;
@@ -85,8 +86,8 @@ public class Module implements StringBuilderToString {
         this.entryPoint = entryPoint;
     }
 
-    public Map<FTypeIdentifier, FClass> getImportedClasses () {
-        Map<FTypeIdentifier, FClass> res = new LinkedHashMap<>();
+    public Map<FTypeIdentifier, FType> getImportedClasses () {
+        Map<FTypeIdentifier, FType> res = new LinkedHashMap<>();
         for (Module module : importedModules) {
             res.putAll(module.getExportedClasses());
         }

@@ -1,45 +1,35 @@
 package tys.frontier.code;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import tys.frontier.code.Operator.FBinaryOperator;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.visitor.ClassVisitor;
-import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.util.IntIntPair;
-import tys.frontier.util.Pair;
-import tys.frontier.util.StringBuilderToString;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class FClass implements IdentifierNameable, HasVisibility, StringBuilderToString {
-    protected FTypeIdentifier identifier;
+public class FClass extends FType implements HasVisibility {
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
     protected FLocalVariable thiz;
-    private Set<FVariable> parameters;
+    private Map<FTypeIdentifier, FTypeVariable> parameters;
 
-    private Map<FClass, FField> delegates = new HashMap<>();
-    protected BiMap<FVariableIdentifier, FField> instanceFields = HashBiMap.create();
-    protected BiMap<FVariableIdentifier, FField> staticFields = HashBiMap.create();
-    protected Multimap<FFunctionIdentifier, FFunction> instanceFunctions = ArrayListMultimap.create();
-    protected Multimap<FFunctionIdentifier, FFunction> staticFunctions = ArrayListMultimap.create();
+    private Map<FType, FField> delegates = new HashMap<>();
 
     protected Map<FFunction, String> uniqueFunctionNames;
 
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
-        this(identifier, visibility, Collections.emptySet());
+        this(identifier, visibility, Collections.emptyMap());
     }
 
-    public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility, Set<FVariable> parameters) {
-        this.identifier = identifier;
+    public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility, Map<FTypeIdentifier, FTypeVariable> parameters) {
+        super(identifier);
         this.visibility = visibility;
         this.parameters = parameters;
         thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
@@ -54,11 +44,6 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }
-    }
-
-    @Override
-    public FTypeIdentifier getIdentifier () {
-        return identifier;
     }
 
     @Override
@@ -78,13 +63,18 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return thiz;
     }
 
+    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+        return parameters;
+    }
+
     public void addDelegate(FField field) {
         assert field.getMemberOf() == this;
+        assert field.getType() instanceof FClass;
         if (field.getVisibility() != FVisibilityModifier.PRIVATE)
             delegates.put(field.getType(), field);
     }
 
-    public List<FField> getDelegate(FClass toType) {
+    public List<FField> getDelegate(FType toType) {
         List<FField> res = new ArrayList<>();
         if (getDelegate(toType, res))
             return res;
@@ -92,110 +82,20 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
             return null;
     }
 
-    private boolean getDelegate(FClass toType, List<FField> res) {
+    private boolean getDelegate(FType toType, List<FField> res) {
         FField f = delegates.get(toType);
         if (f != null) {
             res.add(f);
             return true;
         }
 
-        for (Map.Entry<FClass, FField> entry : delegates.entrySet()) {
+        for (Map.Entry<FType, FField> entry : delegates.entrySet()) {
             res.add(entry.getValue());
-            if (entry.getKey().getDelegate(toType, res))
+            if (entry.getKey() instanceof FClass && ((FClass) entry.getKey()).getDelegate(toType, res))
                 return true;
             res.remove(res.size() - 1);
         }
         return false;
-    }
-
-    public BiMap<FVariableIdentifier, FField> getInstanceFields() {
-        return instanceFields;
-    }
-
-    public BiMap<FVariableIdentifier, FField> getStaticFields() {
-        return staticFields;
-    }
-
-    public Iterable<FField> getFields() {
-        return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
-    }
-
-    public Multimap<FFunctionIdentifier, FFunction> getInstanceFunctions() {
-        return instanceFunctions;
-    }
-
-    public Multimap<FFunctionIdentifier, FFunction> getStaticFunctions() {
-        return staticFunctions;
-    }
-
-    public Iterable<FFunction> getFunctions() {
-        return Iterables.concat(getInstanceFunctions().values(), getStaticFunctions().values());
-    }
-
-    public Pair<FFunction, IntIntPair> resolveInstanceFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
-        return new FunctionResolver(identifier, arguments).resolve();
-    }
-
-    public Pair<FFunction, IntIntPair> resolveStaticFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
-        return new FunctionResolver(identifier, arguments).resolveStatic();
-    }
-
-    private class FunctionResolver {
-        private FFunction bestFunction;
-        private IntIntPair bestCosts;
-
-        private FFunctionIdentifier identifier;
-        private List<FExpression> arguments;
-
-        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments) {
-            this.identifier = identifier;
-            this.arguments = arguments;
-        }
-
-        Pair<FFunction, IntIntPair> resolve() throws FunctionNotFound {
-            for (FFunction f : getInstanceFunctions().get(identifier)) {
-                try {
-                    IntIntPair cost = f.castSignatureFrom(arguments);
-                    updateCost(cost, f);
-                } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
-            }
-
-            if (bestFunction == null)
-                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
-            return result();
-        }
-
-        Pair<FFunction, IntIntPair> resolveStatic() throws FunctionNotFound {
-            for (FFunction f : getStaticFunctions().get(identifier)) {
-                try {
-                    IntIntPair cost = f.castSignatureFrom(arguments);
-                    updateCost(cost, f);
-                } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
-            }
-
-            if (bestFunction == null)
-                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
-            return result();
-        }
-
-        private Pair<FFunction, IntIntPair> result() {
-            return new Pair<>(bestFunction, bestCosts);
-        }
-
-        private void updateCost(IntIntPair newCosts, FFunction newFunction) {
-            if (bestCosts == null) {
-                bestCosts = newCosts;
-                bestFunction = newFunction;
-                return;
-            }
-            int res = newCosts.compareTo(bestCosts);
-            if (res < 0) {
-                bestCosts = newCosts;
-                bestFunction = newFunction;
-            } else if (res == 0) {
-                bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
-            }
-        }
     }
 
     public void addField (FField field) throws IdentifierCollision {
@@ -287,6 +187,15 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return res;
     }
 
+    public FClass specify (List<FType> types) throws WrongNumberOfTypeArguments {
+        if (parameters.size() != types.size()) {
+            throw new WrongNumberOfTypeArguments(this, types);
+        }
+        if (parameters.size() == 0)
+            return this;
+        return null; //TODO do specification
+    }
+
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
         visitor.enterType(this);
         List<Fi> fields = new ArrayList<>(this.getInstanceFields().size() + this.getStaticFields().size());
@@ -350,8 +259,4 @@ public class FClass implements IdentifierNameable, HasVisibility, StringBuilderT
         return sb.append("\n}");
     }
 
-    @Override
-    public String toString() {
-        return tS();
-    }
 }

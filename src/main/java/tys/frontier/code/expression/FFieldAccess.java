@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
+import tys.frontier.code.FType;
 import tys.frontier.code.FVariable;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -75,7 +75,7 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject {
     }
 
     @Override
-    public FClass getType() {
+    public FType getType() {
         return field.getType();
     }
 

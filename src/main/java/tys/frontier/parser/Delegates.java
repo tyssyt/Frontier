@@ -24,7 +24,7 @@ import java.util.*;
 
 public class Delegates {
 
-    private Multimap<FClass, Delegate> delegateToMap = ArrayListMultimap.create();
+    private Multimap<FType, Delegate> delegateToMap = ArrayListMultimap.create();
 
     private static class Delegate{
         FField field;
@@ -39,20 +39,20 @@ public class Delegates {
 
     public void add(FField field, Selector<FFunctionIdentifier> selector) {
         Delegate d = new Delegate(field, selector);
-        FClass to = field.getMemberOf();
+        FType to = field.getMemberOf();
         delegateToMap.put(to, d);
     }
 
     public void createDelegatedFunctions() throws SyntaxErrors {
         List<SyntaxError> errors = new ArrayList<>();
-        Set<FClass> toDo = new HashSet<>(delegateToMap.keySet());
+        Set<FType> toDo = new HashSet<>(delegateToMap.keySet());
 
         while (!toDo.isEmpty()) {
             boolean changed = false;
-            classLoop: for (Iterator<FClass> it = toDo.iterator(); it.hasNext();) {
-                FClass cur = it.next();
+            classLoop: for (Iterator<FType> it = toDo.iterator(); it.hasNext();) {
+                FType cur = it.next();
                 for (Delegate d : delegateToMap.get(cur)) {
-                    FClass from = d.field.getType();
+                    FType from = d.field.getType();
                     if (toDo.contains(from))
                         continue classLoop; //dependency found, wait
                 }
@@ -70,7 +70,7 @@ public class Delegates {
     }
 
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
-        FClass from = d.field.getType();
+        FType from = d.field.getType();
         FClass to = d.field.getMemberOf();
         for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getInstanceFunctions().asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {

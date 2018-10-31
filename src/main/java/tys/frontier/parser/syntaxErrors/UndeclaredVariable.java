@@ -1,12 +1,12 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 public class UndeclaredVariable extends SyntaxError {
 
-    public final FVariableIdentifier identifier;
+    public final FIdentifier identifier;
 
-    public UndeclaredVariable(FVariableIdentifier identifier) {
+    public UndeclaredVariable(FIdentifier identifier) {
         super(identifier.toString());
         this.identifier = identifier;
     }

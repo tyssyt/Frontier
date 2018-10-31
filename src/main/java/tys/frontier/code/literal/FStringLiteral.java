@@ -1,6 +1,7 @@
 package tys.frontier.code.literal;
 
 import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -27,7 +28,7 @@ public class FStringLiteral implements FLiteral { //TODO make sure string litera
     }
 
     @Override
-    public FLiteral specify(FClass targetType) throws IncompatibleTypes {
+    public FLiteral specify(FType targetType) throws IncompatibleTypes {
         if (getType() == targetType)
             return this;
         if (targetType == FIntN._8 && value.length() == 1) {
