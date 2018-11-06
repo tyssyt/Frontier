@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public final class ParserContextUtils {
 
@@ -84,9 +85,9 @@ public final class ParserContextUtils {
         }
     }
 
-    public static FType getNonPredefined(String id, Map<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
+    public static FType getNonPredefined(String id, Function<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
         FTypeIdentifier identifier = new FTypeIdentifier(id);
-        FType type = possibleTypes.get(identifier);
+        FType type = possibleTypes.apply(identifier);
         if (type==null) {
             throw new TypeNotFound(identifier);
         }
@@ -107,7 +108,7 @@ public final class ParserContextUtils {
             return Selector.notIn(res);
     }
 
-    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
         FType base = predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
@@ -123,7 +124,7 @@ public final class ParserContextUtils {
             return base;
     }
 
-    public static FType getType (FrontierParser.TypeTypeContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType res;
         FrontierParser.BasicTypeContext basic = ctx.basicType();
@@ -139,7 +140,7 @@ public final class ParserContextUtils {
         return res;
     }
 
-    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Map<FTypeIdentifier, FType> possibleTypes)
+    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType type = getType(ctx.typeType(), possibleTypes);
         FIdentifier identifier = getVarIdentifier(ctx.identifier());

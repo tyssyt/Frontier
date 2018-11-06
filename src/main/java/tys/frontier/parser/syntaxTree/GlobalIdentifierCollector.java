@@ -96,7 +96,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FType returnType;
         if (c != null) {
             try {
-                returnType = ParserContextUtils.getType(c, types);
+                returnType = ParserContextUtils.getType(c, types::get);
             } catch (SyntaxError e) {
                 errors.add(e);
                 returnType = FVoid.INSTANCE; //TODO do we want some error related type here?
@@ -127,7 +127,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         List<SyntaxError> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
-                FParameter param = ParserContextUtils.getParameter(c, types);
+                FParameter param = ParserContextUtils.getParameter(c, types::get);
                 treeData.parameters.put(c, param);
                 res.add(param);
             } catch (SyntaxError e) {
@@ -145,7 +145,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
             FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
-            FType type = ParserContextUtils.getType(ctx.typeType(), types);
+            FType type = ParserContextUtils.getType(ctx.typeType(), types::get);
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);

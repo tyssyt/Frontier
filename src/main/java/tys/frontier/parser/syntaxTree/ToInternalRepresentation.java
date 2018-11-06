@@ -12,6 +12,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
+import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -35,12 +36,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private Stack<FLoopIdentifier> loops = new Stack<>();
     private MapStack<FIdentifier, FLocalVariable> declaredVars = new MapStack<>();
 
-    private Map<FTypeIdentifier, FType> knownClasses;
+    private MapStack<FTypeIdentifier, FType> knownClasses = new MapStack<>();
 
 
     private ToInternalRepresentation(SyntaxTreeData syntaxTreeData, Module module) {
         this.treeData = syntaxTreeData;
-        knownClasses = new HashMap<>(module.getClasses());
+        knownClasses.push();
+        knownClasses.putAll(module.getClasses());
         knownClasses.putAll(module.getImportedClasses());
     }
 
@@ -62,13 +64,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentType = treeData.classes.get(ctx);
+        knownClasses.push();
         knownClasses.putAll(currentType.getParameters());
         try {
             return visitChildren(ctx);
         } finally {
-            for (FTypeIdentifier identifier : currentType.getParameters().keySet()) {
-                knownClasses.remove(identifier);
-            }
+            knownClasses.pop();
             currentType = null;
         }
     }
@@ -79,6 +80,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FField field = treeData.fields.get(ctx);
         if (ctx.expression() != null) {
             declaredVars.push();
+            knownClasses.push();
             try {
                 FFieldAccess access;
                 if (field.isStatic()) {
@@ -97,6 +99,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 errors.add(incompatibleTypes);
             } finally {
                 declaredVars.pop();
+                knownClasses.pop();
             }
         }
         return field;
@@ -154,6 +157,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunction f = treeData.functions.get(ctx.methodHeader());
         currentFunction = f;
         declaredVars.push(Utils.asMap(f.getParams()));
+        knownClasses.push();
         try {
             ctx.methodHeader().accept(this);
 
@@ -168,6 +172,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } finally {
             currentFunction = null;
             declaredVars.pop();
+            knownClasses.pop();
         }
     }
 
@@ -253,7 +258,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FType type = null;
         if (tc != null) {
             try {
-                type = ParserContextUtils.getType(tc, knownClasses);
+                type = ParserContextUtils.getType(tc, knownClasses::get);
             } catch (SyntaxError e) {
                 errors.add(e);
                 failed = true;
@@ -288,6 +293,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             }
         }
 
+        if (var.getType() == FTypeType.INSTANCE) {
+            FTypeVariable typeVar = new FTypeVariable(var);
+            knownClasses.put(typeVar.getIdentifier(), typeVar);
+        }
         declaredVars.put(identifier, var);
         return FVarDeclaration.create(var, assign);
     }
@@ -295,6 +304,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FBlock visitBlock(FrontierParser.BlockContext ctx) {
         declaredVars.push();
+        knownClasses.push();
         try {
             List<FStatement> statements = statementsFromList(ctx.statement());
             for (int i = 0; i < statements.size()-1; i++) {
@@ -308,6 +318,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             return FBlock.from(statements);
         } finally {
             declaredVars.pop();
+            knownClasses.pop();
         }
     }
 
@@ -358,6 +369,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FLoopIdentifier identifier = new FLoopIdentifier();
         loops.push(identifier);
         declaredVars.push();
+        knownClasses.push();
         try {
             FExpression cond;
             try {
@@ -374,6 +386,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } finally {
             loops.pop();
             declaredVars.pop();
+            knownClasses.pop();
         }
     }
 
@@ -382,6 +395,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FLoopIdentifier identifier = new FLoopIdentifier();
         loops.push(identifier);
         declaredVars.push();
+        knownClasses.push();
         try {
             FVarDeclaration decl = null;
             FExpression cond = null;
@@ -426,6 +440,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } finally {
             loops.pop();
             declaredVars.pop();
+            knownClasses.pop();
         }
     }
 
@@ -434,6 +449,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FLoopIdentifier identifier = new FLoopIdentifier();
         loops.push(identifier);
         declaredVars.push();
+        knownClasses.push();
         try {
             FExpression container = visitExpression(ctx.expression());
             FVariableIdentifier id = new FVariableIdentifier(ctx.LCIdentifier().getText());
@@ -450,6 +466,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         } finally {
             loops.pop();
             declaredVars.pop();
+            knownClasses.pop();
         }
     }
 
@@ -626,7 +643,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             type = ((FOptional) castedExpression.getType()).getBaseType();
         } else {
             try {
-                type = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+                type = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
             } catch (SyntaxError e) {
                 errors.add(e);
                 throw new Failed();
@@ -676,7 +693,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFieldAccess visitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
         try {
-            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
             return FFieldAccess.createStatic(findStaticField(fType, identifier));
         } catch (SyntaxError e) {
             errors.add(e);
@@ -758,7 +775,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            FType type = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            FType type = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
             return staticFunctionCall(type, identifier, params);
         } catch (SyntaxError e) {
             errors.add(e);
@@ -770,7 +787,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
         FType type;
         try {
-            type = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses);
+            type = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses::get);
         } catch (SyntaxError e) {
             errors.add(e);
             visitExpressionList(ctx.expressionList()); //parse param list to find more errors
@@ -791,7 +808,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FType baseType;
         try {
-            baseType = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses);
+            baseType = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses::get);
         } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();
@@ -809,7 +826,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FClassExpression visitTypeTypeExpr(FrontierParser.TypeTypeExprContext ctx) {
         try {
-            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses);
+            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
             return new FClassExpression(fType);
         } catch (SyntaxError e) {
             errors.add(e);
