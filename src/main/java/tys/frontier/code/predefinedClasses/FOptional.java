@@ -58,13 +58,14 @@ public class FOptional extends FPredefinedClass {
     }
 
     public static FOptional from(FType baseClass) {
-        return existing.computeIfAbsent(baseClass, p -> new FOptional(baseClass));
+        return existing.computeIfAbsent(baseClass, FOptional::new);
     }
 
     public static FOptional fromFlatten(FType baseClass) {
         if (baseClass instanceof FOptional)
             return (FOptional) baseClass;
-        return existing.computeIfAbsent(baseClass, p -> new FOptional(baseClass));
+        else
+            return from(baseClass);
     }
 
     public FType getBaseType() {
