@@ -799,7 +799,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FArray array = FArray.getArrayFrom(baseType);
         try {
-            return staticFunctionCall(array, FConstructor.IDENTIFIER, Collections.singletonList(expression));
+            return staticFunctionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression));
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
