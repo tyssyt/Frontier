@@ -558,7 +558,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return instanceFunctionCall(expression, identifier, Collections.emptyList());
-        } catch (FunctionNotFound | AccessForbidden e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
         }
@@ -582,7 +582,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return instanceFunctionCall(expression, identifier, Collections.emptyList());
-        } catch (FunctionNotFound | AccessForbidden e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
         }
@@ -603,10 +603,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return staticFunctionCall(first.getType(), identifier, Arrays.asList(first, second));
-        } catch (FunctionNotFound | AccessForbidden e1) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e1) {
             try {
                 return staticFunctionCall(second.getType(), identifier, Arrays.asList(first, second));
-            } catch (FunctionNotFound | AccessForbidden e2) {
+            } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
                 errors.add(e1);
                 errors.add(e2);
                 throw new Failed();
@@ -704,27 +704,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FFunctionCall instanceFunctionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
-            throws FunctionNotFound, AccessForbidden {
+            throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
         FFunction f = object.getType().resolveInstanceFunction(identifier, params).a;
         checkAccessForbidden(f);
-        try {
-            return FFunctionCall.createInstance(object, f, params);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
-            throw new Failed();
-        }
+        return FFunctionCall.createInstance(object, f, params);
     }
 
     private FFunctionCall staticFunctionCall (FType clazz, FFunctionIdentifier identifier, List<FExpression> params)
-            throws FunctionNotFound, AccessForbidden {
+            throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
         FFunction f = clazz.resolveStaticFunction(identifier, params).a;
         checkAccessForbidden(f);
-        try {
-            return FFunctionCall.createStatic(f, params);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
-            throw new Failed();
-        }
+        return FFunctionCall.createStatic(f, params);
     }
 
     @Override
@@ -740,7 +730,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
             return instanceFunctionCall(object, identifier, params);
-        } catch (FunctionNotFound | AccessForbidden e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
         }
@@ -752,12 +742,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
             return instanceFunctionCall(getThisExpr(), identifier, params);
-        } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden e) {
+        } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden | IncompatibleTypes e) {
             //instance method not found, check for static method
             try {
                 return staticFunctionCall(currentType, identifier, params);
-            } catch (FunctionNotFound |AccessForbidden functionNotFound) {
-                errors.add(functionNotFound);
+            } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
+                errors.add(e2);
                 throw new Failed();
             }
         }
@@ -789,7 +779,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
             return staticFunctionCall(type, FConstructor.IDENTIFIER, params);
-        } catch (FunctionNotFound | AccessForbidden e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
         }
@@ -810,7 +800,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FArray array = FArray.getArrayFrom(baseType);
         try {
             return staticFunctionCall(array, FConstructor.IDENTIFIER, Collections.singletonList(expression));
-        } catch (FunctionNotFound | AccessForbidden e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
         }
