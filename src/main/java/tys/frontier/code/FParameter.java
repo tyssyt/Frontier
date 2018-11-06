@@ -6,19 +6,22 @@ import tys.frontier.code.identifier.FIdentifier;
 import java.util.Optional;
 
 public class FParameter extends FLocalVariable {
+    private boolean hasDefaultValue;
     private FExpression defaultValue; //optional
 
-    public FParameter(FIdentifier identifier, FType type) {
+    public FParameter(FIdentifier identifier, FType type, boolean hasDefaultValue) {
         super(identifier, type);
+        this.hasDefaultValue = hasDefaultValue;
     }
 
     public FParameter(FIdentifier identifier, FType type, FExpression defaultValue) {
         super(identifier, type);
         this.defaultValue = defaultValue;
+        this.hasDefaultValue = defaultValue != null;
     }
 
     public boolean hasDefaultValue() {
-        return defaultValue != null;
+        return hasDefaultValue;
     }
 
     public Optional<FExpression> getDefaultValue() {
@@ -26,6 +29,7 @@ public class FParameter extends FLocalVariable {
     }
 
     public void setDefaultValue(FExpression defaultValue) {
+        assert this.defaultValue == null && hasDefaultValue;
         this.defaultValue = defaultValue;
     }
 }

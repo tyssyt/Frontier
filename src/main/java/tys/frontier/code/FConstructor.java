@@ -57,7 +57,7 @@ public class FConstructor extends FFunction {
                 FExpression defaultValue = new FLiteralExpression(new FNull((FOptional) field.getType()));
                 arguments.add(new FParameter(field.getIdentifier(), field.getType(), defaultValue));
             } else {
-                arguments.add(new FParameter(field.getIdentifier(), field.getType()));
+                arguments.add(new FParameter(field.getIdentifier(), field.getType(), false));
             }
         }
 

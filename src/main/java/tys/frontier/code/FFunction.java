@@ -155,7 +155,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
             throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
         } else if (arguments.size() < params.size()) {
             //the missing arguments might have default values, in which case the call is still valid
-            if (!params.get(arguments.size()).getDefaultValue().isPresent())
+            if (!params.get(arguments.size()).hasDefaultValue())
                 throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
         }
 

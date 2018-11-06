@@ -31,8 +31,8 @@ public class FBinaryOperator extends FOperator {
 
         public FBinaryOperator createPredefined(FClass fClass) {
             return new FBinaryOperator(identifier, fClass, fClass,
-                    new FParameter(new FVariableIdentifier("first"), fClass),
-                    new FParameter(new FVariableIdentifier("second"), fClass)) {
+                    new FParameter(new FVariableIdentifier("first"), fClass, false),
+                    new FParameter(new FVariableIdentifier("second"), fClass, false)) {
                 {predefined = true;}
             };
         }
@@ -65,8 +65,8 @@ public class FBinaryOperator extends FOperator {
 
         public FBinaryOperator createPredefined(FClass fClass) {
             return new FBinaryOperator(identifier, fClass, FBool.INSTANCE,
-                    new FParameter(new FVariableIdentifier("first"), fClass),
-                    new FParameter(new FVariableIdentifier("second"), fClass)) {
+                    new FParameter(new FVariableIdentifier("first"), fClass, false),
+                    new FParameter(new FVariableIdentifier("second"), fClass, false)) {
                 {predefined = true;}
             };
         }
