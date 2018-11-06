@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -38,8 +39,8 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
-        Pair<FFunction, IntIntPair> res = baseType.resolveInstanceFunction(identifier, arguments);
+    public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        Pair<FFunction, IntIntPair> res = baseType.resolveInstanceFunction(identifier, arguments, typeInstantiation);
         res.a = shimMap.computeIfAbsent(res.a, this::createShim);
         return res;
     }

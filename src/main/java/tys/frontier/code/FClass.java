@@ -9,16 +9,17 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
 public class FClass extends FType implements HasVisibility {
+
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
     protected FLocalVariable thiz;
     private Map<FTypeIdentifier, FTypeVariable> parameters;
+    private List<FTypeVariable> parametersList;
 
     private Map<FType, FField> delegates = new HashMap<>();
 
@@ -32,6 +33,8 @@ public class FClass extends FType implements HasVisibility {
         super(identifier);
         this.visibility = visibility;
         this.parameters = parameters;
+        parametersList = new ArrayList<>(parameters.size());
+        parametersList.addAll(parameters.values());
         thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
     }
 
@@ -65,6 +68,10 @@ public class FClass extends FType implements HasVisibility {
 
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
         return parameters;
+    }
+
+    public List<FTypeVariable> getParametersList() {
+        return parametersList;
     }
 
     public void addDelegate(FField field) {
@@ -185,15 +192,6 @@ public class FClass extends FType implements HasVisibility {
             }
         }
         return res;
-    }
-
-    public FClass specify (List<FType> types) throws WrongNumberOfTypeArguments {
-        if (parameters.size() != types.size()) {
-            throw new WrongNumberOfTypeArguments(this, types);
-        }
-        if (parameters.size() == 0)
-            return this;
-        return null; //TODO do specification
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {

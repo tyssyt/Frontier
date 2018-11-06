@@ -722,14 +722,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFunctionCall instanceFunctionCall (FExpression object, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = object.getType().resolveInstanceFunction(identifier, params).a;
+        FFunction f = object.getType().resolveInstanceFunction(identifier, params, TypeInstantiation.EMPTY).a;
         checkAccessForbidden(f);
         return FFunctionCall.createInstance(object, f, params);
     }
 
     private FFunctionCall staticFunctionCall (FType clazz, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = clazz.resolveStaticFunction(identifier, params).a;
+        FFunction f = clazz.resolveStaticFunction(identifier, params, TypeInstantiation.EMPTY).a;
         checkAccessForbidden(f);
         return FFunctionCall.createStatic(f, params);
     }

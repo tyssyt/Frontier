@@ -55,12 +55,12 @@ public abstract class FType implements IdentifierNameable, StringBuilderToString
         return Iterables.concat(getInstanceFunctions().values(), getStaticFunctions().values());
     }
 
-    public Pair<FFunction, IntIntPair> resolveInstanceFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
-        return new FunctionResolver(identifier, arguments).resolve();
+    public Pair<FFunction, IntIntPair> resolveInstanceFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        return new FunctionResolver(identifier, arguments, typeInstantiation).resolve();
     }
 
-    public Pair<FFunction, IntIntPair> resolveStaticFunction (FFunctionIdentifier identifier, List<FExpression> arguments) throws FunctionNotFound {
-        return new FunctionResolver(identifier, arguments).resolveStatic();
+    public Pair<FFunction, IntIntPair> resolveStaticFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        return new FunctionResolver(identifier, arguments, typeInstantiation).resolveStatic();
     }
 
     @Override
@@ -74,16 +74,18 @@ public abstract class FType implements IdentifierNameable, StringBuilderToString
 
         private FFunctionIdentifier identifier;
         private List<FExpression> arguments;
+        private TypeInstantiation typeInstantiation;
 
-        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments) {
+        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) {
             this.identifier = identifier;
             this.arguments = arguments;
+            this.typeInstantiation = typeInstantiation;
         }
 
         Pair<FFunction, IntIntPair> resolve() throws FunctionNotFound {
             for (FFunction f : getInstanceFunctions().get(identifier)) {
                 try {
-                    IntIntPair cost = f.castSignatureFrom(arguments);
+                    IntIntPair cost = f.castSignatureFrom(arguments, typeInstantiation);
                     updateCost(cost, f);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
             }
@@ -96,7 +98,7 @@ public abstract class FType implements IdentifierNameable, StringBuilderToString
         Pair<FFunction, IntIntPair> resolveStatic() throws FunctionNotFound {
             for (FFunction f : getStaticFunctions().get(identifier)) {
                 try {
-                    IntIntPair cost = f.castSignatureFrom(arguments);
+                    IntIntPair cost = f.castSignatureFrom(arguments, typeInstantiation);
                     updateCost(cost, f);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
             }

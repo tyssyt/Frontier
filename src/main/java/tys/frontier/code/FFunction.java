@@ -150,7 +150,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
      * @throws IncompatibleSignatures when the number of parameters differs
      * @throws IncompatibleTypes when a parameter can't be casted
      */
-    public IntIntPair castSignatureFrom(List<FExpression> arguments) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
+    public IntIntPair castSignatureFrom(List<FExpression> arguments, TypeInstantiation typeInstantiation) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
         if (arguments.size() > params.size()) {
             throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
         } else if (arguments.size() < params.size()) {
@@ -163,7 +163,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         int cost = 0;
         for (int i = 0; i < arguments.size(); i++) {
             FExpression argument = arguments.get(i);
-            FType targetType = params.get(i).getType();
+            FType targetType = typeInstantiation.getType(params.get(i).getType());
 
             FExpression cast = argument.typeCheck(targetType);
             if (cast instanceof FLiteralExpression) {

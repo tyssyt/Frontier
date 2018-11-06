@@ -117,7 +117,7 @@ public final class ParserContextUtils {
             parameters.add(getType(c, possibleTypes));
         }
         if (base instanceof FClass)
-            return ((FClass) base).specify(parameters);
+            return FInstantiatedClass.from((FClass) base, parameters);
         else if (parameters.size() != 0)
             throw new ParameterizedTypeVariable(null); //TODO
         else
