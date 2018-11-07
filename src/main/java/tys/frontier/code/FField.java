@@ -3,6 +3,7 @@ package tys.frontier.code;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.Optional;
@@ -51,12 +52,18 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         return Optional.ofNullable(assignment);
     }
 
+    public <C,Fi,Fu,S,E> Fi accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
+        visitor.enterField(this);
+        return visitor.exitField(this, getAssignment().map(assignment -> assignment.accept(visitor)));
+    }
+
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(visibility).append(' ');
         if (statik)
             sb.append("static ");
         sb.append(super.toString());
+        //noinspection ResultOfMethodCallIgnored
         getAssignment().ifPresent(a -> a.getValue().toString(sb.append(" = ")));
         return sb.append(";");
     }

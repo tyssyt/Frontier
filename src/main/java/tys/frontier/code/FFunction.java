@@ -11,6 +11,7 @@ import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.NameGenerator;
@@ -174,6 +175,11 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
             }
         }
         return new IntIntPair(casts, cost);
+    }
+
+    public <C,Fi,Fu,S,E> Fu accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
+        visitor.enterFunction(this);
+        return visitor.exitFunction(this, getBody().map(body -> body.accept(visitor)));
     }
 
     public String headerToString() {

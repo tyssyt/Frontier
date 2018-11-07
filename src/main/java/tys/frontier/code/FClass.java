@@ -198,21 +198,17 @@ public class FClass extends FType implements HasVisibility {
         visitor.enterType(this);
         List<Fi> fields = new ArrayList<>(this.getInstanceFields().size() + this.getStaticFields().size());
         for (FField f : this.getInstanceFields().values()) {
-            visitor.enterField(f);
-            fields.add(visitor.exitField(f, f.getAssignment().map(assignment -> assignment.accept(visitor))));
+            fields.add(f.accept(visitor));
         }
         for (FField f : this.getStaticFields().values()) {
-            visitor.enterField(f);
-            fields.add(visitor.exitField(f, f.getAssignment().map(assignment -> assignment.accept(visitor))));
+            fields.add(f.accept(visitor));
         }
         List<Fu> functions = new ArrayList<>(this.getInstanceFunctions().size() + this.getStaticFunctions().size());
         for (FFunction f : this.getInstanceFunctions().values()) {
-            visitor.enterFunction(f);
-            functions.add(visitor.exitFunction(f, f.getBody().map(body -> body.accept(visitor))));
+            functions.add(f.accept(visitor));
         }
         for (FFunction f : this.getStaticFunctions().values()) {
-            visitor.enterFunction(f);
-            functions.add(visitor.exitFunction(f, f.getBody().map(body -> body.accept(visitor))));
+            functions.add(f.accept(visitor));
         }
         return visitor.exitType(this, fields, functions);
     }
