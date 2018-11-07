@@ -28,7 +28,8 @@ public class TypeInstantiation {
         }
         @Override
         public boolean equals(Object o) {
-            return o instanceof TypeInstantiation && ((TypeInstantiation) o).isEmpty();
+            return this == o ||
+                (o instanceof TypeInstantiation && ((TypeInstantiation) o).isEmpty());
         }
         @Override
         public int hashCode() {
@@ -38,8 +39,14 @@ public class TypeInstantiation {
 
     private Map<FTypeVariable, FType> typeMap;
 
-    public TypeInstantiation(Map<FTypeVariable, FType> typeMap) {
+    private TypeInstantiation(Map<FTypeVariable, FType> typeMap) {
         this.typeMap = typeMap;
+    }
+
+    public static TypeInstantiation create(Map<FTypeVariable, FType> typeMap) {
+        if (typeMap.isEmpty())
+            return EMPTY;
+        return new TypeInstantiation(typeMap);
     }
 
     public boolean isEmpty() {
@@ -52,7 +59,7 @@ public class TypeInstantiation {
         } else if (original instanceof FTypeVariable) {
             return typeMap.getOrDefault(original, original);
         } else {
-            return original;
+            return Utils.cantHappen();
         }
     }
 
@@ -60,7 +67,7 @@ public class TypeInstantiation {
         Map<FTypeVariable, FType> newMap = new HashMap<>(typeMap);
         boolean changed = newMap.keySet().retainAll(typeVariables);
         if (changed)
-            return new TypeInstantiation(newMap);
+            return create(newMap);
         else
             return this;
     }

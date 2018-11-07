@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FInstantiatedClass extends FPredefinedClass {
 
-
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<Pair<FClass, TypeInstantiation>, FInstantiatedClass> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
@@ -82,7 +81,7 @@ public class FInstantiatedClass extends FPredefinedClass {
             if (baseClass.getParametersList().get(i) != types.get(i))
                 typeMap.put(baseClass.getParametersList().get(i), types.get(i));
         }
-        return from(baseClass, new TypeInstantiation(typeMap));
+        return from(baseClass, TypeInstantiation.create(typeMap));
     }
 
     public static FClass from(FClass baseClass, TypeInstantiation typeInstantiation) {
