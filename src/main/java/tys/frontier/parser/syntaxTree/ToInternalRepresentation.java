@@ -33,7 +33,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FClass currentType;
     private FFunction currentFunction;
-    private Stack<FLoopIdentifier> loops = new Stack<>();
+    private Deque<FLoopIdentifier> loops = new ArrayDeque<>();
     private MapStack<FIdentifier, FLocalVariable> declaredVars = new MapStack<>();
 
     private MapStack<FTypeIdentifier, FType> knownClasses = new MapStack<>();

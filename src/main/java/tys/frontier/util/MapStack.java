@@ -1,21 +1,18 @@
 package tys.frontier.util;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 public class MapStack<K,V> implements Iterable<Map<K,V>> {
 
-    private Stack<Map<K, V>> stack = new Stack<>();
+    private Deque<Map<K, V>> stack = new ArrayDeque<>();
 
     //basic stack operations
-    public Map<K,V> push(Map<K, V> map) {
-        return stack.push(map);
+    public void push(Map<K, V> map) {
+        stack.push(map);
     }
 
-    public Map<K,V> push() {
-        return stack.push(new HashMap<>());
+    public void push() {
+        stack.push(new HashMap<>());
     }
 
     public Map<K,V> pop() {
