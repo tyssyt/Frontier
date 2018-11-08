@@ -38,6 +38,10 @@ public class FOptional extends FPredefinedClass {
         return shimMap;
     }
 
+    public FFunction getOriginalFunction(FFunction function) {
+        return shimMap.inverse().get(function);
+    }
+
     @Override
     public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         Pair<FFunction, IntIntPair> res = baseType.resolveInstanceFunction(identifier, arguments, typeInstantiation);

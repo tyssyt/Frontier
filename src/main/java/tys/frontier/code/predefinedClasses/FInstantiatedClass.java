@@ -30,12 +30,25 @@ public class FInstantiatedClass extends FPredefinedClass {
 
     private FInstantiatedClass(FClass baseClass, TypeInstantiation typeInstantiation) {
         super(baseClass.getIdentifier()); //TODO what identifier
+        assert !(baseClass instanceof FInstantiatedClass);
         this.baseClass = baseClass;
         this.typeInstantiation = typeInstantiation;
     }
 
+    public FClass getBaseClass() {
+        return baseClass;
+    }
+
     public BiMap<FFunction, FFunction> getShimMap() {
         return shimMap;
+    }
+
+    public FFunction getOriginalFunction(FFunction function) {
+        return shimMap.inverse().get(function);
+    }
+
+    public TypeInstantiation getTypeInstantiation() {
+        return typeInstantiation;
     }
 
     @Override

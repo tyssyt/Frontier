@@ -15,6 +15,10 @@ public class TypeInstantiation {
             return true;
         }
         @Override
+        public boolean contains(FTypeVariable var) {
+            return false;
+        }
+        @Override
         public FType getType(FType original) {
             return original;
         }
@@ -51,6 +55,10 @@ public class TypeInstantiation {
 
     public boolean isEmpty() {
         return typeMap.isEmpty();
+    }
+
+    public boolean contains(FTypeVariable var) {
+        return typeMap.containsKey(var);
     }
 
     public FType getType(FType original) {

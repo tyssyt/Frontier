@@ -4,12 +4,14 @@ import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.util.Collections;
 
 public class Main {
 
@@ -35,6 +37,10 @@ public class Main {
             FForEachLowering.lower(m);
             OperatorAssignmentLowering.lower(m);
         }
+
+        //Reachability analysis
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        Reachability reachability = Reachability.analyse(Collections.singleton(module.getEntryPoint().get()));
 
         //Backend
         LLVMBackend.runBackend(module, output, outputType);
