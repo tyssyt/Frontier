@@ -33,8 +33,7 @@ public class FClass extends FType implements HasVisibility {
         super(identifier);
         this.visibility = visibility;
         this.parameters = parameters;
-        parametersList = new ArrayList<>(parameters.size());
-        parametersList.addAll(parameters.values());
+        parametersList = new ArrayList<>(parameters.values());
         thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
     }
 
@@ -147,10 +146,6 @@ public class FClass extends FType implements HasVisibility {
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);
         }
-    }
-
-    public void removeConstructor() {
-        getStaticFunctions().removeAll(FConstructor.IDENTIFIER);
     }
 
     public Map<FFunction, String> getUniqueFunctionNames() {

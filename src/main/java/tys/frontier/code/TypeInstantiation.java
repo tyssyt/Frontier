@@ -3,21 +3,14 @@ package tys.frontier.code;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.util.Utils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TypeInstantiation {
 
-    public static final TypeInstantiation EMPTY = new TypeInstantiation(null) {
-        @Override
-        public boolean isEmpty() {
-            return true;
-        }
-        @Override
-        public boolean contains(FTypeVariable var) {
-            return false;
-        }
+    public static final TypeInstantiation EMPTY = new TypeInstantiation(Collections.emptyMap()) {
         @Override
         public FType getType(FType original) {
             return original;
@@ -45,6 +38,10 @@ public class TypeInstantiation {
 
     private TypeInstantiation(Map<FTypeVariable, FType> typeMap) {
         this.typeMap = typeMap;
+    }
+
+    public Map<FTypeVariable, FType> getTypeMap() {
+        return typeMap;
     }
 
     public static TypeInstantiation create(Map<FTypeVariable, FType> typeMap) {
