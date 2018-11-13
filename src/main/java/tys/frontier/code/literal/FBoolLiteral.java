@@ -15,6 +15,11 @@ public class FBoolLiteral implements FLiteral {
     }
 
     @Override
+    public FBoolLiteral copy() {
+        return this;
+    }
+
+    @Override
     public FClass getType() {
         return FBool.INSTANCE;
     }

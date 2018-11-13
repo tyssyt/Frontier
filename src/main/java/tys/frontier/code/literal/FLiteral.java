@@ -6,6 +6,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 public interface FLiteral extends Typed {
 
+    FLiteral copy();
     String getOriginalString();
 
     default FLiteral specify(FType targetType) throws IncompatibleTypes {

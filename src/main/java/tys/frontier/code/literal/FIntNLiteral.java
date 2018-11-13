@@ -35,6 +35,17 @@ public class FIntNLiteral implements FLiteral {
         this.originalString = originalString;
     }
 
+    private FIntNLiteral(BigInteger value, FIntN type, String originalString) {
+        this.value = value;
+        this.type = type;
+        this.originalString = originalString;
+    }
+
+    @Override
+    public FIntNLiteral copy() {
+        return new FIntNLiteral(value, type, originalString);
+    }
+
     @Override
     public String getOriginalString() {
         return originalString;

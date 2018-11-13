@@ -18,6 +18,11 @@ public class FStringLiteral implements FLiteral { //TODO make sure string litera
     }
 
     @Override
+    public FStringLiteral copy() {
+        return this;
+    }
+
+    @Override
     public String getOriginalString() {
         return value;
     }

@@ -15,6 +15,11 @@ public class FNull implements FLiteral {
     }
 
     @Override
+    public FLiteral copy() {
+        return UNTYPED;
+    }
+
+    @Override
     public FClass getType() {
         return type == null ? FVoid.INSTANCE : type;
     }

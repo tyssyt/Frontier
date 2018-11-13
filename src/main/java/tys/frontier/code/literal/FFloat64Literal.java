@@ -14,6 +14,11 @@ public class FFloat64Literal implements FLiteral {
     }
 
     @Override
+    public FFloat64Literal copy() {
+        return this;
+    }
+
+    @Override
     public FClass getType() {
         return FFloat64.INSTANCE;
     }

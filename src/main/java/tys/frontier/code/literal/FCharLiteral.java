@@ -20,6 +20,11 @@ public class FCharLiteral implements FLiteral {
     }
 
     @Override
+    public FCharLiteral copy() {
+        return this;
+    }
+
+    @Override
     public String getOriginalString() {
         return value+"";
     }
