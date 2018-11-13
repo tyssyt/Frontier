@@ -32,7 +32,7 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default Statement exitReturn(FReturn fReturn, Optional<Expression> value) {
         return null;
     }
-    default Statement exitVarDeclaration(FVarDeclaration declaration, Optional<Statement> value) {
+    default Statement exitVarDeclaration(FVarDeclaration declaration, Optional<Expression> value) {
         return null;
     }
     default Statement exitVarAssignment(FVarAssignment assignment, Expression variable, Expression value) {

@@ -30,7 +30,8 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
     }
 
     default Statement visitVarDeclaration(FVarDeclaration declaration) {
-        return declaration.getAssignment().map(assignment -> assignment.accept(this)).orElse(null);
+        declaration.getAssignment().map(assignment -> assignment.getValue().accept(this));
+        return null;
     }
 
     default Statement visitVarAssignment(FVarAssignment assignment) {

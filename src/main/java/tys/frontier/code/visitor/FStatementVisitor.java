@@ -29,7 +29,7 @@ public interface FStatementVisitor extends FExpressionVisitor, StatementVisitor<
     }
 
     @Override
-    default FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FStatement> value) {
+    default FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FExpression> value) {
         return declaration;
     }
 
