@@ -15,7 +15,7 @@ public interface FExpression extends Typed, StringBuilderToString {
     default FExpression typeCheck(FType targetType) throws IncompatibleTypes {
         if (getType() == targetType)
             return this;
-        return new FImplicitCast(targetType, this);
+        return FImplicitCast.create(targetType, this);
     }
 
 

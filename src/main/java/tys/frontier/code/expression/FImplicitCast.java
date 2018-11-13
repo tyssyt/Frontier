@@ -23,9 +23,21 @@ public class FImplicitCast extends FCast {
 
     private CastType castType;
 
-    public FImplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
+    private FImplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
         super(type, castedExpression);
         castType = getCastType(type, castedExpression.getType());
+    }
+
+    public static FImplicitCast create(FType type, FExpression castedExpression) throws IncompatibleTypes {
+        return new FImplicitCast(type, castedExpression);
+    }
+
+    public static FImplicitCast createTrusted(FType type, FExpression castedExpression) {
+        try {
+            return create(type, castedExpression);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public static CastType getCastType(FType targetType, FType baseType) throws IncompatibleTypes {

@@ -650,7 +650,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             }
         }
         try {
-            return new FExplicitCast(type, castedExpression);
+            return FExplicitCast.create(type, castedExpression);
         } catch (IncompatibleTypes incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();

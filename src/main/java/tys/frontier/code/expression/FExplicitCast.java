@@ -6,6 +6,7 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 public class FExplicitCast extends FCast {
 
@@ -18,9 +19,21 @@ public class FExplicitCast extends FCast {
 
     private CastType castType;
 
-    public FExplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
+    private FExplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
         super(type, castedExpression);
         castType = getCastType(getType(), getCastedExpression().getType());
+    }
+
+    public static FExplicitCast create(FType type, FExpression castedExpression) throws IncompatibleTypes {
+        return new FExplicitCast(type, castedExpression);
+    }
+
+    public static FExplicitCast createTrusted(FType type, FExpression castedExpression) {
+        try {
+            return create(type, castedExpression);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     public CastType getCastType() {

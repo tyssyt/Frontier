@@ -40,7 +40,7 @@ public class FLiteralExpression implements FExpression {
         FExpression res = new FLiteralExpression(literal.specify(specifyTarget)); //handle all other literals types here
         if (res.getType() == targetType)
             return res;
-        FImplicitCast casted = new FImplicitCast(targetType, res);
+        FImplicitCast casted = FImplicitCast.create(targetType, res);
         assert casted.getCastType() == FImplicitCast.CastType.TO_OPTIONAL; //specify should handle all casts but the to optional
         return casted;
     }
