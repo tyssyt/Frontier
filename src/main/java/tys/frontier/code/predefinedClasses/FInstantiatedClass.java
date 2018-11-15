@@ -39,8 +39,8 @@ public class FInstantiatedClass extends FPredefinedClass {
         return baseClass;
     }
 
-    public BiMap<FFunction, FFunction> getShimMap() {
-        return shimMap;
+    public FFunction getInstantiatedFunction(FFunction function) {
+        return shimMap.computeIfAbsent(function, this::createShim);
     }
 
     public FFunction getOriginalFunction(FFunction function) {
@@ -54,14 +54,14 @@ public class FInstantiatedClass extends FPredefinedClass {
     @Override
     public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         Pair<FFunction, IntIntPair> res = baseClass.resolveInstanceFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
-        res.a = shimMap.computeIfAbsent(res.a, this::createShim);
+        res.a = getInstantiatedFunction(res.a);
         return res;
     }
 
     @Override
     public Pair<FFunction, IntIntPair> resolveStaticFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         Pair<FFunction, IntIntPair> res = baseClass.resolveStaticFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
-        res.a = shimMap.computeIfAbsent(res.a, this::createShim);
+        res.a = getInstantiatedFunction(res.a);
         return res;
     }
 

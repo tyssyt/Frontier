@@ -61,10 +61,10 @@ public class Reachability {
                         FClass orig = f.getMemberOf();
                         FClass c = (FClass) typeInstantiation.getType(orig); //this cast is safe as reachability analysis only traverses fully instatiated classes
                         if (orig != c) {
-                            f = ((FInstantiatedClass) c).getShimMap().get(f); //this cast is safe because either c is an instatiated class or orig a TypeVariable, and Type Variables can't have functions
+                            f = ((FInstantiatedClass) c).getInstantiatedFunction(f); //this cast is safe because either c is an instatiated class or orig a TypeVariable, and Type Variables can't have functions
                         }
                         if (c == parent.getBaseClass()) {
-                            f = parent.getShimMap().get(f);
+                            f = parent.getInstantiatedFunction(f);
                         }
                         todo.addLast(f);
                     }
