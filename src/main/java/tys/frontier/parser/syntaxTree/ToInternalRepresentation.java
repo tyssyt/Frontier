@@ -582,30 +582,6 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public Object visitPostUnaryOp(FrontierParser.PostUnaryOpContext ctx) {
-        FExpression expression = visitExpression(ctx.expression());
-        FFunctionIdentifier identifier = new FFunctionIdentifier('_' + ctx.getChild(1).getText());
-
-        if(expression.getType() instanceof FPredefinedClass &&
-                (identifier.equals(FUnaryOperator.Post.INC.identifier) || identifier.equals(FUnaryOperator.Post.DEC.identifier))) {
-            //special case for inc and dec on predefined types, they are both write and read
-            if ((expression instanceof FVariableExpression)) {
-                ((FVariableExpression) expression).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
-            } else {
-                errors.add(new NonAssignableExpression(expression));
-                throw new Failed();
-            }
-        }
-
-        try {
-            return instanceFunctionCall(expression, identifier, Collections.emptyList());
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
-            errors.add(e);
-            throw new Failed();
-        }
-    }
-
-    @Override
     public FFunctionCall visitBinaryOp(FrontierParser.BinaryOpContext ctx) {
         FExpression first;
         try {

@@ -191,10 +191,9 @@ public class GenericBaking implements FClassVisitor {
 
         if (function instanceof FUnaryOperator) {
             FFunctionIdentifier identifier = function.getIdentifier();
-            if (object.getType() instanceof FPredefinedClass && (
-                    identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier) ||
-                            identifier.equals(FUnaryOperator.Post.INC.identifier) || identifier.equals(FUnaryOperator.Post.DEC.identifier)
-            )) {
+            if (object.getType() instanceof FPredefinedClass &&
+                    (identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier))
+            ) {
                 //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
                 ((FVariableExpression) object).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
             }

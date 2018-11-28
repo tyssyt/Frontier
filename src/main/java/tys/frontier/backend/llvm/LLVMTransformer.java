@@ -368,22 +368,18 @@ class LLVMTransformer implements
         else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
             return LLVMBuildNeg(builder, arg, "neg");
         else if (id.equals(FUnaryOperator.Pre.INC.identifier))
-            return incDec(arg, LLVMAdd, true);
+            return incDec(arg, LLVMAdd);
         else if (id.equals(FUnaryOperator.Pre.DEC.identifier))
-            return incDec(arg, LLVMSub, true);
-        else if (id.equals(FUnaryOperator.Post.INC.identifier))
-            return incDec(arg, LLVMAdd, false);
-        else if (id.equals(FUnaryOperator.Post.DEC.identifier))
-            return incDec(arg, LLVMSub, false);
+            return incDec(arg, LLVMSub);
         else
             return Utils.cantHappen();
     }
 
-    private LLVMValueRef incDec(LLVMValueRef addr, int op, boolean pre) {
+    private LLVMValueRef incDec(LLVMValueRef addr, int op) {
         LLVMValueRef load = LLVMBuildLoad(builder, addr, "load_incdec");
         LLVMValueRef modified = LLVMBuildBinOp(builder, op, load, LLVMConstInt(LLVMTypeOf(load), 1, TRUE), "incdec");
         LLVMBuildStore(builder, modified, addr);
-        return pre ? load : modified;
+        return modified;
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {

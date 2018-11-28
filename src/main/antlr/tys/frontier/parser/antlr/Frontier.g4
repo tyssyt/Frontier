@@ -212,7 +212,6 @@ expression
     |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)                   #newArray
-    |   expression (INC|DEC)                                       #postUnaryOp
     |   (EXMARK|SUB|INC|DEC) expression                               #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
     |   expression (STAR|DIV|MOD) expression                       #binaryOp
