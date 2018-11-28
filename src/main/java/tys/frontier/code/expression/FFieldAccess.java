@@ -18,6 +18,7 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject {
     private FFieldAccess(FField field, FExpression object) {
         this.field = field;
         this.object = object;
+        field.addAccess(this);
     }
 
     //for instance fields
