@@ -6,9 +6,11 @@ import tys.frontier.code.FFunction;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.util.Utils;
 
 import java.util.*;
 
@@ -52,6 +54,8 @@ public class Reachability {
                         if (c == parent.getBaseClass())
                             c = parent;
 
+                        f = Utils.getFieldInClass(f, c);
+
                         ReachableClass reachableClass = res.reachableClasses.computeIfAbsent(c, x -> new ReachableClass());
                         reachableClass.reachableFields.add(f);
                     }
@@ -60,8 +64,10 @@ public class Reachability {
                         FFunction f = functionCall.getFunction();
                         FClass orig = f.getMemberOf();
                         FClass c = (FClass) typeInstantiation.getType(orig); //this cast is safe as reachability analysis only traverses fully instatiated classes
-                        if (orig != c) {
-                            f = ((FInstantiatedClass) c).getInstantiatedFunction(f); //this cast is safe because either c is an instatiated class or orig a TypeVariable, and Type Variables can't have functions
+                        if (orig != c && c instanceof FInstantiatedClass) {
+                            f = ((FInstantiatedClass) c).getInstantiatedFunction(f);
+                        } else if (orig != c && c instanceof FArray) {
+                            f = Utils.getFunctionInClass(f, c);
                         }
                         if (c == parent.getBaseClass()) {
                             f = parent.getInstantiatedFunction(f);

@@ -1,6 +1,9 @@
 package tys.frontier.util;
 
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FField;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FIdentifier;
@@ -62,5 +65,29 @@ public final class Utils {
         for (FExpression exp : exps)
             res.add(exp.getType());
         return res;
+    }
+
+    public static FField getFieldInClass(FField field, FClass in) {
+        if (field.getMemberOf() == in)
+            return field;
+        if (field.isStatic())
+            return in.getStaticFields().get(field.getIdentifier());
+        else
+            return in.getInstanceFields().get(field.getIdentifier());
+    }
+
+    public static FFunction getFunctionInClass(FFunction function, FClass in) {
+        if (function.getMemberOf() == in)
+            return function;
+        if (function.isStatic()) {
+            for (FFunction f : in.getStaticFunctions().get(function.getIdentifier()))
+                if (f.getSignature().equals(function.getSignature()))
+                    return f;
+        } else {
+            for (FFunction f : in.getInstanceFunctions().get(function.getIdentifier()))
+                if (f.getSignature().equals(function.getSignature()))
+                    return f;
+        }
+        return null;
     }
 }
