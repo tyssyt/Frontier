@@ -67,6 +67,10 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
         return function;
     }
 
+    public void setFunction(FFunction function) {
+        this.function = function;
+    }
+
     public List<? extends FExpression> getArguments() {
         return arguments;
     }

@@ -140,12 +140,14 @@ public class FClass extends FType implements HasVisibility {
         return (FConstructor) Iterables.getOnlyElement(getStaticFunctions().get(FConstructor.IDENTIFIER));
     }
 
-    public void generateConstructor() {
+    public FConstructor generateConstructor() {
         FVisibilityModifier visibility = constructorVisibility == null ? FVisibilityModifier.PRIVATE : constructorVisibility;
         try {
-            addFunction(FConstructor.create(visibility, this));
+            FConstructor res = FConstructor.create(visibility, this);
+            addFunction(res);
+            return res;
         } catch (SignatureCollision signatureCollision) {
-            Utils.handleException(signatureCollision);
+            return Utils.handleException(signatureCollision);
         }
     }
 

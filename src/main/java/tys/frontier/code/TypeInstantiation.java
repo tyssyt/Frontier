@@ -1,5 +1,6 @@
 package tys.frontier.code;
 
+import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.util.Utils;
 
@@ -56,6 +57,10 @@ public class TypeInstantiation {
 
     public boolean contains(FTypeVariable var) {
         return typeMap.containsKey(var);
+    }
+
+    public boolean fits(FClass fClass) {
+        return typeMap.size() == fClass.getParameters().size() && typeMap.keySet().containsAll(fClass.getParameters().values());
     }
 
     public FType getType(FType original) {
