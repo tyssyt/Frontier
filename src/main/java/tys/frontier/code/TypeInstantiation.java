@@ -59,7 +59,15 @@ public class TypeInstantiation {
     }
 
     public FType getType(FType original) {
-        if (original instanceof FClass) {
+        if (original instanceof FArray) {
+            FArray array = (FArray) original;
+            if (array.getBaseType() instanceof FTypeVariable) {
+                FTypeVariable typeVariable = (FTypeVariable) array.getBaseType();
+                if (typeMap.containsKey(typeVariable))
+                    return FArray.getArrayFrom(typeMap.get(typeVariable));
+            }
+            return array;
+        } else if (original instanceof FClass) {
             return FInstantiatedClass.from((FClass) original, this);
         } else if (original instanceof FTypeVariable) {
             return typeMap.getOrDefault(original, original);
