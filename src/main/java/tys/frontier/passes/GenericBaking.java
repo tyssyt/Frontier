@@ -83,8 +83,12 @@ public class GenericBaking implements FClassVisitor {
             varMap.put(function.getMemberOf().getThis(), currentClass.getThis());
         currentFunction = currentClass.getInstantiatedFunction(function);
         for (int i = 0; i < function.getParams().size(); i++) {
-            varMap.put(function.getParams().get(i), currentFunction.getParams().get(i));
-        } //TODO are default values for params already converted and set in shim? I assume not so prolly set them here?
+            FParameter p = currentFunction.getParams().get(i);
+            FParameter old = function.getParams().get(i);
+            varMap.put(old, p);
+            if (p.hasDefaultValue())
+                p.setDefaultValue(old.getDefaultValue().get().accept(this));
+        }
         // old.getDefaultValue().map(dv -> dv.accept(this)).orElse(null)
     }
     @Override

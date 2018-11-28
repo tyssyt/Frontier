@@ -91,7 +91,7 @@ public class FInstantiatedClass extends FClass {
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         for (FParameter p : original.getParams()) {
             FType pType = typeInstantiation.getType(p.getType());
-            params.add(new FParameter(p.getIdentifier(), pType, p.getDefaultValue().orElse(null)));
+            params.add(new FParameter(p.getIdentifier(), pType, p.hasDefaultValue()));
         }
         return new FFunction(original.getIdentifier(), this, original.getVisibility(), false, original.isStatic(),
                 returnType, params.build()) {
