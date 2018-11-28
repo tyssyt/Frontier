@@ -123,6 +123,11 @@ public class ParserTest {
         assertTrue(e instanceof NonOptionalExMark);
     }
     @Test
+    public void parseParameterizedTypeVariable() throws Exception {
+        SyntaxError e = parseSyntaxError("ParameterizedTypeVariable.front");
+        assertTrue(e instanceof ParameterizedTypeVariable);
+    }
+    @Test
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
         assertTrue(e instanceof SignatureCollision);
@@ -147,5 +152,9 @@ public class ParserTest {
         SyntaxError e = parseSyntaxError("UntypedVariable.front");
         assertTrue(e instanceof UntypedVariable);
     }
-
+    @Test
+    public void parseWrongNumberOfTypeArguments() throws Exception {
+        SyntaxError e = parseSyntaxError("WrongNumberOfTypeArguments.front");
+        assertTrue(e instanceof WrongNumberOfTypeArguments);
+    }
 }
