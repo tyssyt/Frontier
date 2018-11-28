@@ -11,6 +11,7 @@ public class FLocalVariableExpression implements FVariableExpression {
     private AccessType accessType = AccessType.LOAD;
 
     public FLocalVariableExpression(FLocalVariable variable) {
+        assert variable != null;
         this.variable = variable;
     }
 

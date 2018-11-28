@@ -71,7 +71,6 @@ file
 
 importStatement
     :   IMPORT TypeIdentifier SEMI
-    |   IMPORT
     ;
 
 classDeclaration
@@ -212,7 +211,7 @@ expression
     |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)                   #newArray
-    |   (EXMARK|SUB|INC|DEC) expression                               #preUnaryOp
+    |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
     |   expression (STAR|DIV|MOD) expression                       #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp

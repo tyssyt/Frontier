@@ -47,7 +47,7 @@ public class MapStack<K,V> implements Iterable<Map<K,V>> {
         return stack.peek().put(key, value);
     }
 
-    public void putAll(Map<? extends  K, ?extends V> map) {
+    public void putAll(Map<? extends  K, ? extends V> map) {
         stack.peek().putAll(map);
     }
 
