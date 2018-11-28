@@ -9,6 +9,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -187,6 +188,13 @@ public class FClass extends FType implements HasVisibility {
             }
         }
         return res;
+    }
+
+    public void removeUnreachable(Reachability.ReachableClass reachable) {
+        getStaticFields().values().retainAll(reachable.reachableFields);
+        getInstanceFields().values().retainAll(reachable.reachableFields);
+        getStaticFunctions().values().retainAll(reachable.reachableFunctions);
+        getInstanceFunctions().values().retainAll(reachable.reachableFunctions);
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {

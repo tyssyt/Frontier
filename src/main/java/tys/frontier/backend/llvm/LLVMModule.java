@@ -7,7 +7,6 @@ import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
 import tys.frontier.code.literal.FStringLiteral;
-import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.util.Utils;
 
@@ -163,12 +162,12 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
-     * @param fModule module to parse
+     * @param classes classes to parse
      */
-    public void parseTypes(Module fModule) {
+    public void parseTypes(Iterable<FClass> classes) {
         verificationNeeded = true;
-        for (FClass fClass : fModule.getClasses().values()) {
-            if (fClass instanceof FPredefinedClass || fClass.getConstructor().getCalledBy().isEmpty())
+        for (FClass fClass : classes) {
+            if (fClass instanceof FPredefinedClass)
                 continue;
             parseClass(fClass);
             todoClassBodies.add(fClass);
@@ -185,13 +184,13 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Parses all function Headers found in the file, creating corresponding function prototypes in this module.
-     * Should be called after {@link #parseTypes(Module)}.
-     * @param fModule input module
+     * Should be called after {@link #parseTypes}.
+     * @param classes classes to parse
      */
-    public void parseClassMembers(Module fModule) {
+    public void parseClassMembers(Iterable<FClass> classes) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FType fClass : fModule.getClasses().values()) {
+        for (FType fClass : classes) {
 
             for (FField field : fClass.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?
@@ -207,11 +206,11 @@ public class LLVMModule implements AutoCloseable {
             }
 
             for (FFunction function : fClass.getFunctions()) {
-                if (function.getCalledBy().isEmpty() && !function.isMain())
-                    continue;
-                addFunctionHeader(function);
-                if (!function.isNative())
-                    todoFunctionBodies.add(function);
+                if (!function.isPredefined()) {
+                    addFunctionHeader(function);
+                    if (!function.isNative())
+                        todoFunctionBodies.add(function);
+                }
             }
         }
     }
@@ -275,7 +274,7 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Creates LLVM Code for all parsed Functions and Classes in this module.
-     * Should be called after {@link #parseClassMembers(Module)}.
+     * Should be called after {@link #parseClassMembers}.
      */
     public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;

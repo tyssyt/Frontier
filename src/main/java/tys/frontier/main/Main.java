@@ -1,6 +1,7 @@
 package tys.frontier.main;
 
 import tys.frontier.backend.llvm.LLVMBackend;
+import tys.frontier.code.FClass;
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -12,6 +13,7 @@ import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 public class Main {
 
@@ -42,8 +44,11 @@ public class Main {
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         Reachability reachability = Reachability.analyse(Collections.singleton(module.getEntryPoint().get()));
 
-        //Backend
-        LLVMBackend.runBackend(module, output, outputType);
-    }
+        //remove unreachable fields & functions from reachable classes
+        for (Map.Entry<FClass, Reachability.ReachableClass> entry : reachability.getReachableClasses().entrySet())
+            entry.getKey().removeUnreachable(entry.getValue());
 
+        //Backend
+        LLVMBackend.runBackend(module, reachability, output, outputType);
+    }
 }

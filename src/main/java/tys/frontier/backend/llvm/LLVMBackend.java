@@ -1,9 +1,12 @@
 package tys.frontier.backend.llvm;
 
 import tys.frontier.backend.Backend;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.module.Module;
+import tys.frontier.passes.analysis.reachability.Reachability;
 
-import java.util.Set;
+import java.util.ArrayList;
 
 import static org.bytedeco.javacpp.LLVM.*;
 
@@ -39,11 +42,19 @@ public class LLVMBackend implements Backend {
         LLVMInitializeAllAsmPrinters();
     }
 
-    public static void runBackend(Module fModule, String out, OutputFileType fileType) {
-        //TODO a pass that transformes for each into for
+    public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
+        Iterable<FClass> classes;
+        if (reachability == null) {
+            classes = new ArrayList<>();
+            for (Module m : fModule.getImportedModulesReflexiveTransitive()) {
+                ((ArrayList<FClass>) classes).addAll(m.getClasses().values());
+            }
+        } else {
+            classes = reachability.getReachableClasses().keySet();
+        }
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule)) {
+        try (LLVMModule module = createModule(fModule.getName(), classes, fModule.getEntryPoint().orElse(null))) {
             if (out.indexOf('.') == -1)
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
@@ -57,22 +68,13 @@ public class LLVMBackend implements Backend {
         }
     }
 
-    /**
-     * Creates a LLVMModule based on a Frontier Module
-     * LLVMModule is package privete, so this is the only way to create one from the outside
-     * @param fModule the frontier module
-     * @return a LLVM Module
-     */
-    public static LLVMModule createModule(Module fModule) {
-        LLVMModule res = new LLVMModule(fModule.getName());
-        Set<Module> modules = fModule.getImportedModulesReflexiveTransitive();
-        for(Module m : modules) {
-            res.parseTypes(m);
-        }
-        for (Module m : modules)
-            res.parseClassMembers(m);
+    public static LLVMModule createModule(String name, Iterable<FClass> classes, FFunction entryPoint) {
+        LLVMModule res = new LLVMModule(name);
+        res.parseTypes(classes);
+        res.parseClassMembers(classes);
         res.fillInBodies();
-        fModule.getEntryPoint().ifPresent(res::generateMain);
+        if (entryPoint != null)
+            res.generateMain(entryPoint);
         return res;
     }
 
