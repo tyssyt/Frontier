@@ -578,7 +578,7 @@ class LLVMTransformer implements
         switch (fieldAccess.getAccessType()) {
             case LOAD:
                 return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
-            case STORE:
+            case STORE: case LOAD_AND_STORE:
                 return address;
             default:
                 return Utils.cantHappen();
