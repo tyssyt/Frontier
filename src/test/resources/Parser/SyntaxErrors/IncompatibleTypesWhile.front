@@ -1,7 +1,4 @@
-class A {
-
+class A:
     void test (bool[][] b) {
         while(b[1]){}
     }
-
-}

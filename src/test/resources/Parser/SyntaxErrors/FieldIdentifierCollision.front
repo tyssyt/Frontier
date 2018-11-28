@@ -1,4 +1,3 @@
-class A {
+class A:
     A a;
     int32 a;
-}

@@ -1,11 +1,7 @@
-class A {
+class A:
     private static int32 i;
-}
 
-class B {
-
+class B:
     void test() {
         A.i;
     }
-
-}

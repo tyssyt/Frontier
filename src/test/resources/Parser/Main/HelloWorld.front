@@ -1,7 +1,6 @@
 import IO;
 
-export class HelloWorld {
+export class HelloWorld:
     export static void main() {
         IO.printLine("Hello, World!");
     }
-}

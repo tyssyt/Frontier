@@ -1,23 +1,20 @@
 import IO;
-class A {
+class A:
     constructors;
     char[] member;
     char[] getString() {
         return "this is from A";
     }
-}
 
-class B {
+class B:
     constructors;
     delegate * : A a;
-}
 
-class C {
+class C:
     constructors;
     delegate * : B b;
-}
 
-export class Main {
+export class Main:
     static char[] testCast(A a) {
         return a.member;
     }
@@ -28,4 +25,3 @@ export class Main {
         IO.print(",");
         IO.print(testCast(c));
     }
-}

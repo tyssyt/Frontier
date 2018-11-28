@@ -1,5 +1,2 @@
-class A {
-
+class A:
     A a := b;
-
-}

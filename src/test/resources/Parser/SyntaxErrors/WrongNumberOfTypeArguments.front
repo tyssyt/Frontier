@@ -1,3 +1,2 @@
-class A<T,U,V>{
+class A<T,U,V>:
     A<int32, int32> a;
-}

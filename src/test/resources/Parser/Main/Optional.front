@@ -1,6 +1,6 @@
 import IO;
 
-export class Test {
+export class Test:
 
     char c;
 
@@ -29,4 +29,3 @@ export class Test {
             t!.print();
         }
     }
-}

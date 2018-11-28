@@ -75,11 +75,9 @@ importStatement
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier typeParameters?
-        LBRACE
+    :   visibilityModifier? CLASS TypeIdentifier typeParameters? COLON
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
-        RBRACE
     ;
 
 typeParameters

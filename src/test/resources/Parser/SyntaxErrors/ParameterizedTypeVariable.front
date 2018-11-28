@@ -1,6 +1,5 @@
-class A{
+class A:
     void f() {
         type T;
         T<int32>;
     }
-}

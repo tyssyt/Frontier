@@ -1,7 +1,4 @@
-class A {
-
+class A:
     void fun(int32 a) {
         a!;
     }
-
-}

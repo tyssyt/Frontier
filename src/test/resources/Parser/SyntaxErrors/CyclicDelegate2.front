@@ -1,9 +1,6 @@
-class A{
+class A:
     delegate * : B b;
-}
-class B{
+class B:
     delegate * : C c;
-}
-class C{
+class C:
     delegate * : A a;
-}

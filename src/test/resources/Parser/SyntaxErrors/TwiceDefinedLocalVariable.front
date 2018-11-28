@@ -1,7 +1,4 @@
-class A {
-
+class A:
     void test(A[] i) {
         int32 i := 0;
     }
-
-}
