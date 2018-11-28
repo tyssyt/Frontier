@@ -215,7 +215,7 @@ expression
     |   NEW basicType LPAREN expressionList? RPAREN                #newObject
     |   NEW basicType (LBRACK expression RBRACK)                   #newArray
     |   expression (INC|DEC)                                       #postUnaryOp
-    |   (NOT|SUB|INC|DEC) expression                               #preUnaryOp
+    |   (EXMARK|SUB|INC|DEC) expression                               #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
     |   expression (STAR|DIV|MOD) expression                       #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
@@ -276,7 +276,6 @@ ASSIGN          : '=';
 DECL            : ':=';
 GT              : '>';
 LT              : '<';
-NOT             : '!';
 EQUAL           : '==';
 NOTEQUAL        : '=!=';
 EQUAL_ID        : '=*=';
