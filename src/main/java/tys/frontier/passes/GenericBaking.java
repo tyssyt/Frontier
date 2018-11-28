@@ -1,0 +1,248 @@
+package tys.frontier.passes;
+
+import com.google.common.collect.Iterables;
+import tys.frontier.code.*;
+import tys.frontier.code.Operator.FUnaryOperator;
+import tys.frontier.code.expression.*;
+import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FInstantiatedClass;
+import tys.frontier.code.predefinedClasses.FPredefinedClass;
+import tys.frontier.code.statement.*;
+import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.parser.syntaxErrors.IdentifierCollision;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
+
+import java.util.*;
+
+/**
+ * mhhhhhhh... cookies
+ */
+public class GenericBaking implements FClassVisitor {
+
+    private TypeInstantiation typeInstantiation;
+
+    private FInstantiatedClass currentClass;
+    private FFunction currentFunction;
+
+    private Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
+    private Map<FLoopIdentifier, FLoopIdentifier> loopMap = new HashMap<>();
+    private Map<FField, FField> fieldMap = new HashMap<>();
+
+    private GenericBaking(FInstantiatedClass instantiatedClass) {
+        typeInstantiation = instantiatedClass.getTypeInstantiation();
+        currentClass = instantiatedClass;
+    }
+
+    /*
+        actually this should be a two pass visitor that first adds fields and then adds functions, but atm this works because of specific ways certain things are coded
+     */
+    public static void bake (FInstantiatedClass base) {
+        base.getBaseClass().accept(new GenericBaking(base));
+    }
+
+    @Override
+    public FInstantiatedClass exitType(FType fClass, List<FField> fFields, List<FFunction> fFunctions) {
+        //default functions?
+        try {
+            for (FField field : fFields) {
+                currentClass.addField(field);
+            }
+            for (FFunction function : fFunctions) {
+                currentClass.addFunction(function);
+            }
+        } catch (IdentifierCollision | SignatureCollision e) {
+            Utils.handleException(e);
+        }
+
+        //the constructor we generate by baking the generic constructor is not of class FConstructor, so remove it and generate one the normal way
+        Collection<FFunction> constructors = currentClass.getStaticFunctions().get(FConstructor.IDENTIFIER);
+        FFunction oldConstructor = Iterables.getOnlyElement(constructors);
+        constructors.clear();
+        currentClass.setConstructorVisibility(((FClass) fClass).getConstructorVisibility());
+        FConstructor newConstructor = currentClass.generateConstructor();
+        for (FFunctionCall functionCall : oldConstructor.getCalledBy()) {
+            functionCall.setFunction(newConstructor);
+        }
+        return currentClass;
+    }
+
+    @Override
+    public FField exitField(FField field, Optional<FStatement> assign) {
+        FField res = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic());
+        assign.ifPresent(a -> res.setAssignment((FVarAssignment) a));
+        fieldMap.put(field, res);
+        return res;
+    }
+
+    @Override
+    public void enterFunction(FFunction function) {
+        if (!function.isStatic() || function.isConstructor())
+            varMap.put(function.getMemberOf().getThis(), currentClass.getThis());
+        currentFunction = currentClass.getInstantiatedFunction(function);
+        for (int i = 0; i < function.getParams().size(); i++) {
+            varMap.put(function.getParams().get(i), currentFunction.getParams().get(i));
+        } //TODO are default values for params already converted and set in shim? I assume not so prolly set them here?
+        // old.getDefaultValue().map(dv -> dv.accept(this)).orElse(null)
+    }
+    @Override
+    public FFunction exitFunction(FFunction function, Optional<FStatement> body) {
+        varMap.clear();
+        loopMap.clear();
+        body.ifPresent(b -> currentFunction.setBody((FBlock) b));
+        return currentFunction;
+    }
+
+    //Statements
+    @Override
+    public FStatement exitBlock(FBlock block, List<FStatement> fStatements) {
+        return FBlock.from(fStatements);
+    }
+
+    @Override
+    public FStatement exitExpressionStatement(FExpressionStatement statement, FExpression fExpression) {
+        return new FExpressionStatement(fExpression);
+    }
+
+    @Override
+    public FStatement exitIf(FIf fIf, FExpression cond, FStatement then, Optional<FStatement> elze) {
+        return FIf.createTrusted(cond, (FBlock) then, (FBlock) elze.orElse(null));
+    }
+
+    @Override
+    public FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
+        return FReturn.createTrusted(value.orElse(null), currentFunction);
+    }
+
+    @Override
+    public FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FExpression> value) {
+        FLocalVariable old = declaration.getVar();
+        FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+        varMap.put(old, _new);
+        return FVarDeclaration.createTrusted(_new, value.orElse(null));
+    }
+
+    @Override
+    public FStatement exitVarAssignment(FVarAssignment assignment, FExpression variable, FExpression value) {
+        return FVarAssignment.createTrusted((FVariableExpression) variable, assignment.getOperator(), value);
+    }
+
+    @Override
+    public void enterWhile(FWhile fWhile) {
+        loopMap.put(fWhile.getIdentifier(), new FLoopIdentifier());
+    }
+
+    @Override
+    public void enterFor(FFor fFor) {
+        loopMap.put(fFor.getIdentifier(), new FLoopIdentifier());
+    }
+
+    @Override
+    public void enterForEach(FForEach forEach) {
+        loopMap.put(forEach.getIdentifier(), new FLoopIdentifier());
+    }
+
+    @Override
+    public FStatement exitWhile(FWhile fWhile, FExpression cond, FStatement body) {
+        return FWhile.createTrusted(fWhile.getNestedDepth(), loopMap.get(fWhile.getIdentifier()), cond, (FBlock) body);
+    }
+
+    @Override
+    public FStatement exitFor(FFor fFor, Optional<FStatement> declaration, Optional<FExpression> condition, Optional<FExpression> increment, FStatement body) {
+        return FFor.createTrusted(fFor.getNestedDepth(), loopMap.get(fFor.getIdentifier()),
+                (FVarDeclaration) declaration.orElse(null), condition.orElse(null), increment.orElse(null),
+                (FBlock) body);
+    }
+
+    @Override
+    public FStatement exitForEach(FForEach forEach, FExpression container, FStatement body) {
+        FLocalVariable old = forEach.getIterator();
+        FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+        varMap.put(old, _new);
+        return FForEach.create(forEach.getNestedDepth(), loopMap.get(forEach.getIdentifier()), _new, container, (FBlock) body);
+    }
+
+    @Override
+    public FStatement visitBreak(FBreak fBreak) {
+        return new FBreak(loopMap.get(fBreak.getLoop()));
+    }
+
+    @Override
+    public FStatement visitContinue(FContinue fContinue) {
+        return new FContinue(loopMap.get(fContinue.getLoop()));
+    }
+
+    //Expressions
+    @Override
+    public FExpression exitArrayAccess(FArrayAccess arrayAccess, FExpression array, FExpression index) {
+        return FArrayAccess.createTrusted(array, index);
+    }
+
+    @Override
+    public FExpression exitBrackets(FBracketsExpression brackets, FExpression inner) {
+        return new FBracketsExpression(inner);
+    }
+
+    @Override
+    public FExpression exitFunctionCall(FFunctionCall functionCall, FExpression object, List<FExpression> params) {
+        FFunction function = functionCall.getFunction();
+
+        if (function instanceof FUnaryOperator) {
+            FFunctionIdentifier identifier = function.getIdentifier();
+            if (object.getType() instanceof FPredefinedClass && (
+                    identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier) ||
+                            identifier.equals(FUnaryOperator.Post.INC.identifier) || identifier.equals(FUnaryOperator.Post.DEC.identifier)
+            )) {
+                //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
+                ((FVariableExpression) object).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
+            }
+        }
+
+
+
+        if (function.getMemberOf() == currentClass.getBaseClass())
+            function = currentClass.getInstantiatedFunction(function);
+        if (function.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of functions, and it will have to be expanded if we allow TypeVariable to have functions
+            function = Utils.getFunctionInClass(function, (FClass) typeInstantiation.getType(function.getMemberOf()));
+        if (functionCall.isStatic())
+            return FFunctionCall.createStaticTrusted(function, params);
+        else
+            return FFunctionCall.createInstanceTrusted(object, function, params);
+    }
+
+    @Override
+    public FExpression exitFieldAccess(FFieldAccess fieldAccess, FExpression object) {
+        FField field = fieldAccess.getField();
+        if (field.getMemberOf() == currentClass.getBaseClass())
+            field = fieldMap.get(field);
+        if (field.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of fields, and it will have to be expanded if we allow TypeVariable to have fields
+            field = typeInstantiation.getType(field.getMemberOf()).getInstanceFields().get(FArray.SIZE);
+        if (fieldAccess.isStatic())
+            return FFieldAccess.createStatic(field);
+        else {
+            return FFieldAccess.createInstanceTrusted(field, object);
+        }
+    }
+
+    @Override
+    public FExpression exitImplicitCast(FImplicitCast implicitCast, FExpression castedExpression) {
+        return FImplicitCast.createTrusted(typeInstantiation.getType(implicitCast.getType()), castedExpression);
+    }
+
+    @Override
+    public FExpression exitExplicitCast(FExplicitCast explicitCast, FExpression castedExpression) {
+        return FExplicitCast.createTrusted(typeInstantiation.getType(explicitCast.getType()), castedExpression);
+    }
+
+    @Override
+    public FExpression visitLiteral(FLiteralExpression expression) {
+        return new FLiteralExpression(expression.getLiteral().copy());
+    }
+
+    @Override
+    public FExpression visitVariable(FLocalVariableExpression expression) {
+        return new FLocalVariableExpression(varMap.get(expression.getVariable()));
+    }
+}
