@@ -14,11 +14,11 @@ import java.util.*;
 public final class Utils {
     private Utils() {}
 
-    public static void handleException (Exception e) {
+    public static <T> T handleException (Exception e) {
         throw new RuntimeException(e);
     }
 
-    public static void handleError(String s) {
+    public static <T> T handleError(String s) {
         throw new RuntimeException(s);
     }
 
