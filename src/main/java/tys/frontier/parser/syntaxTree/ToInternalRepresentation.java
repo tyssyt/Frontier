@@ -307,6 +307,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         knownClasses.push();
         try {
             List<FStatement> statements = statementsFromList(ctx.statement());
+            if (!errors.isEmpty())
+                return FBlock.from();
             for (int i = 0; i < statements.size()-1; i++) {
                 FStatement statement = statements.get(i);
                 if (statement.redirectsControlFlow().isPresent()) {
