@@ -157,4 +157,9 @@ public class ParserTest {
         SyntaxError e = parseSyntaxError("WrongNumberOfTypeArguments.front");
         assertTrue(e instanceof WrongNumberOfTypeArguments);
     }
+    @Test
+    public void parseWrongNumberOfTypeArguments2() throws Exception {
+        SyntaxError e = parseSyntaxError("WrongNumberOfTypeArguments2.front");
+        assertTrue(e instanceof WrongNumberOfTypeArguments);
+    }
 }
