@@ -180,7 +180,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public Object visitFormalParameter(FrontierParser.FormalParameterContext ctx) {
         FrontierParser.ExpressionContext c = ctx.expression();
         if (c != null) {
-            treeData.parameters.get(ctx).setDefaultValue(visitExpression(c));
+            try {
+                treeData.parameters.get(ctx).setDefaultValue(visitExpression(c));
+            } catch (IncompatibleTypes incompatibleTypes) {
+                errors.add(incompatibleTypes);
+            }
         }
         return null;
     }

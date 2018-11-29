@@ -55,9 +55,9 @@ public class FConstructor extends FFunction {
         for (FField field : fClass.getInstanceFields().values()) {
             if (field.getType() instanceof FOptional) {
                 FExpression defaultValue = new FLiteralExpression(new FNull((FOptional) field.getType()));
-                arguments.add(new FParameter(field.getIdentifier(), field.getType(), defaultValue));
+                arguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
             } else {
-                arguments.add(new FParameter(field.getIdentifier(), field.getType(), false));
+                arguments.add(FParameter.create(field.getIdentifier(), field.getType(), false));
             }
         }
 

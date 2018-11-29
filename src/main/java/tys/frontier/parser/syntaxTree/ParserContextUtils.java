@@ -145,7 +145,7 @@ public final class ParserContextUtils {
         FType type = getType(ctx.typeType(), possibleTypes);
         FIdentifier identifier = getVarIdentifier(ctx.identifier());
         boolean hasDefaultValue = ctx.expression() != null;
-        return new FParameter(identifier, type, hasDefaultValue);
+        return FParameter.create(identifier, type, hasDefaultValue);
     }
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) { //TODO why do we have res instead of just return (look at once all literals are done)

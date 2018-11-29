@@ -87,7 +87,7 @@ public class GenericBaking implements FClassVisitor {
             FParameter old = function.getParams().get(i);
             varMap.put(old, p);
             if (p.hasDefaultValue())
-                p.setDefaultValue(old.getDefaultValue().get().accept(this));
+                p.setDefaultValueTrusted(old.getDefaultValue().get().accept(this));
         }
         // old.getDefaultValue().map(dv -> dv.accept(this)).orElse(null)
     }
