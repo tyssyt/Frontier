@@ -146,7 +146,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         try {
             FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
             FType type = ParserContextUtils.getType(ctx.typeType(), types::get);
-            FField res = new FField(identifier, type, currentClass, visibilityModifier, statik);
+            FField res = new FField(identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
 

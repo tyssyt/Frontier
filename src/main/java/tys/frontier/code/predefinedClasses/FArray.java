@@ -27,7 +27,7 @@ public class FArray extends FPredefinedClass {
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
         try {
-            addField(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false)); //TODO make final
+            addField(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false)); //TODO make final
         } catch (IdentifierCollision identifierCollision) {
             Utils.handleException(identifierCollision);
         }

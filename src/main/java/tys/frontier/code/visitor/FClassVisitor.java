@@ -16,7 +16,7 @@ public interface FClassVisitor extends FStatementVisitor, ClassVisitor<FType, FF
     }
 
     @Override
-    default FField exitField(FField field, Optional<FStatement> assign) {
+    default FField exitField(FField field, Optional<FExpression> assign) {
         return field;
     }
 

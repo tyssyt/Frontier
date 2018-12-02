@@ -73,7 +73,6 @@ class LLVMTransformer implements
 
         LLVMTypeRef type = module.getLlvmType(field.getType());
         LLVMValueRef val = field.getAssignment()
-                .map(FVarAssignment::getValue)
                 .filter(v -> v instanceof FLiteralExpression)
                 .map(v -> (FLiteralExpression)v)
                 .map(lit -> lit.accept(this))

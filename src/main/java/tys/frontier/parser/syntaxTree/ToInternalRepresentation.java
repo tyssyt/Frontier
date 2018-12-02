@@ -82,21 +82,22 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             declaredVars.push();
             knownClasses.push();
             try {
-                FFieldAccess access;
-                if (field.isStatic()) {
-                    access = FFieldAccess.createStatic(field);
-                } else {
+                if (!field.isStatic()) {
                     FLocalVariable thiz = currentType.getThis();
                     declaredVars.put(thiz.getIdentifier(), thiz);
-                    access = FFieldAccess.createInstanceTrusted(field, new FLocalVariableExpression(thiz));
                 }
                 FExpression expression = visitExpression(ctx.expression());
-                FVarAssignment assignment = FVarAssignment.create(access, FVarAssignment.Operator.ASSIGN, expression);
-                field.setAssignment(assignment); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
+                field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
+                if (!field.isStatic())
+                    for (FParameter param : currentType.getConstructor().getParams())
+                        if (param.getIdentifier().equals(field.getIdentifier()))
+                            param.setDefaultValue(expression);
             } catch (Failed f) {
                 //do not allow Failed to propagate any further
             } catch (IncompatibleTypes incompatibleTypes) {
                 errors.add(incompatibleTypes);
+            } catch (NoSuchElementException ignored) {
+                //thrown of there is no constructor
             } finally {
                 declaredVars.pop();
                 knownClasses.pop();

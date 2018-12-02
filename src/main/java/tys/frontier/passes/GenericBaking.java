@@ -76,9 +76,9 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FField exitField(FField field, Optional<FStatement> assign) {
-        FField res = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic());
-        assign.ifPresent(a -> res.setAssignment((FVarAssignment) a));
+    public FField exitField(FField field, Optional<FExpression> assign) {
+        FField res = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic(), field.hasAssignment());
+        assign.ifPresent(res::setAssignmentTrusted);
         fieldMap.put(field, res);
         varMap.clear();
         return res;

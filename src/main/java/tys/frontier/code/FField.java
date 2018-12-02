@@ -1,11 +1,13 @@
 package tys.frontier.code;
 
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FTypeType;
-import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,16 +17,18 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
     private FClass memberOf;
     private FVisibilityModifier visibility;
     private boolean statik;
-    private FVarAssignment assignment; //TODO this assignment should not be part of the field, but part of an implicit static initializer block or some similar concept
+    private boolean hasAssignment;
+    private FExpression assignment;
 
     private List<FFieldAccess> accessedBy = new ArrayList<>();
 
-    public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik) {
+    public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
         super(identifier, type);
         assert type != FTypeType.INSTANCE;
         this.memberOf = memberOf;
         this.visibility = visibility;
         this.statik = statik;
+        this.hasAssignment = hasAssignment;
     }
 
     @Override
@@ -47,13 +51,24 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         return MemberType.FIELD;
     }
 
-    public void setAssignment(FVarAssignment assignment) {
-        assert this.assignment == null;
-        this.assignment = assignment;
+    public boolean hasAssignment() {
+        return hasAssignment;
     }
 
-    //TODO move the assignments to initializer collection in class
-    public Optional<FVarAssignment> getAssignment() {
+    public void setAssignment(FExpression assignment) throws IncompatibleTypes {
+        assert this.assignment == null && hasAssignment;
+        this.assignment = assignment.typeCheck(getType());
+    }
+
+    public void setAssignmentTrusted(FExpression assignment) {
+        try {
+            setAssignment(assignment);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            Utils.cantHappen();
+        }
+    }
+
+    public Optional<FExpression> getAssignment() {
         return Optional.ofNullable(assignment);
     }
 
@@ -77,7 +92,7 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
             sb.append("static ");
         sb.append(super.toString());
         //noinspection ResultOfMethodCallIgnored
-        getAssignment().ifPresent(a -> a.getValue().toString(sb.append(" = ")));
+        getAssignment().ifPresent(a -> a.toString(sb.append(" = ")));
         return sb.append(";");
     }
     @Override

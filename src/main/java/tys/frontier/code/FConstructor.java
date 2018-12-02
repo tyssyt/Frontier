@@ -53,7 +53,12 @@ public class FConstructor extends FFunction {
         List<FParameter> defaultArguments = new ArrayList<>();
 
         for (FField field : fClass.getInstanceFields().values()) {
-            if (field.getType() instanceof FOptional) {
+            if (field.getAssignment().isPresent()) {
+                FExpression defaultValue = field.getAssignment().get();
+                defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
+            } else if (field.hasAssignment()) {
+                defaultArguments.add(FParameter.create(field.getIdentifier(), field.getType(), true));
+            } else if (field.getType() instanceof FOptional) {
                 FExpression defaultValue = new FLiteralExpression(new FNull((FOptional) field.getType()));
                 defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
             } else {

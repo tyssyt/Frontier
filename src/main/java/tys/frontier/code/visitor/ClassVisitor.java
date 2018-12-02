@@ -17,6 +17,6 @@ public interface ClassVisitor<Class, Field, Function, Statement, Expression> ext
 
     //Bottom Up
     default Class exitType(FType fClass, List<Field> fields, List<Function> functions) {return null;}
-    default Field exitField(FField field, Optional<Statement> assign) {return null;}
+    default Field exitField(FField field, Optional<Expression> assign) {return null;}
     default Function exitFunction(FFunction function, Optional<Statement> body) {return null;}
 }
