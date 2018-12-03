@@ -23,7 +23,6 @@ public class Keywords {
             .put("new", FrontierParser.NEW)
             .put("this", FrontierParser.THIS)
             .put("null", FrontierParser.NULL)
-            .put("void", FrontierParser.VOID)
             .put("bool", FrontierParser.BOOL)
             .put("int", FrontierParser.INT)
             .put("char", FrontierParser.CHAR)

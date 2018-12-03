@@ -1,4 +1,4 @@
 class A:
-    void test(A[] i) {
+    test(A[] i) {
         int32 i := 0;
     }

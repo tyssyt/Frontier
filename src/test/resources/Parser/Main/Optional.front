@@ -4,16 +4,16 @@ export class Test:
 
     char c;
 
-    Test print() {
+    print() -> Test {
         IO.print(c);
         return this;
     }
 
-    char[] get() {
+    get() -> char[] {
         return "exists ";
     }
 
-    export static void main () {
+    export static main () {
         Test? t := null;
         if t {
             t!.print();

@@ -1,5 +1,5 @@
 class A:
-    void f() {
+    f() {
         type T;
         T<int32>;
     }

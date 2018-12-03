@@ -1,7 +1,7 @@
 import IO;
 
 export class HelloWorld:
-    export static void main() {
+    export static main() {
         char c := IO.getChar();
         while(c =!*= "\n") {
             IO.print(c);

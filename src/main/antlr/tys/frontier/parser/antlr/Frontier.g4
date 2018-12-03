@@ -36,7 +36,6 @@ tokens {
     NEW,
     THIS,
     NULL,
-    VOID,
     BOOL,
     INT,
     CHAR,
@@ -109,7 +108,7 @@ methodDeclaration
     ;
 
 methodHeader
-    :   visibilityModifier? NATIVE? STATIC? (typeType|VOID) LCIdentifier formalParameters
+    :   visibilityModifier? NATIVE? STATIC? LCIdentifier formalParameters (ARROW typeType)?
     ;
 
 fieldDeclaration
@@ -253,6 +252,10 @@ booleanLiteral
 QUESTION        : '?';
 EXMARK          : '!';
 
+//Lambdas-----------------------------------------------------------------
+UNDERSCORE      : '_';
+ARROW           : '->';
+
 //Separators--------------------------------------------------------------
 LPAREN          : '(';
 RPAREN          : ')';
@@ -303,10 +306,6 @@ XOR_ASSIGN      : '^=';
 MOD_ASSIGN      : '%=';
 
 Array           : LBRACK RBRACK;
-
-//Lambdas-----------------------------------------------------------------
-UNDERSCORE      : '_';
-ARROW           : '->';
 
 //Datatypes---------------------------------------------------------------------
 

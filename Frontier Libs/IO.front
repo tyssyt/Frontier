@@ -2,7 +2,7 @@ import Native;
 
 export class IO:
 
-    export static void print(int32 chara) {
+    export static print(int32 chara) {
         Native.putchar(chara);
     }
 
@@ -12,13 +12,13 @@ export class IO:
         }
     }
 
-    export static void printLine(char[] string) {
+    export static printLine(char[] string) {
         for c : string {
             print(c);
         }
         print("\n");
     }
 
-    export static char getChar() {
+    export static getChar() -> char {
         return (char)Native.getchar();
     }

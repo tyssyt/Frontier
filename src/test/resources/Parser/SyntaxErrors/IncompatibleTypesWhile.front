@@ -1,4 +1,4 @@
 class A:
-    void test (bool[][] b) {
+    test (bool[][] b) {
         while(b[1]){}
     }

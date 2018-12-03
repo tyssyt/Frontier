@@ -2,7 +2,7 @@ import IO;
 class A:
     constructors;
     char[] member;
-    char[] getString() {
+    getString() -> char[] {
         return "this is from A";
     }
 
@@ -15,11 +15,11 @@ class C:
     delegate * : B b;
 
 export class Main:
-    static char[] testCast(A a) {
+    static testCast(A a) -> char[] {
         return a.member;
     }
 
-    export static void main () {
+    export static main () {
         C c := new C(new B(new A("castSuccessfull!")));
         IO.print(c.getString());
         IO.print(",");

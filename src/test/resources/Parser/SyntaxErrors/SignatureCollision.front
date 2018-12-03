@@ -1,6 +1,6 @@
 class A:
-    void test (A a, B b) {}
-    void test (A a, B b, A a) {}
-    A test (A a, B b) {}
+    test (A a, B b) {}
+    test (A a, B b, A a) {}
+    test (A a, B b) -> A {}
 
 class B:
