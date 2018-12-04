@@ -4,7 +4,9 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
+import tys.frontier.code.expression.FFunctionAddress;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
@@ -61,7 +63,14 @@ public class Reachability {
                     }
                     @Override
                     public void enterFunctionCall(FFunctionCall functionCall) {
-                        FFunction f = functionCall.getFunction();
+                        handleFunction(functionCall.getFunction());
+                    }
+                    @Override
+                    public FExpression visitFunctionAddress(FFunctionAddress address) {
+                        handleFunction(address.getFunction());
+                        return address;
+                    }
+                    private void handleFunction(FFunction f) {
                         FClass orig = f.getMemberOf();
                         FClass c = (FClass) typeInstantiation.getType(orig); //this cast is safe as reachability analysis only traverses fully instatiated classes
                         if (orig != c && c instanceof FInstantiatedClass) {
@@ -84,6 +93,11 @@ public class Reachability {
                     @Override
                     public void enterFunctionCall(FFunctionCall functionCall) {
                         todo.addLast(functionCall.getFunction());
+                    }
+                    @Override
+                    public FExpression visitFunctionAddress(FFunctionAddress address) {
+                        todo.addLast(address.getFunction());
+                        return address;
                     }
                 });
         }
