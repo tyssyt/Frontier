@@ -112,6 +112,8 @@ public class LLVMModule implements AutoCloseable {
             res = arrayType(((FArray) fClass), 0);
         } else if (fClass instanceof FOptional) {
             res = getLlvmType(((FOptional) fClass).getBaseType());
+        } else if (fClass instanceof FFunctionType) {
+            res = functionType(((FFunctionType) fClass));
         } else {
             Utils.NYI("LLVM type for: " + fClass);
         }
@@ -123,6 +125,12 @@ public class LLVMModule implements AutoCloseable {
         PointerPointer<LLVMTypeRef> types = new PointerPointer<>(getLlvmType(FIntN._32),
                 LLVMArrayType(getLlvmType(type.getBaseType()), length));
         LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
+        return LLVMPointerType(baseType, 0);
+    }
+
+    private LLVMTypeRef functionType(FFunctionType functionType) {
+        PointerPointer<LLVMTypeRef> params = LLVMUtil.createPointerPointer(functionType.getIn(), this::getLlvmType);
+        LLVMTypeRef baseType = LLVMFunctionType(getLlvmType(functionType.getOut()), params, functionType.getIn().size(), FALSE);
         return LLVMPointerType(baseType, 0);
     }
 

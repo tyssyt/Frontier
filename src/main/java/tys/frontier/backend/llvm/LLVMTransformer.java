@@ -622,6 +622,11 @@ class LLVMTransformer implements
         return LLVMConstPointerNull(module.getLlvmType(expression.getType())); //TODO this is where we would want to have RTTI but we don't
     }
 
+    @Override
+    public LLVMValueRef visitFunctionAddress(FFunctionAddress expression) {
+        return LLVMGetNamedFunction(module.getModule(), getFunctionName(expression.getFunction()));
+    }
+
     private LLVMValueRef intLiteral(long i, int bits) {
         return LLVMConstInt(module.getLlvmType(FIntN.getIntN(bits)), i, TRUE);
     }
