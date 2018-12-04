@@ -54,4 +54,8 @@ public interface ExpressionWalker<Expression> {
     default Expression visitClassExpr(FClassExpression expression) {
         return null;
     }
+
+    default Expression visitFunctionAddress(FFunctionAddress expression) {
+        return null;
+    }
 }

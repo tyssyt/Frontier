@@ -42,5 +42,8 @@ public interface ExpressionVisitor<Expression>  {
     default Expression visitClassExpr(FClassExpression expression) {
         return null;
     }
+    default Expression visitFunctionAddress(FFunctionAddress address) {
+        return null;
+    }
 
 }

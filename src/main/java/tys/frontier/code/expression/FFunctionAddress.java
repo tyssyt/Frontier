@@ -21,12 +21,12 @@ public class FFunctionAddress implements FExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return null; //TODO
+        return visitor.visitFunctionAddress(this);
     }
 
     @Override
     public <E> E accept(ExpressionWalker<E> walker) {
-        return null; //TODO
+        return walker.visitFunctionAddress(this);
     }
 
     @Override

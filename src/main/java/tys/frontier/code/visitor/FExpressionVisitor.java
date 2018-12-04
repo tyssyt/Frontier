@@ -45,4 +45,14 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     default FExpression visitVariable(FLocalVariableExpression expression) {
         return expression;
     }
+
+    @Override
+    default FExpression visitClassExpr(FClassExpression expression) {
+        return expression;
+    }
+
+    @Override
+    default FExpression visitFunctionAddress(FFunctionAddress address) {
+        return address;
+    }
 }
