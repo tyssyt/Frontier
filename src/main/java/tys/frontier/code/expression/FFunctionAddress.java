@@ -14,6 +14,10 @@ public class FFunctionAddress implements FExpression {
         this.function = function;
     }
 
+    public FFunction getFunction() {
+        return function;
+    }
+
     @Override
     public FType getType() {
         return FFunctionType.from(function);

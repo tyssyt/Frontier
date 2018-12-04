@@ -94,6 +94,7 @@ public class GenericBaking implements FClassVisitor {
             FParameter old = function.getParams().get(i);
             varMap.put(old, p);
             if (p.hasDefaultValue())
+                //noinspection OptionalGetWithoutIsPresent
                 p.setDefaultValueTrusted(old.getDefaultValue().get().accept(this));
         }
         // old.getDefaultValue().map(dv -> dv.accept(this)).orElse(null)
@@ -211,15 +212,19 @@ public class GenericBaking implements FClassVisitor {
         }
 
 
-
-        if (function.getMemberOf() == currentClass.getBaseClass())
-            function = currentClass.getInstantiatedFunction(function);
-        if (function.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of functions, and it will have to be expanded if we allow TypeVariable to have functions
-            function = Utils.getFunctionInClass(function, (FClass) typeInstantiation.getType(function.getMemberOf()));
+        function = bakeFunction(function);
         if (functionCall.isStatic())
             return FFunctionCall.createStaticTrusted(function, params);
         else
             return FFunctionCall.createInstanceTrusted(object, function, params);
+    }
+
+    private FFunction bakeFunction(FFunction function) {
+        if (function.getMemberOf() == currentClass.getBaseClass())
+            function = currentClass.getInstantiatedFunction(function);
+        if (function.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of functions, and it will have to be expanded if we allow TypeVariable to have functions
+            function = Utils.getFunctionInClass(function, (FClass) typeInstantiation.getType(function.getMemberOf()));
+        return function;
     }
 
     @Override
@@ -254,5 +259,16 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FExpression visitVariable(FLocalVariableExpression expression) {
         return new FLocalVariableExpression(varMap.get(expression.getVariable()));
+    }
+
+    @Override
+    public FExpression visitClassExpr(FClassExpression expression) {
+        return new FClassExpression(typeInstantiation.getType(expression.getType()));
+    }
+
+    @Override
+    public FExpression visitFunctionAddress(FFunctionAddress address) { //TODO this is my best guess to what should happen, haven't put much thought into it though
+        FFunction function = bakeFunction(address.getFunction());
+        return new FFunctionAddress(function);
     }
 }
