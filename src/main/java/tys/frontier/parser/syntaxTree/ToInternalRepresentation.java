@@ -770,7 +770,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
         FType type;
         try {
-            type = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses::get);
+            type = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
         } catch (SyntaxError e) {
             errors.add(e);
             visitExpressionList(ctx.expressionList()); //parse param list to find more errors
@@ -791,7 +791,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FType baseType;
         try {
-            baseType = ParserContextUtils.getBasicType(ctx.basicType(), knownClasses::get);
+            baseType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
         } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();
@@ -815,6 +815,38 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             errors.add(e);
             throw new Failed();
         }
+    }
+
+    @Override
+    public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
+        try {
+            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
+            return new FFunctionAddress(getFunction(currentType, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params));
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
+            throw new Failed();
+        }
+    }
+
+    @Override
+    public FFunctionAddress visitFunctionAddress(FrontierParser.FunctionAddressContext ctx) {
+        try {
+            FType fClass = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
+            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
+            return new FFunctionAddress(getFunction(fClass, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params));
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
+            throw new Failed();
+        }
+    }
+
+    private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound { //TODO use params to resolve better
+        Collection<FFunction> _static = fClass.getStaticFunctions().get(identifier);
+        Collection<FFunction> instance = fClass.getInstanceFunctions().get(identifier);
+        if (_static.size() + instance.size() != 1) {
+            throw new FunctionNotFound(identifier, params);
+        }
+        return _static.isEmpty() ? instance.iterator().next() : _static.iterator().next();
     }
 
     //literals

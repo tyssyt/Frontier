@@ -132,13 +132,15 @@ nameSelector
 //types ------------------------------------------------------------------------------------
 
 typeType
-    :   typeType Array QUESTION?
-    |   basicType QUESTION?
+    :   typeType Array
+    |   typeType QUESTION
+    |   typeType (COMMA typeType)* ARROW typeType
+    |   predefinedType (LT typeList GT)?
+    |   TypeIdentifier (LT typeList GT)?
     ;
 
-basicType
-    :   (TypeIdentifier | predefinedType)
-        (LT typeType (COMMA typeType)* GT)?
+typeList
+    :   typeType (COMMA typeType)*
     ;
 
 predefinedType
@@ -208,8 +210,10 @@ expression
     |   expression DOT LCIdentifier LPAREN expressionList? RPAREN  #externalFunctionCall
     |   typeType DOT LCIdentifier LPAREN expressionList? RPAREN    #staticFunctionCall
     |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
-    |   NEW basicType LPAREN expressionList? RPAREN                #newObject
-    |   NEW basicType (LBRACK expression RBRACK)                   #newArray
+    |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
+    |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
+    |   NEW typeType LPAREN expressionList? RPAREN                 #newObject
+    |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
     |   expression (STAR|DIV|MOD) expression                       #binaryOp

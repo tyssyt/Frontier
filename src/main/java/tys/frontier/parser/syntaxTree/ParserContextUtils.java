@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static tys.frontier.parser.antlr.FrontierParser.*;
+
 public final class ParserContextUtils {
 
     private ParserContextUtils() {}
@@ -64,21 +66,21 @@ public final class ParserContextUtils {
 
     public static FPredefinedClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
-            case FrontierParser.BOOL:
+            case BOOL:
                 return FBool.INSTANCE;
-            case FrontierParser.INT:
+            case INT:
                 return Utils.NYI("unbounded int type");
-            case FrontierParser.CHAR:
+            case CHAR:
                 return FIntN._8;
-            case FrontierParser.INT32:
+            case INT32:
                 return FIntN._32;
-            case FrontierParser.INT64:
+            case INT64:
                 return FIntN._64;
-            case FrontierParser.FLOAT32:
+            case FLOAT32:
                 return FFloat32.INSTANCE;
-            case FrontierParser.FLOAT64:
+            case FLOAT64:
                 return FFloat64.INSTANCE;
-            case FrontierParser.TYPE:
+            case TYPE:
                 return FTypeType.INSTANCE;
             default:
                 return Utils.NYI("Frontier type for: " + ((TerminalNode)ctx.children.get(0)).getSymbol().getText());
@@ -94,6 +96,46 @@ public final class ParserContextUtils {
         return type;
     }
 
+    public static List<FType> typesFromList(List<TypeTypeContext> contexts, Function<FTypeIdentifier, FType> possibleTypes)
+            throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        List<FType> res = new ArrayList<>(contexts.size());
+        for (TypeTypeContext c : contexts) {
+            res.add(getType(c, possibleTypes));
+        }
+        return res;
+    }
+
+    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        FType base;
+        if (ctx.Array() != null) {
+            base = getType(ctx.typeType(0), possibleTypes);
+            return FArray.getArrayFrom(base);
+        } else if (ctx.QUESTION() != null) {
+            base = getType(ctx.typeType(0), possibleTypes);
+            return FOptional.from(base);
+        } else if (ctx.ARROW() != null) {
+            List<FType> types = typesFromList(ctx.typeType(), possibleTypes);
+            return FFunctionType.from(types.subList(0, types.size()-1), types.get(types.size()-1));
+        } else if (ctx.predefinedType() != null) {
+            base = getPredefined(ctx.predefinedType());
+        } else if (ctx.TypeIdentifier() != null) {
+            base = getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        } else {
+            return Utils.cantHappen();
+        }
+
+        //handle Type Parameters
+        if (ctx.typeList() != null) {
+            List<FType> parameters = typesFromList(ctx.typeList().typeType(), possibleTypes);
+            if (base instanceof FClass)
+                return FInstantiatedClass.from((FClass) base, parameters);
+            else if (parameters.size() != 0)
+                throw new ParameterizedTypeVariable(null); //TODO
+        }
+        return base;
+    }
+
     public static Selector<FFunctionIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
         if (ctx.STAR() != null && ctx.BACKSLASH() == null)
             return Selector.all();
@@ -106,38 +148,6 @@ public final class ParserContextUtils {
             return Selector.in(res);
         else
             return Selector.notIn(res);
-    }
-
-    public static FType getBasicType (FrontierParser.BasicTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
-            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
-        FrontierParser.PredefinedTypeContext predefined = ctx.predefinedType();
-        FType base = predefined != null ? getPredefined(predefined) : getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
-        List<FType> parameters = new ArrayList<>();
-        for (FrontierParser.TypeTypeContext c : ctx.typeType()) {
-            parameters.add(getType(c, possibleTypes));
-        }
-        if (base instanceof FClass)
-            return FInstantiatedClass.from((FClass) base, parameters);
-        else if (parameters.size() != 0)
-            throw new ParameterizedTypeVariable(null); //TODO
-        else
-            return base;
-    }
-
-    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
-            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
-        FType res;
-        FrontierParser.BasicTypeContext basic = ctx.basicType();
-        if (basic != null) {
-            res = getBasicType(basic, possibleTypes);
-        } else {
-            res = getType(ctx.typeType(), possibleTypes);
-            res = FArray.getArrayFrom(res);
-        }
-        if (ctx.QUESTION() != null) {
-            res = FOptional.from(res);
-        }
-        return res;
     }
 
     public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FTypeIdentifier, FType> possibleTypes)

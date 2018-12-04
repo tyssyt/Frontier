@@ -1,5 +1,6 @@
 package tys.frontier.util;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
@@ -89,5 +90,22 @@ public final class Utils {
                     return f;
         }
         return null;
+    }
+
+    @CanIgnoreReturnValue
+    public static StringBuilder joinIdentifiers(StringBuilder sb, Iterator<? extends IdentifierNameable> nameables, String separator) {
+        if (nameables.hasNext()) {
+            sb.append(nameables.next().getIdentifier());
+            while (nameables.hasNext()) {
+                sb.append(separator);
+                sb.append(nameables.next().getIdentifier());
+            }
+        }
+        return sb;
+    }
+
+    @CanIgnoreReturnValue
+    public static StringBuilder joinIdentifiers(StringBuilder sb, Iterable<? extends IdentifierNameable> nameables, String separator) {
+        return joinIdentifiers(sb, nameables.iterator(), separator);
     }
 }
