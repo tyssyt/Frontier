@@ -41,8 +41,8 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
     }
 
     @Override
-    public boolean isStatic() {
-        return statik;
+    public boolean isInstance() {
+        return !statik;
     }
 
     public FLocalVariable getThis() {

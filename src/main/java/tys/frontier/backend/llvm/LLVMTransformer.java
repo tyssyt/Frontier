@@ -545,11 +545,11 @@ class LLVMTransformer implements
     public LLVMValueRef visitFieldAccess(FFieldAccess fieldAccess) {
         FField field = fieldAccess.getField();
         LLVMValueRef address;
-        if (field.isStatic()) {
-            address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
-        } else {
+        if (field.isInstance()) {
             LLVMValueRef object = fieldAccess.getObject().accept(this);
             address = LLVMBuildStructGEP(builder, object, module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
+        } else {
+            address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
         }
         switch (fieldAccess.getAccessType()) {
             case LOAD:

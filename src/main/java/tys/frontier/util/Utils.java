@@ -71,10 +71,10 @@ public final class Utils {
     public static FField getFieldInClass(FField field, FClass in) {
         if (field.getMemberOf() == in)
             return field;
-        if (field.isStatic())
-            return in.getStaticFields().get(field.getIdentifier());
-        else
+        if (field.isInstance())
             return in.getInstanceFields().get(field.getIdentifier());
+        else
+            return in.getStaticFields().get(field.getIdentifier());
     }
 
     public static FFunction getFunctionInClass(FFunction function, FClass in) {

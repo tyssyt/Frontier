@@ -82,13 +82,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             declaredVars.push();
             knownClasses.push();
             try {
-                if (!field.isStatic()) {
+                if (field.isInstance()) {
                     FLocalVariable _this = field.getThis();
                     declaredVars.put(_this.getIdentifier(), _this);
                 }
                 FExpression expression = visitExpression(ctx.expression());
                 field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
-                if (!field.isStatic())
+                if (field.isInstance())
                     for (FParameter param : currentType.getConstructor().getParams())
                         if (param.getIdentifier().equals(field.getIdentifier()))
                             param.setDefaultValue(expression);

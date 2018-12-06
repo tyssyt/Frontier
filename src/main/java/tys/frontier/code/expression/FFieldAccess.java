@@ -23,7 +23,7 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject {
 
     //for instance fields
     public static FFieldAccess createInstance(FField field, FExpression object) throws IncompatibleTypes {
-        assert !field.isStatic();
+        assert field.isInstance();
         return new FFieldAccess(field, object).checkTypes();
     }
     public static FFieldAccess createInstanceTrusted(FField field, FExpression object) {
@@ -36,7 +36,7 @@ public class FFieldAccess implements FVariableExpression, HasInstanceObject {
 
     //for static fields
     public static FFieldAccess createStatic(FField field) {
-        assert field.isStatic();
+        assert !field.isInstance();
         return new FFieldAccess(field, null);
     }
 

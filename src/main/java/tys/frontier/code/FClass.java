@@ -99,13 +99,13 @@ public class FClass extends FType implements HasVisibility {
     }
 
     public void addField (FField field) throws IdentifierCollision {
-        if (field.isStatic()) {
-            FField old = getStaticFields().put(field.getIdentifier(), field);
+        if (field.isInstance()) {
+            FField old = getInstanceFields().put(field.getIdentifier(), field);
             if (old != null) {
                 throw new IdentifierCollision(field, old);
             }
         } else {
-            FField old = getInstanceFields().put(field.getIdentifier(), field);
+            FField old = getStaticFields().put(field.getIdentifier(), field);
             if (old != null) {
                 throw new IdentifierCollision(field, old);
             }

@@ -58,8 +58,8 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     @Override
-    public boolean isStatic() {
-        return !(params.size() > 0 && params.get(0).getType() == memberOf && !params.get(0).hasDefaultValue());
+    public boolean isInstance() {
+        return params.size() > 0 && params.get(0).getType() == memberOf && !params.get(0).hasDefaultValue();
     }
 
     @Override

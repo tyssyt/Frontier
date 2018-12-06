@@ -11,7 +11,7 @@ public interface FTypeMember extends IdentifierNameable, HasVisibility {
         FUNCTION
     }
 
-    boolean isStatic();
+    boolean isInstance();
     MemberType getMemberType();
     FClass getMemberOf();
 

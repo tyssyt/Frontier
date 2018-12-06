@@ -76,7 +76,7 @@ public class Delegates {
         for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getFunctions().asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {
                 for (FFunction toDelegate : entry.getValue()) {
-                    if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE && !toDelegate.isStatic()) {
+                    if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE && toDelegate.isInstance()) {
                         //replace first param to match the class delegating to replaceing the class delegating from
                         ImmutableList<FParameter> params = toDelegate.getParams();
                         ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
@@ -108,11 +108,11 @@ public class Delegates {
             ImmutableList<FParameter> params = toDo.getParams();
 
             FFieldAccess fieldAccess;
-            if (d.field.isStatic()) {
-                fieldAccess = FFieldAccess.createStatic(d.field);
-            } else {
+            if (d.field.isInstance()) {
                 FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
                 fieldAccess = FFieldAccess.createInstanceTrusted(d.field, thisExpr);
+            } else {
+                fieldAccess = FFieldAccess.createStatic(d.field);
             }
 
             List<FExpression> arguments = new ArrayList<>(params.size());

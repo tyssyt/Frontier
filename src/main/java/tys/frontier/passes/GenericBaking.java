@@ -72,9 +72,9 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public void enterField(FField field) {
-        FField currentField = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic(), field.hasAssignment());
+        FField currentField = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), !field.isInstance(), field.hasAssignment());
         fieldMap.put(field, currentField);
-        if (!field.isStatic())
+        if (field.isInstance())
             varMap.put(field.getThis(), currentField.getThis());
     }
 

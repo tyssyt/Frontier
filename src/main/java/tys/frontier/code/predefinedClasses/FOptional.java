@@ -60,7 +60,7 @@ public class FOptional extends FPredefinedClass {
     private FFunction createShim(FFunction original) {
         FType returnType = original.getType() == FVoid.INSTANCE ? FVoid.INSTANCE : FOptional.fromFlatten(original.getType());
         ImmutableList<FParameter> params = original.getParams();
-        if (!original.isStatic()) {
+        if (original.isInstance()) {
             ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
             builder.add(FParameter.create(params.get(0).getIdentifier(), this, false));
             builder.addAll(params.subList(1, params.size()));

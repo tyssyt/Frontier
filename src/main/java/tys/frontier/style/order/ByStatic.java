@@ -21,6 +21,6 @@ public class ByStatic implements Comparator<FTypeMember> {
     }
 
     private int value(FTypeMember m) {
-        return m.isStatic() ^ preferStatic ? 0 : 1;
+        return m.isInstance() ^ preferStatic ? 1 : 0;
     }
 }
