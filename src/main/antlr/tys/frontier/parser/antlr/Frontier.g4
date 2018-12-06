@@ -206,7 +206,6 @@ expression
     |   expression EXMARK                                          #cast
     |   expression LBRACK expression RBRACK                        #arrayAccess
     |   expression DOT identifier                                  #fieldAccess
-    |   typeType DOT identifier                                    #staticFieldAccess
     |   expression DOT LCIdentifier LPAREN expressionList? RPAREN  #externalFunctionCall
     |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress

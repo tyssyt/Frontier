@@ -655,23 +655,20 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FFieldAccess visitFieldAccess(FrontierParser.FieldAccessContext ctx) {
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+        FType namespace;
         FExpression object = visitExpression(ctx.expression());
-
         try {
-            return FFieldAccess.createInstance(findInstanceField(object.getType(), identifier), object);
+            if (object.getType() == FTypeType.INSTANCE) {
+                if (object instanceof FClassExpression) {
+                    namespace = ((FClassExpression) object).getfClass();
+                    return FFieldAccess.createStatic(findStaticField(namespace, identifier));
+                } else {
+                    return Utils.NYI("a field access on an expression of Type FTypeType that is not an FClassExpression");
+                }
+            } else {
+                return FFieldAccess.createInstance(findInstanceField(object.getType(), identifier), object);
+            }
         } catch (FieldNotFound | AccessForbidden | IncompatibleTypes e) {
-            errors.add(e);
-            throw new Failed();
-        }
-    }
-
-    @Override
-    public FFieldAccess visitStaticFieldAccess(FrontierParser.StaticFieldAccessContext ctx) {
-        FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
-        try {
-            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
-            return FFieldAccess.createStatic(findStaticField(fType, identifier));
-        } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();
         }
