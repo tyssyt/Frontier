@@ -22,7 +22,7 @@ public interface ExpressionVisitor<Expression>  {
     default Expression exitBrackets(FBracketsExpression brackets, Expression inner) {
         return null;
     }
-    default Expression exitFunctionCall(FFunctionCall functionCall, Expression object, List<Expression> params) {
+    default Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params) {
         return null;
     }
     default Expression exitFieldAccess(FFieldAccess fieldAccess, Expression object) {

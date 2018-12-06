@@ -1,6 +1,7 @@
 package tys.frontier.parser;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.FExpression;
@@ -72,11 +73,17 @@ public class Delegates {
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
         FType from = d.field.getType();
         FClass to = d.field.getMemberOf();
-        for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getInstanceFunctions().asMap().entrySet()) {
+        for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getFunctions().asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {
                 for (FFunction toDelegate : entry.getValue()) {
-                    if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE) {
-                        FFunction del = new FFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, d.field.isStatic(), toDelegate.getType(), toDelegate.getParams());
+                    if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE && !toDelegate.isStatic()) {
+                        //replace first param to match the class delegating to replaceing the class delegating from
+                        ImmutableList<FParameter> params = toDelegate.getParams();
+                        ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
+                        builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
+                        builder.addAll(params.subList(1, params.size()));
+
+                        FFunction del = new FFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build());
                         try {
                             to.addFunction(del);
                             d.functions.add(new Pair<>(del, toDelegate));
@@ -98,21 +105,23 @@ public class Delegates {
     private void createFunctionBody(Delegate d) {
         for (Pair<FFunction, FFunction> toDoPair : d.functions) {
             FFunction toDo = toDoPair.a;
-
-            List<FExpression> arguments = new ArrayList<>(toDo.getParams().size()); //TODO compute size
-            for (FParameter p : toDo.getParams()) {
-                arguments.add(new FLocalVariableExpression(p));
-            }
+            ImmutableList<FParameter> params = toDo.getParams();
 
             FFieldAccess fieldAccess;
             if (d.field.isStatic()) {
                 fieldAccess = FFieldAccess.createStatic(d.field);
             } else {
-                FLocalVariableExpression thisExpr = new FLocalVariableExpression(toDo.getMemberOf().getThis());
+                FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
                 fieldAccess = FFieldAccess.createInstanceTrusted(d.field, thisExpr);
             }
 
-            FFunctionCall functionCall = FFunctionCall.createInstanceTrusted(fieldAccess, toDoPair.b, arguments);
+            List<FExpression> arguments = new ArrayList<>(params.size());
+            arguments.add(fieldAccess);
+            for (int i = 1; i < params.size(); i++) {
+                arguments.add(new FLocalVariableExpression(params.get(i)));
+            }
+
+            FFunctionCall functionCall = FFunctionCall.createTrusted(toDoPair.b, arguments);
 
             FStatement res;
             if (toDo.getType() == FVoid.INSTANCE)

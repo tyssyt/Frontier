@@ -5,6 +5,7 @@ import tys.frontier.code.*;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
@@ -58,7 +59,7 @@ public class GenericBaking implements FClassVisitor {
         }
 
         //the constructor we generate by baking the generic constructor is not of class FConstructor, so remove it and generate one the normal way
-        Collection<FFunction> constructors = currentClass.getStaticFunctions().get(FConstructor.IDENTIFIER);
+        Collection<FFunction> constructors = currentClass.getFunctions().get(FConstructor.IDENTIFIER);
         FFunction oldConstructor = Iterables.getOnlyElement(constructors);
         constructors.clear();
         currentClass.setConstructorVisibility(((FClass) fClass).getConstructorVisibility());
@@ -71,23 +72,24 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public void enterField(FField field) {
+        FField currentField = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic(), field.hasAssignment());
+        fieldMap.put(field, currentField);
         if (!field.isStatic())
-            varMap.put(field.getMemberOf().getThis(), currentClass.getThis());
+            varMap.put(field.getThis(), currentField.getThis());
     }
 
     @Override
     public FField exitField(FField field, Optional<FExpression> assign) {
-        FField res = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), field.isStatic(), field.hasAssignment());
+        FField res = fieldMap.get(field);
         assign.ifPresent(res::setAssignmentTrusted);
-        fieldMap.put(field, res);
         varMap.clear();
         return res;
     }
 
     @Override
     public void enterFunction(FFunction function) {
-        if (!function.isStatic() || function.isConstructor())
-            varMap.put(function.getMemberOf().getThis(), currentClass.getThis());
+        if (function.isConstructor()) //TODO no clue, can we skip?
+            varMap.put(((FConstructor) function).getThis(), new FLocalVariable(FVariableIdentifier.THIS, currentClass));
         currentFunction = currentClass.getInstantiatedFunction(function);
         for (int i = 0; i < function.getParams().size(); i++) {
             FParameter p = currentFunction.getParams().get(i);
@@ -198,25 +200,21 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FExpression exitFunctionCall(FFunctionCall functionCall, FExpression object, List<FExpression> params) {
+    public FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
         FFunction function = functionCall.getFunction();
 
         if (function instanceof FUnaryOperator) {
             FFunctionIdentifier identifier = function.getIdentifier();
-            if (object.getType() instanceof FPredefinedClass &&
+            if (function.getMemberOf() instanceof FPredefinedClass &&
                     (identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier))
             ) {
                 //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
-                ((FVariableExpression) object).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
+                ((FVariableExpression) params.get(0)).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
             }
         }
 
-
         function = bakeFunction(function);
-        if (functionCall.isStatic())
-            return FFunctionCall.createStaticTrusted(function, params);
-        else
-            return FFunctionCall.createInstanceTrusted(object, function, params);
+        return FFunctionCall.createTrusted(function, params);
     }
 
     private FFunction bakeFunction(FFunction function) {

@@ -208,7 +208,6 @@ expression
     |   expression DOT identifier                                  #fieldAccess
     |   typeType DOT identifier                                    #staticFieldAccess
     |   expression DOT LCIdentifier LPAREN expressionList? RPAREN  #externalFunctionCall
-    |   typeType DOT LCIdentifier LPAREN expressionList? RPAREN    #staticFunctionCall
     |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress

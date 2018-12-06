@@ -9,7 +9,7 @@ public interface ClassWalker<Class, Field, Function, Statement, Expression> exte
     default Class visitType(FType fClass) {
         for (FField field : fClass.getFields())
             visitField(field);
-        for (FFunction function : fClass.getFunctions())
+        for (FFunction function : fClass.getFunctions().values())
             visitFunction(function);
         return null;
     }

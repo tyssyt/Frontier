@@ -5,6 +5,7 @@ import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.parser.Delegates;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -90,7 +91,6 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean natiwe = ctx.NATIVE() != null;
-        boolean statik = ctx.STATIC() != null;
         //return type
         FrontierParser.TypeTypeContext c = ctx.typeType();
         FType returnType;
@@ -105,10 +105,15 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             returnType = FVoid.INSTANCE;
         }
 
+        ImmutableList.Builder<FParameter> params = ImmutableList.builder();
+        if (ctx.STATIC() == null) {
+            params.add(FParameter.create(FVariableIdentifier.THIS, currentClass, false));
+        }
+
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         try {
-            ImmutableList<FParameter> params = formalParameters(ctx.formalParameters());
-            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, natiwe, statik, returnType, params);
+            formalParameters(ctx.formalParameters(), params);
+            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, params.build());
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
         } catch (SyntaxErrors e) {
@@ -119,24 +124,20 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         return null;
     }
 
-    public ImmutableList<FParameter> formalParameters(FrontierParser.FormalParametersContext ctx) throws SyntaxErrors {
+    public void formalParameters(FrontierParser.FormalParametersContext ctx, ImmutableList.Builder<FParameter> params) throws SyntaxErrors {
         List<FrontierParser.FormalParameterContext> cs = ctx.formalParameter();
-        if (cs.isEmpty())
-            return ImmutableList.of();
-        ImmutableList.Builder<FParameter> res = ImmutableList.builder();
         List<SyntaxError> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
                 FParameter param = ParserContextUtils.getParameter(c, types::get);
                 treeData.parameters.put(c, param);
-                res.add(param);
+                params.add(param);
             } catch (SyntaxError e) {
                 errors.add(e);
             }
         }
         if (!errors.isEmpty())
             throw SyntaxErrors.create(errors);
-        return res.build();
     }
 
     @Override

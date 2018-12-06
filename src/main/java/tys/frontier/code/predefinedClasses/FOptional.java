@@ -5,8 +5,10 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FFunction;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.expression.FExplicitCast;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -15,6 +17,7 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,16 +46,29 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        Pair<FFunction, IntIntPair> res = baseType.resolveInstanceFunction(identifier, arguments, typeInstantiation);
+    public Pair<FFunction, IntIntPair> resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        if (arguments.size() > 0 && arguments.get(0).getType() == this) {
+            arguments = new ArrayList<>(arguments); //copy to not modify the original list
+            //TODO if literals get fixed, resolving can be based on types again and the following can be done by just replacing a type
+            arguments.set(0, FExplicitCast.createTrusted(baseType, arguments.get(0)));
+        }
+        Pair<FFunction, IntIntPair> res = baseType.resolveFunction(identifier, arguments, typeInstantiation);
         res.a = shimMap.computeIfAbsent(res.a, this::createShim);
         return res;
     }
 
     private FFunction createShim(FFunction original) {
         FType returnType = original.getType() == FVoid.INSTANCE ? FVoid.INSTANCE : FOptional.fromFlatten(original.getType());
-        return new FFunction(original.getIdentifier(), this, original.getVisibility(), true, false,
-                returnType, ImmutableList.copyOf(original.getParams())) {
+        ImmutableList<FParameter> params = original.getParams();
+        if (!original.isStatic()) {
+            ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
+            builder.add(FParameter.create(params.get(0).getIdentifier(), this, false));
+            builder.addAll(params.subList(1, params.size()));
+            params = builder.build();
+        }
+
+        return new FFunction(original.getIdentifier(), this, original.getVisibility(), false,
+                returnType, ImmutableList.copyOf(params)) {
             {predefined = true;}
             @Override
             public boolean addCall(FFunctionCall call) {

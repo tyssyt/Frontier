@@ -18,10 +18,7 @@ import tys.frontier.parser.syntaxErrors.TypeNotFound;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 import static tys.frontier.parser.antlr.FrontierParser.*;
@@ -126,14 +123,17 @@ public final class ParserContextUtils {
         }
 
         //handle Type Parameters
-        if (ctx.typeList() != null) {
-            List<FType> parameters = typesFromList(ctx.typeList().typeType(), possibleTypes);
-            if (base instanceof FClass)
-                return FInstantiatedClass.from((FClass) base, parameters);
-            else if (parameters.size() != 0)
-                throw new ParameterizedTypeVariable(null); //TODO
-        }
-        return base;
+        List<FType> parameters;
+        if (ctx.typeList() == null)
+            parameters = Collections.emptyList();
+        else
+            parameters = typesFromList(ctx.typeList().typeType(), possibleTypes);
+        if (base instanceof FClass)
+            return FInstantiatedClass.from((FClass) base, parameters);
+        else if (parameters.size() != 0)
+            throw new ParameterizedTypeVariable(null); //TODO
+        else
+            return base;
     }
 
     public static Selector<FFunctionIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {

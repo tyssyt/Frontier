@@ -213,7 +213,7 @@ public class LLVMModule implements AutoCloseable {
                 todoFieldInitilizers.add(field);
             }
 
-            for (FFunction function : fClass.getFunctions()) {
+            for (FFunction function : fClass.getFunctions().values()) {
                 if (!function.isPredefined()) {
                     addFunctionHeader(function);
                     if (!function.isNative())
@@ -238,18 +238,12 @@ public class LLVMModule implements AutoCloseable {
         //set names for all arguments, add parameter attributes
         //TODO we can use dereferenceable<i> instead of nonNull, and use dereferenceable_or_null for all others, but we need the type sizes...
         LLVMAttributeRef nonNullAttr = getEnumAttribute("nonnull");
-        int offset = 0;
-        if (!function.isStatic()) {
-            LLVMSetValueName(LLVMGetParam(res, 0), "this");
-            LLVMAddAttributeAtIndex(res, 1, nonNullAttr);
-            offset = 1;
-        }
         List<FParameter> fParams = function.getParams();
         for (int i=0; i<fParams.size(); i++) {
             FParameter param = fParams.get(i);
-            LLVMSetValueName(LLVMGetParam(res, i + offset), param.getIdentifier().name);
+            LLVMSetValueName(LLVMGetParam(res, i), param.getIdentifier().name);
             if (LLVMGetTypeKind(getLlvmType(param.getType())) == LLVMPointerTypeKind && !(param.getType() instanceof FOptional))
-                LLVMAddAttributeAtIndex(res, 1+i+offset, nonNullAttr);
+                LLVMAddAttributeAtIndex(res, 1+i, nonNullAttr);
         }
 
         //set return type attributes
@@ -266,18 +260,9 @@ public class LLVMModule implements AutoCloseable {
      */
     private LLVMTypeRef getLLVMFunctionType(FFunction function) {
         List<FParameter> fParams = function.getParams();
-        int size = fParams.size();
-        if (!function.isStatic())
-            size++;
-
-        List<LLVMTypeRef> llvmParamTypes = new ArrayList<>(size);
-        if (!function.isStatic())
-            llvmParamTypes.add(getLlvmType(function.getMemberOf())); //add 'this' as first param
-        for (FLocalVariable param : fParams)
-            llvmParamTypes.add(getLlvmType(param.getType()));
-
+        PointerPointer<LLVMTypeRef> params = createPointerPointer(function.getParams(), p -> getLlvmType(p.getType()));
         LLVMTypeRef returnType = getLlvmType(function.getType());
-        return LLVMFunctionType(returnType, createPointerPointer(llvmParamTypes), size, FALSE);
+        return LLVMFunctionType(returnType, params, fParams.size(), FALSE);
     }
 
     /**

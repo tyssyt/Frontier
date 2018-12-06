@@ -65,22 +65,11 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
-    public Pair<FFunction, IntIntPair> resolveInstanceFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public Pair<FFunction, IntIntPair> resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         if (baked) {
-            return super.resolveInstanceFunction(identifier, arguments, typeInstantiation);
+            return super.resolveFunction(identifier, arguments, typeInstantiation);
         } else {
-            Pair<FFunction, IntIntPair> res = baseClass.resolveInstanceFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
-            res.a = getInstantiatedFunction(res.a);
-            return res;
-        }
-    }
-
-    @Override
-    public Pair<FFunction, IntIntPair> resolveStaticFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        if (baked) {
-            return super.resolveStaticFunction(identifier, arguments, typeInstantiation);
-        } else {
-            Pair<FFunction, IntIntPair> res = baseClass.resolveStaticFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
+            Pair<FFunction, IntIntPair> res = baseClass.resolveFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
             res.a = getInstantiatedFunction(res.a);
             return res;
         }
@@ -93,7 +82,7 @@ public class FInstantiatedClass extends FClass {
             FType pType = typeInstantiation.getType(p.getType());
             params.add(FParameter.create(p.getIdentifier(), pType, p.hasDefaultValue()));
         }
-        return new FFunction(original.getIdentifier(), this, original.getVisibility(), false, original.isStatic(),
+        return new FFunction(original.getIdentifier(), this, original.getVisibility(), false,
                 returnType, params.build()) {
             //{predefined = true;}
             @Override

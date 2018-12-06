@@ -108,7 +108,7 @@ public class FVarAssignment implements FStatement {
         }
 
         public FBinaryOperator getOperator(FType type) {
-            return (FBinaryOperator) Iterables.getOnlyElement(type.getStaticFunctions().get(identifier));
+            return (FBinaryOperator) Iterables.getOnlyElement(type.getFunctions().get(identifier));
         }
 
         public static Operator fromString (String string) {

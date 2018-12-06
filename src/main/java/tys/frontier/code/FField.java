@@ -3,6 +3,7 @@ package tys.frontier.code;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -20,6 +21,8 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
     private boolean hasAssignment;
     private FExpression assignment;
 
+    private FLocalVariable _this; //TODO this is needed for instance fields but will likely no longer be necessary if we do attributes
+
     private List<FFieldAccess> accessedBy = new ArrayList<>();
 
     public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
@@ -29,6 +32,7 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         this.visibility = visibility;
         this.statik = statik;
         this.hasAssignment = hasAssignment;
+        this._this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
     }
 
     @Override
@@ -39,6 +43,10 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
     @Override
     public boolean isStatic() {
         return statik;
+    }
+
+    public FLocalVariable getThis() {
+        return _this;
     }
 
     @Override

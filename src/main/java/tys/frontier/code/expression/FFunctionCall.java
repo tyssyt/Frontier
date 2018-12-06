@@ -11,56 +11,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class FFunctionCall implements FExpression, HasInstanceObject {
-    private FExpression object; //null if the function is static
+public class FFunctionCall implements FExpression {
     private FFunction function;
     private List<FExpression> arguments;
 
-    private FFunctionCall(FExpression object, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
-        this.object = object;
+    private FFunctionCall(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
         this.function = function;
         this.arguments = arguments;
         checkTypes();
         function.addCall(this);
     }
 
-    public static FFunctionCall createInstance(FExpression object, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
-        assert (!function.isStatic());
-        return new FFunctionCall(object, function, arguments);
+    public static FFunctionCall create(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
+        return new FFunctionCall(function, arguments);
     }
-    public static FFunctionCall createInstanceTrusted(FExpression object, FFunction function, List<FExpression> arguments) {
+    public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
         try {
-            return createInstance(object, function, arguments);
+            return create(function, arguments);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
-    }
-
-    public static FFunctionCall createStatic(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
-        assert (function.isStatic());
-        return new FFunctionCall(null, function, arguments);
-    }
-    public static FFunctionCall createStaticTrusted(FFunction function, List<FExpression> arguments) {
-        try {
-            return createStatic(function, arguments);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            return Utils.cantHappen();
-        }
-    }
-
-    @Override
-    public HasInstanceObject copy() {
-        return Utils.cantHappen();
-    }
-
-    @Override
-    public FExpression getObject() {
-        return object;
-    }
-
-    @Override
-    public void setObject(FExpression object) {
-        this.object = object;
     }
 
     public FFunction getFunction() {
@@ -81,8 +51,6 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (object != null)
-            object = object.typeCheck(function.getMemberOf());
         List<FType> paramTypes = function.getSignature().getAllParamTypes();
         for (int i = 0; i < arguments.size(); i++) {
             arguments.set(i, arguments.get(i).typeCheck(paramTypes.get(i)));
@@ -92,11 +60,10 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterFunctionCall(this);
-        E object = this.object == null ? null : this.object.accept(visitor);
         List<E> params = new ArrayList<>(this.arguments.size());
         for (FExpression arg : this.arguments)
             params.add(arg.accept(visitor));
-        return visitor.exitFunctionCall(this, object, params);
+        return visitor.exitFunctionCall(this, params);
     }
 
     @Override
@@ -107,10 +74,7 @@ public class FFunctionCall implements FExpression, HasInstanceObject {
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
-        if (object == null)
-            sb.append(function.getMemberOf().getIdentifier());
-        else
-            object.toString(sb);
+        sb.append(function.getMemberOf().getIdentifier());
         sb.append('.').append(function.getIdentifier()).append('(');
         Iterator<? extends FExpression> it = arguments.iterator();
         if (it.hasNext()) {

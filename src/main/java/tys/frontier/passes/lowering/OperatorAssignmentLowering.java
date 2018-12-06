@@ -36,7 +36,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
         if (varExp instanceof FLocalVariableExpression || varExp instanceof FFieldAccess && ((FFieldAccess) varExp).isStatic()) {
             FFunction op = assignment.getOperator().getOperator(varExp.getType());
             FVariableExpression load = varExp.copy();
-            FExpression newValue = FFunctionCall.createStaticTrusted(op, Arrays.asList(load, assignment.getValue()));
+            FExpression newValue = FFunctionCall.createTrusted(op, Arrays.asList(load, assignment.getValue()));
             FVariableExpression store = varExp.copy();
             return FVarAssignment.createTrusted(store, FVarAssignment.Operator.ASSIGN, newValue);
         } else if (varExp instanceof HasInstanceObject) {
@@ -49,7 +49,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
             FFunction op = assignment.getOperator().getOperator(varExp.getType());
             HasInstanceObject load = oldExp.copy();
             load.setObject(new FLocalVariableExpression(containerVar));
-            FExpression newValue = FFunctionCall.createStaticTrusted(op, Arrays.asList(load, assignment.getValue()));
+            FExpression newValue = FFunctionCall.createTrusted(op, Arrays.asList(load, assignment.getValue()));
             HasInstanceObject store = oldExp.copy();
             store.setObject(new FLocalVariableExpression(containerVar));
             FVarAssignment res = FVarAssignment.createTrusted((FVariableExpression) store, FVarAssignment.Operator.ASSIGN, newValue);

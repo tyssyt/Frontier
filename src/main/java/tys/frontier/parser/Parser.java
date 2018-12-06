@@ -129,7 +129,7 @@ public class Parser {
             //search for entry Point
             try {
                 FFunction entryPoint = res.getExportedClasses().values().stream()
-                        .flatMap(cl -> cl.getStaticFunctions().values().stream())
+                        .flatMap(cl -> cl.getFunctions().values().stream())
                         .filter(FFunction::isMain)
                         .collect(MoreCollectors.onlyElement());
                 res.setEntryPoint(entryPoint);

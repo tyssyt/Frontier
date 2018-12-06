@@ -94,21 +94,16 @@ class LLVMTransformer implements
         LLVMPositionBuilderAtEnd(builder, entryBlock);
 
         //fill in parameters
-        int offset = 0;
-        if (!function.isStatic()) {
-            LLVMValueRef alloca = createEntryBlockAlloca(function.getMemberOf().getThis());
-            LLVMBuildStore(builder, LLVMGetParam(res, 0), alloca);
-            offset++;
-        }
         List<FParameter> fParams = function.getParams();
         for (int i=0; i<fParams.size(); i++) {
             LLVMValueRef alloca = createEntryBlockAlloca(fParams.get(i));
-            LLVMBuildStore(builder, LLVMGetParam(res, i+offset), alloca);
+            LLVMBuildStore(builder, LLVMGetParam(res, i), alloca);
         }
 
         //for constructors, allocate the this object
         if (function.isConstructor()) {
-            LLVMValueRef alloca = createEntryBlockAlloca(function.getMemberOf().getThis());
+            FLocalVariable _thisVar = ((FConstructor) function).getThis();
+            LLVMValueRef alloca = createEntryBlockAlloca(_thisVar);
             LLVMValueRef malloc = LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(function.getMemberOf())), "malloc_" + function.getMemberOf().getIdentifier());
             LLVMBuildStore(builder, malloc, alloca);
         }
@@ -355,13 +350,8 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall) {
-        LLVMValueRef arg;
-        if (functionCall.getFunction().isStatic())
-            arg = functionCall.getArguments().get(0).accept(this);
-        else
-            arg = functionCall.getObject().accept(this);
-
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
+        LLVMValueRef arg = functionCall.getArguments().get(0).accept(this);
         if (id.equals(FUnaryOperator.Pre.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
@@ -382,17 +372,10 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {
-        FExpression l;
-        FExpression r;
-        if (functionCall.getFunction().isStatic()) {
-            l = functionCall.getArguments().get(0);
-            r = functionCall.getArguments().get(1);
-        } else {
-            l = functionCall.getObject();
-            r = functionCall.getArguments().get(0);
-        }
-
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
+        FExpression l = functionCall.getArguments().get(0);
+        FExpression r = functionCall.getArguments().get(1);
+
         if (id.equals(FBinaryOperator.Bool.AND.identifier))
             return shortCircuitLogic(l, r, true);
         else if (id.equals(FBinaryOperator.Bool.OR.identifier))
@@ -483,7 +466,8 @@ class LLVMTransformer implements
         FFunction toCall = optional.getShimMap().inverse().get(function);
         assert toCall != null;
 
-        LLVMValueRef This = functionCall.getObject().accept(this);
+        List<? extends FExpression> fArgs = functionCall.getArguments();
+        LLVMValueRef This = fArgs.get(0).accept(this);
 
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef originalBlock = LLVMGetInsertBlock(builder);
@@ -496,19 +480,19 @@ class LLVMTransformer implements
         LLVMPositionBuilderAtEnd(builder, thenBlock);
         //call
         LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(toCall));
-        List<LLVMValueRef> args = new ArrayList<>();
+        List<LLVMValueRef> llvmArgs = new ArrayList<>();
         //this parameter
-        args.add(This);
-        //given arguments
-        for (FExpression arg : functionCall.getArguments())
-            args.add(arg.accept(this));
+        llvmArgs.add(This);
+        //given arguments besides "this"
+        for (int i = 1; i < fArgs.size(); i++)
+            llvmArgs.add(fArgs.get(i).accept(this));
         List<FParameter> params = toCall.getParams();
         //use default values for non specified parameters
-        for (int i=functionCall.getArguments().size(); i<params.size(); i++)
+        for (int i = fArgs.size(); i<params.size(); i++)
             //noinspection ConstantConditions,OptionalGetWithoutIsPresent
-            args.add(params.get(i).getDefaultValue().get().accept(this));
+            llvmArgs.add(params.get(i).getDefaultValue().get().accept(this));
         String instructionName = toCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
-        LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
+        LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(llvmArgs), llvmArgs.size(), instructionName);
         LLVMBuildBr(builder, continueBlock);
 
         LLVMPositionBuilderAtEnd(builder, continueBlock);
@@ -545,9 +529,6 @@ class LLVMTransformer implements
 
         LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
         List<LLVMValueRef> args = new ArrayList<>();
-        //this parameter for non-static
-        if (!function.isStatic())
-            args.add(functionCall.getObject().accept(this));
         //given arguments
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));

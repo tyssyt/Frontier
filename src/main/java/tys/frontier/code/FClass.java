@@ -5,7 +5,6 @@ import com.google.common.collect.Iterables;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
@@ -18,7 +17,6 @@ public class FClass extends FType implements HasVisibility {
 
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
-    protected FLocalVariable thiz;
     private Map<FTypeIdentifier, FTypeVariable> parameters;
     private List<FTypeVariable> parametersList;
 
@@ -35,7 +33,6 @@ public class FClass extends FType implements HasVisibility {
         this.visibility = visibility;
         this.parameters = parameters;
         parametersList = new ArrayList<>(parameters.values());
-        thiz = new FLocalVariable(FVariableIdentifier.THIS, this);
     }
 
     protected void addDefaultFunctions() {
@@ -60,10 +57,6 @@ public class FClass extends FType implements HasVisibility {
 
     public void setConstructorVisibility(FVisibilityModifier constructorVisibility) {
         this.constructorVisibility = constructorVisibility;
-    }
-
-    public FLocalVariable getThis() {
-        return thiz;
     }
 
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
@@ -120,24 +113,16 @@ public class FClass extends FType implements HasVisibility {
     }
 
     public void addFunction (FFunction function) throws SignatureCollision {
-        if (function.isStatic()) {
-            for (FFunction other : getStaticFunctions().get(function.getIdentifier())) {
-                if (function.getSignature().collidesWith(other.getSignature()))
-                    throw new SignatureCollision(function, other);
-            }
-            getStaticFunctions().put(function.getIdentifier(), function);
-        } else {
-            for (FFunction other : getInstanceFunctions().get(function.getIdentifier())) {
-                if (function.getSignature().collidesWith(other.getSignature()))
-                    throw new SignatureCollision(function, other);
-            }
-            getInstanceFunctions().put(function.getIdentifier(), function);
+        for (FFunction other : getFunctions().get(function.getIdentifier())) {
+            if (function.getSignature().collidesWith(other.getSignature()))
+                throw new SignatureCollision(function, other);
         }
+        getFunctions().put(function.getIdentifier(), function);
         uniqueFunctionNames = null;
     }
 
     public FConstructor getConstructor() {
-        return (FConstructor) Iterables.getOnlyElement(getStaticFunctions().get(FConstructor.IDENTIFIER));
+        return (FConstructor) Iterables.getOnlyElement(getFunctions().get(FConstructor.IDENTIFIER));
     }
 
     public FConstructor generateConstructor() {
@@ -160,9 +145,7 @@ public class FClass extends FType implements HasVisibility {
 
     private Map<FFunction, String> computeUniqueFunctionNames() {
         Map<FFunction, String> res = new HashMap<>();
-        ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create();
-        allFuncs.putAll(getInstanceFunctions());
-        allFuncs.putAll(getStaticFunctions());
+        ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create(getFunctions());
         for (Collection<FFunction> coll : allFuncs.asMap().values()) {
             List<FFunction> list = ((List<FFunction>) coll);
             String name = list.get(0).getIdentifier().name;
@@ -195,8 +178,7 @@ public class FClass extends FType implements HasVisibility {
     public void removeUnreachable(Reachability.ReachableClass reachable) {
         getStaticFields().values().retainAll(reachable.reachableFields);
         getInstanceFields().values().retainAll(reachable.reachableFields);
-        getStaticFunctions().values().retainAll(reachable.reachableFunctions);
-        getInstanceFunctions().values().retainAll(reachable.reachableFunctions);
+        getFunctions().values().retainAll(reachable.reachableFunctions);
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
@@ -208,11 +190,8 @@ public class FClass extends FType implements HasVisibility {
         for (FField f : this.getStaticFields().values()) {
             fields.add(f.accept(visitor));
         }
-        List<Fu> functions = new ArrayList<>(this.getInstanceFunctions().size() + this.getStaticFunctions().size());
-        for (FFunction f : this.getInstanceFunctions().values()) {
-            functions.add(f.accept(visitor));
-        }
-        for (FFunction f : this.getStaticFunctions().values()) {
+        List<Fu> functions = new ArrayList<>(this.getFunctions().size());
+        for (FFunction f : this.getFunctions().values()) {
             functions.add(f.accept(visitor));
         }
         return visitor.exitType(this, fields, functions);
@@ -231,10 +210,7 @@ public class FClass extends FType implements HasVisibility {
             field.toString(sb).append(", ");
         }
         sb.append("\n  ");
-        for (FFunction function : getStaticFunctions().values()) {
-            sb.append(function.headerToString()).append(", ");
-        }
-        for (FFunction function : getInstanceFunctions().values()) {
+        for (FFunction function : getFunctions().values()) {
             sb.append(function.headerToString()).append(", ");
         }
         return sb.append("\n}");
@@ -249,10 +225,7 @@ public class FClass extends FType implements HasVisibility {
         for (FField field : getInstanceFields().values()) {
             field.toString(sb).append('\n');
         }
-        for (FFunction function : getStaticFunctions().values()) {
-            function.toString(sb).append('\n');
-        }
-        for (FFunction function : getInstanceFunctions().values()) {
+        for (FFunction function : getFunctions().values()) {
             function.toString(sb).append('\n');
         }
         return sb.append("\n}");

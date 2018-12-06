@@ -80,15 +80,9 @@ public final class Utils {
     public static FFunction getFunctionInClass(FFunction function, FClass in) {
         if (function.getMemberOf() == in)
             return function;
-        if (function.isStatic()) {
-            for (FFunction f : in.getStaticFunctions().get(function.getIdentifier()))
-                if (f.getSignature().equals(function.getSignature()))
-                    return f;
-        } else {
-            for (FFunction f : in.getInstanceFunctions().get(function.getIdentifier()))
-                if (f.getSignature().equals(function.getSignature()))
-                    return f;
-        }
+        for (FFunction f : in.getFunctions().get(function.getIdentifier()))
+            if (f.getSignature().equals(function.getSignature()))
+                return f;
         return null;
     }
 

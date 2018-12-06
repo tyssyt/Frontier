@@ -30,7 +30,6 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     private FVisibilityModifier modifier;
     private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean natiwe;
-    private boolean statik;
     private FType returnType;
     private ImmutableList<FParameter> params;
     private Signature signature;
@@ -38,26 +37,29 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, boolean statik, FType returnType, ImmutableList<FParameter> params) {
+    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
         this.natiwe = natiwe;
-        this.statik = statik;
         this.returnType = returnType;
         this.params = params;
         this.signature = new Signature(this);
     }
 
-    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, boolean statik, FType returnType, ImmutableList<FParameter> params) {
+    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean natiwe,FType returnType, ImmutableList<FParameter> params) {
         this.identifier = signature.identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
         this.natiwe = natiwe;
-        this.statik = statik;
         this.returnType = returnType;
         this.params = params;
         this.signature = signature;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return !(params.size() > 0 && params.get(0).getType() == memberOf && !params.get(0).hasDefaultValue());
     }
 
     @Override
@@ -72,11 +74,6 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     public boolean isNative() {
         return natiwe;
-    }
-
-    @Override
-    public boolean isStatic() {
-        return statik;
     }
 
     public ImmutableList<FParameter> getParams() {
@@ -130,7 +127,6 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
 
     public boolean isMain() {
         return signature.isMain()
-                && statik
                 && modifier == FVisibilityModifier.EXPORT
                 && memberOf.getVisibility() == FVisibilityModifier.EXPORT
                 && returnType == FVoid.INSTANCE;
@@ -183,7 +179,7 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     }
 
     public String headerToString() {
-        return (body==null ? "abstract " : "") + modifier + (statik ? " static " : " ") + returnType.getIdentifier() + " " +identifier + " " + params;
+        return (body==null ? "abstract " : "") + modifier + " " +  returnType.getIdentifier() + " " +identifier + " " + params;
     }
 
     @Override

@@ -1,7 +1,5 @@
 package tys.frontier.passes.lowering;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.Operator.FBinaryOperator;
@@ -57,15 +55,15 @@ public class FForEachLowering extends StatementReplacer {
         FVarDeclaration decl = FVarDeclaration.createTrusted(counter, zero);
 
         //condition
-        FFunction less = Iterables.getOnlyElement(FIntN._32.getStaticFunctions().get(FBinaryOperator.Bool.LESS.identifier));
+        FFunction less = FBinaryOperator.Bool.LESS.getFunction(FIntN._32);
         FFieldAccess size = FFieldAccess.createInstanceTrusted(array.getType().getInstanceFields().get(FArray.SIZE), array);
-        FExpression cond = FFunctionCall.createStaticTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), size));
+        FExpression cond = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), size));
 
         //increment
-        FFunction inc = Iterables.getOnlyElement(FIntN._32.getInstanceFunctions().get(FUnaryOperator.Pre.INC.identifier));
+        FFunction inc = FUnaryOperator.Pre.INC.getFunction(FIntN._32);
         FLocalVariableExpression invVarExpre = new FLocalVariableExpression(counter);
         invVarExpre.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE); //TODO setting this here explicitly is ugly, but fine for now
-        FExpression incCall = FFunctionCall.createInstanceTrusted(invVarExpre, inc, ImmutableList.of());
+        FExpression incCall = FFunctionCall.createTrusted(inc, Arrays.asList(invVarExpre));
 
         //as first statement of loop accessing the array and storing the result in the iterator var
         FLocalVariable iterator = forEach.getIterator();

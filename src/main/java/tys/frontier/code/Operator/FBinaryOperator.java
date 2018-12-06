@@ -1,8 +1,11 @@
 package tys.frontier.code.Operator;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import tys.frontier.code.FClass;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.FType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FBool;
@@ -35,6 +38,10 @@ public class FBinaryOperator extends FOperator {
                     FParameter.create(new FVariableIdentifier("second"), fClass, false)) {
                 {predefined = true;}
             };
+        }
+
+        public FFunction getFunction(FType type) {
+            return Iterables.getOnlyElement(type.getFunctions().get(identifier));
         }
     }
 
@@ -70,10 +77,14 @@ public class FBinaryOperator extends FOperator {
                 {predefined = true;}
             };
         }
+
+        public FFunction getFunction(FType type) {
+            return Iterables.getOnlyElement(type.getFunctions().get(identifier));
+        }
     }
 
     private FBinaryOperator(FFunctionIdentifier identifier, FClass fClass, FClass returnType, FParameter first, FParameter second) {
-        super(identifier, fClass, true, returnType, ImmutableList.of(first, second));
+        super(identifier, fClass, returnType, ImmutableList.of(first, second));
         assert fClass == first.getType();
         assert fClass == second.getType();
     }

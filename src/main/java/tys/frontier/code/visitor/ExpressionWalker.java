@@ -16,8 +16,6 @@ public interface ExpressionWalker<Expression> {
     }
 
     default Expression visitFunctionCall(FFunctionCall functionCall) {
-        if (functionCall.getObject() != null)
-            functionCall.getObject().accept(this);
         for (FExpression param : functionCall.getArguments())
             param.accept(this);
         return null;

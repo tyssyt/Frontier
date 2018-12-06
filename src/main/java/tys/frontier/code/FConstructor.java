@@ -6,6 +6,7 @@ import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.FBlock;
@@ -21,9 +22,11 @@ public class FConstructor extends FFunction {
 
     public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
 
+    private FLocalVariable _this;
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass, modifier, false, true, fClass, params);
+        super(IDENTIFIER, fClass, modifier, false, fClass, params);
+        _this = new FLocalVariable(FVariableIdentifier.THIS, fClass);
     }
 
     public static FConstructor create(FVisibilityModifier modifier, FClass fClass) {
@@ -36,6 +39,10 @@ public class FConstructor extends FFunction {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
         res.predefined = true;
         return res;
+    }
+
+    public FLocalVariable getThis() {
+        return _this;
     }
 
     @Override
@@ -74,11 +81,11 @@ public class FConstructor extends FFunction {
     private void generateBody() {
         List<FStatement> statements = new ArrayList<>();
         for (FParameter param : getParams()) {
-            FExpression thisExpr = new FLocalVariableExpression(getMemberOf().getThis());
+            FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = getMemberOf().getInstanceFields().get(param.getIdentifier());
             statements.add(FVarAssignment.createTrusted(FFieldAccess.createInstanceTrusted(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
-        statements.add(FReturn.createTrusted(new FLocalVariableExpression(getMemberOf().getThis()), this));
+        statements.add(FReturn.createTrusted(new FLocalVariableExpression(_this), this));
         setBody(FBlock.from(statements));
     }
 }
