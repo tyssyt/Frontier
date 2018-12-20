@@ -137,6 +137,8 @@ typeType
     |   typeType (COMMA typeType)* ARROW typeType
     |   predefinedType (LT typeList GT)?
     |   TypeIdentifier (LT typeList GT)?
+    |   LPAREN typeType RPAREN
+    |   LPAREN RPAREN
     ;
 
 typeList

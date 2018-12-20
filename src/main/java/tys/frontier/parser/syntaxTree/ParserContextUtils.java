@@ -118,8 +118,10 @@ public final class ParserContextUtils {
             base = getPredefined(ctx.predefinedType());
         } else if (ctx.TypeIdentifier() != null) {
             base = getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        } else if (ctx.typeType(0) != null) {
+            return getType(ctx.typeType(0), possibleTypes);
         } else {
-            return Utils.cantHappen();
+            return FVoid.INSTANCE;
         }
 
         //handle Type Parameters
