@@ -542,6 +542,17 @@ class LLVMTransformer implements
     }
 
     @Override
+    public LLVMValueRef visitDynamicFunctionCall(DynamicFunctionCall functionCall) {
+        //TODO this doesn't work for predefined functions
+        LLVMValueRef function = functionCall.getFunction().accept(this);
+        List<LLVMValueRef> args = new ArrayList<>();
+        for (FExpression arg : functionCall.getArguments())
+            args.add(arg.accept(this));
+        String instructionName = functionCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        return LLVMBuildCall(builder, function, createPointerPointer(args), args.size(), instructionName);
+    }
+
+    @Override
     public LLVMValueRef visitFieldAccess(FFieldAccess fieldAccess) {
         FField field = fieldAccess.getField();
         LLVMValueRef address;

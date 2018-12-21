@@ -21,6 +21,14 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
+    default Expression visitDynamicFunctionCall(DynamicFunctionCall functionCall) {
+        functionCall.getFunction().accept(this);
+        for (FExpression param : functionCall.getArguments()) {
+            param.accept(this);
+        }
+        return null;
+    }
+
     default Expression visitFieldAccess(FFieldAccess fieldAccess) {
         if (fieldAccess.getObject() != null)
                 fieldAccess.getObject().accept(this);

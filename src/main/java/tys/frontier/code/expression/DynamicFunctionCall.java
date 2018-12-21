@@ -65,7 +65,7 @@ public class DynamicFunctionCall implements FExpression {
 
     @Override
     public <E> E accept(ExpressionWalker<E> walker) {
-        return null; //TODO
+        return walker.visitDynamicFunctionCall(this);
     }
 
     @Override
