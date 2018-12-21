@@ -1,13 +1,11 @@
 package tys.frontier.code;
 
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.util.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TypeInstantiation {
 
@@ -72,6 +70,13 @@ public class TypeInstantiation {
                     return FArray.getArrayFrom(typeMap.get(typeVariable));
             }
             return array;
+        } else if (original instanceof FFunctionType) {
+            FFunctionType fFunctionType = (FFunctionType) original;
+            List<FType> in = new ArrayList<>(fFunctionType.getIn().size());
+            for (FType fType : fFunctionType.getIn()) {
+                in.add(getType(fType));
+            }
+            return FFunctionType.from(in, getType(fFunctionType.getOut()));
         } else if (original instanceof FClass) {
             return FInstantiatedClass.from((FClass) original, this);
         } else if (original instanceof FTypeVariable) {
