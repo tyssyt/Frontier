@@ -9,10 +9,7 @@ import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.predefinedClasses.FPredefinedClass;
-import tys.frontier.code.predefinedClasses.FTypeType;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -106,18 +103,37 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         return field;
     }
 
+    private void checkAccessForbidden(FTypeMember member) throws AccessForbidden {
+        if (currentType != member.getMemberOf() && member.getVisibility() == FVisibilityModifier.PRIVATE) {
+            throw new AccessForbidden(member);
+        }
+    }
+
+    private FVariableExpression findLocal(FIdentifier identifier, FType type) throws UndeclaredVariable {
+        try {
+            return new FLocalVariableExpression(findLocalVar(identifier));
+        } catch (UndeclaredVariable ignored) {}
+        try {
+            return FFieldAccess.createStatic(findStaticField(currentType, identifier));
+        } catch (FieldNotFound ignored) {
+        } catch (AccessForbidden accessForbidden) {
+            return Utils.cantHappen();
+        }
+        try {
+            return FFieldAccess.createInstanceTrusted(findInstanceField(currentType, identifier), getThisExpr());
+        } catch (FieldNotFound | UndeclaredVariable ignored) {
+        } catch (AccessForbidden accessForbidden) {
+            return Utils.cantHappen();
+        }
+        throw new UndeclaredVariable(identifier);
+    }
+
     private FLocalVariable findLocalVar(FIdentifier identifier) throws UndeclaredVariable {
         FLocalVariable var = declaredVars.get(identifier);
         if (var == null) {
             throw new UndeclaredVariable(identifier);
         }
         return var;
-    }
-
-    private void checkAccessForbidden(FTypeMember member) throws AccessForbidden {
-        if (currentType != member.getMemberOf() && member.getVisibility() == FVisibilityModifier.PRIVATE) {
-            throw new AccessForbidden(member);
-        }
     }
 
     private FField findInstanceField(FType fClass, FIdentifier identifier) throws FieldNotFound, AccessForbidden {
@@ -517,24 +533,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FVariableExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
         try {
-            return new FLocalVariableExpression(findLocalVar(identifier));
-        } catch (UndeclaredVariable ignored) {}
-        try {
-            return FFieldAccess.createStatic(findStaticField(currentType, identifier));
-        } catch (FieldNotFound ignored) {
-        } catch (AccessForbidden accessForbidden) {
-            errors.add(accessForbidden);
+            return findLocal(identifier, currentType);
+        } catch (UndeclaredVariable undeclaredVariable) {
+            errors.add(undeclaredVariable);
             throw new Failed();
         }
-        try {
-            return FFieldAccess.createInstance(findInstanceField(currentType, identifier), getThisExpr());
-        } catch (FieldNotFound | UndeclaredVariable ignored) {
-        } catch (AccessForbidden | IncompatibleTypes syntaxError) {
-            errors.add(syntaxError);
-            throw new Failed();
-        }
-        errors.add(new UndeclaredVariable(identifier));
-        throw new Failed();
     }
 
     @Override
@@ -701,14 +704,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FFunctionCall visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
+    public FExpression visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         List<FExpression> params = new ArrayList<>();
         FType namespace;
 
         try {
             FExpression object = visitExpression(ctx.expression());
-            if (object.getType() == FTypeType.INSTANCE) {
+            if (object.getType() instanceof FFunctionType) {
+                return DynamicFunctionCall.create(object, visitExpressionList(ctx.expressionList()));
+            } else  if (object.getType() == FTypeType.INSTANCE) {
                 if (object instanceof FClassExpression)
                     namespace = ((FClassExpression) object).getfClass();
                 else
@@ -717,12 +722,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 namespace = object.getType();
                 params.add(object);
             }
-        } catch (Failed f) {
-            visitExpressionList(ctx.expressionList());
-            throw f;
-        }
-        params.addAll(visitExpressionList(ctx.expressionList()));
-        try {
+            params.addAll(visitExpressionList(ctx.expressionList()));
             return functionCall(namespace, identifier, params);
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
@@ -731,18 +731,32 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public FFunctionCall visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
-        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
+    public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
+        //first check if we have a variable of function type
+        FIdentifier identifier = new FVariableIdentifier(ctx.LCIdentifier().getText());
         List<FExpression> params = visitExpressionList(ctx.expressionList());
+        try {
+            FVariableExpression var = findLocal(identifier, currentType);
+            if (var.getType() instanceof FFunctionType) {
+                return DynamicFunctionCall.create(var, params);
+            }
+        } catch (UndeclaredVariable ignored) {
+        } catch (IncompatibleTypes incompatibleTypes) {
+            errors.add(incompatibleTypes);
+            throw new Failed();
+        }
+
+        //now check for instance/static functions
+        FFunctionIdentifier fIdentifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         try {
             List<FExpression> params2 = new ArrayList<>(params.size() + 1);
             params2.add(getThisExpr());
             params2.addAll(params);
-            return functionCall(currentType, identifier, params2);
+            return functionCall(currentType, fIdentifier, params2);
         } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden | IncompatibleTypes e) {
             //instance method not found, check for static method
             try {
-                return functionCall(currentType, identifier, params);
+                return functionCall(currentType, fIdentifier, params);
             } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
                 errors.add(e2);
                 throw new Failed();
