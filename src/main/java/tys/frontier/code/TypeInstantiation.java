@@ -64,12 +64,7 @@ public class TypeInstantiation {
     public FType getType(FType original) {
         if (original instanceof FArray) {
             FArray array = (FArray) original;
-            if (array.getBaseType() instanceof FTypeVariable) {
-                FTypeVariable typeVariable = (FTypeVariable) array.getBaseType();
-                if (typeMap.containsKey(typeVariable))
-                    return FArray.getArrayFrom(typeMap.get(typeVariable));
-            }
-            return array;
+            return FArray.getArrayFrom(getType(array.getBaseType()));
         } else if (original instanceof FFunctionType) {
             FFunctionType fFunctionType = (FFunctionType) original;
             List<FType> in = new ArrayList<>(fFunctionType.getIn().size());
