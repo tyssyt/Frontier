@@ -10,6 +10,7 @@ public interface ExpressionVisitor<Expression>  {
     default void enterArrayAccess(FArrayAccess arrayAccess) {}
     default void enterBrackets(FBracketsExpression brackets) {}
     default void enterFunctionCall(FFunctionCall functionCall) {}
+    default void enterDynamicFunctionCall(DynamicFunctionCall functionCall) {}
     default void enterFieldAccess(FFieldAccess fieldAccess) {}
     default void enterImplicitCast(FImplicitCast implicitCast) {}
     default void enterExplicitCast(FExplicitCast explicitCast) {}
@@ -25,6 +26,7 @@ public interface ExpressionVisitor<Expression>  {
     default Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params) {
         return null;
     }
+    default Expression exitDynamicFunctionCall(DynamicFunctionCall functionCall, Expression function, List<Expression> params) {return null;}
     default Expression exitFieldAccess(FFieldAccess fieldAccess, Expression object) {
         return null;
     }

@@ -9,6 +9,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DynamicFunctionCall implements FExpression {
@@ -60,7 +61,12 @@ public class DynamicFunctionCall implements FExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return null; //TODO
+        visitor.enterDynamicFunctionCall(this);
+        E function = this.function.accept(visitor);
+        List<E> params = new ArrayList<>(this.arguments.size());
+        for (FExpression arg : this.arguments)
+            params.add(arg.accept(visitor));
+        return visitor.exitDynamicFunctionCall(this, function, params);
     }
 
     @Override

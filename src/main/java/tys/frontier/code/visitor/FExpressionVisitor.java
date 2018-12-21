@@ -22,6 +22,11 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
+    default FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> params) {
+        return functionCall;
+    }
+
+    @Override
     default FExpression exitFieldAccess(FFieldAccess fieldAccess, FExpression object) {
         return fieldAccess;
     }

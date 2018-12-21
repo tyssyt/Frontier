@@ -217,6 +217,11 @@ public class GenericBaking implements FClassVisitor {
         return FFunctionCall.createTrusted(function, params);
     }
 
+    @Override
+    public FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> params) {
+        return DynamicFunctionCall.createTrusted(function, params);
+    }
+
     private FFunction bakeFunction(FFunction function) {
         if (function.getMemberOf() == currentClass.getBaseClass())
             function = currentClass.getInstantiatedFunction(function);
