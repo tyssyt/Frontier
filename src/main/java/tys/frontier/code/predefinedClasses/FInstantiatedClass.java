@@ -84,7 +84,6 @@ public class FInstantiatedClass extends FClass {
         }
         return new FFunction(original.getIdentifier(), this, original.getVisibility(), false,
                 returnType, params.build()) {
-            //{predefined = true;}
             @Override
             public boolean addCall(FFunctionCall call) {
                 original.addCall(call);

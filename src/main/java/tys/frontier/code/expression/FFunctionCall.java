@@ -1,5 +1,6 @@
 package tys.frontier.code.expression;
 
+import com.google.common.base.Joiner;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -8,7 +9,6 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class FFunctionCall implements FExpression {
@@ -76,13 +76,7 @@ public class FFunctionCall implements FExpression {
     public StringBuilder toString(StringBuilder sb) {
         sb.append(function.getMemberOf().getIdentifier());
         sb.append('.').append(function.getIdentifier()).append('(');
-        Iterator<? extends FExpression> it = arguments.iterator();
-        if (it.hasNext()) {
-            it.next().toString(sb);
-            while (it.hasNext())
-                it.next().toString(sb.append(", "));
-        }
-        return sb.append(')');
+        return Joiner.on(',').appendTo(sb, arguments).append(')');
     }
     @Override
     public String toString() {

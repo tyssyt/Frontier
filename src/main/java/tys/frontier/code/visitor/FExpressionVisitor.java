@@ -17,7 +17,7 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
-    default FExpression exitFunctionCall(FFunctionCall functionCall,  List<FExpression> params) {
+    default FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
         return functionCall;
     }
 
