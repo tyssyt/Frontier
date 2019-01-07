@@ -5,7 +5,6 @@ import tys.frontier.code.*;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
@@ -62,6 +61,7 @@ public class GenericBaking implements FClassVisitor {
         Collection<FFunction> constructors = currentClass.getFunctions().get(FConstructor.IDENTIFIER);
         FFunction oldConstructor = Iterables.getOnlyElement(constructors);
         constructors.clear();
+        currentClass.getFunctions().get(FConstructor.MALLOC_ID).clear(); //TODO this entire block should be done very differently, constructor should be a flag we can just set
         currentClass.setConstructorVisibility(((FClass) fClass).getConstructorVisibility());
         FConstructor newConstructor = currentClass.generateConstructor();
         for (FFunctionCall functionCall : oldConstructor.getCalledBy()) {
@@ -88,8 +88,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public void enterFunction(FFunction function) {
-        if (function.isConstructor()) //TODO no clue, can we skip?
-            varMap.put(((FConstructor) function).getThis(), new FLocalVariable(FVariableIdentifier.THIS, currentClass));
+        if (function.isConstructor()) {} //TODO no clue, can we skip?
         currentFunction = currentClass.getInstantiatedFunction(function);
         for (int i = 0; i < function.getParams().size(); i++) {
             FParameter p = currentFunction.getParams().get(i);

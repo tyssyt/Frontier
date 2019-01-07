@@ -128,6 +128,7 @@ public class FClass extends FType implements HasVisibility {
     public FConstructor generateConstructor() {
         FVisibilityModifier visibility = constructorVisibility == null ? FVisibilityModifier.PRIVATE : constructorVisibility;
         try {
+            addFunction(FConstructor.createMalloc(this));
             FConstructor res = FConstructor.create(visibility, this);
             addFunction(res);
             return res;

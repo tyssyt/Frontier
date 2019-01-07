@@ -1,32 +1,32 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FFieldAccess;
-import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import com.google.common.collect.Iterables;
+import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.statement.FBlock;
-import tys.frontier.code.statement.FReturn;
-import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.code.statement.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 public class FConstructor extends FFunction {
 
     public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
-
-    private FLocalVariable _this;
+    public static final FFunctionIdentifier MALLOC_ID = new FFunctionIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
         super(IDENTIFIER, fClass, modifier, false, fClass, params);
-        _this = new FLocalVariable(FVariableIdentifier.THIS, fClass);
+    }
+
+    public static FFunction createMalloc(FClass fClass) {
+        FFunction function = new FFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of());
+        function.predefined = true;
+        return function;
     }
 
     public static FConstructor create(FVisibilityModifier modifier, FClass fClass) {
@@ -39,10 +39,6 @@ public class FConstructor extends FFunction {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
         res.predefined = true;
         return res;
-    }
-
-    public FLocalVariable getThis() {
-        return _this;
     }
 
     @Override
@@ -80,6 +76,11 @@ public class FConstructor extends FFunction {
 
     private void generateBody() {
         List<FStatement> statements = new ArrayList<>();
+        FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, getMemberOf());
+
+        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(getMemberOf().getFunctions().get(MALLOC_ID)), Collections.emptyList());
+        statements.add(FVarDeclaration.createTrusted(_this, functionCall));
+
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = getMemberOf().getInstanceFields().get(param.getIdentifier());

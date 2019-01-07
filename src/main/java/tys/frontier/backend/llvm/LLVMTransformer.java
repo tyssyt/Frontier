@@ -100,14 +100,6 @@ class LLVMTransformer implements
             LLVMBuildStore(builder, LLVMGetParam(res, i), alloca);
         }
 
-        //for constructors, allocate the this object
-        if (function.isConstructor()) {
-            FLocalVariable _thisVar = ((FConstructor) function).getThis();
-            LLVMValueRef alloca = createEntryBlockAlloca(_thisVar);
-            LLVMValueRef malloc = LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(function.getMemberOf())), "malloc_" + function.getMemberOf().getIdentifier());
-            LLVMBuildStore(builder, malloc, alloca);
-        }
-
         //do the body
         //noinspection ConstantConditions,OptionalGetWithoutIsPresent
         for (FStatement statement : function.getBody().get())
@@ -516,6 +508,8 @@ class LLVMTransformer implements
             return predefinedArray(functionCall);
         } else if (function.getMemberOf() instanceof FOptional) {
             return predefinedOptional(functionCall);
+        } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
+            return LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(functionCall.getType())), "malloc_" + functionCall.getType().getIdentifier());
         } else {
             return Utils.cantHappen();
         }
