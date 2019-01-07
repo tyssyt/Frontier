@@ -67,17 +67,22 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitField(FField field) {
         LLVMValueRef res = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
+        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(module.sfInit));
         if (res.isNull()) {
             Utils.cantHappen();
         }
 
-        LLVMTypeRef type = module.getLlvmType(field.getType());
-        LLVMValueRef val = field.getAssignment()
-                .filter(v -> v instanceof FLiteralExpression)
-                .map(v -> (FLiteralExpression)v)
-                .map(lit -> lit.accept(this))
-                .orElse(LLVMConstNull(type));
-        LLVMSetInitializer(res, val);
+        if (field.hasAssignment()) {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            LLVMValueRef val = field.getAssignment().get().accept(this);
+            if (LLVMIsConstant(val) == TRUE) {
+                LLVMSetInitializer(res, val);
+            } else {
+                LLVMSetInitializer(res, LLVMConstNull(module.getLlvmType(field.getType())));
+                LLVMBuildStore(builder, val, res);
+            }
+        } else
+            LLVMSetInitializer(res, LLVMConstNull(module.getLlvmType(field.getType())));
         return null;
     }
 

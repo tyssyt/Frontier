@@ -53,6 +53,8 @@ public class LLVMModule implements AutoCloseable {
     final LLVMTypeRef bytePointer;
     final LLVMTypeRef bytePointerPointer;
 
+    LLVMValueRef sfInit;
+
     private boolean verificationNeeded = false;
     private boolean ownsContext;
     private LLVMContextRef context;
@@ -76,6 +78,9 @@ public class LLVMModule implements AutoCloseable {
         bytePointer = LLVMPointerType(byteType, 0);
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
         fillInPredefinedTypes();
+
+        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FVoid.INSTANCE), (PointerPointer) null, 0, FALSE));
+        LLVMAppendBasicBlock(sfInit, "entry");
     }
 
     private void fillInPredefinedTypes() {
@@ -209,7 +214,6 @@ public class LLVMModule implements AutoCloseable {
                 LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
 
                 setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
-                //LLVMSetGlobalConstant(global, whoKnows); TODO find out if it is constant
                 todoFieldInitilizers.add(field);
             }
 
@@ -311,11 +315,16 @@ public class LLVMModule implements AutoCloseable {
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
         LLVMPositionBuilderAtEnd(builder, entryBlock);
 
-        //call entry Point
+        //call entry Point & sfInit
+        LLVMBuildCall(builder, sfInit, null, 0, "");
         LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(entryPoint));
         LLVMBuildCall(builder, func, null, 0, "");
 
         LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
+
+        //end sfInit
+        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(sfInit));
+        LLVMBuildRetVoid(builder);
     }
 
     public void verify() { //TODO this should be called at other places as well
