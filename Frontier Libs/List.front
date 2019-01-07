@@ -1,0 +1,74 @@
+export class List<T>:
+    T[] elements;
+    int32 size := 0;
+
+    export static create(int32 startSize:=5) -> List<T> {
+        List<T> res := new List<T>(new T[startSize]);
+        return res;
+    }
+
+    export elements() -> T[] {
+        return elements; //TODO if we have proper handling of fields in the instantiated shims this is no longer necessary
+    }
+
+    export size() -> int32 {
+        return size; //TODO if we have proper handling of fields in the instantiated shims this is no longer necessary
+    }
+
+    export add(T e) {
+        if size >= elements.size {
+            expand();
+        }
+        elements[size] = e;
+        ++size;
+    }
+
+    export add(T e, int32 pos) {
+        if size >= elements.size {
+            expand();
+        }
+        for int32 i := size; i>pos; --i {
+            elements[i] = elements[i-1]; //TODO replace by arrayCopy... once we have that
+        }
+        elements[pos] = e;
+        ++size;
+    }
+
+    export put(T e, int32 pos) {
+        elements[pos] = e;
+    }
+
+    export get(int32 i) -> T {
+        return elements[i];
+    }
+
+    export clear() {
+        size=0;
+    }
+
+    export remove() -> T {
+        --size;
+        return elements[size];
+    }
+
+    export remove(int32 pos) -> T {
+        T res := elements[pos];
+        for int32 i := pos; i<size-1; ++i {
+            elements[i] = elements[i+1]; //TODO replace by arrayCopy... once we have that
+        }
+        --size;
+        return res;
+    }
+
+    private expand() {
+        int32 newSize := (int32)2*elements.size;
+        if newSize < 10 {
+            newSize = 10;
+        }
+
+        newElements := new T[newSize];
+        for int32 i:=0; i<elements.size; ++i {
+            newElements[i] = elements[i]; //TODO replace by arrayCopy... once we have that
+        }
+        elements = newElements;
+    }

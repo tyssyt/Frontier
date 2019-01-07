@@ -6,7 +6,26 @@ export class IO:
         Native.putchar(chara);
     }
 
-    export static void print(char[] string) {
+    export static printInt(int64 l) {
+        //yeah I know
+        if l < 0 {
+            print("-");
+            l *= -1;
+        }
+        int32 i := (int32) (l % 1000);
+        {
+            int32 j := i / 100;
+            print(j + 48);
+            i %=100;
+        } {
+            int32 j := i / 10;
+            print(j + 48);
+            i %=10;
+        }
+        print(i + 48);
+    }
+
+    export static print(char[] string) {
         for c : string {
             print(c);
         }
