@@ -527,6 +527,7 @@ class LLVMTransformer implements
             return predefinedFunctionCall(functionCall);
 
         LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
+        assert func != null && !func.isNull() : function.getIdentifier() + "could not be found in module";
         List<LLVMValueRef> args = new ArrayList<>();
         //given arguments
         for (FExpression arg : functionCall.getArguments())
