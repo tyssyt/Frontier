@@ -2,3 +2,17 @@ export class Native:
 
     export native static putchar(int32 chara);
     export native static getchar() -> int32;
+
+    export native static log(float32 val) -> float32;
+    export native static log(float64 val) -> float64;
+    export native static log10(float32 val) -> float32;
+    export native static log10(float64 val) -> float64;
+    export native static log2(float32 val) -> float32;
+    export native static log2(float64 val) -> float64;
+
+    export native static ceil(float32 val) -> float32;
+    export native static ceil(float64 val) -> float64;
+    export native static floor(float32 val) -> float32;
+    export native static floor(float64 val) -> float64;
+    export native static trunc(float32 val) -> float32;
+    export native static trunc(float64 val) -> float64;

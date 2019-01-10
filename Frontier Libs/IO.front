@@ -6,23 +6,27 @@ export class IO:
         Native.putchar(chara);
     }
 
-    export static printInt(int64 l) {
-        //yeah I know
-        if l < 0 {
-            print("-");
+    export static printInt(int64 l) { //TODO once we have better Math this can be cleaned up a lot
+        bool pos := l >= 0;
+        if !pos {
             l *= -1;
         }
-        int32 i := (int32) (l % 1000);
-        {
-            int32 j := i / 100;
-            print(j + 48);
-            i %=100;
-        } {
-            int32 j := i / 10;
-            print(j + 48);
-            i %=10;
+        int32 size := (int32) Native.ceil(Native.log10((float64)l));
+        if (!pos) {
+            size += 1;
         }
-        print(i + 48);
+
+        char[] digits := new char[size];
+        for int32 i:=1; i<=size; ++i {
+            int64 remainder := l % 10;
+            digits[size-i] = (char) remainder + 48;
+            l /= 10;
+        }
+
+        if (!pos) {
+            digits[0] = "-";
+        }
+        print(digits);
     }
 
     export static print(char[] string) {
