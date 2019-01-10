@@ -2,7 +2,6 @@ package tys.frontier.code;
 
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -73,7 +72,7 @@ public class TypeInstantiation {
             }
             return FFunctionType.from(in, getType(fFunctionType.getOut()));
         } else if (original instanceof FClass) {
-            return FInstantiatedClass.from((FClass) original, this);
+            return ((FClass) original).getInstantiation(this);
         } else if (original instanceof FTypeVariable) {
             return typeMap.getOrDefault(original, original);
         } else {

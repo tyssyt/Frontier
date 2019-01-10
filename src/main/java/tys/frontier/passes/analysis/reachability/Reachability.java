@@ -1,15 +1,11 @@
 package tys.frontier.passes.analysis.reachability;
 
-import tys.frontier.code.FClass;
-import tys.frontier.code.FField;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.*;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionAddress;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Utils;

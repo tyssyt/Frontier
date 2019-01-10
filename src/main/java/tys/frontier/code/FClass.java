@@ -2,12 +2,14 @@ package tys.frontier.code;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.MapMaker;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Utils;
 
@@ -19,6 +21,8 @@ public class FClass extends FType implements HasVisibility {
     private FVisibilityModifier constructorVisibility;
     private Map<FTypeIdentifier, FTypeVariable> parameters;
     private List<FTypeVariable> parametersList;
+    private Map<TypeInstantiation, FInstantiatedClass> instantiations;
+
 
     private Map<FType, FField> delegates = new HashMap<>();
 
@@ -31,8 +35,15 @@ public class FClass extends FType implements HasVisibility {
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility, Map<FTypeIdentifier, FTypeVariable> parameters) {
         super(identifier);
         this.visibility = visibility;
-        this.parameters = parameters;
-        parametersList = new ArrayList<>(parameters.values());
+        if (parameters.isEmpty()) {
+            this.parameters = Collections.emptyMap();
+            this.parametersList = Collections.emptyList();
+            this.instantiations = Collections.emptyMap();
+        } else {
+            this.parameters = parameters;
+            this.parametersList = new ArrayList<>(parameters.values());
+            this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+        }
     }
 
     protected void addDefaultFunctions() {
@@ -65,6 +76,29 @@ public class FClass extends FType implements HasVisibility {
 
     public List<FTypeVariable> getParametersList() {
         return parametersList;
+    }
+
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+        if (parametersList.size() != types.size()) {
+            throw new WrongNumberOfTypeArguments(this, types);
+        }
+        if (types.size() == 0)
+            return this;
+        Map<FTypeVariable, FType> typeMap = new HashMap<>();
+        for (int i = 0; i < parametersList.size(); i++) {
+            if (parametersList.get(i) != types.get(i))
+                typeMap.put(parametersList.get(i), types.get(i));
+        }
+        return getInstantiation(TypeInstantiation.create(typeMap));
+    }
+
+    public FClass getInstantiation(TypeInstantiation typeInstantiation) {
+        if (this instanceof FInstantiatedClass)
+            return Utils.NYI("specifying within an instantiated class");
+        TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
+        if (intersected.isEmpty())
+            return this;
+        return instantiations.computeIfAbsent(typeInstantiation, i -> new FInstantiatedClass(this, intersected));
     }
 
     public void addDelegate(FField field) {

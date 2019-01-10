@@ -131,7 +131,7 @@ public final class ParserContextUtils {
         else
             parameters = typesFromList(ctx.typeList().typeType(), possibleTypes);
         if (base instanceof FClass)
-            return FInstantiatedClass.from((FClass) base, parameters);
+            return ((FClass) base).getInstantiation(parameters);
         else if (parameters.size() != 0)
             throw new ParameterizedTypeVariable(null); //TODO
         else

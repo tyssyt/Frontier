@@ -1,37 +1,27 @@
-package tys.frontier.code.predefinedClasses;
+package tys.frontier.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapMaker;
-import tys.frontier.code.*;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Pair;
-import tys.frontier.util.Utils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 public class FInstantiatedClass extends FClass {
-
-    //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<Pair<FClass, TypeInstantiation>, FInstantiatedClass> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     private boolean baked = false;
     private FClass baseClass;
     private TypeInstantiation typeInstantiation;
     private BiMap<FFunction, FFunction> shimMap = HashBiMap.create();
 
-    private FInstantiatedClass(FClass baseClass, TypeInstantiation typeInstantiation) {
+    FInstantiatedClass(FClass baseClass, TypeInstantiation typeInstantiation) {
         super(new FInstantiatedClassIdentifier(baseClass.getIdentifier(), typeInstantiation), baseClass.getVisibility());
         assert !(baseClass instanceof FInstantiatedClass);
         this.baseClass = baseClass;
@@ -90,28 +80,5 @@ public class FInstantiatedClass extends FClass {
                 return super.addCall(call);
             }
         };
-    }
-
-    public static FClass from(FClass baseClass, List<FType> types) throws WrongNumberOfTypeArguments {
-        if (baseClass.getParameters().size() != types.size()) {
-            throw new WrongNumberOfTypeArguments(baseClass, types);
-        }
-        if (types.size() == 0)
-            return baseClass;
-        Map<FTypeVariable, FType> typeMap = new HashMap<>();
-        for (int i = 0; i < baseClass.getParametersList().size(); i++) {
-            if (baseClass.getParametersList().get(i) != types.get(i))
-                typeMap.put(baseClass.getParametersList().get(i), types.get(i));
-        }
-        return from(baseClass, TypeInstantiation.create(typeMap));
-    }
-
-    public static FClass from(FClass baseClass, TypeInstantiation typeInstantiation) {
-        if (baseClass instanceof FInstantiatedClass)
-            return Utils.NYI("specifying within an instantiated class");
-        TypeInstantiation intersected = typeInstantiation.intersect(baseClass.getParametersList());
-        if (intersected.isEmpty())
-            return baseClass;
-        return existing.computeIfAbsent(new Pair<>(baseClass, typeInstantiation), p -> new FInstantiatedClass(baseClass, intersected));
     }
 }

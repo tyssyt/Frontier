@@ -6,7 +6,6 @@ import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FInstantiatedClass;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
