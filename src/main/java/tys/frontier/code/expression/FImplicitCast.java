@@ -15,7 +15,6 @@ public class FImplicitCast extends FCast {
     public enum CastType {
         INTEGER_PROMOTION,
         FLOAT_PROMOTION,
-        INT_TO_FLOAT,
         TO_OPTIONAL,
         OPTIONAL_TO_BOOL,
         DELEGATE,
@@ -44,7 +43,6 @@ public class FImplicitCast extends FCast {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() > ((FIntN) baseType).getN())
             return CastType.INTEGER_PROMOTION;
-        //TODO int to float cast
         //TODO upwards float cast
         if (targetType instanceof FOptional && baseType == ((FOptional) targetType).getBaseType())
             return CastType.TO_OPTIONAL;
@@ -66,8 +64,6 @@ public class FImplicitCast extends FCast {
                 return ((FIntN) getType()).getN() - ((FIntN) getCastedExpression().getType()).getN();
             case FLOAT_PROMOTION:
                 return 32;
-            case INT_TO_FLOAT:
-                return 64;
             case TO_OPTIONAL:
                 return 32;
             case OPTIONAL_TO_BOOL:

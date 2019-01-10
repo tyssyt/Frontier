@@ -1,6 +1,8 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FType;
+import tys.frontier.code.predefinedClasses.FFloat32;
+import tys.frontier.code.predefinedClasses.FFloat64;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -14,6 +16,7 @@ public class FExplicitCast extends FCast {
         INTEGER_DEMOTION,
         FLOAT_DEMOTION,
         FLOAT_TO_INT,
+        INT_TO_FLOAT,
         REMOVE_OPTIONAL,
     }
 
@@ -44,7 +47,10 @@ public class FExplicitCast extends FCast {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() < ((FIntN) baseType).getN())
             return CastType.INTEGER_DEMOTION;
-        //TODO float to int
+        if ((baseType == FFloat32.INSTANCE ||baseType == FFloat64.INSTANCE) && targetType instanceof FIntN)
+            return CastType.FLOAT_TO_INT;
+        if (baseType instanceof FIntN && (targetType == FFloat32.INSTANCE || targetType == FFloat64.INSTANCE))
+            return CastType.INT_TO_FLOAT;
         //TODO downwards float cast
         if (baseType instanceof FOptional && targetType == ((FOptional) baseType).getBaseType())
             return CastType.REMOVE_OPTIONAL;

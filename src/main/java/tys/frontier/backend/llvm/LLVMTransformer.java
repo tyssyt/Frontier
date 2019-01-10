@@ -289,8 +289,6 @@ class LLVMTransformer implements
                 return LLVMBuildSExt(builder, toCast, targetType, "cast_int_prom");
             case FLOAT_PROMOTION:
                 return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
-            case INT_TO_FLOAT:
-                return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
             case TO_OPTIONAL:
                 if (implicitCast.getCastedExpression().getType() == FBool.INSTANCE)
                     return LLVMBuildZExt(builder, toCast, targetType, "cast_bool_opt");
@@ -321,6 +319,8 @@ class LLVMTransformer implements
                 return LLVMBuildFPTrunc(builder, toCast, targetType, "cast_float_dem");
             case FLOAT_TO_INT:
                 return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
+            case INT_TO_FLOAT:
+                return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
             case REMOVE_OPTIONAL:
                 //TODO when we have some sort of runtime errors, check before casting and throw errors (and then see if we can avoid checking next)
                 //return LLVMBuildICmp(builder, LLVMIntEQ, toCast, module.getNull((FOptional) explicitCast.getCastedExpression().getType()), "check_NPE");
