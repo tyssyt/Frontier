@@ -2,6 +2,7 @@ package tys.frontier.code;
 
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -64,6 +65,9 @@ public class TypeInstantiation {
         if (original instanceof FArray) {
             FArray array = (FArray) original;
             return FArray.getArrayFrom(getType(array.getBaseType()));
+        } else if (original instanceof FOptional) {
+                FOptional optional = (FOptional) original;
+                return FOptional.fromFlatten(getType(optional.getBaseType()));
         } else if (original instanceof FFunctionType) {
             FFunctionType fFunctionType = (FFunctionType) original;
             List<FType> in = new ArrayList<>(fFunctionType.getIn().size());
