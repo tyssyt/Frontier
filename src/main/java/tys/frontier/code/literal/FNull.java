@@ -33,4 +33,10 @@ public class FNull implements FLiteral {
     public String getOriginalString() {
         return toString();
     }
+
+    @Override
+    public int distance(FLiteral other) {
+        assert other instanceof FNull;
+        return 0;
+    }
 }
