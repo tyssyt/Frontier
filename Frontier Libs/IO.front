@@ -7,6 +7,10 @@ export class IO:
     }
 
     export static printInt(int64 l) { //TODO once we have better Math this can be cleaned up a lot
+        if l =*= 0 {
+            print("0");
+            return;
+        }
         bool pos := l >= 0;
         if !pos {
             l *= -1;
