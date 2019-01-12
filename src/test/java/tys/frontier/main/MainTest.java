@@ -72,4 +72,9 @@ public class MainTest {
         String res = doMain("Optional", null);
         assertEquals("null pexists null qexists q", res);
     }
+    @Test
+    public void mainOptGeneric() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("OptGeneric", null);
+        assertEquals("024568", res);
+    }
 }
