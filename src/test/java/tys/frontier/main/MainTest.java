@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 
 public class MainTest {
 
+    private static final String endl = System.getProperty("line.separator");
     private static final String prefix = "Parser/Main/";
     private static final String out = "tmp/";
 
@@ -47,7 +48,7 @@ public class MainTest {
     @Test
     public void mainHelloWorld() throws IOException, InterruptedException, SyntaxErrors {
         String res = doMain("HelloWorld", null);
-        assertEquals("Hello, World!\r\n", res); //TODO I wish I could fix whoever adds the \r in there...
+        assertEquals("Hello, World!" + endl, res);
     }
     @Test
     public void mainEcho() throws IOException, InterruptedException, SyntaxErrors {
