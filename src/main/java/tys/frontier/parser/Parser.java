@@ -96,7 +96,7 @@ public class Parser {
             res.getImportedModules().addAll(ImportFinder.resolve(context, importResolver));
 
             stage = Stage.IDENTIFIER_COLLECTION;
-            Pair<SyntaxTreeData, Delegates> treeDataAndDelegates = GlobalIdentifierCollector.getIdentifiers(context);
+            Pair<SyntaxTreeData, Delegates> treeDataAndDelegates = GlobalIdentifierCollector.getIdentifiers(context, res);
             SyntaxTreeData treeData = treeDataAndDelegates.a;
             treeDataAndDelegates.b.createDelegatedFunctions();
             for (FClass fClass : treeData.classes.values()) {

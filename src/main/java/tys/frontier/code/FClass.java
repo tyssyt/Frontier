@@ -9,13 +9,12 @@ import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class FClass extends FType implements HasVisibility {
+public class FClass extends FType implements HasVisibility, HasTypeParameters<FClass> {
 
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
@@ -70,28 +69,17 @@ public class FClass extends FType implements HasVisibility {
         this.constructorVisibility = constructorVisibility;
     }
 
+    @Override
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
         return parameters;
     }
 
+    @Override
     public List<FTypeVariable> getParametersList() {
         return parametersList;
     }
 
-    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
-        if (parametersList.size() != types.size()) {
-            throw new WrongNumberOfTypeArguments(this, types);
-        }
-        if (types.size() == 0)
-            return this;
-        Map<FTypeVariable, FType> typeMap = new HashMap<>();
-        for (int i = 0; i < parametersList.size(); i++) {
-            if (parametersList.get(i) != types.get(i))
-                typeMap.put(parametersList.get(i), types.get(i));
-        }
-        return getInstantiation(TypeInstantiation.create(typeMap));
-    }
-
+    @Override
     public FClass getInstantiation(TypeInstantiation typeInstantiation) {
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())

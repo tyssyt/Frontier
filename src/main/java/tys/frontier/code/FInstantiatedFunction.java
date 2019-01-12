@@ -2,11 +2,13 @@ package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.statement.FBlock;
 
 public class FInstantiatedFunction extends FFunction {
 
     private FFunction base;
     private TypeInstantiation typeInstantiation;
+    private boolean baked = false;
 
     private FInstantiatedFunction(FFunction base, FClass memberOf,  TypeInstantiation typeInstantiation) {
         super(base.getIdentifier(), memberOf, base.getVisibility(), base.isNative(), typeInstantiation.getType(base.getType()), createParams(base.getParams(), typeInstantiation));
@@ -28,9 +30,27 @@ public class FInstantiatedFunction extends FFunction {
         return new FInstantiatedFunction(base, _class, _class.getTypeInstantiation());
     }
 
+    public FFunction getBase() {
+        return base;
+    }
+
+    public TypeInstantiation getTypeInstantiation() {
+        return typeInstantiation;
+    }
+
+    public boolean isBaked() {
+        return baked;
+    }
+
     @Override
     public boolean addCall(FFunctionCall call) {
         base.addCall(call);
         return super.addCall(call);
+    }
+
+    @Override
+    public void setBody(FBlock body) {
+        super.setBody(body);
+        baked = true;
     }
 }

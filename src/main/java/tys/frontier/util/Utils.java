@@ -102,4 +102,19 @@ public final class Utils {
     public static StringBuilder joinIdentifiers(StringBuilder sb, Iterable<? extends IdentifierNameable> nameables, String separator) {
         return joinIdentifiers(sb, nameables.iterator(), separator);
     }
+
+    public static  <T> T firstDuplicate(Set<T> a, Set<T> b) {
+        if (a.size() < b.size()) {
+            for (T t : a) {
+                if (b.contains(t))
+                    return t;
+            }
+        } else {
+            for (T t : b) {
+                if (a.contains(t))
+                    return t;
+            }
+        }
+        return null;
+    }
 }

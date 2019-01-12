@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MapMaker;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FImplicitCast;
@@ -18,12 +19,10 @@ import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 //TODO the FFunction hierachy is so messy with constructors and predefined and stuff...
-public class FFunction implements FTypeMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
+public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
     private FClass memberOf;
@@ -35,9 +34,17 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
     private Signature signature;
     protected FBlock body;
 
+    private Map<FTypeIdentifier, FTypeVariable> parameters;
+    private List<FTypeVariable> parametersList;
+    private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
+
     protected boolean predefined = false;
 
     public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params) {
+        this(identifier, memberOf, modifier, natiwe, returnType, params, Collections.emptyMap());
+    }
+
+    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -45,16 +52,15 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         this.returnType = returnType;
         this.params = params;
         this.signature = new Signature(this);
-    }
-
-    protected FFunction(Signature signature, FClass memberOf, FVisibilityModifier modifier, boolean natiwe,FType returnType, ImmutableList<FParameter> params) {
-        this.identifier = signature.identifier;
-        this.memberOf = memberOf;
-        this.modifier = modifier;
-        this.natiwe = natiwe;
-        this.returnType = returnType;
-        this.params = params;
-        this.signature = signature;
+        if (parameters.isEmpty()) {
+            this.parameters = Collections.emptyMap();
+            this.parametersList = Collections.emptyList();
+            this.instantiations = Collections.emptyMap();
+        } else {
+            this.parameters = parameters;
+            this.parametersList = new ArrayList<>(parameters.values());
+            this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+        }
     }
 
     @Override
@@ -138,6 +144,29 @@ public class FFunction implements FTypeMember, IdentifierNameable, Typed, Contro
         FIdentifier identifier = type == FTypeType.INSTANCE ? new FTypeIdentifier(name) : new FVariableIdentifier(name);
         //TODO maybe be tryhards and try to find good names? like using the type as prefix?
         return new FLocalVariable(identifier, type);
+    }
+
+
+    @Override
+    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+        return parameters;
+    }
+
+    @Override
+    public List<FTypeVariable> getParametersList() {
+        return parametersList;
+    }
+
+    @Override
+    public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
+        //TODO
+        return null;
+        /*
+        TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
+        if (intersected.isEmpty())
+            return this;
+        return instantiations.computeIfAbsent(typeInstantiation, i -> new FInstantiatedClass(this, intersected));
+        */
     }
 
     /**

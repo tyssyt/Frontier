@@ -175,6 +175,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         currentFunction = f;
         declaredVars.push(Utils.asMap(f.getParams()));
         knownClasses.push();
+        knownClasses.putAll(f.getParameters());
         try {
             ctx.methodHeader().accept(this);
             f.setBody(visitBlock(ctx.block()));

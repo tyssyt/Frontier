@@ -108,7 +108,7 @@ methodDeclaration
     ;
 
 methodHeader
-    :   visibilityModifier? NATIVE? STATIC? LCIdentifier formalParameters (ARROW typeType)?
+    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeType)?
     ;
 
 fieldDeclaration

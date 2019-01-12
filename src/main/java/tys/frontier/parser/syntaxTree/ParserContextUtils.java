@@ -34,15 +34,19 @@ public final class ParserContextUtils {
         if (c == null) {
             return new FClass(identifier, visibilityModifier);
         }
-        Map<FTypeIdentifier, FTypeVariable> parameters = new LinkedHashMap<>();
-        for (TerminalNode node : c.TypeIdentifier()) {
+        return new FClass(identifier, visibilityModifier, getTypeParameters(c));
+    }
+
+    public static Map<FTypeIdentifier, FTypeVariable> getTypeParameters(FrontierParser.TypeParametersContext ctx) throws TwiceDefinedLocalVariable {
+        Map<FTypeIdentifier, FTypeVariable> res = new LinkedHashMap<>();
+        for (TerminalNode node : ctx.TypeIdentifier()) {
             FTypeIdentifier id = new FTypeIdentifier(node.getText());
-            if (parameters.containsKey(id))
+            if (res.containsKey(id))
                 throw new TwiceDefinedLocalVariable(id);
             FLocalVariable var = new FLocalVariable(id, FTypeType.INSTANCE);
-            parameters.put(id, new FTypeVariable(var));
+            res.put(id, new FTypeVariable(var));
         }
-        return new FClass(identifier, visibilityModifier, parameters);
+        return res;
     }
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
