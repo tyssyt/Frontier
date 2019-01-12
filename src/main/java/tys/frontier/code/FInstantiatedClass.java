@@ -2,15 +2,15 @@ package tys.frontier.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Pair;
+import tys.frontier.util.Utils;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class FInstantiatedClass extends FClass {
     }
 
     public FFunction getInstantiatedFunction(FFunction function) {
-        return shimMap.computeIfAbsent(function, this::createShim);
+        return shimMap.computeIfAbsent(function, f -> FInstantiatedFunction.fromClassInstantiation(this, f));
     }
 
     public FFunction getOriginalFunction(FFunction function) {
@@ -42,6 +42,16 @@ public class FInstantiatedClass extends FClass {
 
     public TypeInstantiation getTypeInstantiation() {
         return typeInstantiation;
+    }
+
+    @Override
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+        return Utils.NYI("specifying within an instantiated class");
+    }
+
+    @Override
+    public FClass getInstantiation(TypeInstantiation typeInstantiation) {
+        return Utils.NYI("specifying within an instantiated class");
     }
 
     public boolean isBaked() {
@@ -63,22 +73,5 @@ public class FInstantiatedClass extends FClass {
             res.a = getInstantiatedFunction(res.a);
             return res;
         }
-    }
-
-    private FFunction createShim(FFunction original) {
-        FType returnType = typeInstantiation.getType(original.getType());
-        ImmutableList.Builder<FParameter> params = ImmutableList.builder();
-        for (FParameter p : original.getParams()) {
-            FType pType = typeInstantiation.getType(p.getType());
-            params.add(FParameter.create(p.getIdentifier(), pType, p.hasDefaultValue()));
-        }
-        return new FFunction(original.getIdentifier(), this, original.getVisibility(), false,
-                returnType, params.build()) {
-            @Override
-            public boolean addCall(FFunctionCall call) {
-                original.addCall(call);
-                return super.addCall(call);
-            }
-        };
     }
 }

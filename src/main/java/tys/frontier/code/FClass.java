@@ -93,8 +93,6 @@ public class FClass extends FType implements HasVisibility {
     }
 
     public FClass getInstantiation(TypeInstantiation typeInstantiation) {
-        if (this instanceof FInstantiatedClass)
-            return Utils.NYI("specifying within an instantiated class");
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())
             return this;
