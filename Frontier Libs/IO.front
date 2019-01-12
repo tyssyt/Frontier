@@ -2,7 +2,7 @@ import Native;
 
 export class IO:
 
-    export static print(int32 chara) {
+    export static print(char chara) {
         Native.putchar(chara);
     }
 
