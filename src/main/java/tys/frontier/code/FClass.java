@@ -3,16 +3,31 @@ package tys.frontier.code;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.Operator.FBinaryOperator;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FImplicitCast.CastType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.IsType;
+import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
+import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.passes.analysis.reachability.Reachability;
+import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
+
+import static tys.frontier.code.typeInference.Variance.*;
 
 public class FClass extends FType implements HasVisibility, HasTypeParameters<FClass> {
 
@@ -21,6 +36,8 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
     private Map<FTypeIdentifier, FTypeVariable> parameters;
     private List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedClass> instantiations;
+
+    protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
 
     private Map<FType, FField> delegates = new HashMap<>();
@@ -68,6 +85,15 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
     public void setConstructorVisibility(FVisibilityModifier constructorVisibility) {
         this.constructorVisibility = constructorVisibility;
     }
+
+    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+        return functions;
+    }
+
+    public FFunction resolveFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        return new FunctionResolver(identifier, arguments, typeInstantiation).resolve();
+    }
+
 
     @Override
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
@@ -250,6 +276,197 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
             function.toString(sb).append('\n');
         }
         return sb.append("\n}");
+    }
+
+    private class FunctionResolver {
+        private FFunction bestFunction;
+        private IntIntPair bestCosts;
+
+        private FFunctionIdentifier identifier;
+        private List<FExpression> arguments;
+        private TypeInstantiation typeInstantiation;
+
+        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) {
+            this.identifier = identifier;
+            this.arguments = arguments;
+            this.typeInstantiation = typeInstantiation;
+        }
+
+        /**
+         *
+         * @param arg
+         * @param target
+         * @param variance
+         * @param costs pair of number of casts and sum of costs of cast
+         * @param constraints
+         * @throws IncompatibleTypes
+         */
+        void unify(FType arg, FType target, Variance variance, IntIntPair costs, TypeConstraints constraints) throws IncompatibleTypes {
+            //ideas: first do the target instanceof FTypeVariabke check, then deal with all class shenaningans
+            //when dealing with class shenaningans, in case of contravariance just swap and treat it like covariance
+            //note that I can never truely swap because I need to treat the appearance of TypeVariables differently depending which side they are on
+            //on the topic of FTypeVariables, when they appear in the arguments treat them as constant types
+            //when they appear on side of target, substitute them if they are in typeInstantiation
+            //                                    create a constraint if they are in parameters of f
+            //
+
+            if (target instanceof FTypeVariable) {
+                FType inst = typeInstantiation.getTypeMap().get(target);
+                if (inst != null) {
+                    unify(arg, inst, Covariant, new IntIntPair(0, 0), constraints); //target is already instantiated (i.e. when resolving in an instantiated class), continue with instantiated type
+                } else {
+                    //TODO generate more liberal contraints based on whether co/contravariance is okay
+                    constraints.put((FTypeVariable) target, new IsType(arg)); //unification succeeds under the constraint that target is of type arg
+                }
+                return;
+            }
+
+            FType from, to;
+            boolean swapped = variance == Contravariant;
+            if (swapped) {
+                from = target;
+                to = arg;
+            } else {
+                from = arg;
+                to = target;
+            }
+
+            if (to instanceof FArray) {
+                if (!(from instanceof FArray))
+                    throw new IncompatibleTypes(target, arg);
+                unify(((FArray) arg).getBaseType(), ((FArray) target).getBaseType(), Invariant, costs, constraints);
+            } else if (to instanceof FOptional) {
+                if (arg instanceof FOptional) {
+                    unify(((FOptional) arg).getBaseType(), ((FOptional) target).getBaseType(), variance.then(Covariant), costs, constraints);
+                } else {
+                    costs.a++;
+                    costs.b += CastType.TO_OPTIONAL.baseCost;
+                    unify(arg, ((FOptional) target).getBaseType(), variance.then(Covariant), costs, constraints);
+                }
+            }
+
+
+            if (target instanceof FOptional) {
+                if (arg instanceof FOptional) {
+                    unify(((FOptional) arg).getBaseType(), ((FOptional) target).getBaseType(), variance.then(Covariant), costs, constraints);
+                } else {
+                    switch (variance) {
+                        case Covariant:
+                            costs.a++;
+                            costs.b += CastType.TO_OPTIONAL.baseCost;
+                            unify(arg, ((FOptional) target).getBaseType(), variance.then(Covariant), costs, constraints);
+                            break;
+                        case Contravariant:
+                            if (arg == FBool.INSTANCE) {
+                                costs.a++;
+                                costs.b += CastType.OPTIONAL_TO_BOOL.baseCost;
+                            } else
+                                throw new IncompatibleTypes(target, arg);
+                            break;
+                        case Invariant:
+                            throw new IncompatibleTypes(target, arg);
+                    }
+                }
+            } else if (target instanceof FFunctionType) {
+                if (!(arg instanceof FFunctionType))
+                    throw new IncompatibleTypes(target, arg);
+                FFunctionType fArg = (FFunctionType) arg;
+                FFunctionType fTarget = (FFunctionType) target;
+                //fail if functions are of different arity
+                if (fArg.getIn().size() != fTarget.getIn().size())
+                    throw new IncompatibleTypes(target, arg);
+                //unify argument types
+                for (int i=0; i<fArg.getIn().size(); i++) {
+                    unify(fArg.getIn().get(i), fTarget.getIn().get(i), variance.then(Contravariant), costs, constraints);
+                }
+                //unify return types
+                unify(fArg.getOut(), fTarget.getOut(), variance.then(Covariant), costs, constraints);
+            } else if (target instanceof FInstantiatedClass) {
+                if (!(arg instanceof FInstantiatedClass))
+                    throw new IncompatibleTypes(target, arg);
+                //TODO handle delegate casting, however the fuck that might work with generics ???
+                FInstantiatedClass iArg = (FInstantiatedClass) arg;
+                FInstantiatedClass iTarget = (FInstantiatedClass) target;
+                FClass base = iArg.getBaseClass();
+                //make sure we have the same base class
+                if (base != iTarget.getBaseClass())
+                    throw new IncompatibleTypes(target, arg);
+                //compare type parameters
+                Map<FTypeVariable, FType> argMap = iArg.getTypeInstantiation().getTypeMap();
+                Map<FTypeVariable, FType> tagetMap = iTarget.getTypeInstantiation().getTypeMap();
+                for (FTypeVariable t : base.getParametersList()) {
+                    unify(argMap.get(t), tagetMap.get(t), Invariant, costs, constraints);
+                }
+
+            } else if (target instanceof FClass) {
+                if (arg != target)
+                    throw new IncompatibleTypes(target, arg);
+                //TODO try casting (integer & float promotion & delegate, optional2Bool)
+            }
+        }
+
+        FFunction resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
+            for (FFunction f : getFunctions().get(identifier)) {
+                try {
+                    FFunction.Signature sig = f.getSignature();
+                    //reject when too many or too few arguments are given
+                    if (arguments.size() > sig.getAllParamTypes().size() || arguments.size() < sig.getParamTypes().size())
+                        throw new FFunction.IncompatibleSignatures(sig, Utils.typesFromExpressionList(arguments));
+
+                    List<FExpression> args = new ArrayList<>(arguments);
+                    //if not enough arguments are given, fill up with default arguments
+                    for (int i=args.size(); i<f.getParams().size(); i++) {
+                        args.add(f.getParams().get(i).getDefaultValue().get());
+                    }
+
+                    TypeConstraints constraints = new TypeConstraints();
+                    //iterate over all args and unify types, creating constraints in the process TODO this does not implicit cast on top level (where co-contravariance are still irrelevant)
+                    for (int i=0; i<args.size(); i++) {
+                        unify(args.get(i).getType(), sig.getAllParamTypes().get(i), Covariant, new IntIntPair(0,0), constraints);
+                    }
+
+                    //resolve constraints
+                    for (TypeInstantiation instantiation : constraints.solve()) {
+                        assert instantiation.fits(f);
+                    }
+
+                    //cast arguments & compute cost
+
+                    //update result
+
+
+
+                    if (!f.getParametersList().isEmpty()) {
+                        //collect constraints
+
+                        //resolve constraints
+
+
+                    }
+                    IntIntPair cost = f.castSignatureFrom(arguments, typeInstantiation);
+                    updateCost(cost, f);
+                } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
+            }
+
+            if (bestFunction == null)
+                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
+            return bestFunction;
+        }
+
+        private void updateCost(IntIntPair newCosts, FFunction newFunction) {
+            if (bestCosts == null) {
+                bestCosts = newCosts;
+                bestFunction = newFunction;
+                return;
+            }
+            int res = newCosts.compareTo(bestCosts);
+            if (res < 0) {
+                bestCosts = newCosts;
+                bestFunction = newFunction;
+            } else if (res == 0) {
+                bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+            }
+        }
     }
 
 }

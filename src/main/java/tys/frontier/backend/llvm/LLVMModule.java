@@ -203,7 +203,7 @@ public class LLVMModule implements AutoCloseable {
     public void parseClassMembers(Iterable<FClass> classes) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FType fClass : classes) {
+        for (FClass fClass : classes) {
 
             for (FField field : fClass.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?

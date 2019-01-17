@@ -57,7 +57,7 @@ public class TypeInstantiation {
         return typeMap.containsKey(var);
     }
 
-    public boolean fits(FClass fClass) {
+    public <T extends HasTypeParameters<T>> boolean fits(HasTypeParameters<T> fClass) {
         return typeMap.size() == fClass.getParameters().size() && typeMap.keySet().containsAll(fClass.getParameters().values());
     }
 

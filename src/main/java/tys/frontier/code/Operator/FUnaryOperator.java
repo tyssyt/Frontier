@@ -5,7 +5,6 @@ import com.google.common.collect.Iterables;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.FType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 
@@ -33,8 +32,8 @@ public class FUnaryOperator extends FOperator {
             };
         }
 
-        public FFunction getFunction(FType type) {
-            return Iterables.getOnlyElement(type.getFunctions().get(identifier));
+        public FFunction getFunction(FClass fClass) {
+            return Iterables.getOnlyElement(fClass.getFunctions().get(identifier));
         }
     }
 

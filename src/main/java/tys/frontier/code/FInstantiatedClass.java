@@ -8,8 +8,6 @@ import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
-import tys.frontier.util.IntIntPair;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.List;
@@ -65,13 +63,12 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
-    public Pair<FFunction, IntIntPair> resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         if (baked) {
             return super.resolveFunction(identifier, arguments, typeInstantiation);
         } else {
-            Pair<FFunction, IntIntPair> res = baseClass.resolveFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
-            res.a = getInstantiatedFunction(res.a);
-            return res;
+            FFunction base = baseClass.resolveFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
+            return getInstantiatedFunction(base);
         }
     }
 }

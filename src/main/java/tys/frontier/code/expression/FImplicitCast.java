@@ -13,11 +13,24 @@ import tys.frontier.util.Utils;
 public class FImplicitCast extends FCast {
 
     public enum CastType {
-        INTEGER_PROMOTION,
-        FLOAT_PROMOTION,
-        TO_OPTIONAL,
-        OPTIONAL_TO_BOOL,
-        DELEGATE,
+        INTEGER_PROMOTION(0, 1),
+        FLOAT_PROMOTION(32, 0),
+        TO_OPTIONAL(32, 0),
+        OPTIONAL_TO_BOOL(32, 0),
+        DELEGATE(0, 32);
+        //TODO function cast, co-&contraivariant casts
+
+        public final int baseCost;
+        public final int costPerStep;
+
+        CastType(int baseCost, int costPerStep) {
+            this.baseCost = baseCost;
+            this.costPerStep = costPerStep;
+        }
+
+        public int getCost(int steps) {
+            return baseCost + steps * costPerStep;
+        }
     }
 
     private CastType castType;
@@ -44,8 +57,18 @@ public class FImplicitCast extends FCast {
                 ((FIntN) targetType).getN() > ((FIntN) baseType).getN())
             return CastType.INTEGER_PROMOTION;
         //TODO upwards float cast
-        if (targetType instanceof FOptional && baseType == ((FOptional) targetType).getBaseType())
-            return CastType.TO_OPTIONAL;
+        if (targetType instanceof FOptional) {
+            FType targetBase = ((FOptional) targetType).getBaseType();
+            if (baseType instanceof FOptional) {
+                //TODO covariant inner cast
+            } else {
+                if (baseType == targetBase) {
+                    return CastType.TO_OPTIONAL;
+                } else {
+                    //TODO try to cast inner types (cause optional is covariant) and then wrap that into an toOptional
+                }
+            }
+        }
         if (baseType instanceof FOptional && targetType == FBool.INSTANCE)
             return CastType.OPTIONAL_TO_BOOL;
         if (baseType instanceof FClass && ((FClass) baseType).getDelegate(targetType) != null)
@@ -61,15 +84,15 @@ public class FImplicitCast extends FCast {
     public int getCost() {
         switch (castType) {
             case INTEGER_PROMOTION:
-                return ((FIntN) getType()).getN() - ((FIntN) getCastedExpression().getType()).getN();
+                return castType.getCost(((FIntN) getType()).getN() - ((FIntN) getCastedExpression().getType()).getN());
             case FLOAT_PROMOTION:
-                return 32;
+                return castType.getCost(0);
             case TO_OPTIONAL:
-                return 32;
+                return castType.getCost(0);
             case OPTIONAL_TO_BOOL:
-                return 32;
+                return castType.getCost(0);
             case DELEGATE:
-                return 32* ((FClass) getCastedExpression().getType()).getDelegate(getType()).size();
+                return castType.getCost(32 * ((FClass) getCastedExpression().getType()).getDelegate(getType()).size());
             default:
                 return Utils.cantHappen();
         }

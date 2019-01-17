@@ -14,8 +14,6 @@ import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.util.IntIntPair;
-import tys.frontier.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,15 +44,14 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public Pair<FFunction, IntIntPair> resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         if (arguments.size() > 0 && arguments.get(0).getType() == this) {
             arguments = new ArrayList<>(arguments); //copy to not modify the original list
             //TODO if literals get fixed, resolving can be based on types again and the following can be done by just replacing a type
             arguments.set(0, FExplicitCast.createTrusted(baseType, arguments.get(0)));
         }
-        Pair<FFunction, IntIntPair> res = baseType.resolveFunction(identifier, arguments, typeInstantiation);
-        res.a = shimMap.computeIfAbsent(res.a, this::createShim);
-        return res;
+        FFunction base = baseType.resolveFunction(identifier, arguments, typeInstantiation);
+        return shimMap.computeIfAbsent(base, this::createShim);
     }
 
     private FFunction createShim(FFunction original) {

@@ -71,7 +71,9 @@ public class Delegates {
     }
 
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
-        FType from = d.field.getType();
+        if (!(d.field.getType() instanceof FClass))
+            return;
+        FClass from = (FClass) d.field.getType();
         FClass to = d.field.getMemberOf();
         for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getFunctions().asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {

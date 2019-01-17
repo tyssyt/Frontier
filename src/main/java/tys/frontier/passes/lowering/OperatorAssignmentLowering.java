@@ -1,5 +1,6 @@
 package tys.frontier.passes.lowering;
 
+import tys.frontier.code.FClass;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
@@ -34,7 +35,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
 
         FVariableExpression varExp = assignment.getVariableExpression();
         if (varExp instanceof FLocalVariableExpression || varExp instanceof FFieldAccess && ((FFieldAccess) varExp).isStatic()) {
-            FFunction op = assignment.getOperator().getOperator(varExp.getType());
+            FFunction op = assignment.getOperator().getOperator(((FClass) varExp.getType()));
             FVariableExpression load = varExp.copy();
             FExpression newValue = FFunctionCall.createTrusted(op, Arrays.asList(load, assignment.getValue()));
             FVariableExpression store = varExp.copy();
@@ -46,7 +47,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
             FLocalVariable containerVar = function.getFreshVariable(container.getType());
             FVarDeclaration containerDecl = FVarDeclaration.createTrusted(containerVar, container);
 
-            FFunction op = assignment.getOperator().getOperator(varExp.getType());
+            FFunction op = assignment.getOperator().getOperator(((FClass) varExp.getType()));
             HasInstanceObject load = oldExp.copy();
             load.setObject(new FLocalVariableExpression(containerVar));
             FExpression newValue = FFunctionCall.createTrusted(op, Arrays.asList(load, assignment.getValue()));
