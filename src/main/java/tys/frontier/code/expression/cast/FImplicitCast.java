@@ -1,103 +1,60 @@
 package tys.frontier.code.expression.cast;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FInstantiatedClass;
 import tys.frontier.code.FType;
+import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.predefinedClasses.FBool;
-import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
-public class FImplicitCast extends FCast {
+import static tys.frontier.code.typeInference.Variance.Contravariant;
+import static tys.frontier.code.typeInference.Variance.Covariant;
 
-    public enum CastType {
-        INTEGER_PROMOTION(0, 1),
-        FLOAT_PROMOTION(32, 0),
-        TO_OPTIONAL(32, 0),
-        OPTIONAL_TO_BOOL(32, 0), //this is a special case and should never be done as an inner cast
-        DELEGATE(0, 32);
-        //TODO function cast, co-&contraivariant casts
+public abstract class FImplicitCast extends FCast {
 
-        public final int baseCost;
-        public final int costPerStep;
+    protected Variance variance;
 
-        CastType(int baseCost, int costPerStep) {
-            this.baseCost = baseCost;
-            this.costPerStep = costPerStep;
-        }
-
-        public int getCost(int steps) {
-            return baseCost + steps * costPerStep;
-        }
-    }
-
-    private CastType castType;
-
-    private FImplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
+    protected FImplicitCast(FType type, FExpression castedExpression, Variance variance) {
         super(type, castedExpression);
-        castType = getCastType(type, castedExpression.getType());
+        this.variance = variance;
     }
 
-    public static FImplicitCast create(FType type, FExpression castedExpression) throws IncompatibleTypes {
-        return new FImplicitCast(type, castedExpression);
+    public static FImplicitCast create(FType targetType, FExpression castedExpression) throws IncompatibleTypes {
+        return create(targetType, castedExpression, Contravariant);
+    }
+
+    public static FImplicitCast create(FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
+        assert variance == Covariant || variance == Contravariant; //why else would we cast?
+        FType baseType = castedExpression.getType();
+        if (targetType instanceof FTypeVariable || baseType instanceof FTypeVariable)
+            throw new IncompatibleTypes(targetType, baseType); //TODO this actually always succeeds, but we need more knowledge of vars and to create and return contraints
+        if (targetType instanceof FInstantiatedClass && baseType instanceof FInstantiatedClass && ((FInstantiatedClass) targetType).getBaseClass() == ((FInstantiatedClass) baseType).getBaseClass())
+            return TypeParameterCast.createTTTTT(((FInstantiatedClass) targetType), castedExpression, variance); //TODO what if one of them is the base class, I think thats in theory possible
+        if (targetType instanceof FOptional && baseType instanceof FOptional)
+            return TypeParameterCast.createTTTTT(((FOptional) targetType), castedExpression, variance); //TODO optional will be made generic some day
+        if (targetType instanceof FFunctionType && baseType instanceof FFunctionType)
+            return TypeParameterCast.createTTTTT(((FFunctionType) targetType), castedExpression, variance); //TODO function types will be made generic some day
+        return DirectConversion.create(targetType, castedExpression, variance);
     }
 
     public static FImplicitCast createTrusted(FType type, FExpression castedExpression) {
+        return createTrusted(type, castedExpression, Covariant);
+    }
+
+    public static FImplicitCast createTrusted(FType type, FExpression castedExpression, Variance variance) {
         try {
-            return create(type, castedExpression);
+            return create(type, castedExpression, variance);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
-    public static CastType getCastType(FType targetType, FType baseType) throws IncompatibleTypes {
-        if (targetType instanceof FIntN && baseType instanceof FIntN &&
-                ((FIntN) targetType).getN() > ((FIntN) baseType).getN())
-            return CastType.INTEGER_PROMOTION;
-        //TODO upwards float cast
-        if (targetType instanceof FOptional) {
-            FType targetBase = ((FOptional) targetType).getBaseType();
-            if (baseType instanceof FOptional) {
-                //TODO covariant inner cast
-            } else {
-                if (baseType == targetBase) {
-                    return CastType.TO_OPTIONAL;
-                } else {
-                    //TODO try to cast inner types (cause optional is covariant) and then wrap that into an toOptional
-                }
-            }
-        }
-        if (baseType instanceof FOptional && targetType == FBool.INSTANCE)
-            return CastType.OPTIONAL_TO_BOOL;
-        if (baseType instanceof FClass && ((FClass) baseType).getDelegate(targetType) != null)
-            return CastType.DELEGATE;
-
-        throw new IncompatibleTypes(targetType, baseType);
-    }
-
-    public CastType getCastType() {
-        return castType;
-    }
-
-    public int getCost() {
-        switch (castType) {
-            case INTEGER_PROMOTION:
-                return castType.getCost(((FIntN) getType()).getN() - ((FIntN) getCastedExpression().getType()).getN());
-            case FLOAT_PROMOTION:
-                return castType.getCost(0);
-            case TO_OPTIONAL:
-                return castType.getCost(0);
-            case OPTIONAL_TO_BOOL:
-                return castType.getCost(0);
-            case DELEGATE:
-                return castType.getCost(32 * ((FClass) getCastedExpression().getType()).getDelegate(getType()).size());
-            default:
-                return Utils.cantHappen();
-        }
-    }
+    public abstract int getCost();
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {

@@ -6,7 +6,7 @@ import com.google.common.collect.MapMaker;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.cast.FImplicitCast.CastType;
+import tys.frontier.code.expression.cast.DirectConversion.CastType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
@@ -293,13 +293,7 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
         }
 
         /**
-         *
-         * @param arg
-         * @param target
-         * @param variance
          * @param costs pair of number of casts and sum of costs of cast
-         * @param constraints
-         * @throws IncompatibleTypes
          */
         void unify(FType arg, FType target, Variance variance, IntIntPair costs, TypeConstraints constraints) throws IncompatibleTypes {
             //ideas: first do the target instanceof FTypeVariabke check, then deal with all class shenaningans

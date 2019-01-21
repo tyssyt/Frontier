@@ -5,8 +5,8 @@ import tys.frontier.code.expression.FExpression;
 
 public abstract class FCast implements FExpression {
 
-    private FType type;
-    private FExpression castedExpression;
+    protected FType type;
+    protected FExpression castedExpression;
 
     public FCast(FType type, FExpression castedExpression) {
         this.type = type;
@@ -17,6 +17,8 @@ public abstract class FCast implements FExpression {
     public FType getType() {
         return type;
     }
+
+    public abstract boolean isNoOpCast();
 
     public FExpression getCastedExpression() {
         return castedExpression;

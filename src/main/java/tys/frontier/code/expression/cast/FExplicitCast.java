@@ -2,10 +2,7 @@ package tys.frontier.code.expression.cast;
 
 import tys.frontier.code.FType;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.predefinedClasses.FFloat32;
-import tys.frontier.code.predefinedClasses.FFloat64;
-import tys.frontier.code.predefinedClasses.FIntN;
-import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -57,6 +54,24 @@ public class FExplicitCast extends FCast {
             return CastType.REMOVE_OPTIONAL;
 
         throw new IncompatibleTypes(targetType, baseType);
+    }
+
+    @Override
+    public boolean isNoOpCast() {
+        switch (castType) {
+            case INTEGER_DEMOTION:
+                return false;
+            case FLOAT_DEMOTION:
+                return false;
+            case FLOAT_TO_INT:
+                return false;
+            case INT_TO_FLOAT:
+                return false;
+            case REMOVE_OPTIONAL:
+                return getType() != FBool.INSTANCE;
+            default:
+                return Utils.cantHappen();
+        }
     }
 
     @Override
