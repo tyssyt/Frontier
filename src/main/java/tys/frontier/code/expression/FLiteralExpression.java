@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FType;
+import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;

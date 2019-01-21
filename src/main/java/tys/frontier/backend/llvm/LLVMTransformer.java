@@ -6,6 +6,8 @@ import tys.frontier.code.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
+import tys.frontier.code.expression.cast.FExplicitCast;
+import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;

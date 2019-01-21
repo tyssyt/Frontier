@@ -6,7 +6,7 @@ import com.google.common.collect.MapMaker;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FImplicitCast.CastType;
+import tys.frontier.code.expression.cast.FImplicitCast.CastType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;

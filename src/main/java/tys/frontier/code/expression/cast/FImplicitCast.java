@@ -1,7 +1,8 @@
-package tys.frontier.code.expression;
+package tys.frontier.code.expression.cast;
 
 import tys.frontier.code.FClass;
 import tys.frontier.code.FType;
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -16,7 +17,7 @@ public class FImplicitCast extends FCast {
         INTEGER_PROMOTION(0, 1),
         FLOAT_PROMOTION(32, 0),
         TO_OPTIONAL(32, 0),
-        OPTIONAL_TO_BOOL(32, 0),
+        OPTIONAL_TO_BOOL(32, 0), //this is a special case and should never be done as an inner cast
         DELEGATE(0, 32);
         //TODO function cast, co-&contraivariant casts
 

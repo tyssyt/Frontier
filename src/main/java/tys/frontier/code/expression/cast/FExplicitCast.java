@@ -1,6 +1,7 @@
-package tys.frontier.code.expression;
+package tys.frontier.code.expression.cast;
 
 import tys.frontier.code.FType;
+import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.predefinedClasses.FFloat32;
 import tys.frontier.code.predefinedClasses.FFloat64;
 import tys.frontier.code.predefinedClasses.FIntN;
