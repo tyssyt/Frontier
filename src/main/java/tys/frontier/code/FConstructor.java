@@ -51,7 +51,7 @@ public class FConstructor extends FFunction {
         return true;
     }
 
-    private static ImmutableList<FParameter> getParameters(FType fClass) {
+    private static ImmutableList<FParameter> getParameters(FClass fClass) {
         List<FParameter> arguments = new ArrayList<>();
         List<FParameter> defaultArguments = new ArrayList<>();
 

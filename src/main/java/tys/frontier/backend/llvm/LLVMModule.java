@@ -62,7 +62,7 @@ public class LLVMModule implements AutoCloseable {
     private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private HashObjIntMap<FField> fieldIndices = HashObjIntMaps.newMutableMap();
-    private List<FType> todoClassBodies = new ArrayList<>();
+    private List<FClass> todoClassBodies = new ArrayList<>();
     private List<FField> todoFieldInitilizers = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
 
@@ -277,7 +277,7 @@ public class LLVMModule implements AutoCloseable {
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
-        for (FType fClass : todoClassBodies) {
+        for (FClass fClass : todoClassBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
             for (FField field : fClass.getInstanceFields().values()) {

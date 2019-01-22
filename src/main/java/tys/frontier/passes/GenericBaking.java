@@ -236,7 +236,7 @@ public class GenericBaking implements FClassVisitor {
         if (field.getMemberOf() == currentClass.getBaseClass())
             field = fieldMap.get(field);
         if (field.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of fields, and it will have to be expanded if we allow TypeVariable to have fields
-            field = typeInstantiation.getType(field.getMemberOf()).getInstanceFields().get(FArray.SIZE);
+            field = ((FArray) typeInstantiation.getType(field.getMemberOf())).getInstanceFields().get(FArray.SIZE);
         if (fieldAccess.isStatic())
             return FFieldAccess.createStatic(field);
         else {

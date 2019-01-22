@@ -1,13 +1,11 @@
 package tys.frontier.code;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.MapMaker;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.cast.DirectConversion.CastType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FBool;
@@ -29,14 +27,17 @@ import java.util.*;
 
 import static tys.frontier.code.typeInference.Variance.*;
 
-public class FClass extends FType implements HasVisibility, HasTypeParameters<FClass> {
+public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
+    protected FTypeIdentifier identifier;
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
     private Map<FTypeIdentifier, FTypeVariable> parameters;
     private List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedClass> instantiations;
 
+    protected BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
+    protected BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
 
@@ -45,21 +46,11 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
     protected Map<FFunction, String> uniqueFunctionNames;
 
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
-        this(identifier, visibility, Collections.emptyMap());
-    }
-
-    public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility, Map<FTypeIdentifier, FTypeVariable> parameters) {
-        super(identifier);
+        this.identifier = identifier;
         this.visibility = visibility;
-        if (parameters.isEmpty()) {
             this.parameters = Collections.emptyMap();
             this.parametersList = Collections.emptyList();
             this.instantiations = Collections.emptyMap();
-        } else {
-            this.parameters = parameters;
-            this.parametersList = new ArrayList<>(parameters.values());
-            this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
-        }
     }
 
     protected void addDefaultFunctions() {
@@ -73,6 +64,20 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
         }
     }
 
+    public void setParameters(Map<FTypeIdentifier, FTypeVariable> parameters) {
+        assert this.parameters.isEmpty();
+        if (!parameters.isEmpty()) {
+            this.parameters = parameters;
+            this.parametersList = new ArrayList<>(parameters.values());
+            this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+        }
+    }
+
+    @Override
+    public FTypeIdentifier getIdentifier () {
+        return identifier;
+    }
+
     @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
@@ -84,6 +89,18 @@ public class FClass extends FType implements HasVisibility, HasTypeParameters<FC
 
     public void setConstructorVisibility(FVisibilityModifier constructorVisibility) {
         this.constructorVisibility = constructorVisibility;
+    }
+
+    public BiMap<FIdentifier, FField> getInstanceFields() {
+        return instanceFields;
+    }
+
+    public BiMap<FIdentifier, FField> getStaticFields() {
+        return staticFields;
+    }
+
+    public Iterable<FField> getFields() {
+        return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
     }
 
     public Multimap<FFunctionIdentifier, FFunction> getFunctions() {

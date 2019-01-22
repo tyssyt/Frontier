@@ -138,19 +138,25 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FField findInstanceField(FType fClass, FIdentifier identifier) throws FieldNotFound, AccessForbidden {
-        FField res = fClass.getInstanceFields().get(identifier);
-        if (res == null)
-            throw new FieldNotFound(identifier);
-        checkAccessForbidden(res);
-        return res;
+        if (fClass instanceof FClass) {
+            FField res = ((FClass) fClass).getInstanceFields().get(identifier);
+            if (res == null)
+                throw new FieldNotFound(identifier);
+            checkAccessForbidden(res);
+            return res;
+        }
+        throw new FieldNotFound(identifier);
     }
 
     private FField findStaticField(FType type, FIdentifier identifier) throws FieldNotFound, AccessForbidden {
-        FField res = type.getStaticFields().get(identifier);
+        if (type instanceof FClass) {
+        FField res = ((FClass) type).getStaticFields().get(identifier);
         if (res == null)
             throw new FieldNotFound(identifier);
         checkAccessForbidden(res);
         return res;
+        }
+        throw new FieldNotFound(identifier);
     }
 
     //methods enter & exitArrayAccess

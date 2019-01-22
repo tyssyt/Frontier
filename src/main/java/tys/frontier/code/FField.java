@@ -4,7 +4,6 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;
@@ -27,7 +26,6 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
 
     public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
         super(identifier, type);
-        assert type != FTypeType.INSTANCE;
         this.memberOf = memberOf;
         this.visibility = visibility;
         this.statik = statik;

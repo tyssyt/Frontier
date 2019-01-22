@@ -8,7 +8,7 @@ import tys.frontier.code.predefinedClasses.FTypeType;
 
 public abstract class FVariable implements IdentifierNameable, Typed {
 
-    private FIdentifier identifier;
+    protected FIdentifier identifier;
     private FType type;
 
     public FVariable(FIdentifier identifier, FType type) {

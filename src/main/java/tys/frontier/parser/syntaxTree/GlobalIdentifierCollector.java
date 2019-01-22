@@ -99,7 +99,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
                 try {
-                    typeParameters = ParserContextUtils.getTypeParameters(c);
+                    typeParameters = ParserContextUtils.getTypeParameters(c, null);
                     FTypeIdentifier duplicate = Utils.firstDuplicate(currentClass.getParameters().keySet(), typeParameters.keySet());
                     if (duplicate != null) {
                         throw new TwiceDefinedLocalVariable(duplicate);

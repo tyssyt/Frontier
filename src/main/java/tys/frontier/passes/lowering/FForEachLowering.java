@@ -40,12 +40,13 @@ public class FForEachLowering extends StatementReplacer {
 
         //first store the array expression in a fresh variable, if necessary
         FExpression array = forEach.getContainer();
+        FArray arrayType = ((FArray) array.getType());
         FLocalVariable arrayVar;
         FVarDeclaration arrayDecl = null;
         if (array instanceof FLocalVariableExpression) {
             arrayVar = ((FLocalVariableExpression) array).getVariable();
         } else {
-            arrayVar = function.getFreshVariable(array.getType());
+            arrayVar = function.getFreshVariable(arrayType);
             arrayDecl = FVarDeclaration.createTrusted(arrayVar, array);
         }
 
@@ -56,7 +57,7 @@ public class FForEachLowering extends StatementReplacer {
 
         //condition
         FFunction less = FBinaryOperator.Bool.LESS.getFunction(FIntN._32);
-        FFieldAccess size = FFieldAccess.createInstanceTrusted(array.getType().getInstanceFields().get(FArray.SIZE), array);
+        FFieldAccess size = FFieldAccess.createInstanceTrusted(arrayType.getInstanceFields().get(FArray.SIZE), array);
         FExpression cond = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), size));
 
         //increment

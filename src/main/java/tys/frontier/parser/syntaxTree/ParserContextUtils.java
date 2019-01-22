@@ -31,19 +31,25 @@ public final class ParserContextUtils {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        if (c == null) {
-            return new FClass(identifier, visibilityModifier);
+        FClass res =  new FClass(identifier, visibilityModifier);
+        if (c != null) {
+            res.setParameters(getTypeParameters(c, res));
         }
-        return new FClass(identifier, visibilityModifier, getTypeParameters(c));
+        return res;
     }
 
-    public static Map<FTypeIdentifier, FTypeVariable> getTypeParameters(FrontierParser.TypeParametersContext ctx) throws TwiceDefinedLocalVariable {
+    public static Map<FTypeIdentifier, FTypeVariable> getTypeParameters(FrontierParser.TypeParametersContext ctx, FClass fClass) throws TwiceDefinedLocalVariable {
         Map<FTypeIdentifier, FTypeVariable> res = new LinkedHashMap<>();
         for (TerminalNode node : ctx.TypeIdentifier()) {
             FTypeIdentifier id = new FTypeIdentifier(node.getText());
             if (res.containsKey(id))
                 throw new TwiceDefinedLocalVariable(id);
-            FLocalVariable var = new FLocalVariable(id, FTypeType.INSTANCE);
+            FVariable var;
+            if (fClass == null) {
+                var = new FLocalVariable(id, FTypeType.INSTANCE);
+            } else {
+                var = new FField(id, FTypeType.INSTANCE, fClass, FVisibilityModifier.PRIVATE, false, false);
+            }
             res.put(id, new FTypeVariable(var));
         }
         return res;
