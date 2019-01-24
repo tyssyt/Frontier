@@ -5,15 +5,21 @@ import tys.frontier.code.expression.FExpression;
 
 public class ImplicitCastable extends TypeConstraint {
 
-    private FType to;
+    private FType target;
+    private Variance variance;
 
-    public ImplicitCastable(FExpression origin, FType to) {
+    public ImplicitCastable(FExpression origin, FType target, Variance variance) {
         super(origin);
-        this.to = to;
+        this.target = target;
+        this.variance = variance;
     }
 
-    public FType getTo() {
-        return to;
+    public FType getTarget() {
+        return target;
+    }
+
+    public Variance getVariance() {
+        return variance;
     }
 
     @Override
@@ -23,11 +29,14 @@ public class ImplicitCastable extends TypeConstraint {
 
         ImplicitCastable that = (ImplicitCastable) o;
 
-        return to.equals(that.to);
+        if (!target.equals(that.target)) return false;
+        return variance == that.variance;
     }
 
     @Override
     public int hashCode() {
-        return to.hashCode()*31;
+        int result = target.hashCode();
+        result = 31 * result + variance.hashCode();
+        return result;
     }
 }

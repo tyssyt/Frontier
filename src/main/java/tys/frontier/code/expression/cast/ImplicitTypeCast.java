@@ -10,7 +10,6 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.util.Utils;
 
 import static tys.frontier.code.typeInference.Variance.Invariant;
 
@@ -31,8 +30,7 @@ public abstract class ImplicitTypeCast {
 
         //first check if either base or targetType is a TypeVariable and do a type variable cast
         if (baseType instanceof FTypeVariable || targetType instanceof FTypeVariable) {
-            //TODO TypeVariablesCast
-            return Utils.NYI("TypeVariable Cast");
+            return TypeVariableCast.createTVC(baseType, targetType, variance, constraints);
         }
 
         //if we are invariant, there can't be an implicit cast

@@ -36,7 +36,11 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         FType baseType = castedExpression.getType();
         if (baseType == targetType)
             return castedExpression;
-        return new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
+        FImplicitCast res = new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
+        for (TypeConstraint constraint : constraints.values()) {
+            constraint.setOrigin(res);
+        }
+        return res;
     }
 
     public static FExpression createTrusted(FType type, FExpression castedExpression, Variance variance) {

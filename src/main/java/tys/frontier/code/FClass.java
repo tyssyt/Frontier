@@ -11,7 +11,7 @@ import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -311,7 +311,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         /**
          * @param costs pair of number of casts and sum of costs of cast
          */
-        void unify(FType arg, FType target, Variance variance, IntIntPair costs, TypeConstraints constraints) throws IncompatibleTypes {
+        void unify(FType arg, FType target, Variance variance, IntIntPair costs, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
             //ideas: first do the target instanceof FTypeVariabke check, then deal with all class shenaningans
             //when dealing with class shenaningans, in case of contravariance just swap and treat it like covariance
             //note that I can never truely swap because I need to treat the appearance of TypeVariables differently depending which side they are on
@@ -326,7 +326,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     unify(arg, inst, Covariant, new IntIntPair(0, 0), constraints); //target is already instantiated (i.e. when resolving in an instantiated class), continue with instantiated type
                 } else {
                     //TODO generate more liberal contraints based on whether co/contravariance is okay
-                    //constraints.put((FTypeVariable) target, new IsType(arg)); //unification succeeds under the constraint that target is of type arg
+                    //constraints.put((FTypeVariable) target, new ImplicitCastable(arg)); //unification succeeds under the constraint that target is of type arg
                 }
                 return;
             }
@@ -429,16 +429,13 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                         args.add(f.getParams().get(i).getDefaultValue().get());
                     }
 
-                    TypeConstraints constraints = new TypeConstraints();
+                    Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
                     //iterate over all args and unify types, creating constraints in the process TODO this does not implicit cast on top level (where co-contravariance are still irrelevant)
                     for (int i=0; i<args.size(); i++) {
                         unify(args.get(i).getType(), sig.getAllParamTypes().get(i), Covariant, new IntIntPair(0,0), constraints);
                     }
 
                     //resolve constraints
-                    for (TypeInstantiation instantiation : constraints.solve()) {
-                        assert instantiation.fits(f);
-                    }
 
                     //cast arguments & compute cost
 
