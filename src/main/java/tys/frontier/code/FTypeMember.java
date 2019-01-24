@@ -13,6 +13,6 @@ public interface FTypeMember extends IdentifierNameable, HasVisibility {
 
     boolean isInstance();
     MemberType getMemberType();
-    FClass getMemberOf();
+    FType getMemberOf();
 
 }

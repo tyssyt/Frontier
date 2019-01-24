@@ -67,7 +67,7 @@ public class Reachability {
                         return address;
                     }
                     private void handleFunction(FFunction f) {
-                        FClass orig = f.getMemberOf();
+                        FType orig = f.getMemberOf();
                         FClass c = (FClass) typeInstantiation.getType(orig); //this cast is safe as reachability analysis only traverses fully instatiated classes
                         if (orig != c && c instanceof FInstantiatedClass) {
                             f = ((FInstantiatedClass) c).getInstantiatedFunction(f);
@@ -101,7 +101,7 @@ public class Reachability {
     }
 
     private void addFunction(FFunction function) {
-        ReachableClass reachableClass = reachableClasses.computeIfAbsent(function.getMemberOf(), x -> new ReachableClass());
+        ReachableClass reachableClass = reachableClasses.computeIfAbsent((FClass) function.getMemberOf(), x -> new ReachableClass());
         reachableClass.reachableFunctions.add(function);
     }
 

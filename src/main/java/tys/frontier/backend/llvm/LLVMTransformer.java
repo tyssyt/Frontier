@@ -6,15 +6,16 @@ import tys.frontier.code.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.DirectConversion;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
+import tys.frontier.code.expression.cast.TypeConversion;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
@@ -288,16 +289,22 @@ class LLVMTransformer implements
     public LLVMValueRef visitImplicitCast(FImplicitCast implicitCast) {
         LLVMValueRef toCast = implicitCast.getCastedExpression().accept(this);
         LLVMTypeRef targetType = module.getLlvmType(implicitCast.getType());
-        if (implicitCast instanceof DirectConversion) {
-            switch (((DirectConversion) implicitCast).getCastType()) {
+        if (implicitCast.isNoOpCast()) {
+            if (LLVMTypeOf(toCast).equals(targetType))
+                return toCast;
+            else
+                return LLVMBuildBitCast(builder, toCast, targetType, "noOpCast");
+        }
+        if (implicitCast.getTypeCast() instanceof TypeConversion) {
+            assert implicitCast.getTypeCast().getVariance() == Variance.Covariant;
+            switch (((TypeConversion) implicitCast.getTypeCast()).getCastType()) {
                 case INTEGER_PROMOTION:
                     return LLVMBuildSExt(builder, toCast, targetType, "cast_int_prom");
                 case FLOAT_PROMOTION:
                     return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
                 case TO_OPTIONAL:
-                    if (implicitCast.getCastedExpression().getType() == FBool.INSTANCE)
-                        return LLVMBuildZExt(builder, toCast, targetType, "cast_bool_opt");
-                    return toCast;
+                    assert implicitCast.getCastedExpression().getType() == FBool.INSTANCE;
+                    return LLVMBuildZExt(builder, toCast, targetType, "cast_bool_opt");
                 case OPTIONAL_TO_BOOL:
                     return LLVMBuildICmp(builder, LLVMIntNE, toCast, module.getNull((FOptional) implicitCast.getCastedExpression().getType()), "ne");
                 case DELEGATE:
@@ -311,7 +318,7 @@ class LLVMTransformer implements
                 default:
                     return Utils.cantHappen();
             }
-        } else if (implicitCast instanceof TypeParameterCast) {
+        } else if (implicitCast.getTypeCast() instanceof TypeParameterCast) {
             return Utils.NYI("Type Parameter cast in Backend");
         } else {
             return Utils.cantHappen();

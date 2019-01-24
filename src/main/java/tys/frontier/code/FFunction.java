@@ -25,7 +25,7 @@ import java.util.*;
 public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     private FFunctionIdentifier identifier;
-    private FClass memberOf;
+    private FType memberOf;
     private FVisibilityModifier modifier;
     private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean natiwe;
@@ -40,11 +40,11 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
 
     protected boolean predefined = false;
 
-    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params) {
+    public FFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params) {
         this(identifier, memberOf, modifier, natiwe, returnType, params, Collections.emptyMap());
     }
 
-    public FFunction(FFunctionIdentifier identifier, FClass memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public FFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -69,7 +69,7 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
     }
 
     @Override
-    public FClass getMemberOf() {
+    public FType getMemberOf() {
         return memberOf;
     }
 
@@ -134,7 +134,7 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
     public boolean isMain() {
         return signature.isMain()
                 && modifier == FVisibilityModifier.EXPORT
-                && memberOf.getVisibility() == FVisibilityModifier.EXPORT
+                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT
                 && returnType == FVoid.INSTANCE;
     }
 

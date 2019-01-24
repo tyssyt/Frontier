@@ -44,13 +44,15 @@ public final class ParserContextUtils {
             FTypeIdentifier id = new FTypeIdentifier(node.getText());
             if (res.containsKey(id))
                 throw new TwiceDefinedLocalVariable(id);
+            /* TODO at some point we might want to have those variables again, i.e. when not everything is baked
             FVariable var;
             if (fClass == null) {
                 var = new FLocalVariable(id, FTypeType.INSTANCE);
             } else {
                 var = new FField(id, FTypeType.INSTANCE, fClass, FVisibilityModifier.PRIVATE, false, false);
             }
-            res.put(id, new FTypeVariable(var));
+            */
+            res.put(id, new FTypeVariable(id));
         }
         return res;
     }

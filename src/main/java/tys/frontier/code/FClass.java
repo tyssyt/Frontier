@@ -3,7 +3,7 @@ package tys.frontier.code;
 import com.google.common.collect.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.cast.DirectConversion.CastType;
+import tys.frontier.code.expression.cast.TypeConversion.CastType;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -11,7 +11,6 @@ import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.typeInference.IsType;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
@@ -327,7 +326,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     unify(arg, inst, Covariant, new IntIntPair(0, 0), constraints); //target is already instantiated (i.e. when resolving in an instantiated class), continue with instantiated type
                 } else {
                     //TODO generate more liberal contraints based on whether co/contravariance is okay
-                    constraints.put((FTypeVariable) target, new IsType(arg)); //unification succeeds under the constraint that target is of type arg
+                    //constraints.put((FTypeVariable) target, new IsType(arg)); //unification succeeds under the constraint that target is of type arg
                 }
                 return;
             }

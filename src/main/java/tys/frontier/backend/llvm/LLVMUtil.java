@@ -2,6 +2,7 @@ package tys.frontier.backend.llvm;
 
 import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
@@ -44,7 +45,7 @@ public class LLVMUtil {
     public static String getFunctionName(FFunction function) {
         return function.isNative()
                 ? function.getIdentifier().name
-                : "fun." + function.getMemberOf().getIdentifier().name + '.' + function.getMemberOf().getUniqueFunctionNames().get(function);
+                : "fun." + function.getMemberOf().getIdentifier().name + '.' + ((FClass) function.getMemberOf()).getUniqueFunctionNames().get(function);
     }
 
     public static String getConstantStringName(String s) {

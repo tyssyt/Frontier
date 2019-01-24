@@ -19,9 +19,11 @@ public class FExplicitCast extends FCast {
     }
 
     private CastType castType;
+    private FType type;
 
     private FExplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
-        super(type, castedExpression);
+        super(castedExpression);
+        this.type = type;
         castType = getCastType(getType(), getCastedExpression().getType());
     }
 
@@ -35,6 +37,11 @@ public class FExplicitCast extends FCast {
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
+    }
+
+    @Override
+    public FType getType() {
+        return type;
     }
 
     public CastType getCastType() {

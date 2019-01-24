@@ -1,39 +1,81 @@
 package tys.frontier.code.expression.cast;
 
-import tys.frontier.code.FClass;
-import tys.frontier.code.FInstantiatedClass;
-import tys.frontier.code.FType;
-import tys.frontier.code.expression.FExpression;
+import com.google.common.collect.Multimap;
+import tys.frontier.code.*;
+import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
-public class TypeParameterCast extends FImplicitCast {
+import java.util.List;
 
-    private FImplicitCast[] casts;
+import static tys.frontier.code.typeInference.Variance.Contravariant;
+import static tys.frontier.code.typeInference.Variance.Covariant;
 
-    private TypeParameterCast(FType type, FExpression castedExpression, Variance variance, FImplicitCast[] casts) {
-        super(type, castedExpression, variance);
-        assert castedExpression.getType() instanceof FInstantiatedClass && type instanceof FInstantiatedClass;
-        assert ((FInstantiatedClass) castedExpression.getType()).getBaseClass() == ((FInstantiatedClass) type).getBaseClass();
-        assert casts.length == ((FClass) castedExpression.getType()).getParametersList().size();
+public class TypeParameterCast extends ImplicitTypeCast {
+
+    private ImplicitTypeCast[] casts;
+
+    private TypeParameterCast(FInstantiatedClass base, FInstantiatedClass target, Variance variance, ImplicitTypeCast[] casts) {
+        super(base, target, variance);
         this.casts = casts;
     }
 
-    public static TypeParameterCast createTTTTT(FClass type, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
-        //assert base classes are the same
+    //TODO remove once optionals are generic
+    public static TypeParameterCast createTPC(FOptional baseType, FOptional targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+        return Utils.NYI("implicit inner cast Optional");
+    }
+
+    //TODO remove once functionType is generic
+    public static TypeParameterCast createTPC(FFunctionType baseType, FFunctionType targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+        return Utils.NYI("implicit inner cast FunctionType");
+    }
+
+    public static TypeParameterCast createTPC(FInstantiatedClass baseType, FInstantiatedClass targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+        assert variance == Covariant || variance == Contravariant;
+        assert baseType != targetType;
+        FClass nonParameterized = baseType.getBaseClass();
+        assert  nonParameterized == targetType.getBaseClass();
+        TypeInstantiation baseInst = baseType.getTypeInstantiation();
+        TypeInstantiation targetInst = targetType.getTypeInstantiation();
+
         //get BaseClass Parameter list
+        List<FTypeVariable> parameters = nonParameterized.getParametersList();
+        ImplicitTypeCast[] casts = new ImplicitTypeCast[parameters.size()];
+
         //for each baseClass parameter, instantiated with the instantiations from both sides
-        //try to implicit cast from one side to the other (using the variance of the base parameter)
-        //fails just propaget (unless I want decent error messages)
-        //if they are equal put a null in casts, otherwise put the cast in casts
-        //problem, I do not cast expressions here anymore, just types, which is not possible atm, but guess we will make it work :)
-        throw new IncompatibleTypes(type, castedExpression.getType());
+        for (int i = 0; i < parameters.size(); i++) {
+            FTypeVariable param = parameters.get(i);
+            FType b = baseInst.getType(param);
+            FType t = targetInst.getType(param);
+            assert param != b || param != t;
+
+            if (b==t)
+                continue;
+
+            //try to implicit cast from one side to the other (using the variance of the base parameter)
+            Variance paramVar = variance.then(param.getVariance());
+            casts[i] = ImplicitTypeCast.create(b, t, paramVar, constraints); //fails just propagate TODO at some point catch the fail and improve the error message
+        }
+        return new TypeParameterCast(baseType, targetType, variance, casts);
+    }
+
+    @Override
+    public FInstantiatedClass getBase() {
+        return (FInstantiatedClass) base;
+    }
+
+    @Override
+    public FInstantiatedClass getTarget() {
+        return (FInstantiatedClass) target;
     }
 
     @Override
     public int getCost() {
         int cost = 0;
-        for (FImplicitCast cast : casts) {
+        for (ImplicitTypeCast cast : casts) {
             if (cast != null)
                 cost += cast.getCost();
         }
@@ -42,7 +84,7 @@ public class TypeParameterCast extends FImplicitCast {
 
     @Override
     public boolean isNoOpCast() {
-        for (FImplicitCast cast : casts) {
+        for (ImplicitTypeCast cast : casts) {
             if (cast != null && !cast.isNoOpCast())
                 return false;
         }

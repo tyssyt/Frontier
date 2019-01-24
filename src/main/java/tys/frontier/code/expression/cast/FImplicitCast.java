@@ -1,60 +1,79 @@
 package tys.frontier.code.expression.cast;
 
-import tys.frontier.code.FInstantiatedClass;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
-import static tys.frontier.code.typeInference.Variance.Contravariant;
+import java.util.Map;
+
 import static tys.frontier.code.typeInference.Variance.Covariant;
 
-public abstract class FImplicitCast extends FCast {
+public class FImplicitCast extends FCast { //TODO consider removing all the forwared methods and haveing the caller of the just use the typeCast getter
 
-    protected Variance variance;
+    private ImplicitTypeCast typeCast;
 
-    protected FImplicitCast(FType type, FExpression castedExpression, Variance variance) {
-        super(type, castedExpression);
-        this.variance = variance;
+    private FImplicitCast(FExpression castedExpression, ImplicitTypeCast typeCast) {
+        super(castedExpression);
+        this.typeCast = typeCast;
     }
 
-    public static FImplicitCast create(FType targetType, FExpression castedExpression) throws IncompatibleTypes {
-        return create(targetType, castedExpression, Contravariant);
+    public static FExpression create(FType targetType, FExpression castedExpression) throws IncompatibleTypes {
+        ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
+        FExpression res = create(targetType, castedExpression, Covariant, constraints);
+        for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
+            entry.getKey().addConstraint(entry.getValue());
+        }
+        return res;
     }
 
-    public static FImplicitCast create(FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
-        assert variance == Covariant || variance == Contravariant; //why else would we cast?
+    public static FExpression create(FType targetType, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
         FType baseType = castedExpression.getType();
-        if (targetType instanceof FTypeVariable || baseType instanceof FTypeVariable)
-            throw new IncompatibleTypes(targetType, baseType); //TODO this actually always succeeds, but we need more knowledge of vars and to create and return contraints
-        if (targetType instanceof FInstantiatedClass && baseType instanceof FInstantiatedClass && ((FInstantiatedClass) targetType).getBaseClass() == ((FInstantiatedClass) baseType).getBaseClass())
-            return TypeParameterCast.createTTTTT(((FInstantiatedClass) targetType), castedExpression, variance); //TODO what if one of them is the base class, I think thats in theory possible
-        if (targetType instanceof FOptional && baseType instanceof FOptional)
-            return TypeParameterCast.createTTTTT(((FOptional) targetType), castedExpression, variance); //TODO optional will be made generic some day
-        if (targetType instanceof FFunctionType && baseType instanceof FFunctionType)
-            return TypeParameterCast.createTTTTT(((FFunctionType) targetType), castedExpression, variance); //TODO function types will be made generic some day
-        return DirectConversion.create(targetType, castedExpression, variance);
+        if (baseType == targetType)
+            return castedExpression;
+        return new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
     }
 
-    public static FImplicitCast createTrusted(FType type, FExpression castedExpression) {
-        return createTrusted(type, castedExpression, Covariant);
-    }
-
-    public static FImplicitCast createTrusted(FType type, FExpression castedExpression, Variance variance) {
+    public static FExpression createTrusted(FType type, FExpression castedExpression) {
         try {
-            return create(type, castedExpression, variance);
+            return create(type, castedExpression);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
-    public abstract int getCost();
+    public static FExpression createTrusted(FType type, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
+        try {
+            return create(type, castedExpression, variance, constraints);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
+    }
+
+    public ImplicitTypeCast getTypeCast() {
+        return typeCast;
+    }
+
+    @Override
+    public boolean isNoOpCast() {
+        return typeCast.isNoOpCast();
+    }
+
+    @Override
+    public FType getType() {
+        return typeCast.getTarget();
+    }
+
+    public int getCost() {
+        return typeCast.getCost();
+    }
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {

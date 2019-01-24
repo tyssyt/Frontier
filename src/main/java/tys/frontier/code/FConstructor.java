@@ -75,15 +75,16 @@ public class FConstructor extends FFunction {
     }
 
     private void generateBody() {
+        FClass memberOf = (FClass) getMemberOf();
         List<FStatement> statements = new ArrayList<>();
-        FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, getMemberOf());
+        FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
 
-        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(getMemberOf().getFunctions().get(MALLOC_ID)), Collections.emptyList());
+        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions().get(MALLOC_ID)), Collections.emptyList());
         statements.add(FVarDeclaration.createTrusted(_this, functionCall));
 
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
-            FField field = getMemberOf().getInstanceFields().get(param.getIdentifier());
+            FField field = memberOf.getInstanceFields().get(param.getIdentifier());
             statements.add(FVarAssignment.createTrusted(FFieldAccess.createInstanceTrusted(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
         }
         statements.add(FReturn.createTrusted(new FLocalVariableExpression(_this), this));

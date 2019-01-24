@@ -316,7 +316,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
 
         if (var.getType() == FTypeType.INSTANCE) {
-            FTypeVariable typeVar = new FTypeVariable(var);
+            FTypeVariable typeVar = new FTypeVariable((FTypeIdentifier) identifier);
             knownClasses.put(typeVar.getIdentifier(), typeVar);
         }
         declaredVars.put(identifier, var);
