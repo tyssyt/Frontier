@@ -246,7 +246,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FExpression exitImplicitCast(FImplicitCast implicitCast, FExpression castedExpression) {
-        return FImplicitCast.createTrusted(typeInstantiation.getType(implicitCast.getType()), castedExpression);
+        return FImplicitCast.createTrusted(typeInstantiation.getType(implicitCast.getType()), castedExpression, implicitCast.getTypeCast().getVariance());
     }
 
     @Override

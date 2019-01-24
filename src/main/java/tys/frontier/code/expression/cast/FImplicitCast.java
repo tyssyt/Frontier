@@ -14,8 +14,6 @@ import tys.frontier.util.Utils;
 
 import java.util.Map;
 
-import static tys.frontier.code.typeInference.Variance.Covariant;
-
 public class FImplicitCast extends FCast { //TODO consider removing all the forwared methods and haveing the caller of the just use the typeCast getter
 
     private ImplicitTypeCast typeCast;
@@ -25,9 +23,9 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         this.typeCast = typeCast;
     }
 
-    public static FExpression create(FType targetType, FExpression castedExpression) throws IncompatibleTypes {
+    public static FExpression create(FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
         ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-        FExpression res = create(targetType, castedExpression, Covariant, constraints);
+        FExpression res = create(targetType, castedExpression, variance, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             entry.getKey().addConstraint(entry.getValue());
         }
@@ -41,9 +39,9 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         return new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
     }
 
-    public static FExpression createTrusted(FType type, FExpression castedExpression) {
+    public static FExpression createTrusted(FType type, FExpression castedExpression, Variance variance) {
         try {
-            return create(type, castedExpression);
+            return create(type, castedExpression, variance);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }

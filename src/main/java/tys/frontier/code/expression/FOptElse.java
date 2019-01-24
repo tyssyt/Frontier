@@ -1,7 +1,9 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FType;
+import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.IsType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -21,9 +23,15 @@ public class FOptElse implements FExpression {
         return new FOptElse(optional, elze);
     }
 
-    private void checkTypes() throws IncompatibleTypes {
-        if (!(optional.getType() instanceof FOptional))
+    private void checkTypes() throws IncompatibleTypes { //TODO the inner type of the optional could be allowed to implicitly cast to type of else I guess?
+        if (optional instanceof FTypeVariable) {
+            ((FTypeVariable) optional).addConstraint(new IsType(this, FOptional.from(elze.getType())));
+            return;
+        }
+
+        if (!(optional.getType() instanceof FOptional)) {
             throw new IncompatibleTypes(optional.getType(), FOptional.from(optional.getType()));
+        }
         elze = elze.typeCheck(((FOptional) optional.getType()).getBaseType());
     }
 

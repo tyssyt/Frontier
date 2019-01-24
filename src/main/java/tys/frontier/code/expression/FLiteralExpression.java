@@ -6,6 +6,7 @@ import tys.frontier.code.expression.cast.TypeConversion;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -42,7 +43,7 @@ public class FLiteralExpression implements FExpression {
         FExpression res = new FLiteralExpression(literal.specify(specifyTarget)); //handle all other literals types here
         if (res.getType() == targetType)
             return res;
-        FExpression casted = FImplicitCast.create(targetType, res);
+        FExpression casted = FImplicitCast.create(targetType, res, Variance.Covariant);
         //specify should handle all casts but the to optional
         assert casted instanceof FImplicitCast && ((FImplicitCast) casted).getTypeCast() instanceof TypeConversion && ((TypeConversion) ((FImplicitCast) casted).getTypeCast()).getCastType() == TypeConversion.CastType.TO_OPTIONAL;
         return casted;
