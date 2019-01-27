@@ -266,13 +266,26 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
         }
 
         public boolean collidesWith(Signature other) {
-            int max = Math.max(
-                    this.getParamTypes().size(),
+            int maxNeeded = Math.max(
+                     this.getParamTypes().size(),
                     other.getParamTypes().size()
             );
-            if (this.getAllParamTypes().size() < max || other.getAllParamTypes().size() < max)
+            int minTotal = Math.min(
+                     this.getAllParamTypes().size(),
+                    other.getAllParamTypes().size()
+            );
+            //if the length if needed arguments of one function is longer then the length of all args of the other, they can't collide
+            if (minTotal < maxNeeded)
                 return false;
-            return this.getAllParamTypes().subList(0, max).equals(other.getAllParamTypes().subList(0, max));
+            //otherwise try to find a arg that is different
+            for (int i=0; i< minTotal; i++) {
+                FType t =  this.getAllParamTypes().get(i);
+                FType o = other.getAllParamTypes().get(i);
+                //args are not different if they are a type variable
+                if (!(t instanceof FTypeVariable) && !(o instanceof FTypeVariable) && t != o)
+                    return false;
+            }
+            return true;
         }
 
         //TODO castSig to here?
