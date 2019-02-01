@@ -23,7 +23,7 @@ public class FTypeVariable implements FType {
     private FTypeIdentifier identifier;
     private Set<TypeConstraint> constraints;
     private Variance variance;
-    private NameGenerator returnTypeNames = new NameGenerator("?" + identifier.name + "ret.", "");
+    private NameGenerator returnTypeNames;
 
     public FTypeVariable(FTypeIdentifier identifier) {
         this(identifier, Variance.Invariant);
@@ -36,6 +36,7 @@ public class FTypeVariable implements FType {
         this.identifier = identifier;
         this.variance = variance;
         this.constraints = constraints;
+        this.returnTypeNames = new NameGenerator("?" + identifier.name + "ret.", "");
     }
 
     @Override

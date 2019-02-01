@@ -430,7 +430,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     }
 
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    IntIntPair cost = f.castSignatureFrom(Utils.typesFromExpressionList(arguments), typeInstantiation, constraints);
+                    IntIntPair cost = f.castSignatureFrom(Utils.typesFromExpressionList(args), typeInstantiation, constraints);
 
                     //check contraints TODO see the todo on why this doesn't just work
                     /**
