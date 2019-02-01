@@ -2,16 +2,20 @@ package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.cast.FImplicitCast;
+import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.IntIntPair;
@@ -176,28 +180,21 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
      * @throws IncompatibleSignatures when the number of parameters differs
      * @throws IncompatibleTypes when a parameter can't be casted
      */
-    public IntIntPair castSignatureFrom(List<FExpression> arguments, TypeInstantiation typeInstantiation) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
-        if (arguments.size() > params.size()) {
-            throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
-        } else if (arguments.size() < params.size()) {
-            //the missing arguments might have default values, in which case the call is still valid
-            if (!params.get(arguments.size()).hasDefaultValue())
-                throw new IncompatibleSignatures(this.getSignature(), Utils.typesFromExpressionList(arguments));
+    public IntIntPair castSignatureFrom(List<FType> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleSignatures, IncompatibleTypes { //TODO we can move this to sig again
+        if (arguments.size() != params.size()) {
+            throw new IncompatibleSignatures(this.getSignature(), arguments);
         }
 
         int casts = 0;
         int cost = 0;
         for (int i = 0; i < arguments.size(); i++) {
-            FExpression argument = arguments.get(i);
+            FType argumentType = arguments.get(i);
             FType targetType = typeInstantiation.getType(params.get(i).getType());
-
-            FExpression cast = argument.typeCheck(targetType);
-            if (cast instanceof FLiteralExpression) {
-                cost -= ((FLiteralExpression) argument).distance(((FLiteralExpression) cast));
-            } else if (cast instanceof FImplicitCast) {
-                casts++;
-                cost += 100* ((FImplicitCast) cast).getCost();
-            }
+            if (argumentType == targetType)
+                continue;
+            ImplicitTypeCast typeCast = ImplicitTypeCast.create(argumentType, targetType, Variance.Covariant, constraints);
+            casts++;
+            cost += 100*typeCast.getCost(); //the 100 is a leftover from the time we could "tighten" literals, so that those operations had a smaller weight
         }
         return new IntIntPair(casts, cost);
     }

@@ -430,27 +430,17 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     }
 
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    //iterate over all args and unify types, creating constraints in the process TODO this does not implicit cast on top level (where co-contravariance are still irrelevant)
-                    for (int i=0; i<args.size(); i++) {
-                        unify(args.get(i).getType(), sig.getAllParamTypes().get(i), Covariant, new IntIntPair(0,0), constraints);
+                    IntIntPair cost = f.castSignatureFrom(Utils.typesFromExpressionList(arguments), typeInstantiation, constraints);
+
+                    //check contraints TODO see the todo on why this doesn't just work
+                    /**
+                     * abriged: yes we can check constraints now, but both the caller might generate constraints post call that make it impossible
+                     *          and the body might not be parsed which also can have more constraints
+                     */
+                    if (!constraints.isEmpty()) {
+                        return Utils.NYI("calls that create constraints");
                     }
 
-                    //resolve constraints
-
-                    //cast arguments & compute cost
-
-                    //update result
-
-
-
-                    if (!f.getParametersList().isEmpty()) {
-                        //collect constraints
-
-                        //resolve constraints
-
-
-                    }
-                    IntIntPair cost = f.castSignatureFrom(arguments, typeInstantiation);
                     updateCost(cost, f);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes ignored) {}
             }

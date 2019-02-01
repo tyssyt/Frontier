@@ -61,7 +61,7 @@ public abstract class ImplicitTypeCast {
         return variance;
     }
 
-    abstract int getCost();
+    public abstract int getCost();
 
-    abstract boolean isNoOpCast();
+    public abstract boolean isNoOpCast();
 }

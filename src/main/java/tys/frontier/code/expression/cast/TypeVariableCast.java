@@ -27,12 +27,12 @@ public class TypeVariableCast extends ImplicitTypeCast {
     }
 
     @Override
-    int getCost() {
+    public int getCost() {
         return 0; //TODO cant give a definitive answer here...
     }
 
     @Override
-    boolean isNoOpCast() {
+    public boolean isNoOpCast() {
         return false;
     }
 }
