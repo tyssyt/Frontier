@@ -67,7 +67,7 @@ public class FIntN extends FPredefinedClass {
     }
 
     public static int neededBits(BigInteger number) {
-        return Math.max(number.abs().bitLength(), 4);
+        return Math.max(number.abs().bitLength()+1, 4); //no int representation smaller then 4 bits allowed, also need to add the "sign bit"
     }
 
     public boolean canRepresent(BigInteger i) {
