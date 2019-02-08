@@ -100,7 +100,7 @@ public class TypeConversion extends ImplicitTypeCast {
 
     @Override
     public FClass getTarget() {
-        return (FClass) base;
+        return (FClass) target;
     }
 
     @Override
