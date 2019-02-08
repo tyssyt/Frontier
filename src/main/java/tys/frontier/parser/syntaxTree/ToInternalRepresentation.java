@@ -9,6 +9,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FLiteral;
+import tys.frontier.code.literal.FNull;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
@@ -296,7 +297,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 type = val.getType();
         }
 
-        if (type == null) { //type inference failed
+        if (type == null || type == FNull.NULL_TYPE) { //type inference failed TODO better error message in case of null fail
             errors.add(new UntypedVariable(identifier));
             failed = true;
         }

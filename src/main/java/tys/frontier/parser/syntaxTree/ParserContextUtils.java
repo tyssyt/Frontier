@@ -206,6 +206,10 @@ public final class ParserContextUtils {
                         }
                         sb.append(c);
                     }
+                    String string = sb.toString();
+                    if (string.length() == 1) {
+                        return new FCharLiteral(string.charAt(0));
+                    }
                     return new FStringLiteral(sb.toString());
             }
         }

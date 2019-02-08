@@ -5,6 +5,10 @@ import com.google.common.collect.Multimap;
 import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
+import tys.frontier.code.literal.FLiteral;
+import tys.frontier.code.literal.FNull;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -36,6 +40,12 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         FType baseType = castedExpression.getType();
         if (baseType == targetType)
             return castedExpression;
+        if (castedExpression instanceof FLiteralExpression) {
+            FLiteral literal = ((FLiteralExpression) castedExpression).getLiteral();
+            if (literal == FNull.UNTYPED && targetType instanceof FOptional) {
+                return new FLiteralExpression(new FNull((FOptional) targetType));
+            }
+        }
         FImplicitCast res = new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
         for (TypeConstraint constraint : constraints.values()) {
             constraint.setOrigin(res);

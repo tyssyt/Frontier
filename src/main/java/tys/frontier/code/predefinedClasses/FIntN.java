@@ -59,11 +59,15 @@ public class FIntN extends FPredefinedClass {
     }
 
     public BigInteger minValue() {
-        return BigInteger.valueOf(2).pow(n-1).subtract(BigInteger.ONE).negate();
+        return maxValue().negate();
     }
 
     public BigInteger maxValue() {
         return BigInteger.valueOf(2).pow(n-1).subtract(BigInteger.ONE);
+    }
+
+    public static int neededBits(BigInteger number) {
+        return Math.max(number.abs().bitLength(), 4);
     }
 
     public boolean canRepresent(BigInteger i) {

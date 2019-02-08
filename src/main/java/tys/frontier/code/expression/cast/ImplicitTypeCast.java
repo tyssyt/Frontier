@@ -5,11 +5,13 @@ import tys.frontier.code.FClass;
 import tys.frontier.code.FInstantiatedClass;
 import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
+import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 import static tys.frontier.code.typeInference.Variance.Invariant;
 
@@ -27,6 +29,25 @@ public abstract class ImplicitTypeCast {
 
     public static ImplicitTypeCast create(FType baseType, FType targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
         assert baseType != targetType;
+
+        if (baseType == FNull.NULL_TYPE) {
+            if (targetType instanceof FOptional)
+                return new ImplicitTypeCast(baseType, targetType, variance) { //TODO this is a bit of a hack, but atm there is no need for a non Anon class
+                    @Override
+                    public int getCost() {
+                        return 0;
+                    }
+                    @Override
+                    public boolean isNoOpCast() {
+                        return true;
+                    }
+                };
+            else
+                throw new IncompatibleTypes(targetType, baseType); //can't assign null to a non-optional type
+        }
+
+        if (targetType == FNull.NULL_TYPE)
+            return Utils.cantHappen();
 
         //first check if either base or targetType is a TypeVariable and do a type variable cast
         if (baseType instanceof FTypeVariable || targetType instanceof FTypeVariable) {

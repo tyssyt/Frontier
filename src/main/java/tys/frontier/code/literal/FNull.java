@@ -1,11 +1,34 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
+import tys.frontier.code.FFunction;
+import tys.frontier.code.FType;
+import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.util.Utils;
+
+import java.util.List;
 
 public class FNull implements FLiteral {
 
+    public static FType NULL_TYPE = new FType() {
+        @Override
+        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) {
+            return Utils.cantHappen();
+        }
+
+        @Override
+        public FTypeIdentifier getIdentifier() {
+            return Utils.cantHappen();
+        }
+
+        @Override
+        public StringBuilder toString(StringBuilder sb) {
+            return Utils.cantHappen();
+        }
+    };
     public static final FNull UNTYPED = new FNull(null);
 
     private FOptional type;
@@ -20,8 +43,8 @@ public class FNull implements FLiteral {
     }
 
     @Override
-    public FClass getType() {
-        return type == null ? FVoid.INSTANCE : type;
+    public FType getType() {
+        return type == null ? NULL_TYPE : type;
     }
 
     @Override
@@ -32,11 +55,5 @@ public class FNull implements FLiteral {
     @Override
     public String getOriginalString() {
         return toString();
-    }
-
-    @Override
-    public int distance(FLiteral other) {
-        assert other instanceof FNull;
-        return 0;
     }
 }

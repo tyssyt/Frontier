@@ -3,10 +3,7 @@ package tys.frontier.code;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FTypeType;
@@ -21,7 +18,6 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
-import tys.frontier.util.Utils;
 
 import java.util.*;
 
@@ -193,6 +189,8 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
             if (argumentType == targetType)
                 continue;
             ImplicitTypeCast typeCast = ImplicitTypeCast.create(argumentType, targetType, Variance.Covariant, constraints);
+            if (typeCast.getCost() == 0)
+                continue;
             casts++;
             cost += 100*typeCast.getCost(); //the 100 is a leftover from the time we could "tighten" literals, so that those operations had a smaller weight
         }

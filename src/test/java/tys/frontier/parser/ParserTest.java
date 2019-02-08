@@ -113,11 +113,6 @@ public class ParserTest {
         assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
-    public void parseIntLiteralTooLarge() throws Exception {
-        SyntaxError e = parseSyntaxError("IntLiteralTooLarge.front");
-        assertTrue(e instanceof IntLiteralTooLarge);
-    }
-    @Test
     public void parseNonOptionalExMark() throws Exception {
         SyntaxError e = parseSyntaxError("NonOptionalExMark.front");
         assertTrue(e instanceof NonOptionalExMark);
