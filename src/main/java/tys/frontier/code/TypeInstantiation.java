@@ -96,7 +96,12 @@ public class TypeInstantiation {
     public TypeInstantiation then(TypeInstantiation other) {
         if (other.isEmpty())
             return this;
-        return Utils.NYI("combining instantiations");
+        Map<FTypeVariable, FType> newMap = new HashMap<>(other.typeMap);
+        for (Map.Entry<FTypeVariable, FType> entry : this.typeMap.entrySet()) {
+            FType old = newMap.put(entry.getKey(), other.getType(entry.getValue()));
+            assert old == null;
+        }
+        return create(newMap);
     }
 
     @Override

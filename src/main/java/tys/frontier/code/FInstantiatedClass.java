@@ -6,9 +6,7 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
-import tys.frontier.util.Utils;
 
 import java.util.List;
 
@@ -43,13 +41,11 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
-    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
-        return Utils.NYI("specifying within an instantiated class");
-    }
-
-    @Override
-    public FClass getInstantiation(TypeInstantiation typeInstantiation) {
-        return Utils.NYI("specifying within an instantiated class");
+    public FClass getInstantiation(TypeInstantiation typeInstantiation) { //TODO this could be far more optimized...
+        if (typeInstantiation.isEmpty())
+            return this;
+        TypeInstantiation combined = this.typeInstantiation.then(typeInstantiation);
+        return baseClass.getInstantiation(combined);
     }
 
     public boolean isBaked() {
