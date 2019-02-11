@@ -61,7 +61,7 @@ export class List<T>:
     }
 
     private expand() {
-        int32 newSize := (int32)2*elements.size;
+        int32 newSize := 2*elements.size;
         if newSize < 10 {
             newSize = 10;
         }
