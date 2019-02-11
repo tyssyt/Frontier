@@ -38,9 +38,9 @@ public class TypeConversion extends ImplicitTypeCast {
     }
 
     private CastType castType;
-    private TypeParameterCast inner;
+    private ImplicitTypeCast inner;
 
-    private TypeConversion(FClass base, FClass target, Variance variance, CastType castType, TypeParameterCast inner) {
+    private TypeConversion(FClass base, FClass target, Variance variance, CastType castType, ImplicitTypeCast inner) {
         super(base, target, variance);
         this.castType = castType;
         this.inner = inner;
@@ -60,7 +60,7 @@ public class TypeConversion extends ImplicitTypeCast {
         if (variance == Covariant && targetType instanceof FOptional) {
             FType targetBase = ((FOptional) targetType).getBaseType();
             if (baseType != targetBase) { //if the inner type doesn't match, try casting it, because optionals are covariant
-                TypeParameterCast inner = (TypeParameterCast) ImplicitTypeCast.create(baseType, targetBase, variance, constraints);
+                ImplicitTypeCast inner = ImplicitTypeCast.create(baseType, targetBase, variance, constraints);
                 return new TypeConversion(baseType, targetType, variance, CastType.TO_OPTIONAL, inner);
             }
             return new TypeConversion(baseType, targetType, variance, CastType.TO_OPTIONAL, null);
@@ -89,7 +89,7 @@ public class TypeConversion extends ImplicitTypeCast {
         return castType;
     }
 
-    public TypeParameterCast getInner() {
+    public ImplicitTypeCast getInner() {
         return inner;
     }
 

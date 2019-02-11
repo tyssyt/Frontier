@@ -6,10 +6,7 @@ import tys.frontier.code.*;
 import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
-import tys.frontier.code.expression.cast.FImplicitCast;
-import tys.frontier.code.expression.cast.TypeConversion;
-import tys.frontier.code.expression.cast.TypeParameterCast;
+import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
@@ -295,33 +292,53 @@ class LLVMTransformer implements
             else
                 return LLVMBuildBitCast(builder, toCast, targetType, "noOpCast");
         }
-        if (implicitCast.getTypeCast() instanceof TypeConversion) {
-            assert implicitCast.getTypeCast().getVariance() == Variance.Covariant;
-            switch (((TypeConversion) implicitCast.getTypeCast()).getCastType()) {
-                case INTEGER_PROMOTION:
-                    return LLVMBuildSExt(builder, toCast, targetType, "cast_int_prom");
-                case FLOAT_PROMOTION:
-                    return LLVMBuildFPExt(builder, toCast, targetType, "cast_float_prom");
-                case TO_OPTIONAL:
-                    assert implicitCast.getCastedExpression().getType() == FBool.INSTANCE;
-                    return LLVMBuildZExt(builder, toCast, targetType, "cast_bool_opt");
-                case OPTIONAL_TO_BOOL:
-                    return LLVMBuildICmp(builder, LLVMIntNE, toCast, module.getNull((FOptional) implicitCast.getCastedExpression().getType()), "ne");
-                case DELEGATE:
-                    List<FField> path = ((FClass) implicitCast.getCastedExpression().getType()).getDelegate(implicitCast.getType());
-                    LLVMValueRef cur = toCast;
-                    for (FField field : path) {
-                        LLVMValueRef addr = LLVMBuildStructGEP(builder, cur, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);
-                        cur = LLVMBuildLoad(builder, addr, "load_delegate_" + field.getIdentifier().name);
-                    }
-                    return cur;
-                default:
-                    return Utils.cantHappen();
-            }
-        } else if (implicitCast.getTypeCast() instanceof TypeParameterCast) {
-            return Utils.NYI("Type Parameter cast in Backend");
-        } else {
+        return visitImplicitTypeCast(toCast, implicitCast.getTypeCast());
+    }
+
+    private LLVMValueRef visitImplicitTypeCast(LLVMValueRef base, ImplicitTypeCast cast) {
+        if (cast instanceof TypeVariableCast)
             return Utils.cantHappen();
+        else if (cast instanceof TypeConversion)
+            return visitTypeConversion(base, (TypeConversion) cast);
+        else if (cast instanceof TypeParameterCast)
+            return Utils.NYI("Type Parameter Cast");
+        else
+            return Utils.cantHappen();
+    }
+
+    private LLVMValueRef visitTypeConversion(LLVMValueRef base, TypeConversion conversion) {
+        assert conversion.getVariance() == Variance.Covariant;
+        FClass baseClass;
+        if (conversion.getInner() != null) {
+            base = visitImplicitTypeCast(base, conversion.getInner());
+            baseClass = (FClass) conversion.getInner().getTarget();
+        } else
+            baseClass = conversion.getBase();
+
+        LLVMTypeRef target = module.getLlvmType(conversion.getTarget());
+
+        switch (conversion.getCastType()) {
+            case INTEGER_PROMOTION:
+                return LLVMBuildSExt(builder, base, target, "cast_int_prom");
+            case FLOAT_PROMOTION:
+                return LLVMBuildFPExt(builder, base, target, "cast_float_prom");
+            case TO_OPTIONAL:
+                if (baseClass == FBool.INSTANCE)
+                    return LLVMBuildZExt(builder, base, target, "cast_bool_opt");
+                else
+                    return base;
+            case OPTIONAL_TO_BOOL:
+                return LLVMBuildICmp(builder, LLVMIntNE, base, module.getNull((FOptional) baseClass), "ne");
+            case DELEGATE:
+                List<FField> path = baseClass.getDelegate(conversion.getTarget());
+                LLVMValueRef cur = base;
+                for (FField field : path) {
+                    LLVMValueRef addr = LLVMBuildStructGEP(builder, cur, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);
+                    cur = LLVMBuildLoad(builder, addr, "load_delegate_" + field.getIdentifier().name);
+                }
+                return cur;
+            default:
+                return Utils.cantHappen();
         }
     }
 
