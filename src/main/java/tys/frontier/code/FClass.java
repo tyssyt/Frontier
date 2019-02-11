@@ -260,6 +260,16 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return visitor.exitType(this, fields, functions);
     }
 
+    @Override
+    public String toString() {
+        return tS();
+    }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
+        return sb.append(getIdentifier().name);
+    }
+
     public String headerToString() {
         return visibility + " class " + identifier;
     }
@@ -279,8 +289,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return sb.append("\n}");
     }
 
-    @Override
-    public StringBuilder toString(StringBuilder sb) {
+    public StringBuilder printAll(StringBuilder sb) {
         sb.append(headerToString()).append("{\n");
         for (FField field : getStaticFields().values()) {
             field.toString(sb).append('\n');
