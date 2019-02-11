@@ -429,8 +429,17 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                         args.add(f.getParams().get(i).getDefaultValue().get());
                     }
 
+                    List<FType> argTypes = new ArrayList<>(args.size());
+                    for (int i = 0; i < arguments.size(); i++) {
+                        argTypes.add(args.get(i).getType());
+                    }
+                    //default arguments come from the function, thus we might need to instantiate types
+                    for (int i = arguments.size(); i < args.size(); i++) {
+                        argTypes.add(typeInstantiation.getType(args.get(i).getType()));
+                    }
+
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    IntIntPair cost = f.castSignatureFrom(Utils.typesFromExpressionList(args), typeInstantiation, constraints);
+                    IntIntPair cost = f.castSignatureFrom(argTypes, typeInstantiation, constraints);
 
                     //check contraints TODO see the todo on why this doesn't just work
                     /**

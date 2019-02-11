@@ -184,7 +184,7 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
         int casts = 0;
         int cost = 0;
         for (int i = 0; i < arguments.size(); i++) {
-            FType argumentType = typeInstantiation.getType(arguments.get(i)); //even though this should only instantiate types from the called function, the argument might be a default value of that function and thus needs to be initialised
+            FType argumentType = arguments.get(i);
             FType targetType = typeInstantiation.getType(params.get(i).getType());
             if (argumentType == targetType)
                 continue;
