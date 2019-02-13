@@ -35,6 +35,7 @@ tokens {
     DELEGATE,
     IN,
     OUT,
+    WHERE,
     NEW,
     THIS,
     NULL,
@@ -76,6 +77,7 @@ importStatement
 
 classDeclaration
     :   visibilityModifier? CLASS TypeIdentifier typeParameters? COLON
+        typeParameterSpecification*
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
     ;
@@ -86,6 +88,18 @@ typeParameters
 
 typeParamer
     :   (IN|OUT)? TypeIdentifier STAR?  //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
+    ;
+
+typeParameterSpecification
+    :   WHERE upperBound? TypeIdentifier lowerBound?
+    ;
+
+upperBound
+    : typeList GT
+    ;
+
+lowerBound
+    : GT typeList
     ;
 
 classDeclaratives
@@ -114,7 +128,7 @@ methodDeclaration
     ;
 
 methodHeader
-    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeType)?
+    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeType)? typeParameterSpecification*
     ;
 
 fieldDeclaration

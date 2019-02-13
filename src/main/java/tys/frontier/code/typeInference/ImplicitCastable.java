@@ -1,14 +1,13 @@
 package tys.frontier.code.typeInference;
 
 import tys.frontier.code.FType;
-import tys.frontier.code.expression.FExpression;
 
 public class ImplicitCastable extends TypeConstraint {
 
     private FType target;
     private Variance variance;
 
-    public ImplicitCastable(FExpression origin, FType target, Variance variance) {
+    public ImplicitCastable(Object origin, FType target, Variance variance) {
         super(origin);
         this.target = target;
         this.variance = variance;

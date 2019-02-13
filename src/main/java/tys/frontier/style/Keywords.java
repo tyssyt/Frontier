@@ -22,6 +22,7 @@ public class Keywords {
             .put("delegate", FrontierParser.DELEGATE)
             .put("in", FrontierParser.IN)
             .put("out", FrontierParser.OUT)
+            .put("where", FrontierParser.WHERE)
             .put("new", FrontierParser.NEW)
             .put("this", FrontierParser.THIS)
             .put("null", FrontierParser.NULL)

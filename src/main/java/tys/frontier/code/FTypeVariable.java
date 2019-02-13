@@ -15,7 +15,6 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
-import java.util.HashSet;
 import java.util.List;
 
 public class FTypeVariable implements FType {
@@ -26,7 +25,7 @@ public class FTypeVariable implements FType {
     private NameGenerator returnTypeNames;
 
     public static FTypeVariable create(FTypeIdentifier identifier, boolean fixed) {
-        TypeConstraints constraints = fixed ? TypeConstraints.EMPTY : TypeConstraints.create(new HashSet<>());
+        TypeConstraints constraints = fixed ? TypeConstraints.EMPTY : TypeConstraints.create();
         return new FTypeVariable(identifier, fixed, constraints);
     }
 
@@ -47,7 +46,7 @@ public class FTypeVariable implements FType {
     }
 
     public void setConstraints(TypeConstraints constraints) {
-        assert fixed && this.constraints == TypeConstraints.EMPTY;
+        assert constraints.isEmpty();
         this.constraints = constraints;
     }
 

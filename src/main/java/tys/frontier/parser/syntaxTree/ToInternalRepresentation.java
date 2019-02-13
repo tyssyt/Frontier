@@ -66,6 +66,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         knownClasses.push();
         knownClasses.putAll(currentType.getParameters());
         try {
+            //handle typeParameterSpecification
+            for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
+                try {
+                    ParserContextUtils.handleTypeParameterSpecification(c, currentType, knownClasses::get);
+                } catch (SyntaxError syntaxError) {
+                    errors.add(syntaxError);
+                }
+            }
+
             return visitChildren(ctx);
         } finally {
             knownClasses.pop();
@@ -193,6 +202,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             declaredVars.pop();
             knownClasses.pop();
         }
+    }
+
+    @Override
+    public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
+        for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
+            try {
+                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction, knownClasses::get);
+            } catch (SyntaxError syntaxError) {
+                errors.add(syntaxError);
+            }
+        }
+        visitFormalParameters(ctx.formalParameters());
+        return null;
     }
 
     @Override

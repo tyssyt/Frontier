@@ -13,6 +13,7 @@
 
         "in":           "in",
         "out":          "out",
+        "where":        "where",
 
         "abstract":     "abstract",
         "override":     "override",

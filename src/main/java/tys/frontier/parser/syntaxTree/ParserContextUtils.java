@@ -11,6 +11,8 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
+import tys.frontier.code.typeInference.ImplicitCastable;
+import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.ParameterizedTypeVariable;
@@ -79,6 +81,29 @@ public final class ParserContextUtils {
 
     public static boolean isStatic (FrontierParser.ModifierContext ctx) {
         return ctx !=  null;
+    }
+
+    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
+        FTypeVariable typeVariable = _class.getParameters().get(identifier);
+        if (typeVariable == null)
+            Utils.NYI("error for unknown TypeVariable in where Clause");
+
+        TypeConstraints constraints = TypeConstraints.create();
+        UpperBoundContext uC = ctx.upperBound();
+        if (uC != null) {
+            for (FType type : typesFromList(uC.typeList().typeType(), possibleTypes))
+                constraints.add(new ImplicitCastable(_class, type, Variance.Contravariant));
+        }
+        LowerBoundContext lC = ctx.lowerBound();
+        if (lC != null) {
+            for (FType type : typesFromList(lC.typeList().typeType(), possibleTypes))
+                constraints.add(new ImplicitCastable(_class, type, Variance.Covariant));
+        }
+
+        if (!constraints.isConsistent())
+            Utils.NYI("constraints not consistent error");
+        typeVariable.setConstraints(constraints);
     }
 
     public static FPredefinedClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {

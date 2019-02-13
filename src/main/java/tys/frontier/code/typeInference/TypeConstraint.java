@@ -1,20 +1,18 @@
 package tys.frontier.code.typeInference;
 
-import tys.frontier.code.expression.FExpression;
-
 public abstract class TypeConstraint {
 
-    private FExpression origin;
+    private Object origin; //TODO an interface that groups all possible origins
 
-    public TypeConstraint(FExpression origin) {
+    public TypeConstraint(Object origin) {
         this.origin = origin;
     }
 
-    public FExpression getOrigin() {
+    public Object getOrigin() {
         return origin;
     }
 
-    public void setOrigin(FExpression origin) {
+    public void setOrigin(Object origin) {
         this.origin = origin;
     }
 

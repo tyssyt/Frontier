@@ -44,12 +44,16 @@ public class TypeConstraints {
         this.constraints = constraints;
     }
 
-    public static TypeConstraints create(Set<TypeConstraint> constraints) {
-        return new TypeConstraints(constraints);
+    public static TypeConstraints create() {
+        return new TypeConstraints(new HashSet<>());
     }
 
     public TypeConstraints copy() {
-        return create(new HashSet<>(constraints));
+        return new TypeConstraints(new HashSet<>(constraints));
+    }
+
+    public boolean isEmpty() {
+        return constraints.isEmpty();
     }
 
     public void add(TypeConstraint constraint) {
