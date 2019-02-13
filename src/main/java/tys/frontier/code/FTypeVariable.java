@@ -25,14 +25,9 @@ public class FTypeVariable implements FType {
     private TypeConstraints constraints;
     private NameGenerator returnTypeNames;
 
-    //not fixed
-    public FTypeVariable(FTypeIdentifier identifier) {
-        this(identifier, false, TypeConstraints.create(new HashSet<>()));
-    }
-
-    //fixed
-    public FTypeVariable(FTypeIdentifier identifier, TypeConstraints constraints) {
-        this(identifier, true, constraints);
+    public static FTypeVariable create(FTypeIdentifier identifier, boolean fixed) {
+        TypeConstraints constraints = fixed ? TypeConstraints.EMPTY : TypeConstraints.create(new HashSet<>());
+        return new FTypeVariable(identifier, fixed, constraints);
     }
 
     protected FTypeVariable(FTypeIdentifier identifier, boolean fixed, TypeConstraints constraints) {
@@ -49,6 +44,11 @@ public class FTypeVariable implements FType {
 
     public boolean isFixed() {
         return fixed;
+    }
+
+    public void setConstraints(TypeConstraints constraints) {
+        assert fixed && this.constraints == TypeConstraints.EMPTY;
+        this.constraints = constraints;
     }
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
@@ -79,7 +79,7 @@ public class FTypeVariable implements FType {
             params.add(FParameter.create(id, arg.getType(), false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
-        FTypeVariable returnType = new FTypeVariable(new FTypeIdentifier(returnTypeNames.next()));
+        FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), fixed);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         return new FFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
             @Override

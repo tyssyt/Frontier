@@ -45,8 +45,6 @@ public class TypeConstraints {
     }
 
     public static TypeConstraints create(Set<TypeConstraint> constraints) {
-        if (constraints.isEmpty())
-            return EMPTY;
         return new TypeConstraints(constraints);
     }
 

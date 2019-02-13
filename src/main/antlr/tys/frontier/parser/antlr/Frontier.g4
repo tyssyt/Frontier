@@ -33,6 +33,8 @@ tokens {
     STATIC,
     NATIVE,
     DELEGATE,
+    IN,
+    OUT,
     NEW,
     THIS,
     NULL,
@@ -79,7 +81,11 @@ classDeclaration
     ;
 
 typeParameters
-    :   LT TypeIdentifier (COMMA TypeIdentifier)* GT
+    :   LT typeParamer (COMMA typeParamer)* GT
+    ;
+
+typeParamer
+    :   (IN|OUT)? TypeIdentifier STAR?  //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
     ;
 
 classDeclaratives

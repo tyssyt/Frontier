@@ -42,16 +42,25 @@ public final class ParserContextUtils {
     }
 
     public static Pair<List<FTypeVariable>, List<Variance>> getTypeParameters(FrontierParser.TypeParametersContext ctx) throws TwiceDefinedLocalVariable {
-        List<TerminalNode> nodes = ctx.TypeIdentifier();
+        List<TypeParamerContext> nodes = ctx.typeParamer();
         List<FTypeVariable> vars = new ArrayList<>(nodes.size());
         List<Variance> variances = new ArrayList<>(nodes.size());
         Set<FTypeIdentifier> seem = new HashSet<>();
-        for (TerminalNode node : nodes) {
-            FTypeIdentifier id = new FTypeIdentifier(node.getText());
+        for (TypeParamerContext c : nodes) {
+            FTypeIdentifier id = new FTypeIdentifier(c.TypeIdentifier().getText());
             if (!seem.add(id))
                 throw new TwiceDefinedLocalVariable(id);
-            vars.add(new FTypeVariable(id));
-            variances.add(Variance.Invariant); //TODO add variances to grammar and parse and set them here
+
+            boolean fixed = c.STAR() == null;
+            vars.add(FTypeVariable.create(id, fixed));
+            Variance variance;
+            if(c.IN() != null)
+                variance = Variance.Contravariant;
+            else if (c.OUT() != null)
+                variance = Variance.Covariant;
+            else
+                variance = Variance.Invariant;
+            variances.add(variance);
         }
         return new Pair<>(vars, variances);
     }

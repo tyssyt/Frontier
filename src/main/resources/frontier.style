@@ -11,6 +11,9 @@
         "native":       "native",
         "delegate":     "delegate",
 
+        "in":           "in",
+        "out":          "out",
+
         "abstract":     "abstract",
         "override":     "override",
 
