@@ -33,6 +33,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     private FVisibilityModifier constructorVisibility;
     private Map<FTypeIdentifier, FTypeVariable> parameters;
     private List<FTypeVariable> parametersList;
+    private Map<FTypeVariable, Variance> parameterVariance;
     private Map<TypeInstantiation, FInstantiatedClass> instantiations;
 
     protected BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
@@ -47,9 +48,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
-            this.parameters = Collections.emptyMap();
-            this.parametersList = Collections.emptyList();
-            this.instantiations = Collections.emptyMap();
+        this.parameters = Collections.emptyMap();
+        this.parametersList = Collections.emptyList();
+        this.parameterVariance = Collections.emptyMap();
+        this.instantiations = Collections.emptyMap();
     }
 
     protected void addDefaultFunctions() {
@@ -63,12 +65,19 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         }
     }
 
-    public void setParameters(Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance) {
         assert this.parameters.isEmpty();
         if (!parameters.isEmpty()) {
-            this.parameters = parameters;
-            this.parametersList = new ArrayList<>(parameters.values());
+            this.parameters = new HashMap<>(parameters.size());
+            this.parametersList = parameters;
+            this.parameterVariance = new HashMap<>(parameters.size());
             this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+
+            for (int i = 0; i < parameters.size(); i++) {
+                FTypeVariable var = parameters.get(i);
+                this.parameters.put(var.getIdentifier(), var);
+                this.parameterVariance.put(var, parameterVariance.get(i));
+            }
         }
     }
 
@@ -119,6 +128,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     @Override
     public List<FTypeVariable> getParametersList() {
         return parametersList;
+    }
+
+    public Variance getParameterVariance(FTypeVariable parameter) {
+        return parameterVariance.get(parameter);
     }
 
     @Override

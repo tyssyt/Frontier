@@ -11,11 +11,13 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.ParameterizedTypeVariable;
 import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
 import tys.frontier.parser.syntaxErrors.TypeNotFound;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -33,28 +35,25 @@ public final class ParserContextUtils {
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
         FClass res =  new FClass(identifier, visibilityModifier);
         if (c != null) {
-            res.setParameters(getTypeParameters(c, res));
+            Pair<List<FTypeVariable>, List<Variance>> typeParameters = getTypeParameters(c);
+            res.setParameters(typeParameters.a, typeParameters.b);
         }
         return res;
     }
 
-    public static Map<FTypeIdentifier, FTypeVariable> getTypeParameters(FrontierParser.TypeParametersContext ctx, FClass fClass) throws TwiceDefinedLocalVariable {
-        Map<FTypeIdentifier, FTypeVariable> res = new LinkedHashMap<>();
-        for (TerminalNode node : ctx.TypeIdentifier()) {
+    public static Pair<List<FTypeVariable>, List<Variance>> getTypeParameters(FrontierParser.TypeParametersContext ctx) throws TwiceDefinedLocalVariable {
+        List<TerminalNode> nodes = ctx.TypeIdentifier();
+        List<FTypeVariable> vars = new ArrayList<>(nodes.size());
+        List<Variance> variances = new ArrayList<>(nodes.size());
+        Set<FTypeIdentifier> seem = new HashSet<>();
+        for (TerminalNode node : nodes) {
             FTypeIdentifier id = new FTypeIdentifier(node.getText());
-            if (res.containsKey(id))
+            if (!seem.add(id))
                 throw new TwiceDefinedLocalVariable(id);
-            /* TODO at some point we might want to have those variables again, i.e. when not everything is baked
-            FVariable var;
-            if (fClass == null) {
-                var = new FLocalVariable(id, FTypeType.INSTANCE);
-            } else {
-                var = new FField(id, FTypeType.INSTANCE, fClass, FVisibilityModifier.PRIVATE, false, false);
-            }
-            */
-            res.put(id, new FTypeVariable(id));
+            vars.add(new FTypeVariable(id));
+            variances.add(Variance.Invariant); //TODO add variances to grammar and parse and set them here
         }
-        return res;
+        return new Pair<>(vars, variances);
     }
 
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {

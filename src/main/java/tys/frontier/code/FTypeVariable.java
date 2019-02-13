@@ -11,7 +11,6 @@ import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
-import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
@@ -24,26 +23,21 @@ public class FTypeVariable implements FType {
     private FTypeIdentifier identifier;
     private boolean fixed;
     private TypeConstraints constraints;
-    private Variance variance;
     private NameGenerator returnTypeNames;
 
     //not fixed
-    public FTypeVariable(FTypeIdentifier identifier) { //TODO see if we can delete this one
-        this(identifier, Variance.Invariant);
-    }
-    public FTypeVariable(FTypeIdentifier identifier, Variance variance) {
-        this(identifier, false, variance, TypeConstraints.create(new HashSet<>()));
+    public FTypeVariable(FTypeIdentifier identifier) {
+        this(identifier, false, TypeConstraints.create(new HashSet<>()));
     }
 
     //fixed
-    public FTypeVariable(FTypeIdentifier identifier, TypeConstraints constraints, Variance variance) {
-        this(identifier, true, variance, constraints);
+    public FTypeVariable(FTypeIdentifier identifier, TypeConstraints constraints) {
+        this(identifier, true, constraints);
     }
 
-    protected FTypeVariable(FTypeIdentifier identifier, boolean fixed, Variance variance, TypeConstraints constraints) {
+    protected FTypeVariable(FTypeIdentifier identifier, boolean fixed, TypeConstraints constraints) {
         this.identifier = identifier;
         this.fixed = fixed;
-        this.variance = variance;
         this.constraints = constraints;
         this.returnTypeNames = new NameGenerator("?" + identifier.name + "ret.", "");
     }
@@ -55,10 +49,6 @@ public class FTypeVariable implements FType {
 
     public boolean isFixed() {
         return fixed;
-    }
-
-    public Variance getVariance() {
-        return variance;
     }
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
@@ -101,7 +91,7 @@ public class FTypeVariable implements FType {
     }
 
     public FTypeVariable copy() {
-        return new FTypeVariable(identifier, fixed, variance, constraints.copy());
+        return new FTypeVariable(identifier, fixed, constraints.copy());
     }
 
     @Override

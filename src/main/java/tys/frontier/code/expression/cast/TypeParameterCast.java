@@ -56,7 +56,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
                 continue;
 
             //try to implicit cast from one side to the other (using the variance of the base parameter)
-            Variance paramVar = variance.then(param.getVariance());
+            Variance paramVar = variance.then(nonParameterized.getParameterVariance(param));
             casts[i] = ImplicitTypeCast.create(b, t, paramVar, constraints); //fails just propagate TODO at some point catch the fail and improve the error message
         }
         return new TypeParameterCast(baseType, targetType, variance, casts);

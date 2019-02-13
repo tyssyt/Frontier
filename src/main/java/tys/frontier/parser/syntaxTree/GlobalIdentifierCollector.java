@@ -99,7 +99,9 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
                 try {
-                    typeParameters = ParserContextUtils.getTypeParameters(c, null);
+                    Map map = Utils.asMap(ParserContextUtils.getTypeParameters(c).a); //we hack with rawtypes because I can't be bothered to find a way to generify asMap
+                    //noinspection unchecked
+                    typeParameters = (Map<FTypeIdentifier, FTypeVariable>) map;
                     FTypeIdentifier duplicate = Utils.firstDuplicate(currentClass.getParameters().keySet(), typeParameters.keySet());
                     if (duplicate != null) {
                         throw new TwiceDefinedLocalVariable(duplicate);
