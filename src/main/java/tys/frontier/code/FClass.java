@@ -119,6 +119,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return new FunctionResolver(identifier, arguments, typeInstantiation).resolve();
     }
 
+    @Override
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        return resolveFunction(identifier, arguments, typeInstantiation); //TODO
+    }
 
     @Override
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
@@ -438,12 +442,12 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         }
 
         FFunction resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
-            for (FFunction f : getFunctions().get(identifier)) {
+            functionLoop: for (FFunction f : getFunctions().get(identifier)) {
                 try {
                     FFunction.Signature sig = f.getSignature();
                     //reject when too many or too few arguments are given
                     if (arguments.size() > sig.getAllParamTypes().size() || arguments.size() < sig.getParamTypes().size())
-                        throw new FFunction.IncompatibleSignatures(sig, Utils.typesFromExpressionList(arguments));
+                        throw new FFunction.IncompatibleSignatures(sig, Utils.typesFromExpressionList(arguments)); //why not just continue the loop if we ignore the error anyway?
 
                     List<FExpression> args = new ArrayList<>(arguments);
                     //if not enough arguments are given, fill up with default arguments
@@ -468,8 +472,16 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                      * abriged: yes we can check constraints now, but both the caller might generate constraints post call that make it impossible
                      *          and the body might not be parsed which also can have more constraints
                      */
-                    if (!constraints.isEmpty()) {
-                        return Utils.NYI("calls that create constraints");
+                    for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : constraints.asMap().entrySet()) {
+                        FTypeVariable typeVariable = entry.getKey();
+                        if (typeVariable.isFixed()) {
+                            for (TypeConstraint constraint : entry.getValue()) {
+                                if (!typeVariable.getConstraints().satisfies(constraint))
+                                    continue functionLoop;
+                            }
+                        } else {
+                            return Utils.NYI(" calls that create constraints for non fixed TypeVariables"); //TODO
+                        }
                     }
 
                     updateCost(cost, f);

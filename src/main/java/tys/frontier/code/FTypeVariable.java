@@ -1,6 +1,8 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -16,6 +18,7 @@ import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
 import java.util.List;
+import java.util.Map;
 
 public class FTypeVariable implements FType {
 
@@ -50,6 +53,10 @@ public class FTypeVariable implements FType {
         this.constraints = constraints;
     }
 
+    public TypeConstraints getConstraints() {
+        return constraints;
+    }
+
     public boolean tryAddConstraint(TypeConstraint constraint) {
         if (fixed)
             return constraints.satisfies(constraint);
@@ -61,7 +68,19 @@ public class FTypeVariable implements FType {
 
     @Override
     public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
+        FFunction res = resolveFunction(identifier, arguments, typeInstantiation, constraints);
+        for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
+            if (!entry.getKey().tryAddConstraint(entry.getValue()))
+                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
+        }
+        return res;
+    }
+
+    @Override
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         HasCall constraint = new HasCall(null, identifier, arguments, typeInstantiation);
+        constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
             throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
 

@@ -19,6 +19,18 @@ public class HasCall extends TypeConstraint {
         this.typeInstantiation = typeInstantiation;
     }
 
+    public FFunctionIdentifier getIdentifier() {
+        return identifier;
+    }
+
+    public List<FExpression> getArguments() {
+        return arguments;
+    }
+
+    public TypeInstantiation getTypeInstantiation() {
+        return typeInstantiation;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
