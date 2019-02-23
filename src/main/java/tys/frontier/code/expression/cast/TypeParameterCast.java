@@ -7,7 +7,6 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.util.Utils;
 
 import java.util.List;
 
@@ -23,6 +22,11 @@ public class TypeParameterCast extends ImplicitTypeCast {
         this.casts = casts;
     }
 
+    private TypeParameterCast(FOptional base, FOptional target, Variance variance, ImplicitTypeCast[] casts) {
+        super(base, target, variance);
+        this.casts = casts;
+    }
+
     private TypeParameterCast(FFunctionType base, FFunctionType target, Variance variance, ImplicitTypeCast[] casts) {
         super(base, target, variance);
         this.casts = casts;
@@ -30,7 +34,14 @@ public class TypeParameterCast extends ImplicitTypeCast {
 
     //TODO remove once optionals are generic
     public static TypeParameterCast createTPC(FOptional baseType, FOptional targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
-        return Utils.NYI("implicit inner cast Optional");
+        assert variance == Covariant || variance == Contravariant;
+        assert baseType != targetType;
+
+        ImplicitTypeCast[] casts = new ImplicitTypeCast[] {
+                ImplicitTypeCast.create(baseType.getBaseType(), targetType.getBaseType(), variance, constraints)
+        };
+
+        return new TypeParameterCast(baseType, targetType, variance, casts);
     }
 
     //TODO remove once functionType is generic
@@ -57,7 +68,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
             if (b==t)
                 continue;
 
-            //try to implicit cast from one side to the other (using the variance of the base parameter)
+            //try to implicit cast from one side to the other
             Variance paramVar = variance.then(Contravariant); //Parameter Types are Contravariant
             casts[i+1] = ImplicitTypeCast.create(b, t, paramVar, constraints); //fails just propagate TODO at some point catch the fail and improve the error message
         }
