@@ -12,6 +12,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static tys.frontier.code.typeInference.Variance.Contravariant;
 import static tys.frontier.code.typeInference.Variance.Invariant;
 
 public class TypeConstraints { //TODO there is a lot of potential for optimization in here
@@ -164,6 +165,8 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     }
 
     public static boolean implies(ImplicitCastable a, HasCall b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
+        if (a.getVariance() == Contravariant) //casts from constraints cannot be used for function resolving
+            return false;
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
             a.getTarget().resolveFunction(b.getIdentifier(), b.getArgumentTypes(), b.getTypeInstantiation(), newConstraints);
