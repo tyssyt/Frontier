@@ -12,6 +12,7 @@ public class FInstantiatedFunction extends FFunction {
 
     private FInstantiatedFunction(FFunction base, FClass memberOf,  TypeInstantiation typeInstantiation) {
         super(base.getIdentifier(), memberOf, base.getVisibility(), base.isNative(), typeInstantiation.getType(base.getType()), createParams(base.getParams(), typeInstantiation));
+        assert !(base instanceof FInstantiatedFunction);
         this.base = base;
         this.typeInstantiation = typeInstantiation;
     }
@@ -35,6 +36,7 @@ public class FInstantiatedFunction extends FFunction {
             TypeInstantiation baseTypeInstantiation = ((FInstantiatedFunction) base).getTypeInstantiation();
             assert baseTypeInstantiation.disjoint(typeInstantiation);
             typeInstantiation = typeInstantiation.then(baseTypeInstantiation);
+            base = ((FInstantiatedFunction) base).getBase();
         }
         return new FInstantiatedFunction(base, (FClass) base.getMemberOf(), typeInstantiation);
     }
