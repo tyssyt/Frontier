@@ -2,16 +2,17 @@ package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
+
+import static tys.frontier.code.typeInference.Variance.Invariant;
 
 public class TypeConstraints { //TODO there is a lot of potential for optimization in here
 
@@ -36,7 +37,7 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
 
         @Override
         public TypeConstraints copy() {
-            return this;
+            return create();
         }
     };
 
@@ -74,8 +75,14 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         constraints.add(constraint);
     }
 
+    public void addAll(Collection<TypeConstraint> newConstraints) {
+        for (TypeConstraint constraint : newConstraints) {
+            add(constraint);
+        }
+    }
+
     public boolean isConsistent() {
-        return false; //TODO
+        return true; //TODO
     }
 
     public boolean satisfies(TypeConstraint constraint) {
@@ -104,6 +111,35 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         }
     }
 
+    public FClass resolve() throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
+        ImplicitCastable res = null;
+        int foundCandidates = 0;
+        for (TypeConstraint constraint : constraints) {
+            if (constraint instanceof ImplicitCastable) {
+                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+                if (implicitCastable.getTarget() instanceof FClass) {
+                    res = implicitCastable;
+                    foundCandidates++;
+                    if (implicitCastable.getVariance() == Invariant) {
+                        foundCandidates = 1;
+                        break;
+                    }
+                }
+            }
+        }
+        if (foundCandidates != 1)
+            return Utils.NYI("constraint resolving");
+        if (res.getVariance() != Invariant)
+            res = new ImplicitCastable(res.getOrigin(), res.getTarget(), Invariant);
+        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        for (TypeConstraint constraint : constraints) {
+            if (!implies(res, constraint, newConstraints) || !newConstraints.isEmpty()) {
+                throw new UnfulfillableConstraints(null, this, res, constraint); //TODO where do we get the var from?
+            }
+        }
+        return (FClass) res.getTarget();
+    }
+
     public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (b instanceof ImplicitCastable)
             return implies(a, (ImplicitCastable) b, newConstraints);
@@ -118,6 +154,8 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
             return false;
 
         try {
+            if (a.getTarget() == b.getTarget())
+                return true;
             ImplicitTypeCast.create(a.getTarget(), b.getTarget(), b.getVariance(), newConstraints);
             return true;
         } catch (IncompatibleTypes incompatibleTypes) {

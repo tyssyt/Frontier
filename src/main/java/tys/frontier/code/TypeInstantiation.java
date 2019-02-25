@@ -3,6 +3,9 @@ package tys.frontier.code;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.typeInference.HasCall;
+import tys.frontier.code.typeInference.ImplicitCastable;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -84,6 +87,22 @@ public class TypeInstantiation {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public <C extends TypeConstraint> C getConstraint(C constraint) {
+        if (constraint instanceof ImplicitCastable) {
+            ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+            FType newType = getType(implicitCastable.getTarget());
+            if (newType == implicitCastable.getTarget())
+                return constraint;
+            else
+                return (C) new ImplicitCastable(constraint.getOrigin(), newType, implicitCastable.getVariance());
+        } else if (constraint instanceof HasCall) {
+            return constraint;
+        } else {
+            return Utils.cantHappen();
+        }
+    }
+
     public TypeInstantiation intersect (List<FTypeVariable> typeVariables) {
         Map<FTypeVariable, FType> newMap = new HashMap<>(typeMap);
         boolean changed = newMap.keySet().retainAll(typeVariables);
@@ -91,6 +110,10 @@ public class TypeInstantiation {
             return create(newMap);
         else
             return this;
+    }
+
+    public boolean disjoint(TypeInstantiation other) {
+        return Utils.disjoint(this.typeMap.keySet(), other.typeMap.keySet());
     }
 
     public TypeInstantiation then(TypeInstantiation other) {

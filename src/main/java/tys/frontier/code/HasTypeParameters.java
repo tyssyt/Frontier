@@ -11,8 +11,9 @@ import java.util.Map;
 public interface HasTypeParameters<T extends HasTypeParameters> extends IdentifierNameable {
 
     Map<FTypeIdentifier, FTypeVariable> getParameters();
-
     List<FTypeVariable> getParametersList();
+
+    T getInstantiation(TypeInstantiation typeInstantiation);
 
     default T getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
         if (getParametersList().size() != types.size()) {
@@ -28,5 +29,4 @@ public interface HasTypeParameters<T extends HasTypeParameters> extends Identifi
         return getInstantiation(TypeInstantiation.create(typeMap));
     }
 
-    T getInstantiation(TypeInstantiation typeInstantiation);
 }

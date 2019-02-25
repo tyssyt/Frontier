@@ -103,6 +103,21 @@ public final class Utils {
         return joinIdentifiers(sb, nameables.iterator(), separator);
     }
 
+    public static <T> boolean disjoint(Set<T> a, Set<T> b) {
+        if (a.size() < b.size()) {
+            for (T t : a) {
+                if (b.contains(t))
+                    return false;
+            }
+        } else {
+            for (T t : b) {
+                if (a.contains(t))
+                    return false;
+            }
+        }
+        return true;
+    }
+
     public static  <T> T firstDuplicate(Set<T> a, Set<T> b) {
         if (a.size() < b.size()) {
             for (T t : a) {

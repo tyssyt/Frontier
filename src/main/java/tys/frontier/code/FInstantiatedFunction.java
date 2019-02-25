@@ -30,6 +30,15 @@ public class FInstantiatedFunction extends FFunction {
         return new FInstantiatedFunction(base, _class, _class.getTypeInstantiation());
     }
 
+    static FInstantiatedFunction fromFunctionInstantiation(FFunction base, TypeInstantiation typeInstantiation) {
+        if (base instanceof FInstantiatedFunction) {
+            TypeInstantiation baseTypeInstantiation = ((FInstantiatedFunction) base).getTypeInstantiation();
+            assert baseTypeInstantiation.disjoint(typeInstantiation);
+            typeInstantiation = typeInstantiation.then(baseTypeInstantiation);
+        }
+        return new FInstantiatedFunction(base, (FClass) base.getMemberOf(), typeInstantiation);
+    }
+
     public FFunction getBase() {
         return base;
     }

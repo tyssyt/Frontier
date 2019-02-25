@@ -159,14 +159,10 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
 
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
-        //TODO
-        return null;
-        /*
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())
             return this;
-        return instantiations.computeIfAbsent(typeInstantiation, i -> new FInstantiatedClass(this, intersected));
-        */
+        return instantiations.computeIfAbsent(typeInstantiation, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
     }
 
     /**

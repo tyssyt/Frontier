@@ -15,10 +15,7 @@ import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.ParameterizedTypeVariable;
-import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
-import tys.frontier.parser.syntaxErrors.TypeNotFound;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -83,7 +80,7 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints {
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         FTypeVariable typeVariable = _class.getParameters().get(identifier);
         if (typeVariable == null)
@@ -102,7 +99,7 @@ public final class ParserContextUtils {
         }
 
         if (!constraints.isConsistent())
-            Utils.NYI("constraints not consistent error");
+            throw new UnfulfillableConstraints(typeVariable, constraints, null, null);
         typeVariable.setConstraints(constraints);
     }
 
