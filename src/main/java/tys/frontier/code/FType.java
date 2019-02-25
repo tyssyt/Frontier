@@ -1,7 +1,6 @@
 package tys.frontier.code;
 
 import com.google.common.collect.Multimap;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
@@ -13,9 +12,9 @@ import java.util.List;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
-    FFunction resolveFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound;
+    FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound;
 
-    FFunction resolveFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
+    FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
 
     @Override
     FTypeIdentifier getIdentifier();

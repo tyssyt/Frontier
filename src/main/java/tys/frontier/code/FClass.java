@@ -2,7 +2,6 @@ package tys.frontier.code;
 
 import com.google.common.collect.*;
 import tys.frontier.code.Operator.FBinaryOperator;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -106,13 +105,14 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return functions;
     }
 
-    public FFunction resolveFunction (FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        return new FunctionResolver(identifier, arguments, typeInstantiation).resolve();
+    @Override
+    public FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        return new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        return resolveFunction(identifier, arguments, typeInstantiation); //TODO
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        return resolveFunction(identifier, argumentTypes, typeInstantiation); //TODO have a resolve that can create constraints
     }
 
     @Override
@@ -316,12 +316,12 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         private IntIntPair bestCosts;
 
         private FFunctionIdentifier identifier;
-        private List<FExpression> arguments;
+        private List<FType> argumentTypes;
         private TypeInstantiation typeInstantiation;
 
-        FunctionResolver(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) {
+        FunctionResolver(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
             this.identifier = identifier;
-            this.arguments = arguments;
+            this.argumentTypes = argumentTypes;
             this.typeInstantiation = typeInstantiation;
         }
 
@@ -330,26 +330,20 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                 try {
                     FFunction.Signature sig = f.getSignature();
                     //reject when too many or too few arguments are given
-                    if (arguments.size() > sig.getAllParamTypes().size() || arguments.size() < sig.getParamTypes().size())
-                        throw new FFunction.IncompatibleSignatures(sig, Utils.typesFromExpressionList(arguments)); //why not just continue the loop if we ignore the error anyway?
+                    if (argumentTypes.size() > sig.getAllParamTypes().size() || argumentTypes.size() < sig.getParamTypes().size())
+                        throw new FFunction.IncompatibleSignatures(sig, argumentTypes); //why not just continue the loop if we ignore the error anyway?
 
-                    List<FExpression> args = new ArrayList<>(arguments);
+                    List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
                     //if not enough arguments are given, fill up with default arguments
-                    for (int i=args.size(); i<f.getParams().size(); i++) {
-                        args.add(f.getParams().get(i).getDefaultValue().get());
-                    }
-
-                    List<FType> argTypes = new ArrayList<>(args.size());
-                    for (int i = 0; i < arguments.size(); i++) {
-                        argTypes.add(args.get(i).getType());
-                    }
-                    //default arguments come from the function, thus we might need to instantiate types
-                    for (int i = arguments.size(); i < args.size(); i++) {
-                        argTypes.add(typeInstantiation.getType(args.get(i).getType()));
+                    for (int i=this.argumentTypes.size(); i<f.getParams().size(); i++) {
+                        FType defaultArgType = f.getParams().get(i).getDefaultValue().get().getType();
+                        //default arguments come from the function, thus we might need to instantiate types
+                        defaultArgType = typeInstantiation.getType(defaultArgType);
+                        argumentTypes.add(defaultArgType);
                     }
 
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    IntIntPair cost = f.castSignatureFrom(argTypes, typeInstantiation, constraints);
+                    IntIntPair cost = f.castSignatureFrom(argumentTypes, typeInstantiation, constraints);
 
                     //compute instantiations
                     Map<FTypeVariable, FType> typeVarianleMap = new HashMap<>();
@@ -404,7 +398,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
             }
 
             if (bestFunction == null)
-                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
+                throw new FunctionNotFound(identifier, this.argumentTypes);
             return bestFunction;
         }
 

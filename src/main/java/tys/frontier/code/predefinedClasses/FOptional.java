@@ -8,9 +8,7 @@ import tys.frontier.code.FFunction;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -44,13 +42,12 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        if (arguments.size() > 0 && arguments.get(0).getType() == this) {
-            arguments = new ArrayList<>(arguments); //copy to not modify the original list
-            //TODO if literals get fixed, resolving can be based on types again and the following can be done by just replacing a type
-            arguments.set(0, FExplicitCast.createTrusted(baseType, arguments.get(0)));
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        if (argumentTypes.size() > 0 && argumentTypes.get(0) == this) {
+            argumentTypes = new ArrayList<>(argumentTypes); //copy to not modify the original list
+            argumentTypes.set(0, baseType);
         }
-        FFunction base = baseType.resolveFunction(identifier, arguments, typeInstantiation);
+        FFunction base = baseType.resolveFunction(identifier, argumentTypes, typeInstantiation);
         return shimMap.computeIfAbsent(base, this::createShim);
     }
 

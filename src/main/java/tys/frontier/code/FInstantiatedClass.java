@@ -2,7 +2,6 @@ package tys.frontier.code;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -59,11 +58,11 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         if (baked) {
-            return super.resolveFunction(identifier, arguments, typeInstantiation);
+            return super.resolveFunction(identifier, argumentTypes, typeInstantiation);
         } else {
-            FFunction base = baseClass.resolveFunction(identifier, arguments, typeInstantiation.then(this.typeInstantiation));
+            FFunction base = baseClass.resolveFunction(identifier, argumentTypes, typeInstantiation.then(this.typeInstantiation));
             return getInstantiatedFunction(base);
         }
     }

@@ -1,5 +1,6 @@
 package tys.frontier.code.typeInference;
 
+import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -9,13 +10,13 @@ import java.util.List;
 public class HasCall extends TypeConstraint {
 
     private FFunctionIdentifier identifier;
-    private List<FExpression> arguments;
+    private List<FType> argumentTypes;
     private TypeInstantiation typeInstantiation;
 
-    public HasCall(FExpression origin, FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) {
+    public HasCall(FExpression origin, FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
         super(origin);
         this.identifier = identifier;
-        this.arguments = arguments;
+        this.argumentTypes = argumentTypes;
         this.typeInstantiation = typeInstantiation;
     }
 
@@ -23,8 +24,8 @@ public class HasCall extends TypeConstraint {
         return identifier;
     }
 
-    public List<FExpression> getArguments() {
-        return arguments;
+    public List<FType> getArgumentTypes() {
+        return argumentTypes;
     }
 
     public TypeInstantiation getTypeInstantiation() {
@@ -39,14 +40,14 @@ public class HasCall extends TypeConstraint {
         HasCall hasCall = (HasCall) o;
 
         if (!identifier.equals(hasCall.identifier)) return false;
-        if (!arguments.equals(hasCall.arguments)) return false;
+        if (!argumentTypes.equals(hasCall.argumentTypes)) return false;
         return typeInstantiation.equals(hasCall.typeInstantiation);
     }
 
     @Override
     public int hashCode() {
         int result = identifier.hashCode();
-        result = 31 * result + arguments.hashCode();
+        result = 31 * result + argumentTypes.hashCode();
         result = 31 * result + typeInstantiation.hashCode();
         return result;
     }

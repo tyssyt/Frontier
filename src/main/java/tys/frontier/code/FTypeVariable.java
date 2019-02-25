@@ -3,7 +3,6 @@ package tys.frontier.code;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -15,7 +14,6 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
-import tys.frontier.util.Utils;
 
 import java.util.List;
 import java.util.Map;
@@ -67,34 +65,34 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-        FFunction res = resolveFunction(identifier, arguments, typeInstantiation, constraints);
+        FFunction res = resolveFunction(identifier, argumentTypes, typeInstantiation, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
-                throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
+                throw new FunctionNotFound(identifier, argumentTypes);
         }
         return res;
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FExpression> arguments, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        HasCall constraint = new HasCall(null, identifier, arguments, typeInstantiation);
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        HasCall constraint = new HasCall(null, identifier, argumentTypes, typeInstantiation);
         constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
-            throw new FunctionNotFound(identifier, Utils.typesFromExpressionList(arguments));
+            throw new FunctionNotFound(identifier, argumentTypes);
 
         //just return some fitting dummy function
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
-        for (FExpression arg : arguments) {
+        for (FType arg : argumentTypes) {
             FIdentifier id;
-            if (arg.getType() == FTypeType.INSTANCE) {
+            if (arg == FTypeType.INSTANCE) {
                 id = new FTypeIdentifier(paramNames.next());
             } else {
                 id = new FVariableIdentifier(paramNames.next());
             }
-            params.add(FParameter.create(id, arg.getType(), false));
+            params.add(FParameter.create(id, arg, false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), fixed);

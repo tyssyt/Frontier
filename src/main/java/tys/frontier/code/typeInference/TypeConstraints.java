@@ -166,7 +166,7 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     public static boolean implies(ImplicitCastable a, HasCall b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
-            a.getTarget().resolveFunction(b.getIdentifier(), b.getArguments(), b.getTypeInstantiation(), newConstraints);
+            a.getTarget().resolveFunction(b.getIdentifier(), b.getArgumentTypes(), b.getTypeInstantiation(), newConstraints);
             return true;
         } catch (FunctionNotFound functionNotFound) {
             return false;
