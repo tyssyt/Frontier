@@ -59,7 +59,9 @@ public class GenericBaking implements FClassVisitor {
         for (FParameter param : instantiatedClass.getConstructor().getParams()) {
             if (!param.hasDefaultValue())
                 continue;
-            param.setDefaultValueTrusted(instantiatedClass.getInstanceFields().get(param.getIdentifier()).getAssignment().get());
+            FField field = instantiatedClass.getInstanceFields().get(param.getIdentifier());
+            if (field.hasAssignment())
+                param.setDefaultValueTrusted(field.getAssignment().get());
         }
 
         instantiatedClass.setBaked();
