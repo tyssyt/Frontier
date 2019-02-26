@@ -222,7 +222,8 @@ public final class ParserContextUtils {
                     res = FNull.UNTYPED;
                     break;
                 case FrontierParser.FloatingPointLiteral:
-                    return Utils.NYI("float literals");
+                    res = new FFloat64Literal(Double.parseDouble(text), text);
+                    break;
                 case FrontierParser.StringLiteral:
                     assert text.charAt(0) == '\"';
                     assert text.charAt(text.length()-1) == '\"';
