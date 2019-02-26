@@ -3,6 +3,7 @@ package tys.frontier.code;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.statement.FBlock;
+import tys.frontier.passes.GenericBaking;
 
 public class FInstantiatedFunction extends FFunction {
 
@@ -62,6 +63,16 @@ public class FInstantiatedFunction extends FFunction {
     @Override
     public void setBody(FBlock body) {
         super.setBody(body);
+        baked = true;
+    }
+
+    public void bake() {
+        if (baked)
+            return;
+        GenericBaking.bake(this);
+    }
+
+    public void setBaked() {
         baked = true;
     }
 }

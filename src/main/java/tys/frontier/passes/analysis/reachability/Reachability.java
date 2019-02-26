@@ -5,9 +5,9 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionAddress;
 import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -39,48 +39,27 @@ public class Reachability {
                 continue;
             }
 
-            if (cur.getMemberOf() instanceof FInstantiatedClass) {
-                FInstantiatedClass parent = (FInstantiatedClass) cur.getMemberOf();
-                TypeInstantiation typeInstantiation = parent.getTypeInstantiation();
-
-                parent.getOriginalFunction(cur).accept(new FClassVisitor() {
-                    @Override
-                    public void enterFieldAccess(FFieldAccess fieldAccess) {
-                        FField f = fieldAccess.getField();
-                        FClass c = f.getMemberOf();
-                        c = (FClass) typeInstantiation.getType(c);
-                        if (c == parent.getBaseClass())
-                            c = parent;
-
-                        f = Utils.getFieldInClass(f, c);
-
-                        ReachableClass reachableClass = res.reachableClasses.computeIfAbsent(c, x -> new ReachableClass());
-                        reachableClass.reachableFields.add(f);
-                    }
-                    @Override
-                    public void enterFunctionCall(FFunctionCall functionCall) {
-                        handleFunction(functionCall.getFunction());
-                    }
-                    @Override
-                    public FExpression visitFunctionAddress(FFunctionAddress address) {
-                        handleFunction(address.getFunction());
-                        return address;
-                    }
-                    private void handleFunction(FFunction f) {
-                        FType orig = f.getMemberOf();
-                        FClass c = (FClass) typeInstantiation.getType(orig); //this cast is safe as reachability analysis only traverses fully instatiated classes
-                        if (orig != c && c instanceof FInstantiatedClass) {
-                            f = ((FInstantiatedClass) c).getInstantiatedFunction(f);
-                        } else if (orig != c && c instanceof FArray) {
-                            f = Utils.getFunctionInClass(f, c);
-                        }
-                        if (c == parent.getBaseClass()) {
-                            f = parent.getInstantiatedFunction(f);
-                        }
-                        todo.addLast(f);
-                    }
-                });
-            } else
+            if (cur instanceof FInstantiatedFunction) { //for instantiated functions, we have to visit the base instead because they are not yet baked
+                FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) cur;
+                TypeInstantiation typeInstantiation = instantiatedFunction.getTypeInstantiation();
+                //Analyse Base
+                Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(instantiatedFunction.getBase());
+                //Instantiate Base results and add to Q/reach
+                for (FFunctionCall fC : baseAnalysis.a) {
+                    List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(), typeInstantiation::getType);
+                    FFunction f = Utils.findFunctionInstantiation(fC.getFunction(), paramTypes, typeInstantiation);
+                    todo.addLast(f);
+                }
+                for (FFieldAccess fA : baseAnalysis.b) {
+                    FField f = Utils.findFieldInstantiation(fA.getField(), typeInstantiation);
+                    res.addField(f);
+                }
+                for (FFunctionAddress fA : baseAnalysis.c) {
+                    List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getParams(), typeInstantiation::getType);
+                    FFunction f = Utils.findFunctionInstantiation(fA.getFunction(), paramTypes, typeInstantiation);
+                    todo.addLast(f);
+                }
+            } else { //normal function
                 cur.accept(new FClassVisitor() {
                     @Override
                     public void enterFieldAccess(FFieldAccess fieldAccess) {
@@ -96,6 +75,35 @@ public class Reachability {
                         return address;
                     }
                 });
+            }
+        }
+        return res;
+    }
+
+    private static Map<FFunction, Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>>> cachedBaseAnalysis = new HashMap<>();
+    private static Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> analyseBase(FFunction base) {
+        Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> res = cachedBaseAnalysis.get(base);
+        if (res == null) {
+            Set<FFunctionCall> reachableFunctions = new HashSet<>();
+            Set<FFieldAccess> reachableFields = new HashSet<>();
+            Set<FFunctionAddress> reachableFunctionAddresses = new HashSet<>();
+            res = new Triple<>(reachableFunctions, reachableFields, reachableFunctionAddresses);
+            base.accept(new FClassVisitor() {
+                @Override
+                public void enterFieldAccess(FFieldAccess fieldAccess) {
+                    reachableFields.add(fieldAccess);
+                }
+                @Override
+                public void enterFunctionCall(FFunctionCall functionCall) {
+                    reachableFunctions.add(functionCall);
+                }
+                @Override
+                public FExpression visitFunctionAddress(FFunctionAddress address) {
+                    reachableFunctionAddresses.add(address);
+                    return address;
+                }
+            });
+            cachedBaseAnalysis.put(base, res);
         }
         return res;
     }
@@ -119,6 +127,7 @@ public class Reachability {
         return reachableClass != null && reachableClass.reachableFields.contains(field);
     }
 
+    @SuppressWarnings("SuspiciousMethodCalls")
     public boolean isReachable(FFunction function) {
         ReachableClass reachableClass = reachableClasses.get(function.getMemberOf());
         return reachableClass != null && reachableClass.reachableFunctions.contains(function);

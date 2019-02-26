@@ -105,13 +105,13 @@ public class TypeParameterCast extends ImplicitTypeCast {
     }
 
     @Override
-    public FInstantiatedClass getBase() {
-        return (FInstantiatedClass) base;
+    public FClass getBase() {
+        return (FClass) base;
     }
 
     @Override
-    public FInstantiatedClass getTarget() {
-        return (FInstantiatedClass) target;
+    public FClass getTarget() {
+        return (FClass) target;
     }
 
     @Override

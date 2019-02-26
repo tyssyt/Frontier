@@ -1,11 +1,9 @@
 package tys.frontier.code.literal;
 
 import com.google.common.collect.Multimap;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
-import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.TypeConstraint;
@@ -16,6 +14,11 @@ import java.util.List;
 public class FNull implements FLiteral {
 
     public static FType NULL_TYPE = new FType() {
+        @Override
+        public FField getField(FIdentifier identifier)  {
+            return Utils.cantHappen();
+        }
+
         @Override
         public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
             return Utils.cantHappen();

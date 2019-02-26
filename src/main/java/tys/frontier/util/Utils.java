@@ -2,18 +2,17 @@ package tys.frontier.util;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FField;
-import tys.frontier.code.FFunction;
-import tys.frontier.code.FType;
-import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.parser.syntaxErrors.FieldNotFound;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.UnaryOperator;
 
 public final class Utils {
     private Utils() {}
@@ -61,10 +60,17 @@ public final class Utils {
         return input;
     }
 
-    public static List<FType> typesFromExpressionList(List<FExpression> exps) {
+    public static List<FType> typesFromExpressionList(List<? extends Typed> exps) {
         List<FType> res = new ArrayList<>(exps.size());
-        for (FExpression exp : exps)
+        for (Typed exp : exps)
             res.add(exp.getType());
+        return res;
+    }
+
+    public static List<FType> typesFromExpressionList(List<? extends Typed> exps, UnaryOperator<FType> op) {
+        List<FType> res = new ArrayList<>(exps.size());
+        for (Typed exp : exps)
+            res.add(op.apply(exp.getType()));
         return res;
     }
 
@@ -77,13 +83,26 @@ public final class Utils {
             return in.getStaticFields().get(field.getIdentifier());
     }
 
-    public static FFunction getFunctionInClass(FFunction function, FClass in) {
-        if (function.getMemberOf() == in)
+    public static FField findFieldInstantiation(FField field, TypeInstantiation typeInstantiation) {
+        FType namespace = typeInstantiation.getType(field.getMemberOf());
+        if (namespace == field.getMemberOf())
+            return field;
+        try {
+            return namespace.getField(field.getIdentifier());
+        } catch (FieldNotFound fieldNotFound) {
+            return cantHappen();
+        }
+    }
+
+    public static FFunction findFunctionInstantiation(FFunction function, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
+        FType namespace = typeInstantiation.getType(function.getMemberOf());
+        if (namespace == function.getMemberOf())
             return function;
-        for (FFunction f : in.getFunctions().get(function.getIdentifier()))
-            if (f.getSignature().equals(function.getSignature()))
-                return f;
-        return null;
+        try {
+            return namespace.resolveFunction(function.getIdentifier(), argumentTypes, TypeInstantiation.EMPTY);
+        } catch (FunctionNotFound functionNotFound) {
+            return cantHappen();
+        }
     }
 
     @CanIgnoreReturnValue

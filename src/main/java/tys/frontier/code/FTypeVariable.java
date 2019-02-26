@@ -12,8 +12,10 @@ import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
+import tys.frontier.util.Utils;
 
 import java.util.List;
 import java.util.Map;
@@ -62,6 +64,11 @@ public class FTypeVariable implements FType {
             constraints.add(constraint);
             return true;
         }
+    }
+
+    @Override
+    public FField getField(FIdentifier identifier) throws FieldNotFound {
+        return Utils.NYI(""); //TODO
     }
 
     @Override

@@ -1,22 +1,21 @@
 package tys.frontier.passes;
 
-import com.google.common.collect.Iterables;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.FClassVisitor;
-import tys.frontier.parser.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * mhhhhhhh... cookies
@@ -25,72 +24,72 @@ public class GenericBaking implements FClassVisitor {
 
     private TypeInstantiation typeInstantiation;
 
-    private FInstantiatedClass currentClass;
-    private FFunction currentFunction;
+    private FField currentField;
+    private FInstantiatedFunction currentFunction;
 
     private Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
     private Map<FLoopIdentifier, FLoopIdentifier> loopMap = new HashMap<>();
-    private Map<FField, FField> fieldMap = new HashMap<>();
 
-    private GenericBaking(FInstantiatedClass instantiatedClass) {
-        typeInstantiation = instantiatedClass.getTypeInstantiation();
-        currentClass = instantiatedClass;
+    public GenericBaking(TypeInstantiation typeInstantiation) {
+        this.typeInstantiation = typeInstantiation;
     }
 
     /*
-        actually this should be a two pass visitor that first adds fields and then adds functions, but atm this works because of specific ways certain things are coded
-     */
-    public static void bake (FInstantiatedClass base) {
-        base.getBaseClass().accept(new GenericBaking(base));
+            actually this should be a two pass visitor that first adds fields and then adds functions, but atm this works because of specific ways certain things are coded
+         */
+    public static void bake (FInstantiatedClass instantiatedClass) {
+        GenericBaking visitor = new GenericBaking(instantiatedClass.getTypeInstantiation());
+
+        //field has no instantiated version yet, but it is also much easier to find the corresponding field
+        for (FField field : instantiatedClass.getFields()) {
+            visitor.currentField = field;
+            Utils.getFieldInClass(field, instantiatedClass.getBaseClass()).accept(visitor);
+        }
+
+        for (FFunction function : instantiatedClass.getFunctions().values()) {
+            if (function.isConstructor() ||function.getIdentifier() == FConstructor.MALLOC_ID)
+                continue;
+            FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) function;
+            visitor.currentFunction = instantiatedFunction;
+            instantiatedFunction.getBase().accept(visitor);
+            instantiatedFunction.setBaked();
+        }
+
+        //set default value for fields in constructor
+        for (FParameter param : instantiatedClass.getConstructor().getParams()) {
+            if (!param.hasDefaultValue())
+                continue;
+            param.setDefaultValueTrusted(instantiatedClass.getInstanceFields().get(param.getIdentifier()).getAssignment().get());
+        }
+
+        instantiatedClass.setBaked();
     }
 
-    @Override
-    public FInstantiatedClass exitType(FType fClass, List<FField> fFields, List<FFunction> fFunctions) {
-        //default functions?
-        try {
-            for (FField field : fFields) {
-                currentClass.addField(field);
-            }
-            for (FFunction function : fFunctions) {
-                currentClass.addFunction(function);
-            }
-        } catch (IdentifierCollision | SignatureCollision e) {
-            Utils.handleException(e);
-        }
-
-        //the constructor we generate by baking the generic constructor is not of class FConstructor, so remove it and generate one the normal way
-        Collection<FFunction> constructors = currentClass.getFunctions().get(FConstructor.IDENTIFIER);
-        FFunction oldConstructor = Iterables.getOnlyElement(constructors);
-        constructors.clear();
-        currentClass.getFunctions().get(FConstructor.MALLOC_ID).clear(); //TODO this entire block should be done very differently, constructor should be a flag we can just set
-        currentClass.setConstructorVisibility(((FClass) fClass).getConstructorVisibility());
-        FConstructor newConstructor = currentClass.generateConstructor();
-        for (FFunctionCall functionCall : oldConstructor.getCalledBy()) {
-            functionCall.setFunction(newConstructor);
-        }
-        return currentClass;
+    public static void bake (FInstantiatedFunction instantiatedFunction) {
+        assert !(instantiatedFunction.getMemberOf() instanceof FInstantiatedClass);
+        GenericBaking visitor = new GenericBaking(instantiatedFunction.getTypeInstantiation());
+        visitor.currentFunction = instantiatedFunction;
+        instantiatedFunction.getBase().accept(visitor);
+        instantiatedFunction.setBaked();
+        ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
     }
 
     @Override
     public void enterField(FField field) {
-        FField currentField = new FField(field.getIdentifier(), typeInstantiation.getType(field.getType()), currentClass, field.getVisibility(), !field.isInstance(), field.hasAssignment());
-        fieldMap.put(field, currentField);
         if (field.isInstance())
             varMap.put(field.getThis(), currentField.getThis());
     }
 
     @Override
     public FField exitField(FField field, Optional<FExpression> assign) {
-        FField res = fieldMap.get(field);
-        assign.ifPresent(res::setAssignmentTrusted);
+        assign.ifPresent(currentField::setAssignmentTrusted);
         varMap.clear();
-        return res;
+        return currentField;
     }
 
     @Override
     public void enterFunction(FFunction function) {
-        if (function.isConstructor()) {} //TODO no clue, can we skip?
-        currentFunction = currentClass.getInstantiatedFunction(function);
+        assert !function.isConstructor();
         for (int i = 0; i < function.getParams().size(); i++) {
             FParameter p = currentFunction.getParams().get(i);
             FParameter old = function.getParams().get(i);
@@ -99,7 +98,6 @@ public class GenericBaking implements FClassVisitor {
                 //noinspection OptionalGetWithoutIsPresent
                 p.setDefaultValueTrusted(old.getDefaultValue().get().accept(this));
         }
-        // old.getDefaultValue().map(dv -> dv.accept(this)).orElse(null)
     }
     @Override
     public FFunction exitFunction(FFunction function, Optional<FStatement> body) {
@@ -213,7 +211,7 @@ public class GenericBaking implements FClassVisitor {
             }
         }
 
-        function = bakeFunction(function);
+        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params), typeInstantiation);
         return FFunctionCall.createTrusted(function, params);
     }
 
@@ -222,21 +220,10 @@ public class GenericBaking implements FClassVisitor {
         return DynamicFunctionCall.createTrusted(function, params);
     }
 
-    private FFunction bakeFunction(FFunction function) {
-        if (function.getMemberOf() == currentClass.getBaseClass())
-            function = currentClass.getInstantiatedFunction(function);
-        if (function.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of functions, and it will have to be expanded if we allow TypeVariable to have functions
-            function = Utils.getFunctionInClass(function, (FClass) typeInstantiation.getType(function.getMemberOf()));
-        return function;
-    }
-
     @Override
     public FExpression exitFieldAccess(FFieldAccess fieldAccess, FExpression object) {
-        FField field = fieldAccess.getField();
-        if (field.getMemberOf() == currentClass.getBaseClass())
-            field = fieldMap.get(field);
-        if (field.getMemberOf() instanceof FArray) //TODO I really don't like this explicit handling of fields, and it will have to be expanded if we allow TypeVariable to have fields
-            field = ((FArray) typeInstantiation.getType(field.getMemberOf())).getInstanceFields().get(FArray.SIZE);
+        FField old = fieldAccess.getField();
+        FField field = Utils.findFieldInstantiation(old, typeInstantiation);
         if (fieldAccess.isStatic())
             return FFieldAccess.createStatic(field);
         else {
@@ -270,8 +257,10 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FExpression visitFunctionAddress(FFunctionAddress address) { //TODO this is my best guess to what should happen, haven't put much thought into it though
-        FFunction function = bakeFunction(address.getFunction());
+    public FExpression visitFunctionAddress(FFunctionAddress address) {
+        FFunction old = address.getFunction();
+        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParams(), typeInstantiation::getType);
+        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, typeInstantiation);
         return new FFunctionAddress(function);
     }
 }

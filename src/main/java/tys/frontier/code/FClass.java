@@ -89,6 +89,17 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         this.constructorVisibility = constructorVisibility;
     }
 
+    @Override
+    public FField getField(FIdentifier identifier) throws FieldNotFound {
+        FField f = instanceFields.get(identifier);
+        if (f != null)
+            return f;
+        f = staticFields.get(identifier);
+        if (f != null)
+            return f;
+        throw new FieldNotFound(identifier);
+    }
+
     public BiMap<FIdentifier, FField> getInstanceFields() {
         return instanceFields;
     }
@@ -134,7 +145,13 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())
             return this;
-        return instantiations.computeIfAbsent(typeInstantiation, i -> new FInstantiatedClass(this, intersected));
+        FInstantiatedClass res = instantiations.get(intersected);
+        if (res == null) {
+            res = new FInstantiatedClass(this, intersected);
+            instantiations.put(intersected, res);
+            res.prepare();
+        }
+        return res;
     }
 
     public void addDelegate(FField field) {
@@ -168,7 +185,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return false;
     }
 
-    public void addField (FField field) throws IdentifierCollision {
+    public void addField(FField field) throws IdentifierCollision {
         if (field.isInstance()) {
             FField old = getInstanceFields().put(field.getIdentifier(), field);
             if (old != null) {
@@ -182,13 +199,29 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         }
     }
 
-    public void addFunction (FFunction function) throws SignatureCollision {
+    public void addFieldTrusted(FField field) {
+        try {
+            addField(field);
+        } catch (IdentifierCollision identifierCollision) {
+            Utils.cantHappen();
+        }
+    }
+
+    public void addFunction(FFunction function) throws SignatureCollision {
         for (FFunction other : getFunctions().get(function.getIdentifier())) {
             if (function.getSignature().collidesWith(other.getSignature()))
                 throw new SignatureCollision(function, other);
         }
         getFunctions().put(function.getIdentifier(), function);
         uniqueFunctionNames = null;
+    }
+
+    public void addFunctionTrusted(FFunction function) {
+        try {
+            addFunction(function);
+        } catch (SignatureCollision signatureCollision) {
+            Utils.cantHappen();
+        }
     }
 
     public FConstructor getConstructor() {
@@ -336,7 +369,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
                     //if not enough arguments are given, fill up with default arguments
                     for (int i=this.argumentTypes.size(); i<f.getParams().size(); i++) {
-                        FType defaultArgType = f.getParams().get(i).getDefaultValue().get().getType();
+                        FType defaultArgType = f.getParams().get(i).getType();
                         //default arguments come from the function, thus we might need to instantiate types
                         defaultArgType = typeInstantiation.getType(defaultArgType);
                         argumentTypes.add(defaultArgType);

@@ -2,7 +2,9 @@ package tys.frontier.main;
 
 import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.FClass;
+import tys.frontier.code.FFunction;
 import tys.frontier.code.FInstantiatedClass;
+import tys.frontier.code.FInstantiatedFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -50,9 +52,14 @@ public class Main {
             entry.getKey().removeUnreachable(entry.getValue());
 
         //bake
-        for (FClass fClass : reachability.getReachableClasses().keySet())
-            if (fClass instanceof FInstantiatedClass)
-                ((FInstantiatedClass) fClass).bake();
+        for (Map.Entry<FClass, Reachability.ReachableClass> fClass : reachability.getReachableClasses().entrySet()) {
+            if (fClass.getKey() instanceof FInstantiatedClass)
+                ((FInstantiatedClass) fClass.getKey()).bake();
+            for (FFunction reachableFunction : fClass.getValue().reachableFunctions) {
+                if (reachableFunction instanceof FInstantiatedFunction)
+                    ((FInstantiatedFunction) reachableFunction).bake();
+            }
+        }
 
         //Backend
         LLVMBackend.runBackend(module, reachability, output, outputType);
