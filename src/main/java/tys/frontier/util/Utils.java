@@ -74,15 +74,6 @@ public final class Utils {
         return res;
     }
 
-    public static FField getFieldInClass(FField field, FClass in) {
-        if (field.getMemberOf() == in)
-            return field;
-        if (field.isInstance())
-            return in.getInstanceFields().get(field.getIdentifier());
-        else
-            return in.getStaticFields().get(field.getIdentifier());
-    }
-
     public static FField findFieldInstantiation(FField field, TypeInstantiation typeInstantiation) {
         FType namespace = typeInstantiation.getType(field.getMemberOf());
         if (namespace == field.getMemberOf())

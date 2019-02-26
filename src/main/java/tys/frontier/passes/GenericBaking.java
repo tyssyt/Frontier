@@ -43,7 +43,12 @@ public class GenericBaking implements FClassVisitor {
         //field has no instantiated version yet, but it is also much easier to find the corresponding field
         for (FField field : instantiatedClass.getFields()) {
             visitor.currentField = field;
-            Utils.getFieldInClass(field, instantiatedClass.getBaseClass()).accept(visitor);
+            FField f;
+            if (field.isInstance())
+                f = instantiatedClass.getBaseClass().getInstanceFields().get(field.getIdentifier());
+            else
+                f = instantiatedClass.getBaseClass().getStaticFields().get(field.getIdentifier());
+            f.accept(visitor);
         }
 
         for (FFunction function : instantiatedClass.getFunctions().values()) {
