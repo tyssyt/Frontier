@@ -66,8 +66,8 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         if (constraint instanceof ImplicitCastable) { //remove all constraints implied by the new one
             ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-            TypeConstraint c = null;
-            for (Iterator<TypeConstraint> it = constraints.iterator(); it.hasNext(); c=it.next()) {
+            for (Iterator<TypeConstraint> it = constraints.iterator(); it.hasNext();) {
+                TypeConstraint c = it.next();
                 if (implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
                     it.remove();
                 newConstraints.clear();
