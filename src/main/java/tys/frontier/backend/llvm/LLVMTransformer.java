@@ -1,9 +1,11 @@
 package tys.frontier.backend.llvm;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.FBinaryOperator;
+import tys.frontier.code.Operator.FBinaryOperator.Arith;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
@@ -24,6 +26,8 @@ import java.util.Map;
 
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
+import static tys.frontier.code.Operator.FBinaryOperator.Arith.*;
+import static tys.frontier.code.Operator.FBinaryOperator.Bool.*;
 
 class LLVMTransformer implements
         AutoCloseable,
@@ -31,6 +35,40 @@ class LLVMTransformer implements
 
     private static final int TRUE = 1;
     private static final int FALSE = 0;
+
+    private static final ImmutableMap<FFunctionIdentifier, Integer> arithOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(PLUS.identifier, LLVMAdd)
+            .put(MINUS.identifier, LLVMSub)
+            .put(TIMES.identifier, LLVMMul)
+            .put(DIVIDED.identifier, LLVMSDiv)
+            .put(MODULO.identifier, LLVMSRem)
+            .put(Arith.AND.identifier, LLVMAnd)
+            .put(Arith.OR.identifier, LLVMOr)
+            .put(XOR.identifier, LLVMXor)
+            .build();
+    private static final ImmutableMap<FFunctionIdentifier, Integer> cmpOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(EQUALS_ID.identifier, LLVMIntEQ)
+            .put(NOT_EQUALS_ID.identifier, LLVMIntNE)
+            .put(LESS.identifier, LLVMIntSLT)
+            .put(GREATER.identifier, LLVMIntSGT)
+            .put(LESS_EQUAL.identifier, LLVMIntSLE)
+            .put(GREATER_EQUAL.identifier, LLVMIntSGE)
+            .build();
+    private static final ImmutableMap<FFunctionIdentifier, Integer> arithFOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(PLUS.identifier, LLVMFAdd)
+            .put(MINUS.identifier, LLVMFSub)
+            .put(TIMES.identifier, LLVMFMul)
+            .put(DIVIDED.identifier, LLVMFDiv)
+            .put(MODULO.identifier, LLVMFRem)
+            .build();
+    private static final ImmutableMap<FFunctionIdentifier, Integer> cmpFOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(EQUALS_ID.identifier, LLVMRealOEQ)
+            .put(NOT_EQUALS_ID.identifier, LLVMRealONE)
+            .put(LESS.identifier, LLVMRealOLT)
+            .put(GREATER.identifier, LLVMRealOGT)
+            .put(LESS_EQUAL.identifier, LLVMRealOLE)
+            .put(GREATER_EQUAL.identifier, LLVMRealOGE)
+            .build();
 
     private LLVMModule module;
     private LLVMBuilderRef builder;
@@ -414,37 +452,18 @@ class LLVMTransformer implements
 
         LLVMValueRef left = l.accept(this);
         LLVMValueRef right = r.accept(this);
-        //TODO create an enum that maps Id to the llvm op and actually make this all a 1 liner... (or not)
-        if (id.equals(FBinaryOperator.Arith.PLUS.identifier)) {
-            return LLVMBuildAdd(builder, left, right, "add");
-        } else if (id.equals(FBinaryOperator.Arith.MINUS.identifier)) {
-            return LLVMBuildSub(builder, left, right, "sub");
-        } else if (id.equals(FBinaryOperator.Arith.TIMES.identifier)) {
-            return LLVMBuildMul(builder, left, right, "mul");
-        } else if (id.equals(FBinaryOperator.Arith.DIVIDED.identifier)) {
-            return LLVMBuildSDiv(builder, left, right, "sdiv");
-        } else if (id.equals(FBinaryOperator.Arith.MODULO.identifier)) {
-            return LLVMBuildSRem(builder, left, right, "srem");
-        } else if (id.equals(FBinaryOperator.Arith.AND.identifier)) {
-            return LLVMBuildAnd(builder, left, right, "and");
-        } else if (id.equals(FBinaryOperator.Arith.OR.identifier)) {
-            return LLVMBuildOr(builder, left, right, "or");
-        } else if (id.equals(FBinaryOperator.Arith.XOR.identifier)) {
-            return LLVMBuildXor(builder, left, right, "xor");
-        } else if (id.equals(FBinaryOperator.Bool.LESS.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntSLT, left, right, "slt");
-        } else if (id.equals(FBinaryOperator.Bool.GREATER.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntSGT, left, right, "sgt");
-        } else if (id.equals(FBinaryOperator.Bool.LESS_EQUAL.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntSLE, left, right, "sle");
-        } else if (id.equals(FBinaryOperator.Bool.GREATER_EQUAL.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntSGE, left, right, "sge");
-        } else if (id.equals(FBinaryOperator.Bool.EQUALS_ID.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntEQ, left, right, "eq");
-        } else if (id.equals(FBinaryOperator.Bool.NOT_EQUALS_ID.identifier)) {
-            return LLVMBuildICmp(builder, LLVMIntNE, left, right, "ne");
+        if (functionCall.getFunction().getMemberOf() instanceof FIntN) {
+            Integer arith = arithOpMap.get(id);
+            if (arith != null)
+                return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
+            else
+                return LLVMBuildICmp(builder, cmpOpMap.get(id), left, right, "cmp_" + id.name);
         } else {
-            return Utils.cantHappen();
+            Integer arith = arithFOpMap.get(id);
+            if (arith != null)
+                return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
+            else
+                return LLVMBuildFCmp(builder, cmpFOpMap.get(id), left, right, "cmp_" + id.name);
         }
     }
 
