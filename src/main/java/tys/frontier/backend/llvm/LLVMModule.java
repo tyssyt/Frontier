@@ -418,15 +418,18 @@ public class LLVMModule implements AutoCloseable {
     //TODO find taget triples and other config options we want to make available and make them params & prolly enum them
     private int emitToFile(String file, int fileType, BytePointer error) {
         LLVMBackend.initialize();
-        BytePointer targetTriple = LLVMGetDefaultTargetTriple();
+        BytePointer tt = LLVMGetDefaultTargetTriple();
+        BytePointer targetTriple = LLVMNormalizeTargetTriple(tt);
         LLVMTargetRef target = new LLVMTargetRef();
         if (LLVMGetTargetFromTriple(targetTriple, target, error) != 0) {
             String message = error.getString();
             LLVMDisposeMessage(error);
             Utils.handleError(message);
         }
-        String cpu = "generic"; //TODO is there any other useful value here?
-        LLVMTargetMachineRef targetMachine = LLVMCreateTargetMachine(target, targetTriple.getString(), cpu, "", LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);
+
+        BytePointer cpu = LLVMGetHostCPUName();
+        BytePointer features = LLVMGetHostCPUFeatures();
+        LLVMTargetMachineRef targetMachine = LLVMCreateTargetMachine(target, targetTriple, cpu, features, LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);
 
         LLVMTargetDataRef dataLayout = LLVMCreateTargetDataLayout(targetMachine);
         LLVMSetModuleDataLayout(module, dataLayout);
@@ -435,7 +438,10 @@ public class LLVMModule implements AutoCloseable {
         int res = LLVMTargetMachineEmitToFile(targetMachine, module, new BytePointer(file), fileType, error);
         LLVMDisposeTargetData(dataLayout);
         LLVMDisposeTargetMachine(targetMachine);
+        LLVMDisposeMessage(features);
+        LLVMDisposeMessage(cpu);
         LLVMDisposeMessage(targetTriple);
+        LLVMDisposeMessage(tt);
         return res;
     }
 
