@@ -152,10 +152,14 @@ class LLVMTransformer implements
 
         //finish
         LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
-        if (function.getType() == FVoid.INSTANCE)
+        if (function.getType() == FVoid.INSTANCE && !function.getBody().get().redirectsControlFlow().isPresent())
             LLVMBuildRetVoid(builder);
         localVars.clear();
-        //LLVMViewFunctionCFG(res);
+        /*
+        if (LLVMVerifyFunction(res, 1) == TRUE) {
+            LLVMViewFunctionCFG(res);
+        }
+        */
         return res;
     }
 
