@@ -76,8 +76,6 @@ public final class Utils {
 
     public static FField findFieldInstantiation(FField field, TypeInstantiation typeInstantiation) {
         FType namespace = typeInstantiation.getType(field.getMemberOf());
-        if (namespace == field.getMemberOf())
-            return field;
         try {
             return namespace.getField(field.getIdentifier());
         } catch (FieldNotFound fieldNotFound) {
@@ -87,8 +85,6 @@ public final class Utils {
 
     public static FFunction findFunctionInstantiation(FFunction function, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
         FType namespace = typeInstantiation.getType(function.getMemberOf());
-        if (namespace == function.getMemberOf())
-            return function;
         try {
             return namespace.resolveFunction(function.getIdentifier(), argumentTypes, TypeInstantiation.EMPTY);
         } catch (FunctionNotFound functionNotFound) {

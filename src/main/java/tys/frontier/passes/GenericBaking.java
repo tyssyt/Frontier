@@ -26,6 +26,7 @@ public class GenericBaking implements FClassVisitor {
 
     private FField currentField;
     private FInstantiatedFunction currentFunction;
+    private boolean useOriginal = false;
 
     private Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
     private Map<FLoopIdentifier, FLoopIdentifier> loopMap = new HashMap<>();
@@ -81,6 +82,12 @@ public class GenericBaking implements FClassVisitor {
         ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
     }
 
+    public static FStatement bake (FStatement statement, TypeInstantiation typeInstantiation) {
+        GenericBaking visitor = new GenericBaking(typeInstantiation);
+        visitor.useOriginal = true;
+        return statement.accept(visitor);
+    }
+
     @Override
     public void enterField(FField field) {
         if (field.isInstance())
@@ -132,13 +139,20 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
-        return FReturn.createTrusted(value.orElse(null), currentFunction);
+        if (useOriginal)
+            return FReturn.createTrusted(value.orElse(null), fReturn.getFunction());
+        else
+            return FReturn.createTrusted(value.orElse(null), currentFunction);
     }
 
     @Override
     public FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FExpression> value) {
         FLocalVariable old = declaration.getVar();
-        FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+        FLocalVariable _new;
+        if(useOriginal)
+            _new = old;
+        else
+            _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
         varMap.put(old, _new);
         return FVarDeclaration.createTrusted(_new, value.orElse(null));
     }

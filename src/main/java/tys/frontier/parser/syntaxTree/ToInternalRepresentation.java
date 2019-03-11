@@ -19,6 +19,7 @@ import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.parser.warnings.UnreachableStatements;
 import tys.frontier.parser.warnings.Warning;
+import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
 import tys.frontier.util.Utils;
 
@@ -34,6 +35,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FFunction currentFunction;
     private Deque<FLoopIdentifier> loops = new ArrayDeque<>();
     private MapStack<FIdentifier, FLocalVariable> declaredVars = new MapStack<>();
+
+    private Set<FTypeVariable> genericFunctionAddressToInstantiate = new HashSet<>();
 
     private MapStack<FTypeIdentifier, FType> knownClasses = new MapStack<>();
 
@@ -232,7 +235,29 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     //statements
     public FStatement visitStatement(FrontierParser.StatementContext ctx) throws Failed {
-        return (FStatement) ctx.accept(this);
+        assert genericFunctionAddressToInstantiate.isEmpty();
+
+        FStatement res = (FStatement) ctx.accept(this);
+
+        try {
+            return instantiateFunctionAddresses(res);
+        } catch (UnfulfillableConstraints unfulfillableConstraints) {
+            errors.add(unfulfillableConstraints);
+            throw new Failed();
+        }
+    }
+
+    private FStatement instantiateFunctionAddresses(FStatement untyped) throws UnfulfillableConstraints {
+        if(genericFunctionAddressToInstantiate.isEmpty())
+            return untyped;
+
+        Map<FTypeVariable, FType> typeInstantiationMap = new HashMap<>();
+        for (FTypeVariable toInstantiate : genericFunctionAddressToInstantiate) {
+            typeInstantiationMap.put(toInstantiate, toInstantiate.getConstraints().resolve());
+        }
+        genericFunctionAddressToInstantiate.clear();
+        TypeInstantiation typeInstantiation = TypeInstantiation.create(typeInstantiationMap);
+        return GenericBaking.bake(untyped, typeInstantiation);
     }
 
     @Override
@@ -376,127 +401,83 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FIf visitIfStatement(FrontierParser.IfStatementContext ctx) {
-        FExpression cond = null;
-        FBlock then = null;
-        FBlock elze = null;
-        boolean failed = false;
         try {
-            cond = visitExpression(ctx.expression());
-        } catch (Failed f) {
-            failed = true;
-        }
-        try {
-            then = visitBlock(ctx.block(0));
-        } catch (Failed f) {
-            failed = true;
-        }
-        try {
-            FrontierParser.BlockContext bc = ctx.block(1);
-            if (bc != null) {
-                elze = visitBlock(ctx.block(1));
+            FExpression cond = visitExpression(ctx.expression());
+            FIf res = FIf.create(cond, null, null);
+            res = (FIf) instantiateFunctionAddresses(res);
+            res.setThen(visitBlock(ctx.block(0)));
+            if (ctx.block(1) != null) {
+                res.setElse(visitBlock(ctx.block(1)));
             } else if (ctx.ifStatement() != null) {
-                elze = FBlock.from(visitIfStatement(ctx.ifStatement()));
+                res.setElse(FBlock.from(visitIfStatement(ctx.ifStatement())));
             }
-        } catch (Failed f) {
-            failed = true;
-        }
-
-        if (failed)
-            throw new Failed();
-        try {
-            return FIf.create(cond, then, elze);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+            return res;
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
             throw new Failed();
         }
     }
 
-    @Override
-    public FWhile visitWhileStatement(FrontierParser.WhileStatementContext ctx) {
+    private FLoopIdentifier startLoop() {
         FLoopIdentifier identifier = new FLoopIdentifier();
         loops.push(identifier);
         declaredVars.push();
         knownClasses.push();
+        return identifier;
+    }
+
+    private void endLoop() {
+        loops.pop();
+        declaredVars.pop();
+        knownClasses.pop();
+    }
+
+    @Override
+    public FWhile visitWhileStatement(FrontierParser.WhileStatementContext ctx) {
+        FLoopIdentifier identifier = startLoop();
         try {
-            FExpression cond;
-            try {
-                cond = visitExpression(ctx.expression());
-            } catch (Failed f) {
-                visitBlock(ctx.block()); //still visit the body to find more errors
-                throw f;
-            }
-            FBlock body = visitBlock(ctx.block());
-            return FWhile.create(loops.size(), identifier, cond, body);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+            FExpression cond = visitExpression(ctx.expression());
+
+            FWhile res = FWhile.create(loops.size(), identifier, cond, null);
+            res = (FWhile) instantiateFunctionAddresses(res);
+            res.setBody(visitBlock(ctx.block()));
+            return res;
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
             throw new Failed();
         } finally {
-            loops.pop();
-            declaredVars.pop();
-            knownClasses.pop();
+            endLoop();
         }
     }
 
     @Override
     public FFor visitForStatement(FrontierParser.ForStatementContext ctx) {
-        FLoopIdentifier identifier = new FLoopIdentifier();
-        loops.push(identifier);
-        declaredVars.push();
-        knownClasses.push();
+        FLoopIdentifier identifier = startLoop();
         try {
-            FVarDeclaration decl = null;
-            FExpression cond = null;
-            FExpression inc = null;
-            FBlock body = null;
-            boolean failed = false;
-
             FrontierParser.LocalVariableDeclarationContext dc = ctx.localVariableDeclaration();
-            try {
-                decl = dc == null ? null : visitLocalVariableDeclaration(dc);
-            } catch (Failed f) {
-                failed = true;
-            }
+            FVarDeclaration decl = dc == null ? null : visitLocalVariableDeclaration(dc);
 
             FrontierParser.ExpressionContext ec = ctx.expression();
-            try {
-                cond = ec == null ? null : visitExpression(ec);
-            } catch (Failed f) {
-                failed = true;
-            }
+            FExpression cond = ec == null ? null : visitExpression(ec);
 
             FrontierParser.Expression2Context c2 = ctx.expression2();
-            try {
-                inc = c2 == null ? null : visitExpression(c2.expression());
-            } catch (Failed f) {
-                failed = true;
-            }
+            FExpression inc = c2 == null ? null : visitExpression(c2.expression());
 
-            try {
-                body = visitBlock(ctx.block());
-            } catch (Failed f) {
-                failed = true;
-            }
-
-            if (failed)
-                throw new Failed();
-
-            return FFor.create(loops.size(), identifier, decl, cond, inc, body);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+            FFor res = FFor.create(loops.size(), identifier, decl, cond, inc, null);
+            res = (FFor) instantiateFunctionAddresses(res);
+            res.setBody(visitBlock(ctx.block()));
+            return res;
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
             throw new Failed();
         } finally {
-            loops.pop();
-            declaredVars.pop();
-            knownClasses.pop();
+            endLoop();
         }
     }
 
     @Override
     public FForEach visitForeachStatement(FrontierParser.ForeachStatementContext ctx) {
-        FLoopIdentifier identifier = new FLoopIdentifier();
-        loops.push(identifier);
-        declaredVars.push();
-        knownClasses.push();
+        FLoopIdentifier identifier = startLoop();
         try {
             FExpression container = visitExpression(ctx.expression());
             FVariableIdentifier id = new FVariableIdentifier(ctx.LCIdentifier().getText());
@@ -508,12 +489,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             }
             FLocalVariable it = new FLocalVariable(id, varType);
             declaredVars.put(it.getIdentifier(), it);
-            FBlock body = visitBlock(ctx.block());
-            return FForEach.create(loops.size(), identifier, it, container, body);
+
+            FForEach res = FForEach.create(loops.size(), identifier, it, container, null);
+            res = (FForEach) instantiateFunctionAddresses(res);
+            res.setBody(visitBlock(ctx.block()));
+            return res;
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
+            throw new Failed();
         } finally {
-            loops.pop();
-            declaredVars.pop();
-            knownClasses.pop();
+            endLoop();
         }
     }
 
@@ -846,11 +831,30 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
+    private FFunction sthsthFunctionAddress(FFunction function) { //TODO name
+        if (function.getParametersList().isEmpty())
+            return function;
+
+        //create a non fixed copy for each var
+        Map<FTypeVariable, FType> varMap = new HashMap<>();
+        for (FTypeVariable var : function.getParametersList()) {
+            if (!var.isFixed() && !function.getBody().isPresent())
+                return Utils.NYI("getting a function address with non fixed Parameters where the body is not finished"); //TODO for non recursive cases, this could be solved by waiting on f to finish parsing
+            FTypeVariable copy = var.copy(false);
+            genericFunctionAddressToInstantiate.add(copy);
+            varMap.put(var, copy);
+        }
+        //instantiate the funciton with the non fixed copies
+        return function.getInstantiation(TypeInstantiation.create(varMap));
+    }
+
     @Override
     public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
         try {
             List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
-            return new FFunctionAddress(getFunction(currentType, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params));
+            FFunction function = getFunction(currentType, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params);
+            function = sthsthFunctionAddress(function);
+            return new FFunctionAddress(function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
@@ -862,7 +866,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             FType fClass = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
             List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
-            return new FFunctionAddress(getFunction(fClass, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params));
+            FFunction function = getFunction(fClass, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params);
+            function = sthsthFunctionAddress(function);
+            return new FFunctionAddress(function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();

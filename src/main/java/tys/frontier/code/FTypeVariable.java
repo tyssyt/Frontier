@@ -117,6 +117,10 @@ public class FTypeVariable implements FType {
         return new FTypeVariable(identifier, fixed, constraints.copy());
     }
 
+    public FTypeVariable copy(boolean fixed) {
+        return new FTypeVariable(identifier, fixed, constraints.copy());
+    }
+
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(getIdentifier().name);

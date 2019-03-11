@@ -27,6 +27,11 @@ public abstract class FLoop implements FStatement, ControlFlowIDontKnow {
         return identifier;
     }
 
+    public void setBody(FBlock body) {
+        assert this.body == null;
+        this.body = body;
+    }
+
     public FBlock getBody() {
         return body;
     }

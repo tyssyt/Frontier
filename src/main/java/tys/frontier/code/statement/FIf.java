@@ -39,8 +39,18 @@ public class FIf implements FStatement {
         return condition;
     }
 
+    public void setThen(FBlock then) {
+        assert this.then == null;
+        this.then = then;
+    }
+
     public FBlock getThen() {
         return then;
+    }
+
+    public void setElse(FBlock _else) {
+        assert this.elze == null;
+        this.elze = _else;
     }
 
     public Optional<FBlock> getElse() {
