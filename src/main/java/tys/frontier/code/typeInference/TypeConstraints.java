@@ -8,6 +8,7 @@ import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -70,6 +71,11 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
                 TypeConstraint c = it.next();
                 if (implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
                     it.remove();
+                if (c instanceof ImplicitCastable && ((ImplicitCastable) c).getTarget() == implicitCastable.getTarget()) {
+                    //by process of elimination, we know that the 2 constraints are co- & contravariant, so combine them to invariant
+                    it.remove();
+                    implicitCastable = new ImplicitCastable(new Pair<>(implicitCastable, c), implicitCastable.getTarget(), Invariant);
+                }
                 newConstraints.clear();
             }
         }
