@@ -7,6 +7,7 @@ import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.visitor.FClassVisitor;
@@ -141,8 +142,18 @@ public class GenericBaking implements FClassVisitor {
     public FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
         if (useOriginal)
             return FReturn.createTrusted(value.orElse(null), fReturn.getFunction());
-        else
-            return FReturn.createTrusted(value.orElse(null), currentFunction);
+
+        if (currentFunction.getType() == FVoid.INSTANCE && value.isPresent()) {
+            /* the return value was a type parameter that got instantiated with void
+               now we have a statement of the form return expr;
+               this is invalid for a void, so we need to change it to {expr; return;}
+             */
+            return FBlock.from(
+                    new FExpressionStatement(value.get()),
+                    FReturn.createTrusted(null, currentFunction)
+            );
+        }
+        return FReturn.createTrusted(value.orElse(null), currentFunction);
     }
 
     @Override
