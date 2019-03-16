@@ -203,7 +203,6 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         sb.append(headerToString()).append(" {\n");
         if (predefined)
