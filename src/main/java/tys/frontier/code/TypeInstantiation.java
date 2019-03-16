@@ -46,10 +46,34 @@ public class TypeInstantiation {
         return typeMap;
     }
 
+    /**
+     * Do not modify the map after calling this!
+     */
     public static TypeInstantiation create(Map<FTypeVariable, FType> typeMap) {
         if (typeMap.isEmpty())
             return EMPTY;
+        //clean up the map to make sure no lhs appears on a rhs
+        for (Map.Entry<FTypeVariable, FType> entry : typeMap.entrySet()) {
+            entry.setValue(resolveTrans(entry.getValue(), typeMap));
+        }
         return new TypeInstantiation(typeMap);
+    }
+
+    private static FType resolveTrans(FType startType, Map<FTypeVariable, FType> typeMap) {
+        FType type = startType;
+        while (true) {
+            if (!(type instanceof FTypeVariable)) {
+                return type;
+            }
+
+            FType _new = typeMap.get(type);
+            if (_new == null) {
+                return type;
+            }
+            type = _new;
+            if (startType == _new) //cycle detection
+                return Utils.handleError("types were resolved cyclic"); //TODO
+        }
     }
 
     public boolean isEmpty() {
