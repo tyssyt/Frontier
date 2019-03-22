@@ -280,7 +280,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FExpression visitVariable(FLocalVariableExpression expression) {
-        return new FLocalVariableExpression(varMap.get(expression.getVariable()));
+        return new FLocalVariableExpression(useOriginal ? expression.getVariable() : varMap.get(expression.getVariable()));
     }
 
     @Override
