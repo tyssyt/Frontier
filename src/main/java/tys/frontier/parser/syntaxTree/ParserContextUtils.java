@@ -80,11 +80,11 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints {
+    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         FTypeVariable typeVariable = _class.getParameters().get(identifier);
         if (typeVariable == null)
-            Utils.NYI("error for unknown TypeVariable in where Clause");
+            throw new UndeclaredVariable(identifier);
 
         TypeConstraints constraints = TypeConstraints.create();
         UpperBoundContext uC = ctx.upperBound();

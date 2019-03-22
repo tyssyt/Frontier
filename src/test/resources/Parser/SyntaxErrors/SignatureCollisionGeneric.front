@@ -1,0 +1,3 @@
+class Q:
+    f<A>(A a, int32 i := 5) {}
+    f(float32 f, int32 i) {}

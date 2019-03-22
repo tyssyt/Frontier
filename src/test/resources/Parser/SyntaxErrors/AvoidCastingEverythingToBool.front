@@ -1,0 +1,7 @@
+class A:
+
+    doNot(A a) {
+        if (a) {
+
+        }
+    }

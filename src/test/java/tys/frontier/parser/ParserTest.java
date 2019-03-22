@@ -13,6 +13,7 @@ import tys.frontier.style.Style;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ParserTest {
@@ -40,6 +41,11 @@ public class ParserTest {
         SyntaxError e = parseSyntaxError("AccessForbidden.front");
         assertTrue(e instanceof AccessForbidden);
         assertTrue(((AccessForbidden) e).accessed instanceof FField);
+    }
+    @Test
+    public void parseAvoidCastingEverythingToBool() throws Exception {
+        SyntaxError e = parseSyntaxError("AvoidCastingEverythingToBool.front");
+        assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
     public void parseBreakOutsideLoop() throws Exception {
@@ -128,6 +134,11 @@ public class ParserTest {
         assertTrue(e instanceof SignatureCollision);
     }
     @Test
+    public void parseSignatureCollisionGeneric() throws Exception {
+        SyntaxError e = parseSyntaxError("SignatureCollisionGeneric.front");
+        assertTrue(e instanceof SignatureCollision);
+    }
+    @Test
     public void parseTwiceDefinedLocalVariable() throws Exception {
         SyntaxError e = parseSyntaxError("TwiceDefinedLocalVariable.front");
         assertTrue(e instanceof TwiceDefinedLocalVariable);
@@ -143,9 +154,25 @@ public class ParserTest {
         assertTrue(e instanceof UndeclaredVariable);
     }
     @Test
+    public void parseUndeclaredVariableWhere() throws Exception {
+        SyntaxError e = parseSyntaxError("UndeclaredVariableWhere.front");
+        assertTrue(e instanceof UndeclaredVariable);
+        assertEquals("S", ((UndeclaredVariable)e).identifier.name);
+    }
+    @Test
+    public void parseUnfullfillableConstraintFixed() throws Exception {
+        SyntaxError e = parseSyntaxError("UnfullfillableConstraintFixed.front");
+        assertTrue(e instanceof IncompatibleTypes);
+    }
+    @Test
     public void parseUntypedVariable() throws Exception {
         SyntaxError e = parseSyntaxError("UntypedVariable.front");
         assertTrue(e instanceof UntypedVariable);
+    }
+    @Test
+    public void parseUntypedFunctionAddress() throws Exception {
+        SyntaxError e = parseSyntaxError("UntypedFunctionAddress.front");
+        assertTrue(e instanceof UnfulfillableConstraints);
     }
     @Test
     public void parseWrongNumberOfTypeArguments() throws Exception {

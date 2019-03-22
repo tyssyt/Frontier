@@ -78,4 +78,14 @@ public class MainTest {
         String res = doMain("OptGeneric", null);
         assertEquals("024568", res);
     }
+    @Test
+    public void mainHigherOrder() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("HigherOrder", null);
+        StringBuilder expected = new StringBuilder();
+        for(int i=1; i<=5; i++) {
+            expected.append(i).append(":0123456789101112").append(endl);
+        }
+        expected.append("done");
+        assertEquals(expected.toString(), res);
+    }
 }

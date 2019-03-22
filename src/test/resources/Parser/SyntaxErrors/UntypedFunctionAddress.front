@@ -1,0 +1,6 @@
+class A:
+    static generic <T,R> (T t, R r) {}
+
+    test () {
+        x := generic*;
+    }

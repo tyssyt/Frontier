@@ -1,0 +1,39 @@
+import IO;
+import List;
+
+export class Test:
+
+static doNothing <T> (T t) -> T {
+    T alsoT := t;
+    return alsoT;
+}
+
+static call <R,T,S> (T,S->R f, T t, S s) -> R {
+    return f(t, s);
+}
+
+static forEach <T,R> (List<T> l, T->R f) {
+    for int32 i := 0; i < l.size(); ++i {
+        f(l.elements()[i]);
+    }
+}
+
+export static main() {
+    list := List<int64>.create();
+    for int32 i:= 0; i<=12; ++i {
+        list.add(i);
+    }
+    IO.print("1:");
+    Test.forEach(list, IO.printInt*);
+    IO.print("\n2:");
+    forEach(doNothing(list), doNothing(IO.printInt*));
+    IO.print("\n3:");
+    List<int64>, (int64->()) -> () asdf := forEach*;
+    call(asdf, list, IO.printInt*);
+    IO.print("\n4:");
+    call(forEach*, list, IO.printInt*);
+    IO.print("\n5:");
+    call(doNothing(forEach*), doNothing(list), doNothing(IO.printInt*));
+    //doNothing(doNothing*); this is invalid
+    IO.print("\ndone");
+}

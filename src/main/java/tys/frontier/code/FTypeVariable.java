@@ -54,7 +54,7 @@ public class FTypeVariable implements FType {
     }
 
     public void setConstraints(TypeConstraints constraints) {
-        assert constraints.isEmpty();
+        assert this.constraints.isEmpty();
         this.constraints = constraints;
     }
 

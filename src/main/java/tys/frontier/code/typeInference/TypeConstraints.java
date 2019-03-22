@@ -165,7 +165,7 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
 
             return Utils.NYI("constraint resolving with more then 1 candidate");
         }
-        throw new UnfulfillableConstraints(null, this, null, null); //TODO Maybe we should create a different error type for this
+        throw UnfulfillableConstraints.empty(null, this); //TODO where do we get var from?
     }
 
     public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
