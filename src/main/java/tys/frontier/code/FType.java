@@ -14,6 +14,8 @@ import java.util.List;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
+    boolean isFullyInstantiated();
+
     FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound;
 
     FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;

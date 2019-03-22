@@ -23,6 +23,15 @@ public class FFunctionType extends FPredefinedClass {
         this.out = out;
     }
 
+    @Override
+    public boolean isFullyInstantiated() { //TODO remove once function types are implemented with parametized classes
+        for (FType type : in) {
+            if (!type.isFullyInstantiated())
+                return false;
+        }
+        return out.isFullyInstantiated();
+    }
+
     public List<FType> getIn() {
         return in;
     }

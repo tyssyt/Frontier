@@ -12,6 +12,7 @@ import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.IntIntPair;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -72,6 +73,11 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     }
 
     @Override
+    public boolean isFullyInstantiated() {
+        return parametersList.isEmpty();
+    }
+
+    @Override
     public FTypeIdentifier getIdentifier () {
         return identifier;
     }
@@ -118,12 +124,19 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
     @Override
     public FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        return new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
+        for (Map.Entry<FTypeVariable, TypeConstraint> entry : pair.b.entries()) {
+            if (!entry.getKey().tryAddConstraint(entry.getValue()))
+                throw new FunctionNotFound(identifier, argumentTypes);
+        }
+        return pair.a;
     }
 
     @Override
     public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        return resolveFunction(identifier, argumentTypes, typeInstantiation); //TODO have a resolve that can create constraints
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
+        constraints.putAll(pair.b);
+        return pair.a;
     }
 
     @Override
@@ -346,6 +359,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
     private class FunctionResolver {
         private FFunction bestFunction;
+        private Multimap<FTypeVariable, TypeConstraint> bestConstraints;
         private IntIntPair bestCosts;
 
         private FFunctionIdentifier identifier;
@@ -358,7 +372,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
             this.typeInstantiation = typeInstantiation;
         }
 
-        FFunction resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
             functionLoop: for (FFunction f : getFunctions().get(identifier)) {
                 try {
                     FFunction.Signature sig = f.getSignature();
@@ -380,6 +394,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
                     //compute instantiations
                     Map<FTypeVariable, FType> typeVarianleMap = new HashMap<>();
+                    Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
                     for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : constraints.asMap().entrySet()) {
                         FTypeVariable typeVariable = entry.getKey();
 
@@ -389,7 +404,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
                             TypeConstraints copy = typeVariable.getConstraints().copy();
                             copy.addAll(entry.getValue());
-                            typeVarianleMap.put(typeVariable, copy.resolve());
+                            typeVarianleMap.put(typeVariable, copy.resolve(newConstraints));
                         }
                     }
                     TypeInstantiation instantiation = TypeInstantiation.create(typeVarianleMap);
@@ -397,50 +412,43 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     for (FTypeVariable v : f.getParametersList()) {
                         constraints.removeAll(v);
                     }
+                    constraints.putAll(newConstraints);
                     f = f.getInstantiation(instantiation);
 
                     //handle other constraints
-                    for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : constraints.asMap().entrySet()) {
-                        FTypeVariable typeVariable = entry.getKey();
-                        if (typeVariable.isFixed()) {
-                            for (TypeConstraint constraint : entry.getValue()) {
-                                constraint = instantiation.getConstraint(constraint);
-                                if (!typeVariable.getConstraints().satisfies(constraint))
-                                    continue functionLoop;
-                            }
-                        } else {
-                            return Utils.NYI("calls that create constraints for non fixed TypeVariables");
-                            /* TODO
-                                A bit more detail on why this is so problematic:
-                                If we knew that f is called, adding the necessary constraints here is great and all that needs to be done
-                                However, if there are other candidates for the call, we do not know which function will be called and thus, should not add the constraints
-                                Further down in the process of parsing the caller, we might find more constraints on types that remove the ambiguity
-
-                                To properly solve this, we need to allow ambigious calls that get resolved only after the body they are in finishes.
-                                This is a non-trivial restructure, and might cause problems with the (almost deprecated) calledBy
-
-                                Also either way we do not want to add constraints right here, but return them with the result because the caller decides what to do with the constraints
-                                 (currently the architecture does not allow that, but we extending that is the easier part)
-                            */
-
+                    Iterator<Map.Entry<FTypeVariable, TypeConstraint>> it = constraints.entries().iterator();
+                    while (it.hasNext()) {
+                        Map.Entry<FTypeVariable, TypeConstraint> entry = it.next();
+                        if (entry.getKey().getConstraints().satisfies(entry.getValue())) {
+                            it.remove(); //remove all satisfied constraints
+                            continue;
                         }
+                        if (entry.getKey().isFixed()) {
+                            continue functionLoop; //constraint is unsatisfiable f can't be called
+                        }
+                        //otherwise the constraint stays in the set
                     }
 
-                    updateCost(cost, f);
+                    updateCost(cost, f, constraints);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
             }
 
             if (bestFunction == null)
                 throw new FunctionNotFound(identifier, this.argumentTypes);
-            return bestFunction;
+            return new Pair<>(bestFunction, bestConstraints);
         }
 
-        private void updateCost(IntIntPair newCosts, FFunction newFunction) {
+        private void updateCost(IntIntPair newCosts, FFunction newFunction, Multimap<FTypeVariable, TypeConstraint> constraints) {
             if (bestCosts == null) {
                 bestCosts = newCosts;
                 bestFunction = newFunction;
+                bestConstraints = constraints;
                 return;
             }
+            if (!bestConstraints.isEmpty() || !constraints.isEmpty()) {
+                Utils.NYI("ambiguous function call with constraints");
+            }
+
             int res = newCosts.compareTo(bestCosts);
             if (res < 0) {
                 bestCosts = newCosts;

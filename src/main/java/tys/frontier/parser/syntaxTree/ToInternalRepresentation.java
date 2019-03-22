@@ -1,5 +1,7 @@
 package tys.frontier.parser.syntaxTree;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
@@ -14,6 +16,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
@@ -252,8 +255,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             return untyped;
 
         Map<FTypeVariable, FType> typeInstantiationMap = new HashMap<>();
+        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
         for (FTypeVariable toInstantiate : genericFunctionAddressToInstantiate) {
-            typeInstantiationMap.put(toInstantiate, toInstantiate.getConstraints().resolve());
+            typeInstantiationMap.put(toInstantiate, toInstantiate.getConstraints().resolve(newConstraints));
+        }
+        for (Map.Entry<FTypeVariable, TypeConstraint> entry : newConstraints.entries()) {
+            entry.getKey().tryAddConstraint(entry.getValue());
         }
         genericFunctionAddressToInstantiate.clear();
         TypeInstantiation typeInstantiation = TypeInstantiation.create(typeInstantiationMap);

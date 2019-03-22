@@ -1,8 +1,9 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.FClass;
+import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -43,6 +44,8 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         }
     };
 
+    private boolean resolved = false; //debug flag, only used in assertion
+
     private Set<TypeConstraint> constraints;
 
     private TypeConstraints(Set<TypeConstraint> constraints) {
@@ -64,6 +67,7 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     public void add(TypeConstraint constraint) {
         if (this.satisfies(constraint))
             return;
+        assert !resolved;
         if (constraint instanceof ImplicitCastable) { //remove all constraints implied by the new one
             ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
@@ -118,33 +122,50 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         }
     }
 
-    public FClass resolve() throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
-        ImplicitCastable res = null;
-        int foundCandidates = 0;
+    public FType resolve(Multimap<FTypeVariable, TypeConstraint> newConstraints) throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
+        assert !resolved;
+        FType proposition = proposeType();
+        ImplicitCastable typeConstraint = new ImplicitCastable(this, proposition, Invariant);
         for (TypeConstraint constraint : constraints) {
-            if (constraint instanceof ImplicitCastable) {
-                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
-                if (implicitCastable.getTarget() instanceof FClass) {
-                    res = implicitCastable;
-                    foundCandidates++;
-                    if (implicitCastable.getVariance() == Invariant) {
-                        foundCandidates = 1;
-                        break;
-                    }
+            if (!implies(typeConstraint, constraint, newConstraints)) {
+                throw new UnfulfillableConstraints(null, this, typeConstraint, constraint); //TODO where do we get the var from?
+            }
+        }
+        resolved = true;
+        return proposition;
+    }
+
+    private FType proposeType() throws UnfulfillableConstraints {
+        List<FType> fullyInstantiated = new ArrayList<>();
+        List<FType> rest = new ArrayList<>();
+
+        for (TypeConstraint constraint : constraints) {
+            if(constraint instanceof ImplicitCastable) {
+                FType target = ((ImplicitCastable) constraint).getTarget();
+                if (target.isFullyInstantiated()) {
+                    fullyInstantiated.add(target);
+                } else {
+                    rest.add(target);
                 }
             }
         }
-        if (foundCandidates != 1)
-            return Utils.NYI("constraint resolving");
-        if (res.getVariance() != Invariant)
-            res = new ImplicitCastable(res.getOrigin(), res.getTarget(), Invariant);
-        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-        for (TypeConstraint constraint : constraints) {
-            if (!implies(res, constraint, newConstraints) || !newConstraints.isEmpty()) {
-                throw new UnfulfillableConstraints(null, this, res, constraint); //TODO where do we get the var from?
-            }
+
+        if (fullyInstantiated.size() > 0) {
+
+            if (fullyInstantiated.size() == 1)
+                return Iterables.getOnlyElement(fullyInstantiated);
+
+            return Utils.NYI("constraint resolving with 2 fully Instantiated classes");
         }
-        return (FClass) res.getTarget();
+
+        if (rest.size() > 0) {
+
+            if (rest.size() == 1)
+                return Iterables.getOnlyElement(rest);
+
+            return Utils.NYI("constraint resolving with more then 1 candidate");
+        }
+        throw new UnfulfillableConstraints(null, this, null, null); //TODO Maybe we should create a different error type for this
     }
 
     public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {

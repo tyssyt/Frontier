@@ -46,4 +46,9 @@ public class FArray extends FPredefinedClass {
     public FType getBaseType() {
         return baseType;
     }
+
+    @Override
+    public boolean isFullyInstantiated() { //TODO remove once arrays are implemented with generic parameters
+        return baseType.isFullyInstantiated();
+    }
 }

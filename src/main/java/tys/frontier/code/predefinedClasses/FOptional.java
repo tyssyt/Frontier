@@ -42,6 +42,11 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
+    public boolean isFullyInstantiated() { //TODO remove once optionls are implemented with generic parameters
+        return baseType.isFullyInstantiated();
+    }
+
+    @Override
     public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         if (argumentTypes.size() > 0 && argumentTypes.get(0) == this) {
             argumentTypes = new ArrayList<>(argumentTypes); //copy to not modify the original list

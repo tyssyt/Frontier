@@ -44,6 +44,11 @@ public class FTypeVariable implements FType {
         return identifier;
     }
 
+    @Override
+    public boolean isFullyInstantiated() {
+        return false;
+    }
+
     public boolean isFixed() {
         return fixed;
     }

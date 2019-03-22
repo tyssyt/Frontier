@@ -46,6 +46,15 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
+    public boolean isFullyInstantiated() {
+        for (FTypeVariable param : baseClass.getParametersList()) {
+            if (!typeInstantiation.getType(param).isFullyInstantiated())
+                return false;
+        }
+        return true;
+    }
+
+    @Override
     public FClass getInstantiation(TypeInstantiation typeInstantiation) { //TODO this could be far more optimized...
         if (typeInstantiation.isEmpty())
             return this;
