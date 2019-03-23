@@ -79,13 +79,12 @@ new int[5]
   See Classes
 
 #### Function Types
-  For arbitrary types T1, ..., TN and R T1, ..., TN -> R is the type of a function that takes arguments of Types T1, ..., TN and returns a value of Type R
-  
+  Functions have special types of the form T1, ..., TN -> R, where T1, ..., TN are the types of the arguments and R is the return type.  
   For example, the type of the plus operator on 32 bit integers is: int32, int32 -> int32.
   For functions without return values, we use the special type ().
 
 ### Structure of .front Files
-  A frontier file starts with import statements. Importing will be reworked in the near future.
+  A frontier file starts with import statements. Note that importing will be modified in the near future.
   
   Currently, if the imported name has no file extension, it will be looked up in the standard Library, otherwise it will be looked up in the file system.
   The imported files are parsed first, and all identifiers (classes, functions & fields) that are marked with the visibility modifier *export* are visible to the importer.
@@ -181,14 +180,15 @@ The parameters of constructors are the instance fields of the class.
 If a field has an initial value, it will be used as default value for the parameter.
 
 ### Statements
+The following are allowed statements:
 * block: { StatementList }
 * expression ;
 * return expression ;
-* variable assignment: Varname = expr; (aslo supports +=, -= etc.)
+* variable assignment: Varname = expr; (also supports +=, -= etc.)
 * variable declaration:
-  * Type Varname; just declaration
-  * Type Varname := expr; declaration with assignment
-  * Varname := expr; declaration with assignment and type inference
+  * just declaration: Type Varname;
+  * declaration with assignment: Type Varname := expr;
+  * declaration with assignment and type inference: Varname := expr; 
 * conditionals
 ```
 if (expr) {...}
@@ -199,20 +199,27 @@ if (expr) {...} else if (expr) ...
 #### Loops
 * break; to leave the innermost loop
 * continue; to continue with the next iteration of the innmermost loop
-* while(expr) {...} a nornmal while loop
-* for(VarDecl;expr;expr) {...} a normal for loop with declaration, condition and increment
-* for(Varname : expr) {...} expr needs to be an array. Iterates over all elements of that array.
+* while(expr) {...}  
+a nornmal while loop
+* for(VarDecl;expr;expr) {...}  
+a normal for loop with declaration, condition and increment
+* for(Varname : expr) {...}  
+expr needs to be an array. Iterates over all elements of that array.
 
 
 ### Expressions
+The following are allowed expression:
 * variable
 * literal
 * type
 * array access: expression[expression]
-* field access: expression.expression for accessing fields in the same class the first part may be omitted
-* function call: expression.expression(expression...) for calling functions in the same class the first part may be omitted
-* function address: expression.expression*(type...) for addresses in the same class the first part may be omitted
-if there is only one function of the name the brackets may be omitted
+* field access: expression.expression  
+For accessing fields in the same class the first part may be omitted
+* function call: expression.expression(expression...)  
+For calling functions in the same class the first part may be omitted
+* function address: expression.expression*(type...)  
+For addresses in the same class the first part may be omitted.
+If there is only one function of the name the brackets may be omitted.
 * contructor call: new type (expression...)
 * unary operators: ++ -- - (all prefix)
 * binary operators:
@@ -220,7 +227,8 @@ if there is only one function of the name the brackets may be omitted
   * bool: | & ^
   * bool short circuit: || &&
   * comparison: > < >= <=
-  * equality: == =!= =\*= =!\*= the non star variants are meant to be definable by the user, as we don't have custom operators yet they don't work
+  * equality: == =!= =\*= =!\*=  
+  The non star variants are meant to be definable by the user, as we don't have custom operators yet they don't work.
   * optional else: ':'
 * cast: (type)expression
 * cast remove optional: !expression
