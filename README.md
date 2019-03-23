@@ -144,8 +144,10 @@ Name declarators are a comma seperated list of function names.
 The specified functions need to exist in the type of the field.
 The selected functions are copied into the current class, and calling them delegates the call to the field.
 
-Furthermore, '*' is also a valid name selector that copies all functions and additionally will allow the current type to be cast to the type of the field.
-Finally, '*\' followed by a comma seperated list of function names will delegate all but the specified functions.
+Furthermore, '\*' is also a valid name selector that copies all functions and additionally will allow the current type to be cast to the type of the field.
+Finally, '\*\\' followed by a comma seperated list of function names will delegate all but the specified functions.
+
+The [Delegate Test](https://github.com/tyssyt/Frontier/blob/master/src/test/resources/Parser/Main/Delegate.front) shows examples pf using delegate.
 
 ### Functions
 Function declarations have the form:
