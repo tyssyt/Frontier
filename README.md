@@ -220,7 +220,7 @@ if there is only one function of the name the brackets may be omitted
   * bool: | & ^
   * bool short circuit: || &&
   * comparison: > < >= <=
-  * equality: == =!= =*= =!*= the non star variants are meant to be definable by the user, as we don't have custom operators yet they don't work
+  * equality: == =!= =\*= =!\*= the non star variants are meant to be definable by the user, as we don't have custom operators yet they don't work
   * optional else: ':'
 * cast: (type)expression
 * cast remove optional: !expression
