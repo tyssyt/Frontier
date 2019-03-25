@@ -882,14 +882,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
-    private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound {
+    private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(fClass instanceof FClass))
             throw new FunctionNotFound(identifier, params);
-        //TODO use params to resolve better
-        Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
-        if (fun.size() != 1)
-            throw new FunctionNotFound(identifier, params);
-        return fun.iterator().next();
+        if (params == null) {
+            Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
+            if (fun.size() != 1)
+                throw new FunctionNotFound(identifier, params);
+            return fun.iterator().next();
+        } else {
+            FFunction f = fClass.resolveFunction(identifier, params, TypeInstantiation.EMPTY);
+            checkAccessForbidden(f);
+            return f;
+        }
     }
 
     //literals
