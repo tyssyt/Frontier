@@ -1,15 +1,14 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.*;
+import tys.frontier.code.literal.FLambda;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.module.Module;
@@ -30,25 +29,31 @@ import java.util.*;
 
 public class ToInternalRepresentation extends FrontierBaseVisitor {
 
+    private static class FunctionContext {
+        FFunction function;
+        Deque<FLoopIdentifier> loops = new ArrayDeque<>();
+        MapStack<FIdentifier, FLocalVariable> declaredVars = new MapStack<>();
+        Set<FTypeVariable> genericFunctionAddressToInstantiate = new HashSet<>();
+
+        FunctionContext(FFunction function) {
+            this.function = function;
+        }
+    }
+
     private SyntaxTreeData treeData;
     private List<Warning> warnings = new ArrayList<>();
     private List<SyntaxError> errors = new ArrayList<>();
 
     private FClass currentType;
-    private FFunction currentFunction;
-    private Deque<FLoopIdentifier> loops = new ArrayDeque<>();
-    private MapStack<FIdentifier, FLocalVariable> declaredVars = new MapStack<>();
+    private Deque<FunctionContext> functionContextStack = new ArrayDeque<>();
+    private Map<FVariable, FTypeVariable> typeVariableMap = new HashMap<>();
 
-    private Set<FTypeVariable> genericFunctionAddressToInstantiate = new HashSet<>();
-
-    private MapStack<FTypeIdentifier, FType> knownClasses = new MapStack<>();
+    private Module module;
 
 
     private ToInternalRepresentation(SyntaxTreeData syntaxTreeData, Module module) {
         this.treeData = syntaxTreeData;
-        knownClasses.push();
-        knownClasses.putAll(module.getClasses());
-        knownClasses.putAll(module.getImportedClasses());
+        this.module = module;
     }
 
     public static List<Warning> toInternal(SyntaxTreeData syntaxTreeData, Module module) throws SyntaxErrors {
@@ -66,26 +71,46 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
+    private FunctionContext currentFunction() {
+        return functionContextStack.getLast();
+    }
+
+    private FType findType(FTypeIdentifier identifier) {
+        //first check declared and imported classes
+        FType res = module.getClasses().get(identifier);
+        if (res != null)
+            return res;
+        res = module.getImportedClasses().get(identifier);
+        if (res != null)
+            return res;
+        //check type parameters of current class
+        res = currentType.getParameters().get(identifier);
+        if (res != null)
+            return res;
+        //check type parameters of current function
+        res = currentFunction().function.getParameters().get(identifier);
+        if (res != null)
+            return res;
+        //check for declaration of type variables
+        try {
+            FVariable variable = findLocal(identifier).getVariable();
+            return typeVariableMap.get(variable);
+        } catch (UndeclaredVariable ignored) {}
+        return null;
+    }
+
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentType = treeData.classes.get(ctx);
-        knownClasses.push();
-        knownClasses.putAll(currentType.getParameters());
-        try {
-            //handle typeParameterSpecification
-            for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
-                try {
-                    ParserContextUtils.handleTypeParameterSpecification(c, currentType, knownClasses::get);
-                } catch (SyntaxError syntaxError) {
-                    errors.add(syntaxError);
-                }
+        //handle typeParameterSpecification
+        for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
+            try {
+                ParserContextUtils.handleTypeParameterSpecification(c, currentType, this::findType);
+            } catch (SyntaxError syntaxError) {
+                errors.add(syntaxError);
             }
-
-            return visitChildren(ctx);
-        } finally {
-            knownClasses.pop();
-            currentType = null;
         }
+        return visitChildren(ctx);
     }
 
     //fields
@@ -93,12 +118,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FField visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
         FField field = treeData.fields.get(ctx);
         if (ctx.expression() != null) {
-            declaredVars.push();
-            knownClasses.push();
+            functionContextStack.addLast(new FunctionContext(null));
             try {
+                currentFunction().declaredVars.push();
                 if (field.isInstance()) {
                     FLocalVariable _this = field.getThis();
-                    declaredVars.put(_this.getIdentifier(), _this);
+                    currentFunction().declaredVars.put(_this.getIdentifier(), _this);
                 }
                 FExpression expression = visitExpression(ctx.expression());
                 field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
@@ -113,8 +138,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             } catch (NoSuchElementException ignored) {
                 //thrown of there is no constructor
             } finally {
-                declaredVars.pop();
-                knownClasses.pop();
+                functionContextStack.removeLast();
             }
         }
         return field;
@@ -126,7 +150,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
-    private FVariableExpression findLocal(FIdentifier identifier, FType type) throws UndeclaredVariable {
+    private FVariableExpression findLocal(FIdentifier identifier) throws UndeclaredVariable {
         try {
             return new FLocalVariableExpression(findLocalVar(identifier));
         } catch (UndeclaredVariable ignored) {}
@@ -146,7 +170,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FLocalVariable findLocalVar(FIdentifier identifier) throws UndeclaredVariable {
-        FLocalVariable var = declaredVars.get(identifier);
+        FLocalVariable var = currentFunction().declaredVars.get(identifier);
         if (var == null) {
             throw new UndeclaredVariable(identifier);
         }
@@ -195,18 +219,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FFunction visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
         FFunction f = treeData.functions.get(ctx.methodHeader());
-        currentFunction = f;
-        declaredVars.push(Utils.asMap(f.getParams()));
-        knownClasses.push();
-        knownClasses.putAll(f.getParameters());
+        functionContextStack.addLast(new FunctionContext(f));
         try {
+            currentFunction().declaredVars.push(Utils.asMap(f.getParams()));
             ctx.methodHeader().accept(this);
             f.setBody(visitBlock(ctx.block()));
             return f;
         } finally {
-            currentFunction = null;
-            declaredVars.pop();
-            knownClasses.pop();
+            functionContextStack.removeLast();
         }
     }
 
@@ -214,7 +234,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
-                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction, knownClasses::get);
+                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function, this::findType);
             } catch (SyntaxError syntaxError) {
                 errors.add(syntaxError);
             }
@@ -238,7 +258,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     //statements
     public FStatement visitStatement(FrontierParser.StatementContext ctx) throws Failed {
-        assert genericFunctionAddressToInstantiate.isEmpty();
+        assert currentFunction().genericFunctionAddressToInstantiate.isEmpty();
 
         FStatement res = (FStatement) ctx.accept(this);
 
@@ -251,18 +271,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FStatement instantiateFunctionAddresses(FStatement untyped) throws UnfulfillableConstraints {
-        if(genericFunctionAddressToInstantiate.isEmpty())
+        if(currentFunction().genericFunctionAddressToInstantiate.isEmpty())
             return untyped;
 
         Map<FTypeVariable, FType> typeInstantiationMap = new HashMap<>();
         Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-        for (FTypeVariable toInstantiate : genericFunctionAddressToInstantiate) {
+        for (FTypeVariable toInstantiate : currentFunction().genericFunctionAddressToInstantiate) {
             typeInstantiationMap.put(toInstantiate, toInstantiate.getConstraints().resolve(newConstraints));
         }
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : newConstraints.entries()) {
             entry.getKey().tryAddConstraint(entry.getValue());
         }
-        genericFunctionAddressToInstantiate.clear();
+        currentFunction().genericFunctionAddressToInstantiate.clear();
         TypeInstantiation typeInstantiation = TypeInstantiation.create(typeInstantiationMap);
         return GenericBaking.bake(untyped, typeInstantiation);
     }
@@ -282,7 +302,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FrontierParser.ExpressionContext c = ctx.expression();
         FExpression val = c == null ? null : visitExpression(c);
         try {
-            return FReturn.create(val, currentFunction);
+            return FReturn.create(val, currentFunction().function);
         } catch (IncompatibleTypes incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();
@@ -326,7 +346,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         //identifier
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
-        if (declaredVars.contains(identifier)) {
+        if (currentFunction().declaredVars.contains(identifier)) {
             errors.add(new TwiceDefinedLocalVariable(identifier));
             failed = true;
         }
@@ -335,7 +355,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FType type = null;
         if (tc != null) {
             try {
-                type = ParserContextUtils.getType(tc, knownClasses::get);
+                type = ParserContextUtils.getType(tc, this::findType);
             } catch (SyntaxError e) {
                 errors.add(e);
                 failed = true;
@@ -372,16 +392,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         if (var.getType() == FTypeType.INSTANCE) {
             FTypeVariable typeVar = FTypeVariable.create((FTypeIdentifier) identifier, true);
-            knownClasses.put(typeVar.getIdentifier(), typeVar);
+            typeVariableMap.put(var, typeVar);
         }
-        declaredVars.put(identifier, var);
+        currentFunction().declaredVars.put(identifier, var);
         return FVarDeclaration.create(var, assign);
     }
 
     @Override
     public FBlock visitBlock(FrontierParser.BlockContext ctx) {
-        declaredVars.push();
-        knownClasses.push();
+        currentFunction().declaredVars.push();
         try {
             List<FStatement> statements = statementsFromList(ctx.statement());
             if (!errors.isEmpty())
@@ -396,8 +415,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             }
             return FBlock.from(statements);
         } finally {
-            declaredVars.pop();
-            knownClasses.pop();
+            currentFunction().declaredVars.pop();
         }
     }
 
@@ -427,16 +445,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FLoopIdentifier startLoop() {
         FLoopIdentifier identifier = new FLoopIdentifier();
-        loops.push(identifier);
-        declaredVars.push();
-        knownClasses.push();
+        currentFunction().loops.push(identifier);
+        currentFunction().declaredVars.push();
         return identifier;
     }
 
     private void endLoop() {
-        loops.pop();
-        declaredVars.pop();
-        knownClasses.pop();
+        currentFunction().loops.pop();
+        currentFunction().declaredVars.pop();
     }
 
     @Override
@@ -445,7 +461,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             FExpression cond = visitExpression(ctx.expression());
 
-            FWhile res = FWhile.create(loops.size(), identifier, cond, null);
+            FWhile res = FWhile.create(currentFunction().loops.size(), identifier, cond, null);
             res = (FWhile) instantiateFunctionAddresses(res);
             res.setBody(visitBlock(ctx.block()));
             return res;
@@ -470,7 +486,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FrontierParser.Expression2Context c2 = ctx.expression2();
             FExpression inc = c2 == null ? null : visitExpression(c2.expression());
 
-            FFor res = FFor.create(loops.size(), identifier, decl, cond, inc, null);
+            FFor res = FFor.create(currentFunction().loops.size(), identifier, decl, cond, inc, null);
             res = (FFor) instantiateFunctionAddresses(res);
             res.setBody(visitBlock(ctx.block()));
             return res;
@@ -495,9 +511,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 return Utils.NYI("non array for each");
             }
             FLocalVariable it = new FLocalVariable(id, varType);
-            declaredVars.put(it.getIdentifier(), it);
+            currentFunction().declaredVars.put(it.getIdentifier(), it);
 
-            FForEach res = FForEach.create(loops.size(), identifier, it, container, null);
+            FForEach res = FForEach.create(currentFunction().loops.size(), identifier, it, container, null);
             res = (FForEach) instantiateFunctionAddresses(res);
             res.setBody(visitBlock(ctx.block()));
             return res;
@@ -511,20 +527,20 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     @Override
     public FBreak visitBreakStatement(FrontierParser.BreakStatementContext ctx) {
-        if (loops.isEmpty()) {
+        if (currentFunction().loops.isEmpty()) {
             errors.add(new StatementOutsideLoop());
             throw new Failed();
         }
-        return new FBreak(loops.peek());
+        return new FBreak(currentFunction().loops.peek());
     }
 
     @Override
     public FContinue visitContinueStatement(FrontierParser.ContinueStatementContext ctx) {
-        if (loops.isEmpty()) {
+        if (currentFunction().loops.isEmpty()) {
             errors.add(new StatementOutsideLoop());
             throw new Failed();
         }
-        return new FContinue(loops.peek());
+        return new FContinue(currentFunction().loops.peek());
     }
 
 
@@ -556,7 +572,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FVariableExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
         try {
-            return findLocal(identifier, currentType);
+            return findLocal(identifier);
         } catch (UndeclaredVariable undeclaredVariable) {
             errors.add(undeclaredVariable);
             throw new Failed();
@@ -645,7 +661,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             type = ((FOptional) castedExpression.getType()).getBaseType();
         } else {
             try {
-                type = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
+                type = ParserContextUtils.getType(ctx.typeType(), this::findType);
             } catch (SyntaxError e) {
                 errors.add(e);
                 throw new Failed();
@@ -754,12 +770,80 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
+    public FFunctionAddress visitLambdaExpr(FrontierParser.LambdaExprContext ctx) {
+        FLambda lambda = visitLambda(ctx.lambda());
+        currentFunction().genericFunctionAddressToInstantiate.addAll(lambda.getParametersList());
+        return new FFunctionAddress(lambda);
+    }
+
+    @Override
+    public FLambda visitLambda(FrontierParser.LambdaContext ctx) {
+        FFunctionIdentifier id = currentType.getFreshLambdaName();
+        Map<FTypeIdentifier, FTypeVariable> parameters = new HashMap<>();
+        ImmutableList<FParameter> params;
+        try {
+            params = visitLambdaHeader(ctx.lambdaHeader(), parameters);
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
+            throw new Failed();
+        }
+        FTypeVariable returnType = FTypeVariable.create(new FTypeIdentifier("ReturnOf" + id.name), false);
+        parameters.put(returnType.getIdentifier(), returnType);
+        FLambda res = FLambda.create(id, currentType, returnType, params, parameters);
+        currentType.addFunctionTrusted(res);
+
+        //suspend all things of the current function (note that lambdas can appear inside lambdas, so this can go arbitrarily deep)
+        functionContextStack.addLast(new FunctionContext(res));
+        try {
+            //push params
+            currentFunction().declaredVars.push(Utils.asMap(res.getParams()));
+            FBlock body;
+            if (ctx.expression() != null) { //expression Lambda
+                FExpression expression = visitExpression(ctx.expression());
+                body = FBlock.from(FReturn.createTrusted(expression, res));
+            } else { //block lambda
+                body = visitBlock(ctx.block()); //TODO what happens if there is no return? then I have no constraint for the return type
+            }
+            res.setBody(body);
+            return res;
+        } finally { //restore the outside context
+            functionContextStack.removeLast();
+        }
+    }
+
+    public ImmutableList<FParameter> visitLambdaHeader(FrontierParser.LambdaHeaderContext ctx, Map<FTypeIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        ImmutableList.Builder<FParameter> params = ImmutableList.builder();
+        for (FrontierParser.LambdaParamContext c : ctx.lambdaParam()) {
+            params.add(visitLambdaParam(c, parameters));
+        }
+        return params.build();
+    }
+
+    public FParameter visitLambdaParam(FrontierParser.LambdaParamContext ctx, Map<FTypeIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        FrontierParser.IdentifierContext idContext = ctx.identifier();
+        if (idContext != null) {
+            FIdentifier identifier = ParserContextUtils.getVarIdentifier(idContext);
+            FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
+            FType type;
+            if (typeTypeContext != null) {
+                type = ParserContextUtils.getType(typeTypeContext, this::findType);
+            } else {
+                type = FTypeVariable.create(new FTypeIdentifier("TypeOf" + identifier.name), false);
+                parameters.put(type.getIdentifier(), (FTypeVariable) type);
+            }
+            return FParameter.create(identifier, type, false);
+        } else { //Underscore
+            return FParameter.create(UnnamedIdentifier.get(), FVoid.INSTANCE, false);
+        }
+    }
+
+    @Override
     public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
         //first check if we have a variable of function type
         FIdentifier identifier = new FVariableIdentifier(ctx.LCIdentifier().getText());
         List<FExpression> params = visitExpressionList(ctx.expressionList());
         try {
-            FVariableExpression var = findLocal(identifier, currentType);
+            FVariableExpression var = findLocal(identifier);
             if (var.getType() instanceof FFunctionType) {
                 return DynamicFunctionCall.create(var, params);
             }
@@ -791,7 +875,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
         FType type;
         try {
-            type = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
+            type = ParserContextUtils.getType(ctx.typeType(), this::findType);
         } catch (SyntaxError e) {
             errors.add(e);
             visitExpressionList(ctx.expressionList()); //parse param list to find more errors
@@ -812,7 +896,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FType baseType;
         try {
-            baseType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
+            baseType = ParserContextUtils.getType(ctx.typeType(), this::findType);
         } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();
@@ -830,7 +914,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FClassExpression visitTypeTypeExpr(FrontierParser.TypeTypeExprContext ctx) {
         try {
-            FType fType = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
+            FType fType = ParserContextUtils.getType(ctx.typeType(), this::findType);
             return new FClassExpression(fType);
         } catch (SyntaxError e) {
             errors.add(e);
@@ -842,23 +926,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if (function.getParametersList().isEmpty())
             return function;
 
-        //create a non fixed copy for each var
-        Map<FTypeVariable, FType> varMap = new HashMap<>();
-        for (FTypeVariable var : function.getParametersList()) {
-            if (!var.isFixed() && !function.getBody().isPresent())
-                return Utils.NYI("getting a function address with non fixed Parameters where the body is not finished"); //TODO for non recursive cases, this could be solved by waiting on f to finish parsing
-            FTypeVariable copy = var.copy(false);
-            genericFunctionAddressToInstantiate.add(copy);
-            varMap.put(var, copy);
-        }
-        //instantiate the funciton with the non fixed copies
-        return function.getInstantiation(TypeInstantiation.create(varMap));
+        FFunction res = function.getInstantiableCopy();
+        currentFunction().genericFunctionAddressToInstantiate.addAll(res.getParametersList());
+        return res;
     }
 
     @Override
     public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
         try {
-            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
+            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), this::findType) : null;
             FFunction function = getFunction(currentType, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);
@@ -871,8 +947,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FFunctionAddress visitFunctionAddress(FrontierParser.FunctionAddressContext ctx) {
         try {
-            FType fClass = ParserContextUtils.getType(ctx.typeType(), knownClasses::get);
-            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), knownClasses::get) : null;
+            FType fClass = ParserContextUtils.getType(ctx.typeType(), this::findType);
+            List<FType> params = ctx.typeList() != null ? ParserContextUtils.typesFromList(ctx.typeList().typeType(), this::findType) : null;
             FFunction function = getFunction(fClass, new FFunctionIdentifier(ctx.LCIdentifier().getText()), params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);

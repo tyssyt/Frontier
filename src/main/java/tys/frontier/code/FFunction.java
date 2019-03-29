@@ -18,6 +18,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.IntIntPair;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.StringBuilderToString;
+import tys.frontier.util.Utils;
 
 import java.util.*;
 
@@ -34,8 +35,8 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
     private Signature signature;
     protected FBlock body;
 
-    private Map<FTypeIdentifier, FTypeVariable> parameters;
-    private List<FTypeVariable> parametersList;
+    protected Map<FTypeIdentifier, FTypeVariable> parameters;
+    protected List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
     protected boolean predefined = false;
@@ -162,7 +163,25 @@ public class FFunction implements FTypeMember, HasTypeParameters<FFunction>, Ide
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())
             return this;
-        return instantiations.computeIfAbsent(typeInstantiation, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
+        return instantiations.computeIfAbsent(intersected, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected, Collections.emptyMap()));
+    }
+
+    public FFunction getInstantiableCopy() {
+        if (parametersList.isEmpty())
+            return this;
+
+        //create a non fixed copy for each var
+        Map<FTypeVariable, FTypeVariable> varMap = new HashMap<>();
+        for (FTypeVariable var : parametersList) {
+            if (!var.isFixed() && !getBody().isPresent())
+                return Utils.NYI("getting a function address with non fixed Parameters where the body is not finished"); //TODO for non recursive cases, this could be solved by waiting on f to finish parsing
+            FTypeVariable copy = var.copy(false);
+            varMap.put(var, copy);
+        }
+
+        //instantiate the function with the non fixed copies (the idea is to always get a fresh copy, so no need for cashing here)
+        //noinspection unchecked
+        return FInstantiatedFunction.instantiableCopy(this, TypeInstantiation.create((Map)varMap), (Map)Utils.asMap(varMap.values()));
     }
 
     /**

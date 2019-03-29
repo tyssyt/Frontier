@@ -97,6 +97,14 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     }
 
     public boolean satisfies(TypeConstraint constraint) {
+        return satisfies(constraint, new HashSet<>());
+    }
+
+    private boolean satisfies(TypeConstraint constraint, Set<TypeConstraints> visited) {
+        if (visited.contains(this))
+            return false;
+        visited.add(this);
+
         if (constraints.contains(constraint))
             return true;
         if (constraint instanceof ImplicitCastable) {
@@ -107,7 +115,6 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
                     return true;
                 newConstraints.clear();
             }
-            return false;
         } else if (constraint instanceof HasCall) {
             HasCall hasCall = (HasCall) constraint;
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
@@ -116,10 +123,25 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
                     return true;
                 newConstraints.clear();
             }
-            return false;
         } else {
             return Utils.cantHappen();
         }
+
+        //visit transitive constraints TODO I need to consider variance when visiting transitive constraints
+        for (TypeConstraint toVisit : constraints) {
+            if (toVisit instanceof ImplicitCastable) {
+                ImplicitCastable implicitCastable = (ImplicitCastable) toVisit;
+                if (implicitCastable.getTarget() instanceof FTypeVariable) {
+                    FTypeVariable typeVariable = (FTypeVariable) implicitCastable.getTarget();
+
+
+
+                    if (typeVariable.getConstraints().satisfies(constraint, visited))
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 
     public FType resolve(Multimap<FTypeVariable, TypeConstraint> newConstraints) throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave

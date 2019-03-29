@@ -244,6 +244,7 @@ expression
     |   expression (EQUAL_CONTAINER|NOTEQUAL_CONTAINER) expression #binaryOp
     |   expression (AAND|AOR|XOR|AND|OR) expression                #binaryOp
     |   expression COLON expression                                #optionalElse
+    |   lambda                                                     #lambdaExpr
     |   THIS                                                       #thisExpr
     |   literal                                                    #literalExpr
     |   typeType                                                   #typeTypeExpr
@@ -251,7 +252,20 @@ expression
     ;
 
 expression2
-    : expression
+    :   expression
+    ;
+
+lambda
+    :   lambdaHeader (expression|block)
+    ;
+
+lambdaHeader
+    :   BACKSLASH lambdaParam* ARROW
+    ;
+
+lambdaParam
+    :   typeType? identifier
+    |   UNDERSCORE
     ;
 
 //Literals------------------------------------------------------------------------------------

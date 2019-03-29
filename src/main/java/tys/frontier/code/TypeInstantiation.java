@@ -84,8 +84,25 @@ public class TypeInstantiation {
         return typeMap.containsKey(var);
     }
 
-    public <T extends HasTypeParameters<T>> boolean fits(T fClass) {
-        return typeMap.size() == fClass.getParameters().size() && typeMap.keySet().containsAll(fClass.getParameters().values());
+    public <T extends HasTypeParameters<T>> boolean fits(T hasParam) {
+        return typeMap.size() == hasParam.getParameters().size() && typeMap.keySet().containsAll(hasParam.getParameters().values());
+    }
+
+    public boolean fitsIgnoreReturn(FFunction function) {
+        if (fits(function))
+            return true;
+        FType returnType = function.getType();
+        if (returnType instanceof FTypeVariable && function.getParameters().get(returnType.getIdentifier()) == returnType) {
+            //the return type is a parameter
+            if (typeMap.size() != function.getParameters().size()-1)
+                return false;
+            for (FTypeVariable param : function.getParametersList()) {
+                if (param != returnType && !typeMap.containsKey(param))
+                    return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     public FType getType(FType original) {

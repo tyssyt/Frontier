@@ -12,6 +12,7 @@ import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.IntIntPair;
+import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -31,9 +32,9 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     protected BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
-
     private Map<FType, FField> delegates = new HashMap<>();
 
+    private NameGenerator lambdaNames = new NameGenerator("λ", "");
     protected Map<FFunction, String> uniqueFunctionNames;
 
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
@@ -260,6 +261,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return uniqueFunctionNames;
     }
 
+    public FFunctionIdentifier getFreshLambdaName() {
+        return new FFunctionIdentifier(lambdaNames.next());
+    }
+
     private Map<FFunction, String> computeUniqueFunctionNames() {
         Map<FFunction, String> res = new HashMap<>();
         ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create(getFunctions());
@@ -373,61 +378,23 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         }
 
         Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
-            functionLoop: for (FFunction f : getFunctions().get(identifier)) {
+            for (FFunction f : getFunctions().get(identifier)) {
                 try {
-                    FFunction.Signature sig = f.getSignature();
-                    //reject when too many or too few arguments are given
-                    if (argumentTypes.size() > sig.getAllParamTypes().size() || argumentTypes.size() < sig.getParamTypes().size())
-                        throw new FFunction.IncompatibleSignatures(sig, argumentTypes); //why not just continue the loop if we ignore the error anyway?
+                    List<FType> argumentTypes = getArgumentTypes(f.getSignature());
 
-                    List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
-                    //if not enough arguments are given, fill up with default arguments
-                    for (int i=this.argumentTypes.size(); i<f.getParams().size(); i++) {
-                        FType defaultArgType = f.getParams().get(i).getType();
-                        //default arguments come from the function, thus we might need to instantiate types
-                        defaultArgType = typeInstantiation.getType(defaultArgType);
-                        argumentTypes.add(defaultArgType);
-                    }
+                    f = f.getInstantiableCopy();
 
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
                     IntIntPair cost = f.castSignatureFrom(argumentTypes, typeInstantiation, constraints);
 
                     //compute instantiations
-                    Map<FTypeVariable, FType> typeVarianleMap = new HashMap<>();
-                    Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-                    for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : constraints.asMap().entrySet()) {
-                        FTypeVariable typeVariable = entry.getKey();
-
-                        if (f.getParameters().get(typeVariable.getIdentifier()) == typeVariable) { //typeVariable is a Parameter
-                            if (!typeVariable.isFixed() && !f.getBody().isPresent())
-                                return Utils.NYI("calling a function with non fixed Parameters where the body is not finished"); //TODO for non recursive cases, this could be solved by waiting on f to finish parsing
-
-                            TypeConstraints copy = typeVariable.getConstraints().copy();
-                            copy.addAll(entry.getValue());
-                            typeVarianleMap.put(typeVariable, copy.resolve(newConstraints));
-                        }
-                    }
-                    TypeInstantiation instantiation = TypeInstantiation.create(typeVarianleMap);
-                    assert instantiation.fits(f);
-                    for (FTypeVariable v : f.getParametersList()) {
-                        constraints.removeAll(v);
-                    }
-                    constraints.putAll(newConstraints);
+                    TypeInstantiation instantiation = computeTypeInstantiation(f, constraints, true);
+                    assert instantiation.fitsIgnoreReturn(f);
                     f = f.getInstantiation(instantiation);
 
                     //handle other constraints
-                    Iterator<Map.Entry<FTypeVariable, TypeConstraint>> it = constraints.entries().iterator();
-                    while (it.hasNext()) {
-                        Map.Entry<FTypeVariable, TypeConstraint> entry = it.next();
-                        if (entry.getKey().getConstraints().satisfies(entry.getValue())) {
-                            it.remove(); //remove all satisfied constraints
-                            continue;
-                        }
-                        if (entry.getKey().isFixed()) {
-                            continue functionLoop; //constraint is unsatisfiable f can't be called
-                        }
-                        //otherwise the constraint stays in the set
-                    }
+                    if (removeSatisfiableCheckUnsatisfiable(constraints))
+                        continue;
 
                     updateCost(cost, f, constraints);
                 } catch (FFunction.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
@@ -436,6 +403,56 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
             if (bestFunction == null)
                 throw new FunctionNotFound(identifier, this.argumentTypes);
             return new Pair<>(bestFunction, bestConstraints);
+        }
+
+        private List<FType> getArgumentTypes(FFunction.Signature signature) throws FFunction.IncompatibleSignatures {
+            //reject when too many or too few arguments are given
+            if (argumentTypes.size() > signature.getAllParamTypes().size() || argumentTypes.size() < signature.getParamTypes().size())
+                throw new FFunction.IncompatibleSignatures(signature, argumentTypes);
+
+            List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
+            //if not enough arguments are given, fill up with default arguments
+            for (int i=argumentTypes.size(); i<signature.getAllParamTypes().size(); i++) {
+                FType defaultArgType = signature.getAllParamTypes().get(i);
+                //default arguments come from the function, thus we might need to instantiate types
+                defaultArgType = typeInstantiation.getType(defaultArgType);
+                argumentTypes.add(defaultArgType);
+            }
+            return argumentTypes;
+        }
+
+        private TypeInstantiation computeTypeInstantiation(FFunction toInstantiate, Multimap<FTypeVariable, TypeConstraint> constraints, boolean cleanConstraints) throws UnfulfillableConstraints {
+            if (toInstantiate.getParametersList().isEmpty())
+                return TypeInstantiation.EMPTY;
+            
+            Map<FTypeVariable, FType> typeVariableMap = new HashMap<>();
+            Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+
+            for (FTypeVariable v : toInstantiate.getParametersList()) {
+                TypeConstraints c = v.getConstraints();
+                c.addAll(constraints.get(v));
+                typeVariableMap.put(v, c.resolve(newConstraints));
+                if (cleanConstraints)
+                    constraints.removeAll(v);
+            }
+            constraints.putAll(newConstraints);
+            return TypeInstantiation.create(typeVariableMap);
+        }
+
+        private boolean removeSatisfiableCheckUnsatisfiable(Multimap<FTypeVariable, TypeConstraint> constraints) {
+            Iterator<Map.Entry<FTypeVariable, TypeConstraint>> it = constraints.entries().iterator();
+            while (it.hasNext()) {
+                Map.Entry<FTypeVariable, TypeConstraint> entry = it.next();
+                if (entry.getKey().getConstraints().satisfies(entry.getValue())) {
+                    it.remove(); //remove all satisfied constraints
+                    continue;
+                }
+                if (entry.getKey().isFixed()) {
+                    return true; //constraint is unsatisfiable f can't be called
+                }
+                //otherwise the constraint stays in the set
+            }
+            return false;
         }
 
         private void updateCost(IntIntPair newCosts, FFunction newFunction, Multimap<FTypeVariable, TypeConstraint> constraints) {
