@@ -15,7 +15,9 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
@@ -802,7 +804,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 FExpression expression = visitExpression(ctx.expression());
                 body = FBlock.from(FReturn.createTrusted(expression, res));
             } else { //block lambda
-                body = visitBlock(ctx.block()); //TODO what happens if there is no return? then I have no constraint for the return type
+                body = visitBlock(ctx.block());
+                if(!body.redirectsControlFlow().isPresent()) {
+                    returnType.tryAddConstraint(new ImplicitCastable(res, FVoid.INSTANCE, Variance.Invariant));
+                }
             }
             res.setBody(body);
             return res;
