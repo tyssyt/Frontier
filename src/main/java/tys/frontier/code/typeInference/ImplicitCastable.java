@@ -1,6 +1,7 @@
 package tys.frontier.code.typeInference;
 
 import tys.frontier.code.FType;
+import tys.frontier.util.Utils;
 
 public class ImplicitCastable extends TypeConstraint {
 
@@ -37,5 +38,16 @@ public class ImplicitCastable extends TypeConstraint {
         int result = target.hashCode();
         result = 31 * result + variance.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        switch (variance) {
+            case Covariant:     return "> " + target.getIdentifier().name;
+            case Contravariant: return "< " + target.getIdentifier().name;
+            case Invariant:     return "= " + target.getIdentifier().name;
+            default:            return Utils.cantHappen();
+        }
+
     }
 }
