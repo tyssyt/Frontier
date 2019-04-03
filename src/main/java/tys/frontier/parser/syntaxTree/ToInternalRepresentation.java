@@ -802,7 +802,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FBlock body;
             if (ctx.expression() != null) { //expression Lambda
                 FExpression expression = visitExpression(ctx.expression());
-                body = FBlock.from(FReturn.createTrusted(expression, res));
+                FStatement _return = FReturn.createTrusted(expression, res);
+
+                //as we never called visitStatement we have to manually instantiate here (important for nested lambdas)
+                try {
+                    _return = instantiateFunctionAddresses(_return);
+                } catch (UnfulfillableConstraints unfulfillableConstraints) {
+                    errors.add(unfulfillableConstraints);
+                    throw new Failed();
+                }
+
+                body = FBlock.from(_return);
             } else { //block lambda
                 body = visitBlock(ctx.block());
                 if(!body.redirectsControlFlow().isPresent()) {
@@ -812,6 +822,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             res.setBody(body);
             return res;
         } finally { //restore the outside context
+            assert currentFunction().genericFunctionAddressToInstantiate.isEmpty();
             functionContextStack.removeLast();
         }
     }
