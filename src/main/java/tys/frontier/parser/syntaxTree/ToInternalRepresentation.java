@@ -60,11 +60,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     public static List<Warning> toInternal(SyntaxTreeData syntaxTreeData, Module module) throws SyntaxErrors {
         ToInternalRepresentation visitor = new ToInternalRepresentation(syntaxTreeData, module);
-        visitor.generateConstructors();
-        visitor.visitFile(syntaxTreeData.root);
-        if (!visitor.errors.isEmpty())
-            throw SyntaxErrors.create(visitor.errors);
-        return visitor.warnings;
+        try {
+            visitor.generateConstructors();
+            visitor.visitFile(syntaxTreeData.root);
+            if (!visitor.errors.isEmpty())
+                throw SyntaxErrors.create(visitor.errors);
+            return visitor.warnings;
+        } catch (AssertionError assertionError) {
+            if (!visitor.errors.isEmpty())
+                throw SyntaxErrors.create(visitor.errors);
+            throw assertionError;
+        }
     }
 
     public void generateConstructors() {
