@@ -20,8 +20,8 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public boolean isFullyInstantiated() {
-            return true;
+        public long concreteness() {
+            return Long.MAX_VALUE;
         }
 
         @Override

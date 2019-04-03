@@ -74,8 +74,8 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     }
 
     @Override
-    public boolean isFullyInstantiated() {
-        return parametersList.isEmpty();
+    public long concreteness() {
+        return parametersList.isEmpty() ? Long.MAX_VALUE : 1;
     }
 
     @Override

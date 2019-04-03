@@ -24,12 +24,14 @@ public class FFunctionType extends FPredefinedClass {
     }
 
     @Override
-    public boolean isFullyInstantiated() { //TODO remove once function types are implemented with parametized classes
+    public long concreteness() { //TODO remove once function types are implemented with parameterized classes
+        long res = out.concreteness();
         for (FType type : in) {
-            if (!type.isFullyInstantiated())
-                return false;
+            res = Long.min(res, type.concreteness());
         }
-        return out.isFullyInstantiated();
+        if (res == Long.MAX_VALUE) //avoid overflow
+            return Long.MAX_VALUE;
+        return res+1;
     }
 
     public List<FType> getIn() {

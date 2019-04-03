@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
-    boolean isFullyInstantiated();
+    long concreteness(); //TODO there probably is an established term for this
 
     FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound;
 

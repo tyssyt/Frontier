@@ -42,8 +42,11 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public boolean isFullyInstantiated() { //TODO remove once optionls are implemented with generic parameters
-        return baseType.isFullyInstantiated();
+    public long concreteness() { //TODO once optionals use generics this is no longer necessary
+        long res = baseType.concreteness();
+        if (res == Long.MAX_VALUE) //avoid overflow
+            return Long.MAX_VALUE;
+        return res+1;
     }
 
     @Override

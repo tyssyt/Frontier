@@ -1,7 +1,6 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
@@ -21,7 +20,6 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
 
     //empty immutable constraints
     public static TypeConstraints EMPTY = new TypeConstraints(Collections.emptySet()) {
-        //TODO
 
         @Override
         public void add(TypeConstraint constraint) {
@@ -158,36 +156,27 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     }
 
     private FType proposeType() throws UnfulfillableConstraints {
-        List<FType> fullyInstantiated = new ArrayList<>();
-        List<FType> rest = new ArrayList<>();
+        long maxConcreteness = 0;
+        ArrayList<FType> maxConcretenessList = new ArrayList<>();
 
         for (TypeConstraint constraint : constraints) {
             if(constraint instanceof ImplicitCastable) {
                 FType target = ((ImplicitCastable) constraint).getTarget();
-                if (target.isFullyInstantiated()) {
-                    fullyInstantiated.add(target);
-                } else {
-                    rest.add(target);
+                long targetConcreteness = target.concreteness();
+                if (targetConcreteness > maxConcreteness) {
+                    maxConcreteness = targetConcreteness;
+                    maxConcretenessList.clear();
+                    maxConcretenessList.add(target);
+                } else if (targetConcreteness == maxConcreteness) {
+                    maxConcretenessList.add(target);
                 }
             }
         }
 
-        if (fullyInstantiated.size() > 0) {
+        if (maxConcretenessList.size() == 0)
+            throw UnfulfillableConstraints.empty(null, this); //TODO where do we get var from?
 
-            if (fullyInstantiated.size() == 1)
-                return Iterables.getOnlyElement(fullyInstantiated);
-
-            return Utils.NYI("constraint resolving with 2 fully Instantiated classes");
-        }
-
-        if (rest.size() > 0) {
-
-            if (rest.size() == 1)
-                return Iterables.getOnlyElement(rest);
-
-            return Utils.NYI("constraint resolving with more then 1 candidate");
-        }
-        throw UnfulfillableConstraints.empty(null, this); //TODO where do we get var from?
+        return maxConcretenessList.get(0); //TODO this is the easiest pick :)
     }
 
     public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {

@@ -48,7 +48,10 @@ public class FArray extends FPredefinedClass {
     }
 
     @Override
-    public boolean isFullyInstantiated() { //TODO remove once arrays are implemented with generic parameters
-        return baseType.isFullyInstantiated();
+    public long concreteness() { //TODO once array uses generics this is no longer necessary
+        long res = baseType.concreteness();
+        if (res == Long.MAX_VALUE) //avoid overflow
+            return Long.MAX_VALUE;
+        return res+1;
     }
 }

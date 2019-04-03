@@ -45,8 +45,8 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public boolean isFullyInstantiated() {
-        return false;
+    public long concreteness() {
+        return 0;
     }
 
     public boolean isFixed() {

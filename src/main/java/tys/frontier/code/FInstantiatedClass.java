@@ -45,13 +45,16 @@ public class FInstantiatedClass extends FClass {
         return typeInstantiation;
     }
 
+
     @Override
-    public boolean isFullyInstantiated() {
+    public long concreteness() {
+        long res = Long.MAX_VALUE;
         for (FTypeVariable param : baseClass.getParametersList()) {
-            if (!typeInstantiation.getType(param).isFullyInstantiated())
-                return false;
+            res = Long.min(res, typeInstantiation.getType(param).concreteness());
         }
-        return true;
+        if (res == Long.MAX_VALUE) //avoid overflow
+            return Long.MAX_VALUE;
+        return res+1;
     }
 
     @Override
