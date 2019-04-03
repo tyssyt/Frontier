@@ -3,7 +3,9 @@ package tys.frontier.util;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.*;
+import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -85,8 +87,13 @@ public final class Utils {
 
     public static FFunction findFunctionInstantiation(FFunction function, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
         FType namespace = typeInstantiation.getType(function.getMemberOf());
+        FFunctionIdentifier identifier = function.getIdentifier();
+        if (identifier instanceof FInstantiatedFunctionIdentifier)
+            identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
+        else
+            identifier = function.getIdentifier();
         try {
-            return namespace.resolveFunction(function.getIdentifier(), argumentTypes, TypeInstantiation.EMPTY);
+            return namespace.resolveFunction(identifier, argumentTypes, TypeInstantiation.EMPTY);
         } catch (FunctionNotFound functionNotFound) {
             return cantHappen();
         }

@@ -15,6 +15,7 @@ import tys.frontier.style.Style;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -55,9 +56,20 @@ public class Main {
         for (Map.Entry<FClass, Reachability.ReachableClass> fClass : reachability.getReachableClasses().entrySet()) {
             if (fClass.getKey() instanceof FInstantiatedClass)
                 ((FInstantiatedClass) fClass.getKey()).bake();
-            for (FFunction reachableFunction : fClass.getValue().reachableFunctions) {
-                if (reachableFunction instanceof FInstantiatedFunction)
-                    ((FInstantiatedFunction) reachableFunction).bake();
+            for (FInstantiatedFunction instantiation : fClass.getValue().reachableFunctions.values()) {
+                if (instantiation != null)
+                    instantiation.bake();
+            }
+        }
+
+        //remove bases of instantiated functions
+        for (Map.Entry<FClass, Reachability.ReachableClass> fClass : reachability.getReachableClasses().entrySet()) {
+            for (Map.Entry<FFunction, Collection<FInstantiatedFunction>> entry : fClass.getValue().reachableFunctions.asMap().entrySet()) {
+                Collection<FInstantiatedFunction> instantiations = entry.getValue();
+                if (instantiations.size() > 1 || instantiations.iterator().next() != null) {
+                    FFunction baseFunction = entry.getKey();
+                    fClass.getKey().getFunctions().get(baseFunction.getIdentifier()).remove(baseFunction);
+                }
             }
         }
 

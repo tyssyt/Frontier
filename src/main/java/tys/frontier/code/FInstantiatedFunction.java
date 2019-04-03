@@ -2,6 +2,7 @@ package tys.frontier.code;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.passes.GenericBaking;
@@ -26,7 +27,9 @@ public class FInstantiatedFunction extends FFunction {
     private boolean baked = false;
 
     private FInstantiatedFunction(FFunction base, FClass memberOf,  TypeInstantiation typeInstantiation, InstantiationType instantiationType, Map<FTypeIdentifier, FTypeVariable> parameters) {
-        super(base.getIdentifier(), memberOf, base.getVisibility(), base.isNative(), typeInstantiation.getType(base.getType()), createParams(base.getParams(), typeInstantiation), parameters);
+        super( instantiationType == CLASS_INSTANTIATION ? base.getIdentifier() : new FInstantiatedFunctionIdentifier(base.getIdentifier(),
+               typeInstantiation), memberOf, base.getVisibility(), base.isNative(),
+               typeInstantiation.getType(base.getType()), createParams(base.getParams(), typeInstantiation), parameters);
         assert !(base instanceof FInstantiatedFunction);
         this.base = base;
         this.typeInstantiation = typeInstantiation;
@@ -85,6 +88,10 @@ public class FInstantiatedFunction extends FFunction {
 
     public TypeInstantiation getTypeInstantiation() {
         return typeInstantiation;
+    }
+
+    public InstantiationType getInstantiationType() {
+        return instantiationType;
     }
 
     public boolean isBaked() {

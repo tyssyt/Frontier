@@ -1,5 +1,7 @@
 package tys.frontier.passes.analysis.reachability;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
@@ -16,7 +18,7 @@ public class Reachability {
 
     public static class ReachableClass {
         public final Set<FField> reachableFields = new HashSet<>();
-        public final Set<FFunction> reachableFunctions = new HashSet<>();
+        public final Multimap<FFunction, FInstantiatedFunction> reachableFunctions = ArrayListMultimap.create();
     }
 
     private Map<FClass, ReachableClass> reachableClasses = new HashMap<>();
@@ -110,7 +112,15 @@ public class Reachability {
 
     private void addFunction(FFunction function) {
         ReachableClass reachableClass = reachableClasses.computeIfAbsent((FClass) function.getMemberOf(), x -> new ReachableClass());
-        reachableClass.reachableFunctions.add(function);
+        FInstantiatedFunction value = null;
+        if (function instanceof FInstantiatedFunction) {
+            FInstantiatedFunction fInstantiatedFunction = (FInstantiatedFunction) function;
+            if (fInstantiatedFunction.getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION) {
+                value = fInstantiatedFunction;
+                function = fInstantiatedFunction.getBase();
+            }
+        }
+        reachableClass.reachableFunctions.put(function, value);
     }
 
     private void addField(FField field) {
@@ -130,7 +140,12 @@ public class Reachability {
     @SuppressWarnings("SuspiciousMethodCalls")
     public boolean isReachable(FFunction function) {
         ReachableClass reachableClass = reachableClasses.get(function.getMemberOf());
-        return reachableClass != null && reachableClass.reachableFunctions.contains(function);
+        if (reachableClass == null)
+            return false;
+        if (function instanceof FInstantiatedFunction && ((FInstantiatedFunction) function).getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION)
+            return reachableClass.reachableFunctions.get(((FInstantiatedFunction) function).getBase()).contains(function);
+        else
+            return reachableClass.reachableFunctions.containsKey(function);
     }
 
     public Map<FClass, ReachableClass> getReachableClasses() {

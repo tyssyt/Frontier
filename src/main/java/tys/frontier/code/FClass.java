@@ -300,7 +300,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     public void removeUnreachable(Reachability.ReachableClass reachable) {
         getStaticFields().values().retainAll(reachable.reachableFields);
         getInstanceFields().values().retainAll(reachable.reachableFields);
-        getFunctions().values().retainAll(reachable.reachableFunctions);
+        getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
     }
 
     public <C,Fi,Fu,S,E> C accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
