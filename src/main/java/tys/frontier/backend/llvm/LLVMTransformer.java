@@ -47,7 +47,9 @@ class LLVMTransformer implements
             .put(XOR.identifier, LLVMXor)
             .build();
     private static final ImmutableMap<FFunctionIdentifier, Integer> cmpOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(EQUALS.identifier, LLVMIntEQ)
             .put(EQUALS_ID.identifier, LLVMIntEQ)
+            .put(NOT_EQUALS.identifier, LLVMIntNE)
             .put(NOT_EQUALS_ID.identifier, LLVMIntNE)
             .put(LESS.identifier, LLVMIntSLT)
             .put(GREATER.identifier, LLVMIntSGT)
@@ -62,7 +64,9 @@ class LLVMTransformer implements
             .put(MODULO.identifier, LLVMFRem)
             .build();
     private static final ImmutableMap<FFunctionIdentifier, Integer> cmpFOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+            .put(EQUALS.identifier, LLVMRealOEQ)
             .put(EQUALS_ID.identifier, LLVMRealOEQ)
+            .put(NOT_EQUALS.identifier, LLVMRealONE)
             .put(NOT_EQUALS_ID.identifier, LLVMRealONE)
             .put(LESS.identifier, LLVMRealOLT)
             .put(GREATER.identifier, LLVMRealOGT)
