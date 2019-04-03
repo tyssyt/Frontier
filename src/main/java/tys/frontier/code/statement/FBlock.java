@@ -52,7 +52,11 @@ public class FBlock implements FStatement, List<FStatement> {
 
     @Override
     public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
-        return Iterables.getLast(statements).redirectsControlFlow();
+        try {
+            return Iterables.getLast(statements).redirectsControlFlow();
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
