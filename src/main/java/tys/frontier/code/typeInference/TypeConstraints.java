@@ -1,7 +1,9 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FClass;
 import tys.frontier.code.FType;
 import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
@@ -13,171 +15,347 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-import static tys.frontier.code.typeInference.Variance.Contravariant;
-import static tys.frontier.code.typeInference.Variance.Invariant;
+import static tys.frontier.code.typeInference.Variance.*;
 
-public class TypeConstraints { //TODO there is a lot of potential for optimization in here
+public class TypeConstraints {
 
-    //empty immutable constraints
-    public static TypeConstraints EMPTY = new TypeConstraints(Collections.emptySet()) {
+    private List<FTypeVariable> equivalenceGroup = new ArrayList<>();
+    private FClass resolvedAs;
+    private boolean fixed = false;
+    private List<TypeConstraint> constraints;
 
-        @Override
-        public void add(TypeConstraint constraint) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isConsistent() {
-            return true;
-        }
-
-        @Override
-        public boolean satisfies(TypeConstraint constraint) {
-            return false;
-        }
-
-        @Override
-        public TypeConstraints copy() {
-            return create();
-        }
-    };
-
-    private boolean resolved = false; //debug flag, only used in assertion
-
-    private Set<TypeConstraint> constraints;
-
-    private TypeConstraints(Set<TypeConstraint> constraints) {
+    private TypeConstraints(List<TypeConstraint> constraints) {
         this.constraints = constraints;
     }
 
     public static TypeConstraints create() {
-        return new TypeConstraints(new HashSet<>());
+        return new TypeConstraints(new ArrayList<>());
     }
 
     public TypeConstraints copy() {
-        return new TypeConstraints(new HashSet<>(constraints));
+        return new TypeConstraints(new ArrayList<>(constraints));
+    }
+
+    public void addVar(FTypeVariable var) {
+        equivalenceGroup.add(var);
     }
 
     public boolean isEmpty() {
         return constraints.isEmpty();
     }
 
-    public void add(TypeConstraint constraint) {
-        if (this.satisfies(constraint))
-            return;
-        assert !resolved;
-        if (constraint instanceof ImplicitCastable) { //remove all constraints implied by the new one
+    public boolean isResolved() {
+        return resolvedAs != null;
+    }
+
+    public boolean isFixed() {
+        return fixed;
+    }
+
+    public void setFixed() {
+        this.fixed = true;
+    }
+
+    @SuppressWarnings("AssertWithSideEffects")
+    private TypeConstraints merge(TypeConstraints other) {
+        if ((other.fixed && !this.fixed) || (other.isResolved() && !this.isResolved())) {
+            return other.merge(this);
+        }
+
+        //merge
+        try {
+            TypeConstraints _new = addAll(this, other.constraints);
+            assert _new == this;
+        } catch (UnfulfillableConstraints unfulfillableConstraints) {
+            Utils.cantHappen();
+        }
+        this.fixed |= other.fixed;
+        assert this.resolvedAs == other.resolvedAs; //there might be cases where this doesn't hold, wait for examples
+
+        //update variables
+        for (FTypeVariable otherVar : other.equivalenceGroup) {
+            otherVar.setConstraints(this);
+        }
+        this.equivalenceGroup.addAll(other.equivalenceGroup);
+
+        //force error in case there are somehow reference to other left (and have some fun with Java & asserts ;)
+        assert (other.equivalenceGroup = null) == null;
+        assert (other.constraints = null) == null;
+        return this;
+    }
+
+    private static TypeConstraints mergeAll(Collection<TypeConstraints> constraints) {
+        Iterator<TypeConstraints> it = constraints.iterator();
+        TypeConstraints res = it.next();
+        while (it.hasNext()) {
+            res = res.merge(it.next());
+        }
+        return res;
+    }
+
+    public static TypeConstraints add(TypeConstraints _this, TypeConstraint constraint) throws UnfulfillableConstraints {
+        if (_this.satisfies(constraint))
+            return _this;
+        assert !_this.fixed && !_this.isResolved();
+
+        if (constraint instanceof ImplicitCastable) {
             ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+
+            //if the target is a resolved var, change the constraint to the resolved
+            if (implicitCastable.getTarget() instanceof FTypeVariable) {
+                FTypeVariable target = (FTypeVariable) implicitCastable.getTarget();
+                if (target.getConstraints().isResolved()) {
+                    implicitCastable = new ImplicitCastable(implicitCastable, target.getConstraints().resolvedAs, implicitCastable.getVariance());
+                }
+            }
+
+            //see if adding the constraint will create a cycle, if so merge all constraints on that cycle
+            if (implicitCastable.getTarget() instanceof FTypeVariable) {
+                _this = findAndMergeCycles(_this, implicitCastable);
+            }
+
+            //see if we can find an opposite constraint
+            if (implicitCastable.getVariance() != Invariant) {
+                //iterate in the opposite direction of the constraint
+                Set<FClass> oppClasses = new HashSet<>();
+                Set<TypeConstraints> oppVars = new HashSet<>();
+                _this.iterate(implicitCastable.getVariance().opposite(), oppClasses, oppVars);
+
+                if (implicitCastable.getTarget() instanceof FClass) { //for class target check the visited classes
+                    FClass target = (FClass) implicitCastable.getTarget();
+                    if (oppClasses.contains(target)) {
+                        //upgrade the constraint to invariant
+                        implicitCastable = new ImplicitCastable(implicitCastable, implicitCastable.getTarget(), Invariant);
+                    }
+                } else if (implicitCastable.getTarget() instanceof FTypeVariable) { //for var targets check visited vars
+                    FTypeVariable target = (FTypeVariable) implicitCastable.getTarget();
+                    for (TypeConstraints oppVar : oppVars) {
+                        if (oppVar.equivalenceGroup.contains(target)) {
+                            //upgrade the constraint to invariant
+                            implicitCastable = new ImplicitCastable(implicitCastable, implicitCastable.getTarget(), Invariant);
+                            break;
+                        }
+                    }
+                } else {
+                    return Utils.cantHappen();
+                }
+            }
+
+            //invariant means we can either merge two constraint groups or resolve one
+            if (implicitCastable.getVariance() == Invariant) {
+                if (implicitCastable.getTarget() instanceof FClass) {
+                    //resolve
+                    Multimap<FTypeVariable, TypeConstraint> newConstraints = _this.doResolve((FClass) implicitCastable.getTarget());
+                    if (!newConstraints.isEmpty())
+                        throw new UnfulfillableConstraints(_this, newConstraints.values().iterator().next(), null);
+                    return _this;
+                } else if (implicitCastable.getTarget() instanceof FTypeVariable) {
+                    //merge
+                    return _this.merge(((FTypeVariable) implicitCastable.getTarget()).getConstraints());
+                } else {
+                    return Utils.cantHappen();
+                }
+            }
+
+            //remove constraints implied by the to be added
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-            for (Iterator<TypeConstraint> it = constraints.iterator(); it.hasNext();) {
+            for (Iterator<TypeConstraint> it = _this.constraints.iterator(); it.hasNext();) {
                 TypeConstraint c = it.next();
                 if (implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
                     it.remove();
-                if (c instanceof ImplicitCastable && ((ImplicitCastable) c).getTarget() == implicitCastable.getTarget()) {
-                    //by process of elimination, we know that the 2 constraints are co- & contravariant, so combine them to invariant
-                    it.remove();
-                    implicitCastable = new ImplicitCastable(new Pair<>(implicitCastable, c), implicitCastable.getTarget(), Invariant);
-                }
                 newConstraints.clear();
             }
+
+            //finally add the constraint
+            _this.constraints.add(implicitCastable);
+            return _this;
+        } else if (constraint instanceof HasCall) {
+            _this.constraints.add(constraint);
+            return _this;
+        } else {
+            return Utils.cantHappen();
         }
-        constraints.add(constraint);
     }
 
-    public void addAll(Collection<TypeConstraint> newConstraints) {
+    public static TypeConstraints addAll(TypeConstraints _this, Collection<TypeConstraint> newConstraints) throws UnfulfillableConstraints {
         for (TypeConstraint constraint : newConstraints) {
-            add(constraint);
+            _this = add(_this, constraint);
         }
+        return _this;
     }
 
-    public boolean isConsistent() {
-        return true; //TODO
+    private static TypeConstraints findAndMergeCycles(TypeConstraints _this, ImplicitCastable constraint) {
+        while (true) {
+            TypeConstraints start = ((FTypeVariable) constraint.getTarget()).getConstraints();
+            if (constraint.getVariance() != Contravariant) {
+                ArrayList<TypeConstraints> path = new ArrayList<>();
+                if (start.findCycle(_this, Covariant, path)) {
+                    _this = mergeAll(path);
+                    continue;
+                }
+            }
+            if (constraint.getVariance() != Covariant) {
+                ArrayList<TypeConstraints> path = new ArrayList<>();
+                if (start.findCycle(_this, Contravariant, path)) {
+                    _this = mergeAll(path);
+                    continue;
+                }
+            }
+            break;
+        }
+        return _this;
+    }
+
+    private boolean findCycle(TypeConstraints goal, Variance direction, ArrayList<TypeConstraints> path) {
+        path.add(this);
+        for (TypeConstraint constraint : constraints) {
+            if (constraint instanceof ImplicitCastable) {
+                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+                if (implicitCastable.getVariance() == direction && implicitCastable.getTarget() instanceof FTypeVariable) {
+                    TypeConstraints constraints = ((FTypeVariable) implicitCastable.getTarget()).getConstraints();
+                    if (constraints == goal) {
+                        path.add(goal);
+                        return true;
+                    } else {
+                        if (((FTypeVariable) implicitCastable.getTarget()).getConstraints().findCycle(goal, direction, path))
+                            return true;
+                    }
+                }
+            }
+        }
+        path.remove(path.size() - 1);
+        return false;
     }
 
     public boolean satisfies(TypeConstraint constraint) {
-        return satisfies(constraint, new HashSet<>());
-    }
-
-    private boolean satisfies(TypeConstraint constraint, Set<TypeConstraints> visited) {
-        if (visited.contains(this))
-            return false;
-        visited.add(this);
-
-        if (constraints.contains(constraint))
-            return true;
-        if (constraint instanceof ImplicitCastable) {
-            ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+        if (isResolved()) {
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-            for (TypeConstraint c : constraints) {
-                if (c instanceof ImplicitCastable && implies((ImplicitCastable) c, implicitCastable, newConstraints) && newConstraints.isEmpty())
-                    return true;
-                newConstraints.clear();
+            return implies(new ImplicitCastable(this, resolvedAs, Invariant), constraint, newConstraints) && newConstraints.isEmpty();
+        }
+
+        Variance direction;
+        if (constraint instanceof ImplicitCastable) {
+            direction = ((ImplicitCastable) constraint).getVariance();
+            if (direction == Invariant) {
+                //noinspection SuspiciousMethodCalls
+                return equivalenceGroup.contains(((ImplicitCastable) constraint).getTarget());
             }
         } else if (constraint instanceof HasCall) {
-            HasCall hasCall = (HasCall) constraint;
-            Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
-            for (TypeConstraint c : constraints) {
-                if (c instanceof ImplicitCastable && implies((ImplicitCastable) c, hasCall, newConstraints) && newConstraints.isEmpty())
-                    return true;
-                newConstraints.clear();
-            }
+            direction = Covariant;
         } else {
             return Utils.cantHappen();
         }
 
-        //visit transitive constraints TODO I need to consider variance when visiting transitive constraints
-        for (TypeConstraint toVisit : constraints) {
-            if (toVisit instanceof ImplicitCastable) {
-                ImplicitCastable implicitCastable = (ImplicitCastable) toVisit;
-                if (implicitCastable.getTarget() instanceof FTypeVariable) {
-                    FTypeVariable typeVariable = (FTypeVariable) implicitCastable.getTarget();
+        //search
+        Set<FClass> classes = new HashSet<>();
+        Set<TypeConstraints> vars = new HashSet<>();
+        iterate(direction, classes, vars);
+        vars.add(this);
 
-
-
-                    if (typeVariable.getConstraints().satisfies(constraint, visited))
+        if (constraint instanceof ImplicitCastable) {
+            FType target = ((ImplicitCastable) constraint).getTarget();
+            if (target instanceof FTypeVariable) { //special case if the target is a type variable
+                for (TypeConstraints v : vars) {
+                    if (v.equivalenceGroup.contains(target))
                         return true;
                 }
             }
         }
+
+        //default case: check with implies
+        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        for (FClass c : classes) {
+            if (implies(new ImplicitCastable(null, c, direction), constraint, newConstraints) && newConstraints.isEmpty())
+                return true;
+            newConstraints.clear();
+        }
         return false;
     }
 
-    public FType resolve(Multimap<FTypeVariable, TypeConstraint> newConstraints) throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
-        assert !resolved;
-        FType proposition = proposeType();
-        ImplicitCastable typeConstraint = new ImplicitCastable(this, proposition, Invariant);
-        for (TypeConstraint constraint : constraints) {
-            if (!implies(typeConstraint, constraint, newConstraints)) {
-                throw new UnfulfillableConstraints(null, this, typeConstraint, constraint); //TODO where do we get the var from?
-            }
-        }
-        resolved = true;
-        return proposition;
+    public Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolve() throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
+        if (isResolved())
+            return new Pair<>(resolvedAs, ImmutableListMultimap.of());
+
+        // collect all upper bounds (contravariant constraints) including transitive ones, same for lowers
+        Set<FClass> contraClasses = new HashSet<>();
+        Set<TypeConstraints> contraVars = new HashSet<>();
+        iterate(Contravariant, contraClasses, contraVars);
+        Set<FClass> coClasses = new HashSet<>();
+        Set<TypeConstraints> coVars = new HashSet<>();
+        iterate(Covariant, coClasses, coVars);
+
+        //use bounds to find most concrete type proposition
+        FClass proposition = this.proposeType(contraClasses, coClasses);
+
+        if (proposition == null)
+            return new Pair<>(equivalenceGroup.iterator().next(), ImmutableListMultimap.of());
+
+        //resolve
+        return new Pair<>(proposition, this.doResolve(proposition));
+
     }
 
-    private FType proposeType() throws UnfulfillableConstraints {
-        long maxConcreteness = 0;
-        ArrayList<FType> maxConcretenessList = new ArrayList<>();
+    private Multimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition) throws UnfulfillableConstraints {
+        //check against constraints, error if not consistent
+        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        ImplicitCastable typeConstraint = new ImplicitCastable(this, proposition, Invariant);
+        for (TypeConstraint constraint : this.constraints) {
+            if (!implies(typeConstraint, constraint, newConstraints)) {
+                throw new UnfulfillableConstraints(this, typeConstraint, constraint);
+            }
+        }
 
+        //remove all satisfiable new constraints
+        TypeConstraint unsatisfiable = removeSatisfiableCheckUnsatisfiable(newConstraints);
+        if (unsatisfiable != null) {
+            throw new UnfulfillableConstraints(this, typeConstraint, unsatisfiable);
+        }
+
+
+        if (newConstraints.isEmpty()) {
+            //if there are no more new constraints, mark this group as resolved
+            this.resolvedAs = proposition;
+        }
+        //TODO consider caching the result and constraints that need to be fulfilled
+        return newConstraints;
+    }
+
+    private void iterate(Variance direction, Set<FClass> resClasses, Set<TypeConstraints> resVariables) {
+        assert direction != Invariant;
+        //because we merge cycles when adding constraints, there cannot be any cycles!
         for (TypeConstraint constraint : constraints) {
-            if(constraint instanceof ImplicitCastable) {
-                FType target = ((ImplicitCastable) constraint).getTarget();
-                long targetConcreteness = target.concreteness();
-                if (targetConcreteness > maxConcreteness) {
-                    maxConcreteness = targetConcreteness;
-                    maxConcretenessList.clear();
-                    maxConcretenessList.add(target);
-                } else if (targetConcreteness == maxConcreteness) {
-                    maxConcretenessList.add(target);
+            if (constraint instanceof ImplicitCastable) {
+                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+                if (implicitCastable.getVariance() == direction) {
+                    if (implicitCastable.getTarget() instanceof FTypeVariable) {
+                        TypeConstraints transitiveConstraints = ((FTypeVariable) implicitCastable.getTarget()).getConstraints();
+                        if (transitiveConstraints.isResolved())
+                            resClasses.add(transitiveConstraints.resolvedAs); //treat resolved constraints like a class
+                        else if (resVariables.add(transitiveConstraints))
+                            transitiveConstraints.iterate(direction, resClasses, resVariables); //recurse
+                    } else if (implicitCastable.getTarget() instanceof FClass) {
+                        resClasses.add((FClass) implicitCastable.getTarget()); //add res
+                    } else {
+                        Utils.cantHappen();
+                    }
                 }
             }
         }
-
-        if (maxConcretenessList.size() == 0)
-            throw UnfulfillableConstraints.empty(null, this); //TODO where do we get var from?
-
-        return maxConcretenessList.get(0); //TODO this is the easiest pick :)
     }
+
+    private FClass proposeType(Set<FClass> contra, Set<FClass> co) {
+        //just pick the most concrete out of all upper and lower Bounds for now TODO improve: change mindset to find the most concrete type you can, but not more!
+        FClass maxContra = contra.isEmpty() ? null : Collections.max(contra, Comparator.comparingLong(FClass::concreteness));
+        FClass maxCo     =     co.isEmpty() ? null : Collections.max(co,     Comparator.comparingLong(FClass::concreteness));
+        if (maxContra == null && maxCo == null)
+            return null;
+        if (maxContra == null)
+            return maxCo;
+        if (maxCo == null)
+            return maxContra;
+        return maxContra.concreteness() > maxCo.concreteness() ? maxContra : maxCo;
+    }
+
 
     public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (b instanceof ImplicitCastable)
@@ -192,10 +370,16 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
         if (a.getVariance().sign * b.getVariance().sign == -1) //a covariant and b contravariant or vice versa
             return false;
 
+        FType aTarget = a.getTarget();
+        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).getConstraints().isResolved())
+            aTarget = ((FTypeVariable) aTarget).getConstraints().resolvedAs;
+        FType bTarget = b.getTarget();
+        if (bTarget instanceof FTypeVariable && ((FTypeVariable) bTarget).getConstraints().isResolved())
+            bTarget = ((FTypeVariable) bTarget).getConstraints().resolvedAs;
         try {
-            if (a.getTarget() == b.getTarget())
+            if (aTarget == bTarget)
                 return true;
-            ImplicitTypeCast.create(a.getTarget(), b.getTarget(), b.getVariance(), newConstraints);
+            ImplicitTypeCast.create(aTarget, bTarget, b.getVariance(), newConstraints);
             return true;
         } catch (IncompatibleTypes incompatibleTypes) {
             return false;
@@ -205,12 +389,32 @@ public class TypeConstraints { //TODO there is a lot of potential for optimizati
     public static boolean implies(ImplicitCastable a, HasCall b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (a.getVariance() == Contravariant) //casts from constraints cannot be used for function resolving
             return false;
+
+        FType aTarget = a.getTarget();
+        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).getConstraints().isResolved())
+            aTarget = ((FTypeVariable) aTarget).getConstraints().resolvedAs;
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
-            a.getTarget().resolveFunction(b.getIdentifier(), b.getArgumentTypes(), b.getTypeInstantiation(), newConstraints);
+            aTarget.resolveFunction(b.getIdentifier(), b.getArgumentTypes(), b.getTypeInstantiation(), newConstraints);
             return true;
         } catch (FunctionNotFound functionNotFound) {
             return false;
         }
+    }
+
+    public static TypeConstraint removeSatisfiableCheckUnsatisfiable(Multimap<FTypeVariable, TypeConstraint> constraints) {
+        Iterator<Map.Entry<FTypeVariable, TypeConstraint>> it = constraints.entries().iterator();
+        while (it.hasNext()) {
+            Map.Entry<FTypeVariable, TypeConstraint> entry = it.next();
+            if (entry.getKey().getConstraints().satisfies(entry.getValue())) {
+                it.remove(); //remove all satisfied constraints
+                continue;
+            }
+            if (entry.getKey().isFixed()) {
+                return entry.getValue(); //constraint is unsatisfiable
+            }
+            //otherwise the constraint stays in the set
+        }
+        return null;
     }
 }

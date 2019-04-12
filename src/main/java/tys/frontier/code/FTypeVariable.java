@@ -14,6 +14,7 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
@@ -23,19 +24,19 @@ import java.util.Map;
 public class FTypeVariable implements FType {
 
     private FTypeIdentifier identifier;
-    private boolean fixed;
     private TypeConstraints constraints;
     private NameGenerator returnTypeNames;
 
     public static FTypeVariable create(FTypeIdentifier identifier, boolean fixed) {
-        TypeConstraints constraints = fixed ? TypeConstraints.EMPTY : TypeConstraints.create();
-        return new FTypeVariable(identifier, fixed, constraints);
+        return new FTypeVariable(identifier, fixed, TypeConstraints.create());
     }
 
     protected FTypeVariable(FTypeIdentifier identifier, boolean fixed, TypeConstraints constraints) {
         this.identifier = identifier;
-        this.fixed = fixed;
         this.constraints = constraints;
+        if (fixed)
+            constraints.setFixed();
+        constraints.addVar(this);
         this.returnTypeNames = new NameGenerator("?" + identifier.name + "ret.", "");
     }
 
@@ -50,11 +51,10 @@ public class FTypeVariable implements FType {
     }
 
     public boolean isFixed() {
-        return fixed;
+        return constraints.isFixed();
     }
 
     public void setConstraints(TypeConstraints constraints) {
-        assert this.constraints.isEmpty();
         this.constraints = constraints;
     }
 
@@ -63,10 +63,14 @@ public class FTypeVariable implements FType {
     }
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
-        if (fixed)
+        if (isFixed())
             return constraints.satisfies(constraint);
         else {
-            constraints.add(constraint);
+            try {
+                TypeConstraints.add(constraints, constraint);
+            } catch (UnfulfillableConstraints unfulfillableConstraints) {
+                return false;
+            }
             return true;
         }
     }
@@ -107,7 +111,7 @@ public class FTypeVariable implements FType {
             params.add(FParameter.create(id, arg, false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
-        FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), fixed);
+        FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), isFixed());
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         return new FFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
             @Override
@@ -119,7 +123,7 @@ public class FTypeVariable implements FType {
     }
 
     public FTypeVariable copy() {
-        return new FTypeVariable(identifier, fixed, constraints.copy());
+        return new FTypeVariable(identifier, isFixed(), constraints.copy());
     }
 
     public FTypeVariable copy(boolean fixed) {
@@ -129,7 +133,7 @@ public class FTypeVariable implements FType {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(getIdentifier().name);
-        if (!fixed)
+        if (!isFixed())
             sb.append('*');
         return sb;
     }

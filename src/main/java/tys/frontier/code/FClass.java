@@ -393,7 +393,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                     f = f.getInstantiation(instantiation);
 
                     //handle other constraints
-                    if (removeSatisfiableCheckUnsatisfiable(constraints))
+                    if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(constraints) != null)
                         continue;
 
                     updateCost(cost, f, constraints);
@@ -430,29 +430,15 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
             for (FTypeVariable v : toInstantiate.getParametersList()) {
                 TypeConstraints c = v.getConstraints();
-                c.addAll(constraints.get(v));
-                typeVariableMap.put(v, c.resolve(newConstraints));
+                c = TypeConstraints.addAll(c, constraints.get(v));
+                Pair<FType, Multimap<FTypeVariable, TypeConstraint>> pair = c.resolve();
+                typeVariableMap.put(v, pair.a);
+                newConstraints.putAll(pair.b);
                 if (cleanConstraints)
                     constraints.removeAll(v);
             }
             constraints.putAll(newConstraints);
             return TypeInstantiation.create(typeVariableMap);
-        }
-
-        private boolean removeSatisfiableCheckUnsatisfiable(Multimap<FTypeVariable, TypeConstraint> constraints) {
-            Iterator<Map.Entry<FTypeVariable, TypeConstraint>> it = constraints.entries().iterator();
-            while (it.hasNext()) {
-                Map.Entry<FTypeVariable, TypeConstraint> entry = it.next();
-                if (entry.getKey().getConstraints().satisfies(entry.getValue())) {
-                    it.remove(); //remove all satisfied constraints
-                    continue;
-                }
-                if (entry.getKey().isFixed()) {
-                    return true; //constraint is unsatisfiable f can't be called
-                }
-                //otherwise the constraint stays in the set
-            }
-            return false;
         }
 
         private void updateCost(IntIntPair newCosts, FFunction newFunction, Multimap<FTypeVariable, TypeConstraint> constraints) {

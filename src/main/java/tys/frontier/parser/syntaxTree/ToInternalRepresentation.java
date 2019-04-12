@@ -25,6 +25,7 @@ import tys.frontier.parser.warnings.UnreachableStatements;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -285,7 +286,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         Map<FTypeVariable, FType> typeInstantiationMap = new HashMap<>();
         Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
         for (FTypeVariable toInstantiate : currentFunction().genericFunctionAddressToInstantiate) {
-            typeInstantiationMap.put(toInstantiate, toInstantiate.getConstraints().resolve(newConstraints));
+            Pair<FType, Multimap<FTypeVariable, TypeConstraint>> pair = toInstantiate.getConstraints().resolve();
+            typeInstantiationMap.put(toInstantiate, pair.a);
+            newConstraints.putAll(pair.b);
         }
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : newConstraints.entries()) {
             entry.getKey().tryAddConstraint(entry.getValue());

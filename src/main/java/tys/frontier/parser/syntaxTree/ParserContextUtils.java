@@ -90,16 +90,13 @@ public final class ParserContextUtils {
         UpperBoundContext uC = ctx.upperBound();
         if (uC != null) {
             for (FType type : typesFromList(uC.typeList().typeType(), possibleTypes))
-                constraints.add(new ImplicitCastable(_class, type, Variance.Contravariant));
+                constraints = TypeConstraints.add(constraints, new ImplicitCastable(_class, type, Variance.Contravariant));
         }
         LowerBoundContext lC = ctx.lowerBound();
         if (lC != null) {
             for (FType type : typesFromList(lC.typeList().typeType(), possibleTypes))
-                constraints.add(new ImplicitCastable(_class, type, Variance.Covariant));
+                constraints = TypeConstraints.add(constraints, new ImplicitCastable(_class, type, Variance.Covariant));
         }
-
-        if (!constraints.isConsistent())
-            throw new UnfulfillableConstraints(typeVariable, constraints, null, null);
         typeVariable.setConstraints(constraints);
     }
 

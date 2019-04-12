@@ -53,8 +53,13 @@ public class TypeInstantiation {
         if (typeMap.isEmpty())
             return EMPTY;
         //clean up the map to make sure no lhs appears on a rhs
-        for (Map.Entry<FTypeVariable, FType> entry : typeMap.entrySet()) {
-            entry.setValue(resolveTrans(entry.getValue(), typeMap));
+        Iterator<Map.Entry<FTypeVariable, FType>> it = typeMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<FTypeVariable, FType> entry = it.next();
+            if (entry.getKey() == entry.getValue())
+                it.remove();
+            else
+                entry.setValue(resolveTrans(entry.getValue(), typeMap));
         }
         return new TypeInstantiation(typeMap);
     }
