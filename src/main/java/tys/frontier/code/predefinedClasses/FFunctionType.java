@@ -34,6 +34,13 @@ public class FFunctionType extends FPredefinedClass {
         return res+1;
     }
 
+    @Override
+    public boolean canImplicitlyCast() { //TODO remove once function types are implemented with parameterized classes
+        if (!in.isEmpty())
+            return true;
+        return out.canImplicitlyCast();
+    }
+
     public List<FType> getIn() {
         return in;
     }

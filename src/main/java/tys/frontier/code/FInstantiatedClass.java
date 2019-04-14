@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.passes.GenericBaking;
 
 public class FInstantiatedClass extends FClass {
@@ -55,6 +56,23 @@ public class FInstantiatedClass extends FClass {
         if (res == Long.MAX_VALUE) //avoid overflow
             return Long.MAX_VALUE;
         return res+1;
+    }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        if (!delegates.isEmpty()) //TODO should this be baseClass delegates?
+            return true;
+        for (FTypeVariable param : baseClass.getParametersList()) {
+            Variance var = baseClass.getParameterVariance(param);
+            if (var == Variance.Covariant) {
+                FType inst = typeInstantiation.getType(param);
+                if (inst.canImplicitlyCast())
+                    return true;
+            } else if (var == Variance.Contravariant) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -32,7 +32,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     protected BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
     protected Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
 
-    private Map<FType, FField> delegates = new HashMap<>();
+    protected Map<FType, FField> delegates = new HashMap<>();
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
     protected Map<FFunction, String> uniqueFunctionNames;
@@ -76,6 +76,11 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     @Override
     public long concreteness() {
         return parametersList.isEmpty() ? Long.MAX_VALUE : 1;
+    }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        return Utils.cantHappen();
     }
 
     @Override

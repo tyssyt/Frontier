@@ -1,6 +1,7 @@
 package tys.frontier.code.typeInference;
 
 import tys.frontier.code.FType;
+import tys.frontier.code.FTypeVariable;
 import tys.frontier.util.Utils;
 
 public class ImplicitCastable extends TypeConstraint {
@@ -10,8 +11,14 @@ public class ImplicitCastable extends TypeConstraint {
 
     public ImplicitCastable(Object origin, FType target, Variance variance) {
         super(origin);
-        this.target = target;
-        this.variance = variance;
+        if (target instanceof FTypeVariable && ((FTypeVariable) target).getConstraints().isResolved())
+            this.target = ((FTypeVariable) target).getConstraints().getResolved();
+        else
+            this.target = target;
+        if (variance == Variance.Contravariant && !target.canImplicitlyCast())
+            this.variance = Variance.Invariant;
+        else
+            this.variance = variance;
     }
 
     public FType getTarget() {

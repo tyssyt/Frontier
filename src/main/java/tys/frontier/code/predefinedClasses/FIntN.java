@@ -58,6 +58,11 @@ public class FIntN extends FPredefinedClass {
         return n;
     }
 
+    @Override
+    public boolean canImplicitlyCast() {
+        return true;
+    }
+
     public BigInteger minValue() {
         return maxValue().negate();
     }

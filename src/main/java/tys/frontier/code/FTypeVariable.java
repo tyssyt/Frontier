@@ -50,6 +50,13 @@ public class FTypeVariable implements FType {
         return 0;
     }
 
+    @Override
+    public boolean canImplicitlyCast() {
+        if (constraints.isResolved())
+            return constraints.getResolved().canImplicitlyCast();
+        return true; //TODO when fixed we could check the constraints and find cases where we can return false
+    }
+
     public boolean isFixed() {
         return constraints.isFixed();
     }

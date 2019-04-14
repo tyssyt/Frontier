@@ -146,8 +146,9 @@ public class TypeConstraints {
                 if (implicitCastable.getTarget() instanceof FClass) {
                     //resolve
                     Multimap<FTypeVariable, TypeConstraint> newConstraints = _this.doResolve((FClass) implicitCastable.getTarget());
-                    if (!newConstraints.isEmpty())
-                        throw new UnfulfillableConstraints(_this, newConstraints.values().iterator().next(), null);
+                    for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : newConstraints.asMap().entrySet()) {
+                        TypeConstraints.addAll(entry.getKey().getConstraints(), entry.getValue());
+                    }
                     return _this;
                 } else if (implicitCastable.getTarget() instanceof FTypeVariable) {
                     //merge
@@ -229,6 +230,13 @@ public class TypeConstraints {
 
     public boolean satisfies(TypeConstraint constraint) {
         if (isResolved()) {
+            if (constraint instanceof ImplicitCastable && ((ImplicitCastable) constraint).getTarget() instanceof FTypeVariable) {
+                //for implicit castable to a type var, we can just add the reverse constraint to that var
+                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+                return ((FTypeVariable) implicitCastable.getTarget()).tryAddConstraint(
+                        new ImplicitCastable(constraint, equivalenceGroup.iterator().next(), implicitCastable.getVariance().opposite())
+                );
+            }
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
             return implies(new ImplicitCastable(this, resolvedAs, Invariant), constraint, newConstraints) && newConstraints.isEmpty();
         }
@@ -292,7 +300,11 @@ public class TypeConstraints {
 
         //resolve
         return new Pair<>(proposition, this.doResolve(proposition));
+    }
 
+    public FType getResolved() {
+        assert isResolved();
+        return resolvedAs;
     }
 
     private Multimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition) throws UnfulfillableConstraints {

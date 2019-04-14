@@ -11,4 +11,9 @@ public class FTypeType extends FPredefinedClass {
     private FTypeType() {
         super(IDENTIFIER);
     }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        return false;
+    }
 }

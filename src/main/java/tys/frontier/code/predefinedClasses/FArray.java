@@ -21,6 +21,11 @@ public class FArray extends FPredefinedClass {
 
     private FType baseType;
 
+    @Override
+    public boolean canImplicitlyCast() {
+        return false; //TODO remove once arrays use generics
+    }
+
     private FArray(FType baseType) {
         super(new FArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;

@@ -36,4 +36,9 @@ public class FBool extends FPredefinedClass {
             Utils.handleException(signatureCollision);
         }
     }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        return false;
+    }
 }

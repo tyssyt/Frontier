@@ -34,4 +34,9 @@ public class FFloat64 extends FPredefinedClass {
             Utils.handleException(signatureCollision);
         }
     }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        return false;
+    }
 }

@@ -9,4 +9,9 @@ public class FVoid extends FPredefinedClass {
     private FVoid () {
         super(FTypeIdentifier.VOID);
     }
+
+    @Override
+    public boolean canImplicitlyCast() {
+        return false;
+    }
 }

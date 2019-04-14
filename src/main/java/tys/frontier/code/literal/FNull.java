@@ -25,6 +25,11 @@ public class FNull implements FLiteral {
         }
 
         @Override
+        public boolean canImplicitlyCast() {
+            return false;
+        }
+
+        @Override
         public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
             return Utils.cantHappen();
         }

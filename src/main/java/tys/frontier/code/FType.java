@@ -16,6 +16,8 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     long concreteness(); //TODO there probably is an established term for this
 
+    boolean canImplicitlyCast();
+
     FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound;
 
     FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
