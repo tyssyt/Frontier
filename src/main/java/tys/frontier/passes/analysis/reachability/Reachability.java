@@ -9,6 +9,7 @@ import tys.frontier.code.expression.FFunctionAddress;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 
@@ -28,86 +29,132 @@ public class Reachability {
     public static Reachability analyse (Set<FFunction> startingPoints) {
         //TODO sanity check on startingPoints, making sure they are not generic (i.e. instance functions of a generic class)
         Reachability res = new Reachability();
-        Deque<FFunction> todo = new ArrayDeque<>(startingPoints);
-        while (!todo.isEmpty()) {
-            FFunction cur = todo.pollFirst();
-            if (res.isReachable(cur))
-                continue;
+        Deque<FFunction> todoFunctions = new ArrayDeque<>(startingPoints);
+        Deque<FField> todoFields = new ArrayDeque<>();
+        FClassVisitor reachabilityVisitor = reachabilityVisitor(todoFunctions, todoFields);
 
-            res.addFunction(cur);
+        while (!todoFunctions.isEmpty() || !todoFields.isEmpty()) {
+            if (!todoFunctions.isEmpty()) {
+                FFunction cur = todoFunctions.pollFirst();
+                if (res.isReachable(cur))
+                    continue;
 
-            if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
-                todo.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
-                continue;
+                res.addFunction(cur);
+
+                if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
+                    todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
+                    continue;
+                }
+
+                if (cur instanceof FInstantiatedFunction) { //for instantiated functions, we have to visit the base instead because they are not yet baked
+                    FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) cur;
+                    Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(instantiatedFunction.getBase());
+                    handleBaseAnalysis(baseAnalysis, instantiatedFunction.getTypeInstantiation(), todoFunctions, todoFields);
+                } else { //normal function
+                    cur.accept(reachabilityVisitor);
+                }
+            } else {
+                FField cur = todoFields.pollFirst();
+                if (res.isReachable(cur))
+                    continue;
+
+                res.addField(cur);
+
+                //TODO when fields work in optionals, we need similar handling of optionals here as for functions above
+
+                if (cur.getMemberOf() instanceof FInstantiatedClass) {//for fields in instantiated classes, we have to visit the base instead because they are not yet baked
+                    FInstantiatedClass instantiatedClass = (FInstantiatedClass) cur.getMemberOf();
+                    FField base;
+                    try {
+                        base = instantiatedClass.getBaseClass().getField(cur.getIdentifier());
+                    } catch (FieldNotFound fieldNotFound) {
+                        return Utils.cantHappen();
+                    }
+                    Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(base);
+                    handleBaseAnalysis(baseAnalysis, instantiatedClass.getTypeInstantiation(), todoFunctions, todoFields);
+                } else { //normal field
+                    cur.accept(reachabilityVisitor);
+                }
+            }
+        } //end while
+        return res;
+    }
+
+    private static FClassVisitor reachabilityVisitor(Collection<FFunction> seenFunctions, Collection<FField> seenFields) {
+        return new FClassVisitor() {
+            @Override
+            public void enterFieldAccess(FFieldAccess fieldAccess) {
+                seenFields.add(fieldAccess.getField());
             }
 
-            if (cur instanceof FInstantiatedFunction) { //for instantiated functions, we have to visit the base instead because they are not yet baked
-                FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) cur;
-                TypeInstantiation typeInstantiation = instantiatedFunction.getTypeInstantiation();
-                //Analyse Base
-                Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(instantiatedFunction.getBase());
-                //Instantiate Base results and add to Q/reach
-                for (FFunctionCall fC : baseAnalysis.a) {
-                    List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(), typeInstantiation::getType);
-                    FFunction f = Utils.findFunctionInstantiation(fC.getFunction(), paramTypes, typeInstantiation);
-                    todo.addLast(f);
-                }
-                for (FFieldAccess fA : baseAnalysis.b) {
-                    FField f = Utils.findFieldInstantiation(fA.getField(), typeInstantiation);
-                    res.addField(f);
-                }
-                for (FFunctionAddress fA : baseAnalysis.c) {
-                    List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getParams(), typeInstantiation::getType);
-                    FFunction f = Utils.findFunctionInstantiation(fA.getFunction(), paramTypes, typeInstantiation);
-                    todo.addLast(f);
-                }
-            } else { //normal function
-                cur.accept(new FClassVisitor() {
-                    @Override
-                    public void enterFieldAccess(FFieldAccess fieldAccess) {
-                        res.addField(fieldAccess.getField());
-                    }
-                    @Override
-                    public void enterFunctionCall(FFunctionCall functionCall) {
-                        todo.addLast(functionCall.getFunction());
-                    }
-                    @Override
-                    public FExpression visitFunctionAddress(FFunctionAddress address) {
-                        todo.addLast(address.getFunction());
-                        return address;
-                    }
-                });
+            @Override
+            public void enterFunctionCall(FFunctionCall functionCall) {
+                seenFunctions.add(functionCall.getFunction());
             }
+
+            @Override
+            public FExpression visitFunctionAddress(FFunctionAddress address) {
+                seenFunctions.add(address.getFunction());
+                return address;
+            }
+        };
+    }
+    private static FClassVisitor reachabilityVisitor(Set<FFunctionCall> seenCalls, Set<FFieldAccess> seenFields, Set<FFunctionAddress> seenAddresses) {
+        return new FClassVisitor() {
+            @Override
+            public void enterFieldAccess(FFieldAccess fieldAccess) {
+                seenFields.add(fieldAccess);
+            }
+            @Override
+            public void enterFunctionCall(FFunctionCall functionCall) {
+                seenCalls.add(functionCall);
+            }
+            @Override
+            public FExpression visitFunctionAddress(FFunctionAddress address) {
+                seenAddresses.add(address);
+                return address;
+            }
+        };
+    }
+
+    private static Map<FFunction, Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>>> cachedBaseFunctionAnalysis = new HashMap<>();
+    private static Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> analyseBase(FFunction base) {
+        Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> res = cachedBaseFunctionAnalysis.get(base);
+        if (res == null) {
+            res = new Triple<>(new HashSet<>(), new HashSet<>(), new HashSet<>());
+            base.accept(reachabilityVisitor(res.a, res.b, res.c));
+            cachedBaseFunctionAnalysis.put(base, res);
         }
         return res;
     }
 
-    private static Map<FFunction, Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>>> cachedBaseAnalysis = new HashMap<>();
-    private static Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> analyseBase(FFunction base) {
-        Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> res = cachedBaseAnalysis.get(base);
+    private static Map<FField, Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>>> cachedBaseFieldAnalysis = new HashMap<>();
+    private static Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> analyseBase(FField base) {
+        Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> res = cachedBaseFieldAnalysis.get(base);
         if (res == null) {
-            Set<FFunctionCall> reachableFunctions = new HashSet<>();
-            Set<FFieldAccess> reachableFields = new HashSet<>();
-            Set<FFunctionAddress> reachableFunctionAddresses = new HashSet<>();
-            res = new Triple<>(reachableFunctions, reachableFields, reachableFunctionAddresses);
-            base.accept(new FClassVisitor() {
-                @Override
-                public void enterFieldAccess(FFieldAccess fieldAccess) {
-                    reachableFields.add(fieldAccess);
-                }
-                @Override
-                public void enterFunctionCall(FFunctionCall functionCall) {
-                    reachableFunctions.add(functionCall);
-                }
-                @Override
-                public FExpression visitFunctionAddress(FFunctionAddress address) {
-                    reachableFunctionAddresses.add(address);
-                    return address;
-                }
-            });
-            cachedBaseAnalysis.put(base, res);
+            res = new Triple<>(new HashSet<>(), new HashSet<>(), new HashSet<>());
+            base.accept(reachabilityVisitor(res.a, res.b, res.c));
+            cachedBaseFieldAnalysis.put(base, res);
         }
         return res;
+    }
+
+    private static void handleBaseAnalysis(Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis, TypeInstantiation typeInstantiation, Collection<FFunction> seenFunctions, Collection<FField> seenFields) {
+        //Instantiate Base results and add to Q/reach
+        for (FFunctionCall fC : baseAnalysis.a) {
+            List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(), typeInstantiation::getType);
+            FFunction f = Utils.findFunctionInstantiation(fC.getFunction(), paramTypes, typeInstantiation);
+            seenFunctions.add(f);
+        }
+        for (FFieldAccess fA : baseAnalysis.b) {
+            FField f = Utils.findFieldInstantiation(fA.getField(), typeInstantiation);
+            seenFields.add(f);
+        }
+        for (FFunctionAddress fA : baseAnalysis.c) {
+            List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getParams(), typeInstantiation::getType);
+            FFunction f = Utils.findFunctionInstantiation(fA.getFunction(), paramTypes, typeInstantiation);
+            seenFunctions.add(f);
+        }
     }
 
     private void addFunction(FFunction function) {
