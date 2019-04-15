@@ -135,6 +135,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                     currentFunction().declaredVars.put(_this.getIdentifier(), _this);
                 }
                 FExpression expression = visitExpression(ctx.expression());
+
+                //as we never called visitStatement we have to manually instantiate here (important for nested lambdas)
+                try { //TODO oh god this is one ugly hack
+                    expression = expression.typeCheck(field.getType());
+                    FStatement statement = new FExpressionStatement(expression);
+                    statement = instantiateFunctionAddresses(statement);
+                    assert statement instanceof FExpressionStatement;
+                    expression = ((FExpressionStatement) statement).getExpression();
+                } catch (UnfulfillableConstraints unfulfillableConstraints) {
+                    errors.add(unfulfillableConstraints);
+                    throw new Failed();
+                }
+
                 field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
                 if (field.isInstance())
                     for (FParameter param : currentType.getConstructor().getParams())
