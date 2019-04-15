@@ -317,6 +317,15 @@ public class TypeConstraints {
             }
         }
 
+        //we might create constraint for the class we are resolving right now, handle those first
+        Multimap<FTypeVariable, TypeConstraint> evenNewerConstraints = ArrayListMultimap.create();
+        for (FTypeVariable eqVar : equivalenceGroup) {
+            for (TypeConstraint c : newConstraints.removeAll(eqVar)) {
+                if (!implies(typeConstraint, c, evenNewerConstraints) || !evenNewerConstraints.isEmpty())
+                    throw new UnfulfillableConstraints(this, typeConstraint, c);
+            }
+        }
+
         //remove all satisfiable new constraints
         TypeConstraint unsatisfiable = removeSatisfiableCheckUnsatisfiable(newConstraints);
         if (unsatisfiable != null) {
