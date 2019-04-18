@@ -84,6 +84,8 @@ public class FTypeVariable implements FType {
 
     @Override
     public FField getField(FIdentifier identifier) throws FieldNotFound {
+        if (this.constraints.isResolved())
+            return this.constraints.getResolved().getField(identifier);
         return Utils.NYI(""); //TODO
     }
 
@@ -100,6 +102,9 @@ public class FTypeVariable implements FType {
 
     @Override
     public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        if (this.constraints.isResolved())
+            return this.constraints.getResolved().resolveFunction(identifier, argumentTypes, typeInstantiation, constraints);
+
         HasCall constraint = new HasCall(null, identifier, argumentTypes, typeInstantiation);
         constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
