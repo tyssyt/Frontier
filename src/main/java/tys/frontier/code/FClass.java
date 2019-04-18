@@ -394,7 +394,6 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
                     //compute instantiations
                     TypeInstantiation instantiation = computeTypeInstantiation(f, constraints, true);
-                    assert instantiation.fitsIgnoreReturn(f);
                     f = f.getInstantiation(instantiation);
 
                     //handle other constraints

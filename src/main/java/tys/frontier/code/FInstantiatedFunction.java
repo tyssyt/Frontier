@@ -50,7 +50,8 @@ public class FInstantiatedFunction extends FFunction {
             case CLASS_INSTANTIATION:
                 return super.getInstantiation(typeInstantiation); //most of the logic for this case is in fromFunctionInstantiation
             case FUNCTION_INSTANTIATION:
-                return Utils.cantHappen();
+                assert parameters.isEmpty();
+                return this;
             case INSTANTIABLE_COPY:
                 assert typeInstantiation.disjoint(this.typeInstantiation);
                 typeInstantiation = typeInstantiation.then(this.typeInstantiation);

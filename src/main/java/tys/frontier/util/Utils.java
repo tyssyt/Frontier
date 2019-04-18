@@ -7,6 +7,9 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
@@ -86,17 +89,69 @@ public final class Utils {
     }
 
     public static FFunction findFunctionInstantiation(FFunction function, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
-        FType namespace = typeInstantiation.getType(function.getMemberOf());
-        FFunctionIdentifier identifier = function.getIdentifier();
-        if (identifier instanceof FInstantiatedFunctionIdentifier)
-            identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
-        else
-            identifier = function.getIdentifier();
-        try {
-            return namespace.resolveFunction(identifier, argumentTypes, TypeInstantiation.EMPTY);
-        } catch (FunctionNotFound functionNotFound) {
-            return cantHappen();
+        //handle namespace/class instantiation
+        FType oldNamespace = function.getMemberOf();
+        FType newNamespace = typeInstantiation.getType(oldNamespace);
+
+        if (newNamespace instanceof FTypeVariable ||oldNamespace instanceof FTypeVariable) {
+            //there is no mapping we can follow, we need to fall back to use resolve
+            FFunctionIdentifier identifier = function.getIdentifier();
+            if (identifier instanceof FInstantiatedFunctionIdentifier)
+                identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
+            else
+                identifier = function.getIdentifier();
+            try {
+                FFunction res = newNamespace.resolveFunction(identifier, argumentTypes, TypeInstantiation.EMPTY);
+
+                if (res instanceof FInstantiatedFunction &&
+                    ((FInstantiatedFunction) res).getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION &&
+                    res.getType() instanceof FTypeVariable && typeInstantiation.getTypeMap().containsKey((FTypeVariable)res.getType())
+                ) {
+                    /*
+                        There is a special problematic case:
+                        When the return type is a TypeVariable, that does not appear anywhere else in the header
+                        resolve can't properly instantiate it and will leave it as is without constraints.
+                        However, our typeInstantiation can have a mapping for the return type and thus res is not fully instantiated yet.
+                        This usually only appears with lambdas.
+
+                        Possible solutions include instantiating the already instatiated function again (weakening our instantiation contract).
+                        Or allowing us to pass a type for the return into resolve, making resolve even more complex.
+                     */
+                    return Utils.NYI("correctly instantiating the return type of " + res.headerToString() + " to " + typeInstantiation.getType(res.getType()));
+                }
+                return res;
+            } catch (FunctionNotFound functionNotFound) {
+                return Utils.cantHappen();
+            }
         }
+
+        if (oldNamespace != newNamespace) {
+            //TODO oh god pls make arrys, optionals and function types use generics!
+            if (oldNamespace instanceof FArray) {
+                //arrays only have the constructor
+                assert function.isConstructor();
+                return ((FArray) newNamespace).getConstructor();
+            } else if (oldNamespace instanceof FOptional) {
+                return Utils.NYI("instantiation lookup for optionals"); //TODO
+            } else if (oldNamespace instanceof FFunctionType) {
+                return Utils.cantHappen(); //for now function types have no callable functions
+            }
+
+            if (oldNamespace instanceof FInstantiatedClass) {
+                //if the old namespace is also an instantiation, go back to the base
+                FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldNamespace;
+                function = ((FInstantiatedFunction) function).getBase();
+                oldNamespace = instantiatedClass.getBaseClass();
+            }
+            //now go to the new instantiation
+            assert newNamespace instanceof FInstantiatedClass;
+            FInstantiatedClass instantiatedClass = (FInstantiatedClass) newNamespace;
+            assert instantiatedClass.getBaseClass() == oldNamespace;
+            function = instantiatedClass.getInstantiatedFunction(function);
+        }
+
+        //handle function instantiation
+        return function.getInstantiation(typeInstantiation);
     }
 
     @CanIgnoreReturnValue

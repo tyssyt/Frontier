@@ -4,11 +4,15 @@ import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.passes.GenericBaking;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class FInstantiatedClass extends FClass {
 
     private boolean baked = false;
     private FClass baseClass;
     private TypeInstantiation typeInstantiation;
+    private Map<FFunction, FFunction> baseFunctionMap = new HashMap<>();
 
     FInstantiatedClass(FClass baseClass, TypeInstantiation typeInstantiation) {
         super(new FInstantiatedClassIdentifier(baseClass.getIdentifier(), typeInstantiation), baseClass.getVisibility());
@@ -30,16 +34,24 @@ public class FInstantiatedClass extends FClass {
             if (baseFunction.isConstructor() || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             FInstantiatedFunction instantiatedFunction = FInstantiatedFunction.fromClassInstantiation(this, baseFunction);
+            baseFunctionMap.put(baseFunction, instantiatedFunction);
             this.addFunctionTrusted(instantiatedFunction);
         }
 
         //constructor
         setConstructorVisibility(baseClass.getConstructorVisibility());
-        generateConstructor();
+        FConstructor constructor = generateConstructor();
+        baseFunctionMap.put(baseClass.getConstructor(), constructor);
+        //TODO do we need to put malloc in the map?
     }
 
     public FClass getBaseClass() {
         return baseClass;
+    }
+
+    public FFunction getInstantiatedFunction(FFunction baseFunction) {
+        assert baseFunction.getMemberOf() == baseClass;
+        return baseFunctionMap.get(baseFunction);
     }
 
     public TypeInstantiation getTypeInstantiation() {
