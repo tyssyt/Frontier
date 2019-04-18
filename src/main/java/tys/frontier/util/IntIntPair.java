@@ -1,7 +1,5 @@
 package tys.frontier.util;
 
-import com.sun.istack.internal.NotNull;
-
 public class IntIntPair implements Comparable<IntIntPair> {
 
     public int a;
@@ -13,7 +11,7 @@ public class IntIntPair implements Comparable<IntIntPair> {
     }
 
     @Override
-    public int compareTo(@NotNull IntIntPair o) {
+    public int compareTo(IntIntPair o) {
         if (this.a != o.a)
             return this.a - o.a;
         return this.b - o.b;
