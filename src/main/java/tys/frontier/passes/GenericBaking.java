@@ -1,10 +1,14 @@
 package tys.frontier.passes;
 
 import tys.frontier.code.*;
-import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
+import tys.frontier.code.function.ClassInstantiationFunction;
+import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FInstantiatedFunction;
+import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.predefinedClasses.FVoid;
@@ -26,7 +30,7 @@ public class GenericBaking implements FClassVisitor {
     private TypeInstantiation typeInstantiation;
 
     private FField currentField;
-    private FInstantiatedFunction currentFunction;
+    private FFunction currentFunction;
     private boolean useOriginal = false;
 
     private Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
@@ -56,9 +60,9 @@ public class GenericBaking implements FClassVisitor {
         for (FFunction function : instantiatedClass.getFunctions().values()) {
             if (function.isConstructor() ||function.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
-            FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) function;
+            ClassInstantiationFunction instantiatedFunction = (ClassInstantiationFunction) function;
             visitor.currentFunction = instantiatedFunction;
-            instantiatedFunction.getBase().accept(visitor);
+            instantiatedFunction.getBaseR().accept(visitor);
             instantiatedFunction.setBaked();
         }
 
@@ -78,7 +82,7 @@ public class GenericBaking implements FClassVisitor {
         assert !(instantiatedFunction.getMemberOf() instanceof FInstantiatedClass);
         GenericBaking visitor = new GenericBaking(instantiatedFunction.getTypeInstantiation());
         visitor.currentFunction = instantiatedFunction;
-        instantiatedFunction.getBase().accept(visitor);
+        instantiatedFunction.getBaseR().accept(visitor);
         instantiatedFunction.setBaked();
         ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
     }

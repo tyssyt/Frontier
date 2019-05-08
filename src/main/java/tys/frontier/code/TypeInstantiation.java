@@ -1,5 +1,6 @@
 package tys.frontier.code;
 
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;

@@ -1,7 +1,7 @@
 package tys.frontier.code.statement;
 
-import tys.frontier.code.FFunction;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.loop.FLoop;
 import tys.frontier.code.visitor.StatementVisitor;

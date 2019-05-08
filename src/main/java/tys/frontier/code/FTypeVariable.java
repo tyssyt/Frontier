@@ -4,6 +4,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -125,7 +127,7 @@ public class FTypeVariable implements FType {
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), isFixed());
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        return new FFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
+        return new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
             @Override
             public boolean addCall(FFunctionCall call) { //this is a "hack" to set the origin of the constraint
                 constraint.setOrigin(call);

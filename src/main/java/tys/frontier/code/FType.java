@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import com.google.common.collect.Multimap;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;

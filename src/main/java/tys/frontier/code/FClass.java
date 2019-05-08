@@ -1,7 +1,11 @@
 package tys.frontier.code;
 
 import com.google.common.collect.*;
-import tys.frontier.code.Operator.FBinaryOperator;
+import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.InstantiableFunctionCopy;
+import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -387,10 +391,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                 try {
                     List<FType> argumentTypes = getArgumentTypes(f.getSignature());
 
-                    f = f.getInstantiableCopy();
+                    f = InstantiableFunctionCopy.instantiableCopyOf(f); //TODO
 
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    IntIntPair cost = f.castSignatureFrom(argumentTypes, typeInstantiation, constraints);
+                    IntIntPair cost = f.getSignature().castFrom(argumentTypes, typeInstantiation, constraints);
 
                     //compute instantiations
                     TypeInstantiation instantiation = computeTypeInstantiation(f, constraints, true);
@@ -401,7 +405,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                         continue;
 
                     updateCost(cost, f, constraints);
-                } catch (FFunction.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
+                } catch (Signature.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
             }
 
             if (bestFunction == null)
@@ -409,10 +413,10 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
             return new Pair<>(bestFunction, bestConstraints);
         }
 
-        private List<FType> getArgumentTypes(FFunction.Signature signature) throws FFunction.IncompatibleSignatures {
+        private List<FType> getArgumentTypes(Signature signature) throws Signature.IncompatibleSignatures {
             //reject when too many or too few arguments are given
             if (argumentTypes.size() > signature.getAllParamTypes().size() || argumentTypes.size() < signature.getParamTypes().size())
-                throw new FFunction.IncompatibleSignatures(signature, argumentTypes);
+                throw new Signature.IncompatibleSignatures(signature, argumentTypes);
 
             List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
             //if not enough arguments are given, fill up with default arguments

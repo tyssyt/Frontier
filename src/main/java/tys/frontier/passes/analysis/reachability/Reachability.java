@@ -7,6 +7,8 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionAddress;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
@@ -46,10 +48,10 @@ public class Reachability {
                     continue;
                 }
 
-                if (cur instanceof FInstantiatedFunction) { //for instantiated functions, we have to visit the base instead because they are not yet baked
-                    FInstantiatedFunction instantiatedFunction = (FInstantiatedFunction) cur;
-                    Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(instantiatedFunction.getBase());
-                    handleBaseAnalysis(baseAnalysis, instantiatedFunction.getTypeInstantiation(), todoFunctions, todoFields);
+                if (cur.isInstantiation()) { //for instantiated functions, we have to visit the base instead because they are not yet baked
+                    Triple<Set<FFunctionCall>, Set<FFieldAccess>, Set<FFunctionAddress>> baseAnalysis = analyseBase(cur.getBaseR());
+
+                    handleBaseAnalysis(baseAnalysis, cur.getTypeInstantiationToBase(), todoFunctions, todoFields);
                 } else { //normal function
                     cur.accept(reachabilityVisitor);
                 }
@@ -162,10 +164,8 @@ public class Reachability {
         FInstantiatedFunction value = null;
         if (function instanceof FInstantiatedFunction) {
             FInstantiatedFunction fInstantiatedFunction = (FInstantiatedFunction) function;
-            if (fInstantiatedFunction.getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION) {
-                value = fInstantiatedFunction;
-                function = fInstantiatedFunction.getBase();
-            }
+            value = fInstantiatedFunction;
+            function = fInstantiatedFunction.getProxy();
         }
         reachableClass.reachableFunctions.put(function, value);
     }
@@ -189,8 +189,8 @@ public class Reachability {
         ReachableClass reachableClass = reachableClasses.get(function.getMemberOf());
         if (reachableClass == null)
             return false;
-        if (function instanceof FInstantiatedFunction && ((FInstantiatedFunction) function).getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION)
-            return reachableClass.reachableFunctions.get(((FInstantiatedFunction) function).getBase()).contains(function);
+        if (function instanceof FInstantiatedFunction)
+            return reachableClass.reachableFunctions.get(((FInstantiatedFunction) function).getProxy()).contains(function);
         else
             return reachableClass.reachableFunctions.containsKey(function);
     }

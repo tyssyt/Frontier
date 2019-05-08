@@ -1,6 +1,6 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.FFunction;
+import tys.frontier.code.function.FFunction;
 
 public class SignatureCollision extends SyntaxError {
 

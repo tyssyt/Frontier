@@ -8,6 +8,8 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.selector.Selector;
@@ -85,7 +87,7 @@ public class Delegates {
                         builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
                         builder.addAll(params.subList(1, params.size()));
 
-                        FFunction del = new FFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build());
+                        FFunction del = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build());
                         try {
                             to.addFunction(del);
                             d.functions.add(new Pair<>(del, toDelegate));

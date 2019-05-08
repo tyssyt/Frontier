@@ -1,7 +1,8 @@
-package tys.frontier.code;
+package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
@@ -14,7 +15,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class FConstructor extends FFunction {
+public class FConstructor extends FBaseFunction {
 
     public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
     public static final FFunctionIdentifier MALLOC_ID = new FFunctionIdentifier("!malloc");
@@ -24,7 +25,7 @@ public class FConstructor extends FFunction {
     }
 
     public static FFunction createMalloc(FClass fClass) {
-        FFunction function = new FFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of());
+        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of());
         function.predefined = true;
         return function;
     }

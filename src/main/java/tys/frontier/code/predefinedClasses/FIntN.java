@@ -1,8 +1,8 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.Operator.FBinaryOperator;
-import tys.frontier.code.Operator.FUnaryOperator;
+import tys.frontier.code.function.operator.FBinaryOperator;
+import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.identifier.FIntIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;

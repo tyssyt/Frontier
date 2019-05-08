@@ -4,8 +4,8 @@ import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
+import tys.frontier.code.function.FFunction;
 
 import java.util.Arrays;
 import java.util.List;

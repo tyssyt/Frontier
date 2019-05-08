@@ -1,9 +1,9 @@
 package tys.frontier.passes.lowering;
 
 import tys.frontier.code.FClass;
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;

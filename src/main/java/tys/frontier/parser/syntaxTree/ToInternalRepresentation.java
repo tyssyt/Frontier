@@ -4,9 +4,12 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
-import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
+import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.InstantiableFunctionCopy;
+import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.literal.FLambda;
 import tys.frontier.code.literal.FLiteral;
@@ -964,7 +967,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if (function.getParametersList().isEmpty())
             return function;
 
-        FFunction res = function.getInstantiableCopy();
+        FFunction res = InstantiableFunctionCopy.instantiableCopyOf(function);
         currentFunction().genericFunctionAddressToInstantiate.addAll(res.getParametersList());
         return res;
     }

@@ -3,6 +3,8 @@ package tys.frontier.util;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.*;
+import tys.frontier.code.function.ClassInstantiationFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
@@ -103,10 +105,7 @@ public final class Utils {
             try {
                 FFunction res = newNamespace.resolveFunction(identifier, argumentTypes, TypeInstantiation.EMPTY);
 
-                if (res instanceof FInstantiatedFunction &&
-                    ((FInstantiatedFunction) res).getInstantiationType() == FInstantiatedFunction.InstantiationType.FUNCTION_INSTANTIATION &&
-                    res.getType() instanceof FTypeVariable && typeInstantiation.getTypeMap().containsKey((FTypeVariable)res.getType())
-                ) {
+                if (res.getType() instanceof FTypeVariable && typeInstantiation.getTypeMap().containsKey((FTypeVariable)res.getType())) {
                     /*
                         There is a special problematic case:
                         When the return type is a TypeVariable, that does not appear anywhere else in the header
@@ -140,7 +139,7 @@ public final class Utils {
             if (oldNamespace instanceof FInstantiatedClass) {
                 //if the old namespace is also an instantiation, go back to the base
                 FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldNamespace;
-                function = ((FInstantiatedFunction) function).getBase();
+                function = ((ClassInstantiationFunction) function).getProxy();
                 oldNamespace = instantiatedClass.getBaseClass();
             }
             //now go to the new instantiation

@@ -2,9 +2,9 @@ package tys.frontier.main;
 
 import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.FClass;
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FInstantiatedClass;
-import tys.frontier.code.FInstantiatedFunction;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;

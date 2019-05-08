@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import tys.frontier.code.FClass;
-import tys.frontier.code.FFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;

@@ -4,11 +4,12 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
@@ -74,7 +75,7 @@ public class FOptional extends FPredefinedClass {
             params = builder.build();
         }
 
-        return new FFunction(original.getIdentifier(), this, original.getVisibility(), false,
+        return new FBaseFunction(original.getIdentifier(), this, original.getVisibility(), false,
                 returnType, ImmutableList.copyOf(params)) {
             {predefined = true;}
             @Override

@@ -2,6 +2,8 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
+import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -142,7 +144,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         try {
             formalParameters(ctx.formalParameters(), params, typeResolver);
-            FFunction res = new FFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, params.build(), typeParameters);
+            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, params.build(), typeParameters);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
         } catch (SyntaxErrors e) {

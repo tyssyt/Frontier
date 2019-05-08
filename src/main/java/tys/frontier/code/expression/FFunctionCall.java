@@ -1,8 +1,8 @@
 package tys.frontier.code.expression;
 
 import com.google.common.base.Joiner;
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FType;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;

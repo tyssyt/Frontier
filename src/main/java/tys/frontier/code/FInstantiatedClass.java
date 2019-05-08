@@ -1,5 +1,8 @@
 package tys.frontier.code;
 
+import tys.frontier.code.function.ClassInstantiationFunction;
+import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.passes.GenericBaking;
@@ -33,7 +36,7 @@ public class FInstantiatedClass extends FClass {
         for (FFunction baseFunction : baseClass.getFunctions().values()) {
             if (baseFunction.isConstructor() || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
-            FInstantiatedFunction instantiatedFunction = FInstantiatedFunction.fromClassInstantiation(this, baseFunction);
+            ClassInstantiationFunction instantiatedFunction = ClassInstantiationFunction.fromClassInstantiation(this, baseFunction);
             baseFunctionMap.put(baseFunction, instantiatedFunction);
             this.addFunctionTrusted(instantiatedFunction);
         }

@@ -1,10 +1,10 @@
 package tys.frontier.passes.lowering;
 
-import tys.frontier.code.FFunction;
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.Operator.FBinaryOperator;
-import tys.frontier.code.Operator.FUnaryOperator;
 import tys.frontier.code.expression.*;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.operator.FBinaryOperator;
+import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;

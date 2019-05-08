@@ -3,9 +3,9 @@ package tys.frontier.code.statement;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import tys.frontier.code.FClass;
-import tys.frontier.code.Operator.FBinaryOperator;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.function.operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static tys.frontier.code.Operator.FBinaryOperator.Arith.*;
+import static tys.frontier.code.function.operator.FBinaryOperator.Arith.*;
 
 public class FVarAssignment implements FStatement {
 
