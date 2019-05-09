@@ -104,6 +104,10 @@ public class TypeParameterCast extends ImplicitTypeCast {
         return new TypeParameterCast(baseType, targetType, variance, casts);
     }
 
+    public ImplicitTypeCast[] getCasts() {
+        return casts;
+    }
+
     @Override
     public FClass getBase() {
         return (FClass) base;

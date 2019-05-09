@@ -1,14 +1,15 @@
 package tys.frontier.code;
 
 import com.google.common.collect.*;
+import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
@@ -134,7 +135,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
     @Override
     public FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, null, typeInstantiation).resolve();
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : pair.b.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
                 throw new FunctionNotFound(identifier, argumentTypes);
@@ -144,7 +145,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
 
     @Override
     public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, typeInstantiation).resolve();
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, null, typeInstantiation).resolve();
         constraints.putAll(pair.b);
         return pair.a;
     }
@@ -372,18 +373,21 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     }
 
     private class FunctionResolver {
+
         private FFunction bestFunction;
         private Multimap<FTypeVariable, TypeConstraint> bestConstraints;
         private IntIntPair bestCosts;
 
         private FFunctionIdentifier identifier;
         private List<FType> argumentTypes;
+        private FType returnType;
         private TypeInstantiation typeInstantiation;
 
-        FunctionResolver(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
+        FunctionResolver(FFunctionIdentifier identifier, List<FType> argumentTypes,  FType returnType, TypeInstantiation typeInstantiation) {
             this.identifier = identifier;
             this.argumentTypes = argumentTypes;
             this.typeInstantiation = typeInstantiation;
+            this.returnType = returnType;
         }
 
         Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
@@ -391,20 +395,25 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
                 try {
                     List<FType> argumentTypes = getArgumentTypes(f.getSignature());
 
-                    f = InstantiableFunctionCopy.instantiableCopyOf(f); //TODO
-
                     Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-                    IntIntPair cost = f.getSignature().castFrom(argumentTypes, typeInstantiation, constraints);
+                    Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
+                    FFunctionType call = FFunctionType.from(argumentTypes, returnType != null ? returnType : pair.a.getOut());
+                    if (call == pair.a) //perfect fit
+                        return new Pair<>(f, ImmutableMultimap.of());
+
+                    TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, constraints); //this contravariant is hard to explain, but correct
 
                     //compute instantiations
                     TypeInstantiation instantiation = computeTypeInstantiation(f, constraints, true);
-                    f = f.getInstantiation(instantiation);
+                    f = f.getInstantiation(pair.b.then(instantiation));
 
                     //handle other constraints
                     if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(constraints) != null)
                         continue;
 
-                    updateCost(cost, f, constraints);
+                    int numberOfCastParameters = Utils.countNonNull(cast.getCasts());
+                    int castCost = cast.getCost();
+                    updateCost(new IntIntPair(numberOfCastParameters, castCost), f, constraints);
                 } catch (Signature.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
             }
 

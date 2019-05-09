@@ -199,4 +199,12 @@ public final class Utils {
         }
         return null;
     }
+
+    public static <T> int countNonNull(T[] array) {
+        int res=0;
+        for (T t : array)
+            if (t != null)
+                res++;
+        return res;
+    }
 }

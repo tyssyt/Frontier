@@ -17,7 +17,9 @@ import java.util.List;
 
 public class FNull implements FLiteral {
 
+    private static final FTypeIdentifier IDENTIFIER = new FTypeIdentifier("!NullType");
     public static FType NULL_TYPE = new FType() {
+
         @Override
         public FField getField(FIdentifier identifier)  {
             return Utils.cantHappen();
@@ -44,7 +46,7 @@ public class FNull implements FLiteral {
 
         @Override
         public FTypeIdentifier getIdentifier() {
-            return Utils.cantHappen();
+            return IDENTIFIER;
         }
 
         @Override
