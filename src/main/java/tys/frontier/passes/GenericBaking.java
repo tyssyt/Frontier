@@ -87,8 +87,8 @@ public class GenericBaking implements FClassVisitor {
         ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
     }
 
-    public static FStatement bake (FStatement statement, TypeInstantiation typeInstantiation) {
-        GenericBaking visitor = new GenericBaking(typeInstantiation);
+    public static FStatement bake (FStatement statement) {
+        GenericBaking visitor = new GenericBaking(TypeInstantiation.EMPTY);
         visitor.useOriginal = true;
         return statement.accept(visitor);
     }

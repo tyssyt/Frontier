@@ -299,19 +299,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if(currentFunction().genericFunctionAddressToInstantiate.isEmpty())
             return untyped;
 
-        Map<FTypeVariable, FType> typeInstantiationMap = new HashMap<>();
         Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
         for (FTypeVariable toInstantiate : currentFunction().genericFunctionAddressToInstantiate) {
             Pair<FType, Multimap<FTypeVariable, TypeConstraint>> pair = toInstantiate.getConstraints().resolve();
-            typeInstantiationMap.put(toInstantiate, pair.a);
+            assert !(pair.a instanceof FTypeVariable);
             newConstraints.putAll(pair.b);
         }
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : newConstraints.entries()) {
             entry.getKey().tryAddConstraint(entry.getValue());
         }
         currentFunction().genericFunctionAddressToInstantiate.clear();
-        TypeInstantiation typeInstantiation = TypeInstantiation.create(typeInstantiationMap);
-        return GenericBaking.bake(untyped, typeInstantiation);
+        return GenericBaking.bake(untyped);
     }
 
     @Override
