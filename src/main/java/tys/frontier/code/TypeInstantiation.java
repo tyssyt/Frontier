@@ -7,6 +7,7 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -14,10 +15,6 @@ import java.util.*;
 public class TypeInstantiation {
 
     public static final TypeInstantiation EMPTY = new TypeInstantiation(Collections.emptyMap()) {
-        @Override
-        public FType getType(FType original) {
-            return original;
-        }
         @Override
         public TypeInstantiation intersect(List<FTypeVariable> typeVariables) {
             return this;
@@ -128,7 +125,14 @@ public class TypeInstantiation {
         } else if (original instanceof FClass) {
             return ((FClass) original).getInstantiation(this);
         } else if (original instanceof FTypeVariable) {
-            return typeMap.getOrDefault(original, original);
+            TypeConstraints constraints = ((FTypeVariable) original).getConstraints();
+            if (constraints.isResolved())
+                return getType(constraints.getResolved());
+            FType res = typeMap.get(original);
+            if (res == null)
+                return original;
+            else
+                return getType(res);
         } else {
             return Utils.cantHappen();
         }
