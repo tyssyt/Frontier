@@ -80,9 +80,9 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static <T extends HasTypeParameters<T>> void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, T _class, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
+    public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FTypeIdentifier, FTypeVariable> params, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
-        FTypeVariable typeVariable = _class.getParameters().get(identifier);
+        FTypeVariable typeVariable = params.get(identifier);
         if (typeVariable == null)
             throw new UndeclaredVariable(identifier);
 
@@ -90,12 +90,12 @@ public final class ParserContextUtils {
         UpperBoundContext uC = ctx.upperBound();
         if (uC != null) {
             for (FType type : typesFromList(uC.typeList().typeType(), possibleTypes))
-                constraints = TypeConstraints.add(constraints, new ImplicitCastable(_class, type, Variance.Contravariant));
+                constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Contravariant));
         }
         LowerBoundContext lC = ctx.lowerBound();
         if (lC != null) {
             for (FType type : typesFromList(lC.typeList().typeType(), possibleTypes))
-                constraints = TypeConstraints.add(constraints, new ImplicitCastable(_class, type, Variance.Covariant));
+                constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Covariant));
         }
         typeVariable.setConstraints(constraints);
     }

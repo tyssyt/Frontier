@@ -42,8 +42,7 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
 
         newReturnType = typeInstantiation.getType(base.getType());
         newParams = createParams(base.getParams(), typeInstantiation);
-        //noinspection unchecked
-        newParameters = (Map) Utils.asMap(varMap.values());
+        newParameters = Utils.asTypeMap(varMap.values());
         newParametersList = new ArrayList<>(varMap.values());
         newSignature = new Signature(this);
     }

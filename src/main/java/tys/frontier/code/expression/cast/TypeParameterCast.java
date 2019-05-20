@@ -84,7 +84,8 @@ public class TypeParameterCast extends ImplicitTypeCast {
         TypeInstantiation targetInst = targetType.getTypeInstantiation();
 
         //get BaseClass Parameter list
-        List<FTypeVariable> parameters = nonParameterized.getParametersList();
+        //noinspection unchecked
+        List<FTypeVariable> parameters = ((List<FTypeVariable>) nonParameterized.getParametersList());
         ImplicitTypeCast[] casts = new ImplicitTypeCast[parameters.size()];
 
         //for each baseClass parameter, instantiated with the instantiations from both sides

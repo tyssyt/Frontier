@@ -5,10 +5,7 @@ import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.*;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
-import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -52,6 +49,16 @@ public final class Utils {
 
     public static <T extends IdentifierNameable> Map<FIdentifier, T> asMap (Collection<? extends T> vars) {
         Map<FIdentifier, T> map = new HashMap<>();
+        for (T t : vars) {
+            if (map.put(t.getIdentifier(), t) != null) {
+                throw new IllegalStateException("Duplicate key");
+            }
+        }
+        return map;
+    }
+
+    public static <T extends FType> Map<FTypeIdentifier, T> asTypeMap (Collection<? extends T> vars) {
+        Map<FTypeIdentifier, T> map = new HashMap<>();
         for (T t : vars) {
             if (map.put(t.getIdentifier(), t) != null) {
                 throw new IllegalStateException("Duplicate key");

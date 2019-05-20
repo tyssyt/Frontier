@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface FFunction extends FTypeMember, HasTypeParameters<FFunction>, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
+public interface FFunction extends FTypeMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     @Override
     default boolean isInstance() {
@@ -62,17 +62,14 @@ public interface FFunction extends FTypeMember, HasTypeParameters<FFunction>, Id
 
     FLocalVariable getFreshVariable(FType type);
 
-    @Override
     Map<FTypeIdentifier, FTypeVariable> getParameters();
 
-    @Override
-    List<FTypeVariable> getParametersList();
+    List<FTypeVariable> getParametersList(); //TODO see if we can eliminate either this or the map
 
     boolean isInstantiation();
     FFunction getBaseR();
     TypeInstantiation getTypeInstantiationToBase();
 
-    @Override
     FFunction getInstantiation(TypeInstantiation typeInstantiation);
 
     default <C,Fi,Fu,S,E> Fu accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {

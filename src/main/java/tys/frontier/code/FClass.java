@@ -23,15 +23,14 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
+public class FClass implements FType, HasVisibility {
 
     protected FTypeIdentifier identifier;
     protected FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
-    private Map<FTypeIdentifier, FTypeVariable> parameters;
-    private List<FTypeVariable> parametersList;
+    private ImmutableList<FTypeVariable> parametersList;
     private Map<FTypeVariable, Variance> parameterVariance;
-    private Map<TypeInstantiation, FInstantiatedClass> instantiations;
+    private Map<ImmutableList<FType>, FInstantiatedClass> instantiations;
 
     protected BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
     protected BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
@@ -45,8 +44,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     public FClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
-        this.parameters = Collections.emptyMap();
-        this.parametersList = Collections.emptyList();
+        this.parametersList = ImmutableList.of();
         this.parameterVariance = Collections.emptyMap();
         this.instantiations = Collections.emptyMap();
     }
@@ -63,16 +61,14 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
     }
 
     public void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance) {
-        assert this.parameters.isEmpty();
+        assert this.parametersList.isEmpty();
         if (!parameters.isEmpty()) {
-            this.parameters = new HashMap<>(parameters.size());
-            this.parametersList = parameters;
+            this.parametersList = ImmutableList.copyOf(parameters);
             this.parameterVariance = new HashMap<>(parameters.size());
             this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
             for (int i = 0; i < parameters.size(); i++) {
                 FTypeVariable var = parameters.get(i);
-                this.parameters.put(var.getIdentifier(), var);
                 this.parameterVariance.put(var, parameterVariance.get(i));
             }
         }
@@ -150,13 +146,7 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return pair.a;
     }
 
-    @Override
-    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
-        return parameters;
-    }
-
-    @Override
-    public List<FTypeVariable> getParametersList() {
+    public List<? extends FType> getParametersList() {
         return parametersList;
     }
 
@@ -164,15 +154,23 @@ public class FClass implements FType, HasVisibility, HasTypeParameters<FClass> {
         return parameterVariance.get(parameter);
     }
 
-    @Override
-    public FClass getInstantiation(TypeInstantiation typeInstantiation) {
-        TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
-        if (intersected.isEmpty())
+    public Variance getParameterVariance(int i) {
+        return parameterVariance.get(parametersList.get(i));
+    }
+
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+        if (getParametersList().size() != types.size()) {
+            throw new WrongNumberOfTypeArguments(this, types, getParametersList().size());
+        }
+        if (types.size() == 0 || parametersList.equals(types))
             return this;
-        FInstantiatedClass res = instantiations.get(intersected);
+
+        ImmutableList<FType> args = ImmutableList.copyOf(types);
+
+        FInstantiatedClass res = instantiations.get(args);
         if (res == null) {
-            res = new FInstantiatedClass(this, intersected);
-            instantiations.put(intersected, res);
+            res = new FInstantiatedClass(this, args);
+            instantiations.put(args, res);
             res.prepare();
         }
         return res;

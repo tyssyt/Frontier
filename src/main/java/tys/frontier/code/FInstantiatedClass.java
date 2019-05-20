@@ -1,30 +1,35 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ImmutableList;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FInstantiatedClass extends FClass {
 
     private boolean baked = false;
     private FClass baseClass;
-    private TypeInstantiation typeInstantiation;
+    private ImmutableList<FType> instantiatedParameters;
     private Map<FFunction, FFunction> baseFunctionMap = new HashMap<>();
 
-    FInstantiatedClass(FClass baseClass, TypeInstantiation typeInstantiation) {
-        super(new FInstantiatedClassIdentifier(baseClass.getIdentifier(), typeInstantiation), baseClass.getVisibility());
+    FInstantiatedClass(FClass baseClass, ImmutableList<FType> instantiatedParameters) {
+        super(new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters), baseClass.getVisibility());
         assert !(baseClass instanceof FInstantiatedClass);
+        assert instantiatedParameters.size() == baseClass.getParametersList().size();
         this.baseClass = baseClass;
-        this.typeInstantiation = typeInstantiation;
+        this.instantiatedParameters = instantiatedParameters;
     }
 
     void prepare() {
+        TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add fields
         for (FField baseField : baseClass.getFields()) {
             FField instantiatedField = new FField(baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
@@ -58,15 +63,24 @@ public class FInstantiatedClass extends FClass {
     }
 
     public TypeInstantiation getTypeInstantiation() {
-        return typeInstantiation;
+        Map<FTypeVariable, FType> typeInstantiation = new HashMap<>();
+        //noinspection unchecked
+        List<FTypeVariable> baseParameters = (List<FTypeVariable>) baseClass.getParametersList();
+        for (int i = 0; i < instantiatedParameters.size(); i++)
+            typeInstantiation.put(baseParameters.get(i), instantiatedParameters.get(i));
+        return TypeInstantiation.create(typeInstantiation);
     }
 
+    @Override
+    public List<FType> getParametersList() {
+        return instantiatedParameters;
+    }
 
     @Override
     public long concreteness() {
         long res = Long.MAX_VALUE;
-        for (FTypeVariable param : baseClass.getParametersList()) {
-            res = Long.min(res, typeInstantiation.getType(param).concreteness());
+        for (FType param : instantiatedParameters) {
+            res = Long.min(res, param.concreteness());
         }
         if (res == Long.MAX_VALUE) //avoid overflow
             return Long.MAX_VALUE;
@@ -77,25 +91,19 @@ public class FInstantiatedClass extends FClass {
     public boolean canImplicitlyCast() {
         if (!delegates.isEmpty()) //TODO should this be baseClass delegates?
             return true;
-        for (FTypeVariable param : baseClass.getParametersList()) {
-            Variance var = baseClass.getParameterVariance(param);
-            if (var == Variance.Covariant) {
-                FType inst = typeInstantiation.getType(param);
-                if (inst.canImplicitlyCast())
-                    return true;
-            } else if (var == Variance.Contravariant) {
+        for (int i = 0; i < instantiatedParameters.size(); i++) {
+            Variance var = getParameterVariance(i);
+            if (var == Variance.Covariant && instantiatedParameters.get(i).canImplicitlyCast())
                 return true;
-            }
+            if (var == Variance.Contravariant)
+                return true;
         }
         return false;
     }
 
     @Override
-    public FClass getInstantiation(TypeInstantiation typeInstantiation) { //TODO this could be far more optimized...
-        if (typeInstantiation.isEmpty())
-            return this;
-        TypeInstantiation combined = this.typeInstantiation.then(typeInstantiation);
-        return baseClass.getInstantiation(combined);
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+        return baseClass.getInstantiation(types);
     }
 
     public boolean isBaked() {
@@ -103,7 +111,7 @@ public class FInstantiatedClass extends FClass {
     }
 
     public void bake() {
-        assert !baked && typeInstantiation.fits(baseClass);
+        assert !baked;
         GenericBaking.bake(this);
     }
 

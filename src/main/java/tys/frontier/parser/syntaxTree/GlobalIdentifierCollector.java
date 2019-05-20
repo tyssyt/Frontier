@@ -67,17 +67,17 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
-        for (Map.Entry<FTypeIdentifier, FTypeVariable> entry : currentClass.getParameters().entrySet()) {
-            FType old = types.put(entry.getKey(), entry.getValue());
+        for (FType p : currentClass.getParametersList()) {
+            FType old = types.put(p.getIdentifier(), p);
             if (old != null)
-                errors.add(new IdentifierCollision(old, entry.getValue()));
+                errors.add(new IdentifierCollision(old, p));
         }
         try {
             visitChildren(ctx);
             return null;
         } finally {
-            for (FTypeIdentifier identifier : currentClass.getParameters().keySet()) {
-                types.remove(identifier);
+            for (FType p : currentClass.getParametersList()) {
+                types.remove(p.getIdentifier());
             }
             currentClass = null;
         }
@@ -101,12 +101,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
                 try {
-                    Map map = Utils.asMap(ParserContextUtils.getTypeParameters(c).a); //we hack with rawtypes because I can't be bothered to find a way to generify asMap
-                    //noinspection unchecked
-                    typeParameters = (Map<FTypeIdentifier, FTypeVariable>) map;
-                    FTypeIdentifier duplicate = Utils.firstDuplicate(currentClass.getParameters().keySet(), typeParameters.keySet());
-                    if (duplicate != null) {
-                        throw new TwiceDefinedLocalVariable(duplicate);
+                    typeParameters = Utils.asTypeMap(ParserContextUtils.getTypeParameters(c).a);
+                    for (FType classParam : currentClass.getParametersList()) {
+                        if (typeParameters.containsKey(classParam.getIdentifier())) {
+                            throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
+                        }
                     }
                     typeResolver = id -> {
                         FType t = types.get(id);

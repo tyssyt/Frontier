@@ -51,6 +51,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private List<SyntaxError> errors = new ArrayList<>();
 
     private FClass currentType;
+    private Map<FTypeIdentifier, FTypeVariable> currentTypeParams;
     private Deque<FunctionContext> functionContextStack = new ArrayDeque<>();
     private Map<FVariable, FTypeVariable> typeVariableMap = new HashMap<>();
 
@@ -96,7 +97,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if (res != null)
             return res;
         //check type parameters of current class
-        res = currentType.getParameters().get(identifier);
+        res = currentTypeParams.get(identifier);
         if (res != null)
             return res;
         //check type parameters of current function
@@ -114,10 +115,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentType = treeData.classes.get(ctx);
+        //noinspection unchecked
+        currentTypeParams = Utils.asTypeMap((List<FTypeVariable>)currentType.getParametersList());
         //handle typeParameterSpecification
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
-                ParserContextUtils.handleTypeParameterSpecification(c, currentType, this::findType);
+                ParserContextUtils.handleTypeParameterSpecification(c, currentTypeParams, this::findType);
             } catch (SyntaxError syntaxError) {
                 errors.add(syntaxError);
             }
@@ -259,7 +262,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
-                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function, this::findType);
+                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function.getParameters(), this::findType);
             } catch (SyntaxError syntaxError) {
                 errors.add(syntaxError);
             }

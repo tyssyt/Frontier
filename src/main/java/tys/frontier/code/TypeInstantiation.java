@@ -8,6 +8,7 @@ import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -87,7 +88,7 @@ public class TypeInstantiation {
         return typeMap.containsKey(var);
     }
 
-    public <T extends HasTypeParameters<T>> boolean fits(T hasParam) {
+    public boolean fits(FFunction hasParam) {
         return typeMap.size() == hasParam.getParameters().size() && typeMap.keySet().containsAll(hasParam.getParameters().values());
     }
 
@@ -123,7 +124,16 @@ public class TypeInstantiation {
             }
             return FFunctionType.from(in, getType(fFunctionType.getOut()));
         } else if (original instanceof FClass) {
-            return ((FClass) original).getInstantiation(this);
+            FClass fClass = (FClass) original;
+            List<FType> args = new ArrayList<>(fClass.getParametersList().size());
+            for (FType fType : fClass.getParametersList()) {
+                args.add(getType(fType));
+            }
+            try {
+                return fClass.getInstantiation(args);
+            } catch (WrongNumberOfTypeArguments wrongNumberOfTypeArguments) {
+                return Utils.cantHappen();
+            }
         } else if (original instanceof FTypeVariable) {
             TypeConstraints constraints = ((FTypeVariable) original).getConstraints();
             if (constraints.isResolved())
