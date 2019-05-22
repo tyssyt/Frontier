@@ -3,12 +3,17 @@ package tys.frontier.backend.llvm;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.bytedeco.javacpp.PointerPointer;
-import tys.frontier.code.*;
-import tys.frontier.code.Operator.FBinaryOperator;
-import tys.frontier.code.Operator.FBinaryOperator.Arith;
-import tys.frontier.code.Operator.FUnaryOperator;
+import tys.frontier.code.FClass;
+import tys.frontier.code.FField;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
+import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.operator.FBinaryOperator;
+import tys.frontier.code.function.operator.FBinaryOperator.Arith;
+import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
@@ -26,8 +31,8 @@ import java.util.Map;
 
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
-import static tys.frontier.code.Operator.FBinaryOperator.Arith.*;
-import static tys.frontier.code.Operator.FBinaryOperator.Bool.*;
+import static tys.frontier.code.function.operator.FBinaryOperator.Arith.*;
+import static tys.frontier.code.function.operator.FBinaryOperator.Bool.*;
 
 class LLVMTransformer implements
         AutoCloseable,
@@ -227,7 +232,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitVarAssignment(FVarAssignment assignment) {
         if (assignment.getOperator() != FVarAssignment.Operator.ASSIGN) {
-            Utils.NYI("Operator " + assignment.getOperator());
+            Utils.NYI("operator " + assignment.getOperator());
         }
         LLVMValueRef value = assignment.getValue().accept(this);
         LLVMValueRef variableAddress = assignment.getVariableExpression().accept(this);
