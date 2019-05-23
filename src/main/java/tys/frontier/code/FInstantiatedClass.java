@@ -102,6 +102,16 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
+    public Variance getParameterVariance(FTypeVariable parameter) {
+        return baseClass.getParameterVariance(parameter);
+    }
+
+    @Override
+    public Variance getParameterVariance(int i) {
+        return baseClass.getParameterVariance(i);
+    }
+
+    @Override
     public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
         return baseClass.getInstantiation(types);
     }
