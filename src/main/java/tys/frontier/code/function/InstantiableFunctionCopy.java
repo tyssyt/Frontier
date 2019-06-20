@@ -122,17 +122,13 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
     }
 
     @Override
-    public FFunction getInstantiation(TypeInstantiation typeInstantiation) { //TODO almost copy of FInst
-        if (typeInstantiation.isEmpty())
-            return this;
+    public FFunction getInstantiation(TypeInstantiation typeInstantiation) { //TODO this gets used kind of weird with the assert isEmpty and all the getInstantiation can be refactored to be used better...
+        //InstantiableFunctionCopy is only used with addresses, so when this is called typeInstantiation should be emtpy, and all newParameters should be instantiated
+        assert typeInstantiation.isEmpty();
         Map<FTypeVariable, FType> baseMap = new HashMap<>(newParameters.size());
         for (FTypeVariable var : newParametersList) {
-            FType type = typeInstantiation.getTypeMap().get(var);
-            if (type == null) { //the only var tha is allowed not to be resolved is the return type
-                assert newReturnType == var;
-                type = var;
-            }
-            baseMap.put(proxy.getParameters().get(var.getIdentifier()), type);
+            assert var.getConstraints().isResolved();
+            baseMap.put(proxy.getParameters().get(var.getIdentifier()), var.getConstraints().getResolved());
         }
         return proxy.getInstantiation(TypeInstantiation.create(baseMap));
     }
