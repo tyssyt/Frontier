@@ -402,8 +402,8 @@ public class FClass implements FType, HasVisibility {
                     TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, constraints); //this contravariant is hard to explain, but correct
 
                     //compute instantiations
-                    TypeInstantiation instantiation = computeTypeInstantiation(f, constraints, true);
-                    f = f.getInstantiation(pair.b.then(instantiation));
+                    TypeInstantiation instantiation = computeTypeInstantiation(pair.b, constraints, true);
+                    f = f.getInstantiation(instantiation);
 
                     //handle other constraints
                     if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(constraints) != null)
@@ -436,19 +436,22 @@ public class FClass implements FType, HasVisibility {
             return argumentTypes;
         }
 
-        private TypeInstantiation computeTypeInstantiation(FFunction toInstantiate, Multimap<FTypeVariable, TypeConstraint> constraints, boolean cleanConstraints) throws UnfulfillableConstraints {
-            if (toInstantiate.getParametersList().isEmpty())
+        private TypeInstantiation computeTypeInstantiation(TypeInstantiation baseInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints, boolean cleanConstraints) throws UnfulfillableConstraints {
+            if (baseInstantiation.isEmpty())
                 return TypeInstantiation.EMPTY;
             
             Map<FTypeVariable, FType> typeVariableMap = new HashMap<>();
             Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
 
-            for (FTypeVariable v : toInstantiate.getParametersList()) {
+            for (Map.Entry<FTypeVariable, FType> pair : baseInstantiation.getTypeMap().entrySet()) {
+                FTypeVariable key = pair.getKey();
+                FTypeVariable v = (FTypeVariable) pair.getValue();
+
                 TypeConstraints c = v.getConstraints();
                 c = TypeConstraints.addAll(c, constraints.get(v));
-                Pair<FType, Multimap<FTypeVariable, TypeConstraint>> pair = c.resolve();
-                typeVariableMap.put(v, pair.a);
-                newConstraints.putAll(pair.b);
+                Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolvePair = c.resolve();
+                typeVariableMap.put(key, resolvePair.a);
+                newConstraints.putAll(resolvePair.b);
                 if (cleanConstraints)
                     constraints.removeAll(v);
             }
