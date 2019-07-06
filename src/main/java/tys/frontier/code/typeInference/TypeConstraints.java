@@ -145,10 +145,7 @@ public class TypeConstraints {
             if (implicitCastable.getVariance() == Invariant) {
                 if (implicitCastable.getTarget() instanceof FClass) {
                     //resolve
-                    Multimap<FTypeVariable, TypeConstraint> newConstraints = _this.doResolve((FClass) implicitCastable.getTarget());
-                    for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : newConstraints.asMap().entrySet()) {
-                        TypeConstraints.addAll(entry.getKey().getConstraints(), entry.getValue());
-                    }
+                    _this.doResolve((FClass) implicitCastable.getTarget(), false);
                     return _this;
                 } else if (implicitCastable.getTarget() instanceof FTypeVariable) {
                     //merge
@@ -280,7 +277,7 @@ public class TypeConstraints {
         return false;
     }
 
-    public Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolve() throws UnfulfillableConstraints {  //this will slowly become more powerful, as I get more knowledgeable about how this should properly behave
+    public Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolve() throws UnfulfillableConstraints {
         if (isResolved())
             return new Pair<>(resolvedAs, ImmutableListMultimap.of());
 
@@ -299,7 +296,7 @@ public class TypeConstraints {
             return new Pair<>(equivalenceGroup.iterator().next(), ImmutableListMultimap.of());
 
         //resolve
-        return new Pair<>(proposition, this.doResolve(proposition));
+        return new Pair<>(proposition, this.doResolve(proposition, true));
     }
 
     public FType getResolved() {
@@ -307,7 +304,7 @@ public class TypeConstraints {
         return resolvedAs;
     }
 
-    private Multimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition) throws UnfulfillableConstraints {
+    private Multimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition, boolean soft) throws UnfulfillableConstraints {
         //check against constraints, error if not consistent
         Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
         ImplicitCastable typeConstraint = new ImplicitCastable(this, proposition, Invariant);
@@ -332,6 +329,12 @@ public class TypeConstraints {
             throw new UnfulfillableConstraints(this, typeConstraint, unsatisfiable);
         }
 
+        if (!soft) {
+            for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : newConstraints.asMap().entrySet()) {
+                TypeConstraints.addAll(entry.getKey().getConstraints(), entry.getValue());
+            }
+            newConstraints.clear();
+        }
 
         if (newConstraints.isEmpty()) {
             //if there are no more new constraints, mark this group as resolved
