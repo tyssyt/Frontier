@@ -107,8 +107,11 @@ public class FInstantiatedFunction extends ForwardingFunction {
 
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
+        /* TODO this optimization has to be removed, because when expression baking, we might have an empty type
+             instantiation but still need to run all parameters through a getType to replace resolved variables
         if (typeInstantiation.isEmpty())
             return this;
+        */
         //TODO a more elegant solution would be this.typeInstantiation.then(typeInstantiation).intersect(proxy.getParametersList())
         Map<FTypeVariable, FType> baseMap = new HashMap<>(proxy.getParametersList().size());
         for (FTypeVariable var : proxy.getParametersList()) {
