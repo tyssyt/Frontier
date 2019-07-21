@@ -9,6 +9,7 @@ import java.util.List;
 
 public class HasCall extends TypeConstraint {
 
+    //TODO can there be a case where we know the return Type and want a member for that?
     private FFunctionIdentifier identifier;
     private List<FType> argumentTypes;
     private TypeInstantiation typeInstantiation;

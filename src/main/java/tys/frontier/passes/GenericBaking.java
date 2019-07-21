@@ -247,7 +247,7 @@ public class GenericBaking implements FClassVisitor {
             }
         }
 
-        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params), typeInstantiation);
+        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), typeInstantiation);
         return FFunctionCall.createTrusted(function, params);
     }
 

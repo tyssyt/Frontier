@@ -1,5 +1,6 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -12,6 +13,7 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.List;
+import java.util.Map;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
@@ -19,9 +21,17 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound;
+    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+        ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
+        FFunction res = resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
+        for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
+            if (!entry.getKey().tryAddConstraint(entry.getValue()))
+                throw new FunctionNotFound(identifier, argumentTypes);
+        }
+        return res;
+    }
 
-    FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
+    FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
 
     FField getField(FIdentifier identifier) throws FieldNotFound;
 

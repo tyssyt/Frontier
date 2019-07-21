@@ -419,7 +419,7 @@ public class TypeConstraints {
             aTarget = ((FTypeVariable) aTarget).getConstraints().resolvedAs;
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
-            aTarget.resolveFunction(b.getIdentifier(), b.getArgumentTypes(), b.getTypeInstantiation(), newConstraints);
+            aTarget.resolveFunction(b.getIdentifier(), b.getArgumentTypes(), null, b.getTypeInstantiation(), newConstraints);
             return true;
         } catch (FunctionNotFound functionNotFound) {
             return false;

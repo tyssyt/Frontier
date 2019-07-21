@@ -1,17 +1,16 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapMaker;
+import com.google.common.collect.*;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FType;
+import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
+import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.ArrayList;
@@ -56,12 +55,12 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         if (argumentTypes.size() > 0 && argumentTypes.get(0) == this) {
             argumentTypes = new ArrayList<>(argumentTypes); //copy to not modify the original list
             argumentTypes.set(0, baseType);
         }
-        FFunction base = baseType.resolveFunction(identifier, argumentTypes, typeInstantiation);
+        FFunction base = baseType.resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
         return shimMap.computeIfAbsent(base, this::createShim);
     }
 

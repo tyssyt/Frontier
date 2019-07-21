@@ -130,18 +130,8 @@ public class FClass implements FType, HasVisibility {
     }
 
     @Override
-    public FFunction resolveFunction (FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, null, typeInstantiation).resolve();
-        for (Map.Entry<FTypeVariable, TypeConstraint> entry : pair.b.entries()) {
-            if (!entry.getKey().tryAddConstraint(entry.getValue()))
-                throw new FunctionNotFound(identifier, argumentTypes);
-        }
-        return pair.a;
-    }
-
-    @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, null, typeInstantiation).resolve();
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, returnType, typeInstantiation).resolve();
         constraints.putAll(pair.b);
         return pair.a;
     }

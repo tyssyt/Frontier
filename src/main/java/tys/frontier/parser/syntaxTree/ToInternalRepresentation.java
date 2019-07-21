@@ -765,7 +765,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier, List<FExpression> params)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(params), TypeInstantiation.EMPTY);
+        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(params), null, TypeInstantiation.EMPTY);
         checkAccessForbidden(f);
         return FFunctionCall.create(f, params);
     }
@@ -1000,6 +1000,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
     }
 
+    //TODO check why this is different/more complex then functionCall (should functionCall call this?, comment why not)
     private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(fClass instanceof FClass))
             throw new FunctionNotFound(identifier, params);
@@ -1009,7 +1010,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 throw new FunctionNotFound(identifier, params);
             return fun.iterator().next();
         } else {
-            FFunction f = fClass.resolveFunction(identifier, params, TypeInstantiation.EMPTY);
+            FFunction f = fClass.resolveFunction(identifier, params, null, TypeInstantiation.EMPTY);
             checkAccessForbidden(f);
             return f;
         }

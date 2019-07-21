@@ -1,6 +1,5 @@
 package tys.frontier.code;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.FFunctionCall;
@@ -21,7 +20,6 @@ import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
 import java.util.List;
-import java.util.Map;
 
 public class FTypeVariable implements FType {
 
@@ -92,20 +90,9 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-        FFunction res = resolveFunction(identifier, argumentTypes, typeInstantiation, constraints);
-        for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
-            if (!entry.getKey().tryAddConstraint(entry.getValue()))
-                throw new FunctionNotFound(identifier, argumentTypes);
-        }
-        return res;
-    }
-
-    @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         if (this.constraints.isResolved())
-            return this.constraints.getResolved().resolveFunction(identifier, argumentTypes, typeInstantiation, constraints);
+            return this.constraints.getResolved().resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
 
         HasCall constraint = new HasCall(null, identifier, argumentTypes, typeInstantiation);
         constraints.put(this, constraint);
@@ -125,7 +112,8 @@ public class FTypeVariable implements FType {
             params.add(FParameter.create(id, arg, false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
-        FTypeVariable returnType = create(new FTypeIdentifier(returnTypeNames.next()), isFixed());
+        if (returnType == null)
+            returnType = create(new FTypeIdentifier(returnTypeNames.next()), isFixed());
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         return new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
             @Override

@@ -109,23 +109,11 @@ public final class Utils {
                 identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
             else
                 identifier = function.getIdentifier();
+
+            FType returnType = typeInstantiation.getType(function.getType());
+
             try {
-                FFunction res = newNamespace.resolveFunction(identifier, argumentTypes, TypeInstantiation.EMPTY);
-
-                if (res.getType() instanceof FTypeVariable && typeInstantiation.getTypeMap().containsKey((FTypeVariable)res.getType())) {
-                    /*
-                        There is a special problematic case:
-                        When the return type is a TypeVariable, that does not appear anywhere else in the header
-                        resolve can't properly instantiate it and will leave it as is without constraints.
-                        However, our typeInstantiation can have a mapping for the return type and thus res is not fully instantiated yet.
-                        This usually only appears with lambdas.
-
-                        Possible solutions include instantiating the already instatiated function again (weakening our instantiation contract).
-                        Or allowing us to pass a type for the return into resolve, making resolve even more complex.
-                     */
-                    return Utils.NYI("correctly instantiating the return type of " + res.headerToString() + " to " + typeInstantiation.getType(res.getType()));
-                }
-                return res;
+                return newNamespace.resolveFunction(identifier, argumentTypes, returnType, TypeInstantiation.EMPTY);
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
