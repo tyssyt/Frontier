@@ -51,7 +51,7 @@ public class MainTest {
 
     private static String loadOut(String fileName) throws IOException {
         URL url = Resources.getResource(prefix + fileName);
-        return Resources.toString(url, Charsets.UTF_8).replaceAll("\n", endl);
+        return Resources.toString(url, Charsets.UTF_8).replaceAll("\r?\n", endl);
     }
 
     @Test
