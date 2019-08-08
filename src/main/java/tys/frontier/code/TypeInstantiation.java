@@ -8,6 +8,7 @@ import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
@@ -138,6 +139,25 @@ public class TypeInstantiation {
             TypeConstraints constraints = ((FTypeVariable) original).getConstraints();
             if (constraints.isResolved())
                 return getType(constraints.getResolved());
+
+            if (original instanceof FTypeVariable.ReturnTypeOf) {
+                FFunction function = ((FTypeVariable.ReturnTypeOf) original).getFunction();
+                FType oldMemberOf = function.getMemberOf();
+                FType newMemberOf = getType(oldMemberOf);
+
+                if (newMemberOf != oldMemberOf) {
+                    List<FType> argumentTypes = Utils.typesFromExpressionList(function.getParams(), this::getType);
+                    try {
+                        FFunction instantiation = newMemberOf.resolveFunction(function.getIdentifier(), argumentTypes, null, TypeInstantiation.EMPTY);
+                        //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
+                        return getType(instantiation.getType());
+                    } catch (FunctionNotFound functionNotFound) {
+                        return Utils.handleException(functionNotFound);
+                    }
+                }
+
+            }
+
             FType res = typeMap.get(original);
             if (res == null)
                 return original;

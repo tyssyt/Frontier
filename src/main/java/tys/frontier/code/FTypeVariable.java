@@ -23,6 +23,19 @@ import java.util.List;
 
 public class FTypeVariable implements FType {
 
+    public static class ReturnTypeOf extends FTypeVariable {
+
+        private FFunction function;
+
+        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed) {
+            super(identifier, fixed, TypeConstraints.create());
+        }
+
+        public FFunction getFunction() {
+            return function;
+        }
+    }
+
     private FTypeIdentifier identifier;
     private TypeConstraints constraints;
     private NameGenerator returnTypeNames;
@@ -113,15 +126,18 @@ public class FTypeVariable implements FType {
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
-            returnType = create(new FTypeIdentifier(returnTypeNames.next()), isFixed());
+            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed());
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        return new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
+        FBaseFunction res = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
             @Override
             public boolean addCall(FFunctionCall call) { //this is a "hack" to set the origin of the constraint
                 constraint.setOrigin(call);
                 return super.addCall(call);
             }
         };
+        if (returnType instanceof ReturnTypeOf)
+            ((ReturnTypeOf) returnType).function = res;
+        return res;
     }
 
     public FTypeVariable copy() {
