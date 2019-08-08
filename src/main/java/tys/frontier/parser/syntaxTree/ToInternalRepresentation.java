@@ -846,6 +846,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 }
             }
             res.setBody(body);
+            res.finishLambda();
             return res;
         } finally { //restore the outside context
             assert currentFunction().genericFunctionAddressToInstantiate.isEmpty();

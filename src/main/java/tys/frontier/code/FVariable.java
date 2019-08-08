@@ -23,6 +23,10 @@ public abstract class FVariable implements IdentifierNameable, Typed {
         return type;
     }
 
+    public void setType(FType type) {
+        this.type = type;
+    }
+
     @Override
     public String toString() {
         return type.getIdentifier() + " " + identifier;

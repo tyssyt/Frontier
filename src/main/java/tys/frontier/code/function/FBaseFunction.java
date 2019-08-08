@@ -22,13 +22,13 @@ public class FBaseFunction implements FFunction {
     private FVisibilityModifier modifier;
     private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean natiwe;
-    private FType returnType;
-    private ImmutableList<FParameter> params;
-    private Signature signature;
+    protected FType returnType;
+    protected ImmutableList<FParameter> params;
+    protected Signature signature;
     private FBlock body;
 
-    private Map<FTypeIdentifier, FTypeVariable> parameters;
-    private List<FTypeVariable> parametersList;
+    protected Map<FTypeIdentifier, FTypeVariable> parameters;
+    protected List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
     protected boolean predefined = false;
