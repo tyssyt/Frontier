@@ -45,7 +45,7 @@ public class FCharLiteral implements FLiteral {
 
     @Override
     public int hashCode() {
-        return (int) value;
+        return value;
     }
 
     @Override

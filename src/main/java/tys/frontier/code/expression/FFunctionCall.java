@@ -72,7 +72,6 @@ public class FFunctionCall implements FExpression {
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         sb.append(function.getMemberOf().getIdentifier());
         sb.append('.').append(function.getIdentifier()).append('(');
