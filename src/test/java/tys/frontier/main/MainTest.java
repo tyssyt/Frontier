@@ -1,6 +1,8 @@
 package tys.frontier.main;
 
+import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Resources;
 import org.junit.Before;
 import org.junit.Test;
 import tys.frontier.logging.Log;
@@ -12,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -25,6 +28,7 @@ public class MainTest {
     @Before
     public void setUp() {
         for (File file : new File("tmp/").listFiles()) {
+            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
 
@@ -33,7 +37,7 @@ public class MainTest {
             ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
     }
 
-    private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
+    private static String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
         Main.main(prefix + fileName + ".front", out + fileName);
         Process p = new ProcessBuilder(out + fileName + ".exe").start();
         if (input != null) {
@@ -43,6 +47,11 @@ public class MainTest {
         }
         p.waitFor();
         return CharStreams.toString(new InputStreamReader(p.getInputStream()));
+    }
+
+    private static String loadOut(String fileName) throws IOException {
+        URL url = Resources.getResource(prefix + fileName);
+        return Resources.toString(url, Charsets.UTF_8).replaceAll("\n", endl);
     }
 
     @Test
@@ -87,5 +96,10 @@ public class MainTest {
         }
         expected.append("done");
         assertEquals(expected.toString(), res);
+    }
+    @Test
+    public void mainLambda() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("Lambda", null);
+        assertEquals(loadOut("LambdaOut.txt"), res);
     }
 }

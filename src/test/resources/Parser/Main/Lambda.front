@@ -1,0 +1,81 @@
+import IO;
+import List;
+
+export class Lambda:
+
+static forEach <T, R> (List<T> l, T->R f) {
+    for int32 i := 0; i < l.size(); ++i {
+        f(l.elements()[i]);
+    }
+}
+
+
+static filter <F> (List<F> l, F->bool filter) {
+    for int32 i := 0; i < l.size(); ++i {
+        if filter(l.elements()[i]) {
+            l.remove(i);
+            --i;
+        }
+    }
+}
+
+static even (int64 i) -> bool {
+    return i%2 =*= 0;
+}
+
+static buildMat() -> List<List<int64>> {
+    matrix := List<List<int64>>.create();
+    for int32 i:= 0; i<=9; ++i {
+        inner := List<int64>.create();
+        matrix.add(inner);
+        for int32 j:= 0; j<=9; ++j {
+            inner.add(i*10+j);
+        }
+    }
+    return matrix;
+}
+
+
+static printMat(List<List<int64>> mat) {
+    forEach(mat, \inner -> {
+        forEach(inner, \e -> {
+            IO.printInt(e);
+            IO.print(", ");
+        });
+        IO.printLine("");
+    });
+}
+
+
+static int64 -> bool filterLambda := \i -> i%3 == 0 ^ i%5 == 0;
+
+export static main () {
+    if (filterLambda(12)) {
+        IO.printLine("yes");
+    }
+    matrix := buildMat();
+    forEach(matrix, \inner -> filter(inner, \e -> even(e)));
+    IO.printLine("\nfilter even 1:");
+    printMat(matrix);
+
+
+    forEach(matrix, \inner -> filter(inner, even*));
+    IO.printLine("\nfilter even 2:");
+    printMat(matrix);
+
+    matrix = buildMat();
+    //forEach(matrix, \inner -> filter(inner, \e -> e%2 == 1)); //TODO get this working
+    IO.printLine("\nfilter odd:");
+    printMat(matrix);
+
+    matrix = buildMat();
+    forEach(matrix, \inner -> filter(inner, filterLambda));
+    IO.printLine("\nfilter fizz:");
+    printMat(matrix);
+
+    matrix = buildMat();    forEach(matrix, \inner -> filter(inner, filterLambda));
+    forEach(matrix, \inner -> filter(inner, \e -> filterLambda(e)));
+    IO.printLine("\nfilter fizz2:");
+    printMat(matrix);
+
+}
