@@ -2,7 +2,6 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
@@ -34,10 +33,6 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
     boolean isNative();
 
     ImmutableList<FParameter> getParams();
-
-    boolean addCall(FFunctionCall call);
-
-    List<FFunctionCall> getCalledBy();
 
     Optional<FBlock> getBody();
 

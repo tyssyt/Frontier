@@ -3,7 +3,6 @@ package tys.frontier.code.function;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
@@ -64,16 +63,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
     @Override
     public ImmutableList<FParameter> getParams() {
         return newParams;
-    }
-
-    @Override
-    public boolean addCall(FFunctionCall call) {
-        return Utils.cantHappen();
-    }
-
-    @Override
-    public List<FFunctionCall> getCalledBy() {
-        return Utils.cantHappen();
     }
 
     @Override

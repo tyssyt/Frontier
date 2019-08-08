@@ -4,12 +4,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 
 public class ClassInstantiationFunction extends ForwardingFunction {
 
@@ -18,7 +19,6 @@ public class ClassInstantiationFunction extends ForwardingFunction {
     private ImmutableList<FParameter> newParams;
     private Signature newSignature;
     private FInstantiatedClass newMemberOf;
-    private List<FFunctionCall> newCalledBy = new ArrayList<>();
 
     private Map<TypeInstantiation, FInstantiatedFunction> newInstantiations;
 
@@ -100,17 +100,6 @@ public class ClassInstantiationFunction extends ForwardingFunction {
 
     public boolean isBaked() {
         return baked;
-    }
-
-    @Override
-    public List<FFunctionCall> getCalledBy() {
-        return newCalledBy;
-    }
-
-    @Override
-    public boolean addCall(FFunctionCall call) {
-        proxy.addCall(call);
-        return newCalledBy.add(call);
     }
 
     @Override

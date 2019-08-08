@@ -6,7 +6,6 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -132,13 +131,7 @@ public class FTypeVariable implements FType {
         if (returnType == null)
             returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed());
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        FBaseFunction res = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build()) {
-            @Override
-            public boolean addCall(FFunctionCall call) { //this is a "hack" to set the origin of the constraint
-                constraint.setOrigin(call);
-                return super.addCall(call);
-            }
-        };
+        FBaseFunction res = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build());
         if (returnType instanceof ReturnTypeOf)
             ((ReturnTypeOf) returnType).function = res;
         return res;

@@ -19,7 +19,6 @@ public class FFunctionCall implements FExpression {
         this.function = function;
         this.arguments = arguments;
         checkTypes();
-        function.addCall(this);
     }
 
     public static FFunctionCall create(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {

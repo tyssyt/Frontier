@@ -3,7 +3,6 @@ package tys.frontier.code.function;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -23,7 +22,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     private FType newReturnType;
     private ImmutableList<FParameter> newParams;
     private Signature newSignature;
-    private List<FFunctionCall> newCalledBy = new ArrayList<>();
 
     private boolean baked = false;
 
@@ -53,11 +51,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     @Override
     public ImmutableList<FParameter> getParams() {
         return newParams;
-    }
-
-    @Override
-    public List<FFunctionCall> getCalledBy() {
-        return newCalledBy;
     }
 
     @Override
@@ -136,12 +129,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
 
     public boolean isBaked() {
         return baked;
-    }
-
-    @Override
-    public boolean addCall(FFunctionCall call) {
-        proxy.addCall(call);
-        return newCalledBy.add(call);
     }
 
     @Override

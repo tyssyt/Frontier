@@ -6,7 +6,6 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -26,7 +25,6 @@ public class FBaseFunction implements FFunction {
     private FFunctionIdentifier identifier;
     private FType memberOf;
     private FVisibilityModifier modifier;
-    private List<FFunctionCall> calledBy = new ArrayList<>();
     private boolean natiwe;
     protected FType returnType;
     protected ImmutableList<FParameter> params;
@@ -80,16 +78,6 @@ public class FBaseFunction implements FFunction {
     @Override
     public ImmutableList<FParameter> getParams() {
         return params;
-    }
-
-    @Override
-    public boolean addCall(FFunctionCall call) {
-        return calledBy.add(call);
-    }
-
-    @Override
-    public List<FFunctionCall> getCalledBy() {
-        return calledBy;
     }
 
     @Override

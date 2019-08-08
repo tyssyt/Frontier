@@ -5,7 +5,6 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
@@ -51,16 +50,6 @@ public abstract class ForwardingFunction implements FFunction {
     @Override
     public ImmutableList<FParameter> getParams() {
         return proxy.getParams();
-    }
-
-    @Override
-    public boolean addCall(FFunctionCall call) {
-        return proxy.addCall(call);
-    }
-
-    @Override
-    public List<FFunctionCall> getCalledBy() {
-        return proxy.getCalledBy();
     }
 
     @Override

@@ -3,7 +3,6 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.*;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -77,11 +76,6 @@ public class FOptional extends FPredefinedClass {
         return new FBaseFunction(original.getIdentifier(), this, original.getVisibility(), false,
                 returnType, ImmutableList.copyOf(params)) {
             {predefined = true;}
-            @Override
-            public boolean addCall(FFunctionCall call) {
-                original.addCall(call);
-                return super.addCall(call);
-            }
         };
     }
 
