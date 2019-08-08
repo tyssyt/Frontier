@@ -72,7 +72,7 @@ public class Reachability {
                     FInstantiatedClass instantiatedClass = (FInstantiatedClass) cur.getMemberOf();
                     FField base;
                     try {
-                        base = instantiatedClass.getBaseClass().getField(cur.getIdentifier());
+                        base = instantiatedClass.getProxy().getField(cur.getIdentifier());
                     } catch (FieldNotFound fieldNotFound) {
                         return Utils.cantHappen();
                     }

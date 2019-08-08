@@ -57,9 +57,9 @@ public class GenericBaking implements FClassVisitor {
             visitor.currentField = field;
             FField f;
             if (field.isInstance())
-                f = instantiatedClass.getBaseClass().getInstanceFields().get(field.getIdentifier());
+                f = instantiatedClass.getProxy().getInstanceFields().get(field.getIdentifier());
             else
-                f = instantiatedClass.getBaseClass().getStaticFields().get(field.getIdentifier());
+                f = instantiatedClass.getProxy().getStaticFields().get(field.getIdentifier());
             f.accept(visitor);
         }
 
@@ -80,8 +80,6 @@ public class GenericBaking implements FClassVisitor {
             if (field.hasAssignment())
                 param.setDefaultValueTrusted(field.getAssignment().get());
         }
-
-        instantiatedClass.setBaked();
     }
 
     public static void bake (FInstantiatedFunction instantiatedFunction) {

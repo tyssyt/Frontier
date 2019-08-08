@@ -58,7 +58,7 @@ public abstract class ImplicitTypeCast {
         if (variance == Invariant)
             throw new IncompatibleTypes(targetType, baseType);
 
-        if (targetType instanceof FInstantiatedClass && baseType instanceof FInstantiatedClass && ((FInstantiatedClass) targetType).getBaseClass() == ((FInstantiatedClass) baseType).getBaseClass())
+        if (targetType instanceof FInstantiatedClass && baseType instanceof FInstantiatedClass && ((FInstantiatedClass) targetType).getProxy() == ((FInstantiatedClass) baseType).getProxy())
             return TypeParameterCast.createTPC((FInstantiatedClass) baseType, (FInstantiatedClass) targetType, variance, constraints); //TODO what if one of them is the base class, I think thats in theory possible
         if (targetType instanceof FOptional && baseType instanceof FOptional)
             return TypeParameterCast.createTPC((FOptional) baseType, (FOptional) targetType, variance, constraints); //TODO optional will be made generic some day

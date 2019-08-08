@@ -1,5 +1,7 @@
 package tys.frontier.util;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.FField;
@@ -143,12 +145,12 @@ public final class Utils {
                 //if the old namespace is also an instantiation, go back to the base
                 FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldNamespace;
                 function = ((ClassInstantiationFunction) function).getProxy();
-                oldNamespace = instantiatedClass.getBaseClass();
+                oldNamespace = instantiatedClass.getProxy();
             }
             //now go to the new instantiation
             assert newNamespace instanceof FInstantiatedClass;
             FInstantiatedClass instantiatedClass = (FInstantiatedClass) newNamespace;
-            assert instantiatedClass.getBaseClass() == oldNamespace;
+            assert instantiatedClass.getProxy() == oldNamespace;
             function = instantiatedClass.getInstantiatedFunction(function);
         }
 
@@ -208,6 +210,38 @@ public final class Utils {
         for (T t : array)
             if (t != null)
                 res++;
+        return res;
+    }
+
+    public static Map<FFunction, String> computeUniqueFunctionNames(Multimap<FFunctionIdentifier, FFunction> functions) {
+        Map<FFunction, String> res = new HashMap<>();
+        ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create(functions);
+        for (Collection<FFunction> coll : allFuncs.asMap().values()) {
+            List<FFunction> list = ((List<FFunction>) coll);
+            String name = list.get(0).getIdentifier().name;
+
+            if (list.size() == 1) {
+                res.put(list.get(0), name);
+                continue;
+            }
+
+            list.sort((f1, f2) -> {
+                int c = f1.getParams().size() - f2.getParams().size();
+                if (c != 0)
+                    return c;
+                for (int i=0; i<f1.getParams().size(); i++) {
+                    String id1 = f1.getParams().get(i).getType().getIdentifier().name;
+                    String id2 = f2.getParams().get(i).getType().getIdentifier().name;
+                    c = id1.compareTo(id2);
+                    if (c != 0)
+                        return c;
+                }
+                return 0;
+            });
+            for (int i=0; i<list.size(); i++) {
+                res.put(list.get(i), name + "#" + i);
+            }
+        }
         return res;
     }
 }

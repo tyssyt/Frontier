@@ -12,6 +12,7 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
+import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -36,7 +37,7 @@ public final class ParserContextUtils {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        FClass res =  new FClass(identifier, visibilityModifier);
+        FClass res =  new FBaseClass(identifier, visibilityModifier);
         if (c != null) {
             Pair<List<FTypeVariable>, List<Variance>> typeParameters = getTypeParameters(c);
             res.setParameters(typeParameters.a, typeParameters.b);

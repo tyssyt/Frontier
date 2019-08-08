@@ -6,14 +6,20 @@ import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.util.Utils;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class LLVMUtil {
 
     private LLVMUtil() {} //no instances
+
+    //TODO this is kind of a temporary solution, but I will have to handle LLVM naming more when I start to allow renaming etc. anyways
+    private static Map<FFunction, String> uniqueFunctionNameCache = new HashMap<>();
 
     @SafeVarargs
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (P... list) {
@@ -43,9 +49,15 @@ public class LLVMUtil {
     }
 
     public static String getFunctionName(FFunction function) {
+        String uniqueName = uniqueFunctionNameCache.get(function);
+        if (uniqueName == null) {
+            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((FClass) function.getMemberOf()).getFunctions());
+            uniqueFunctionNameCache.putAll(newNames);
+            uniqueName = newNames.get(function);
+        }
         return function.isNative()
                 ? function.getIdentifier().name
-                : "fun." + function.getMemberOf().getIdentifier().name + '.' + ((FClass) function.getMemberOf()).getUniqueFunctionNames().get(function);
+                : "fun." + function.getMemberOf().getIdentifier().name + '.' + uniqueName;
     }
 
     public static String getConstantStringName(String s) {

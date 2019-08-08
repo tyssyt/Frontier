@@ -82,8 +82,8 @@ public class TypeParameterCast extends ImplicitTypeCast {
     public static TypeParameterCast createTPC(FInstantiatedClass baseType, FInstantiatedClass targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
         assert variance == Covariant || variance == Contravariant;
         assert baseType != targetType;
-        FClass nonParameterized = baseType.getBaseClass();
-        assert  nonParameterized == targetType.getBaseClass();
+        FClass nonParameterized = baseType.getProxy();
+        assert  nonParameterized == targetType.getProxy();
         TypeInstantiation baseInst = baseType.getTypeInstantiation();
         TypeInstantiation targetInst = targetType.getTypeInstantiation();
 

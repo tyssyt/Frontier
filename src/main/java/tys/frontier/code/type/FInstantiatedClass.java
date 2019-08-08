@@ -1,46 +1,57 @@
 package tys.frontier.code.type;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.*;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.passes.GenericBaking;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FInstantiatedClass extends FClass {
+public class FInstantiatedClass extends FForwardingClass {
 
+    private FInstantiatedClassIdentifier newIdentifier;
     private boolean baked = false;
-    private FClass baseClass;
     private ImmutableList<FType> instantiatedParameters;
     private Map<FFunction, FFunction> baseFunctionMap = new HashMap<>();
 
+    private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
+    private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
+    private Multimap<FFunctionIdentifier, FFunction> newFunctions = ArrayListMultimap.create();
+
     FInstantiatedClass(FClass baseClass, ImmutableList<FType> instantiatedParameters) {
-        super(new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters), baseClass.getVisibility());
+        super(baseClass);
         assert !(baseClass instanceof FInstantiatedClass);
         assert instantiatedParameters.size() == baseClass.getParametersList().size();
-        this.baseClass = baseClass;
+        newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
         this.instantiatedParameters = instantiatedParameters;
+    }
+
+    @Override
+    public FTypeIdentifier getIdentifier() {
+        return newIdentifier;
     }
 
     void prepare() {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add fields
-        for (FField baseField : baseClass.getFields()) {
+        for (FField baseField : proxy.getFields()) {
             FField instantiatedField = new FField(baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
                     this, baseField.getVisibility(), !baseField.isInstance(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
         }
 
         //add functions
-        for (FFunction baseFunction : baseClass.getFunctions().values()) {
+        for (FFunction baseFunction : proxy.getFunctions().values()) {
             if (baseFunction.isConstructor() || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = ClassInstantiationFunction.fromClassInstantiation(this, baseFunction);
@@ -49,25 +60,21 @@ public class FInstantiatedClass extends FClass {
         }
 
         //constructor
-        setConstructorVisibility(baseClass.getConstructorVisibility());
+        setConstructorVisibility(proxy.getConstructorVisibility());
         FConstructor constructor = generateConstructor();
-        baseFunctionMap.put(baseClass.getConstructor(), constructor);
+        baseFunctionMap.put(proxy.getConstructor(), constructor);
         //TODO do we need to put malloc in the map?
     }
 
-    public FClass getBaseClass() {
-        return baseClass;
-    }
-
     public FFunction getInstantiatedFunction(FFunction baseFunction) {
-        assert baseFunction.getMemberOf() == baseClass;
+        assert baseFunction.getMemberOf() == proxy;
         return baseFunctionMap.get(baseFunction);
     }
 
     public TypeInstantiation getTypeInstantiation() {
         Map<FTypeVariable, FType> typeInstantiation = new HashMap<>();
         //noinspection unchecked
-        List<FTypeVariable> baseParameters = (List<FTypeVariable>) baseClass.getParametersList();
+        List<FTypeVariable> baseParameters = (List<FTypeVariable>) proxy.getParametersList();
         for (int i = 0; i < instantiatedParameters.size(); i++)
             typeInstantiation.put(baseParameters.get(i), instantiatedParameters.get(i));
         return TypeInstantiation.create(typeInstantiation);
@@ -91,7 +98,7 @@ public class FInstantiatedClass extends FClass {
 
     @Override
     public boolean canImplicitlyCast() {
-        if (!delegates.isEmpty()) //TODO should this be baseClass delegates?
+        if (!getDirectDelegates().isEmpty())
             return true;
         for (int i = 0; i < instantiatedParameters.size(); i++) {
             Variance var = getParameterVariance(i);
@@ -104,18 +111,18 @@ public class FInstantiatedClass extends FClass {
     }
 
     @Override
-    public Variance getParameterVariance(FTypeVariable parameter) {
-        return baseClass.getParameterVariance(parameter);
+    public BiMap<FIdentifier, FField> getInstanceFields() {
+        return newInstanceFields;
     }
 
     @Override
-    public Variance getParameterVariance(int i) {
-        return baseClass.getParameterVariance(i);
+    public BiMap<FIdentifier, FField> getStaticFields() {
+        return newStaticFields;
     }
 
     @Override
-    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
-        return baseClass.getInstantiation(types);
+    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+        return newFunctions;
     }
 
     public boolean isBaked() {
@@ -125,9 +132,6 @@ public class FInstantiatedClass extends FClass {
     public void bake() {
         assert !baked;
         GenericBaking.bake(this);
-    }
-
-    public void setBaked() {
         baked = true;
     }
 }
