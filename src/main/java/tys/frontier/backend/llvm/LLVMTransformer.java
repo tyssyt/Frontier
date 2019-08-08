@@ -465,7 +465,7 @@ class LLVMTransformer implements
 
         LLVMValueRef left = l.accept(this);
         LLVMValueRef right = r.accept(this);
-        if (functionCall.getFunction().getMemberOf() instanceof FIntN) {
+        if (functionCall.getFunction().getMemberOf() instanceof FIntN || functionCall.getFunction().getMemberOf() == FBool.INSTANCE) {
             Integer arith = arithOpMap.get(id);
             if (arith != null)
                 return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
