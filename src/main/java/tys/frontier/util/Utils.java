@@ -102,7 +102,10 @@ public final class Utils {
         FType oldNamespace = function.getMemberOf();
         FType newNamespace = typeInstantiation.getType(oldNamespace);
 
-        if (newNamespace instanceof FTypeVariable ||oldNamespace instanceof FTypeVariable) {
+        if (newNamespace instanceof FTypeVariable)
+            return Utils.cantHappen();
+
+        if (oldNamespace instanceof FTypeVariable) {
             //there is no mapping we can follow, we need to fall back to use resolve
             FFunctionIdentifier identifier = function.getIdentifier();
             if (identifier instanceof FInstantiatedFunctionIdentifier)
