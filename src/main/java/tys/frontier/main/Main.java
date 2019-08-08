@@ -1,11 +1,11 @@
 package tys.frontier.main;
 
 import tys.frontier.backend.llvm.LLVMBackend;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FInstantiatedClass;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.module.Module;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.analysis.reachability.Reachability;

@@ -2,8 +2,8 @@ package tys.frontier.code.literal;
 
 import com.koloboke.collect.map.hash.HashCharCharMap;
 import com.koloboke.collect.map.hash.HashCharCharMaps;
-import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.type.FClass;
 
 public class FCharLiteral implements FLiteral {
 

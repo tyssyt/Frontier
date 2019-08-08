@@ -1,13 +1,13 @@
 package tys.frontier.code.expression.cast;
 
 import com.google.common.collect.Multimap;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FInstantiatedClass;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FInstantiatedClass;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;

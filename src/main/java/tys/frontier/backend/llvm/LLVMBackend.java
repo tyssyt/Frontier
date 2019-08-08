@@ -1,9 +1,9 @@
 package tys.frontier.backend.llvm;
 
 import tys.frontier.backend.Backend;
-import tys.frontier.code.FClass;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
+import tys.frontier.code.type.FClass;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
 import java.util.ArrayList;

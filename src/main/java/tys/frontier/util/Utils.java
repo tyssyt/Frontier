@@ -2,13 +2,18 @@ package tys.frontier.util;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
-import tys.frontier.code.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.Typed;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FInstantiatedClass;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 

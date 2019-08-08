@@ -1,6 +1,10 @@
-package tys.frontier.code;
+package tys.frontier.code.type;
 
 import com.google.common.collect.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.HasVisibility;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;

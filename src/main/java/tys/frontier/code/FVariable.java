@@ -2,6 +2,7 @@ package tys.frontier.code;
 
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.type.FType;
 
 public abstract class FVariable implements IdentifierNameable, Typed {
 

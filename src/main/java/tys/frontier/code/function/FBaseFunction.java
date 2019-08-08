@@ -2,7 +2,10 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.*;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -11,6 +14,9 @@ import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.NameGenerator;
 
 import java.util.*;

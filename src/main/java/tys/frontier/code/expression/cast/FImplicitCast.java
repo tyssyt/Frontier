@@ -2,13 +2,13 @@ package tys.frontier.code.expression.cast;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;

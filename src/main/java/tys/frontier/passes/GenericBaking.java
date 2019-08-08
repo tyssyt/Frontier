@@ -1,6 +1,9 @@
 package tys.frontier.passes;
 
-import tys.frontier.code.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
@@ -14,6 +17,9 @@ import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FInstantiatedClass;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Utils;
 

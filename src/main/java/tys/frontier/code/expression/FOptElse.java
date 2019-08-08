@@ -1,8 +1,8 @@
 package tys.frontier.code.expression;
 
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;

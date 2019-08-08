@@ -1,7 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FType;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 

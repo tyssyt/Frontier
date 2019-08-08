@@ -2,11 +2,11 @@ package tys.frontier.code.module;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import tys.frontier.code.FClass;
-import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
 import tys.frontier.util.StringBuilderToString;

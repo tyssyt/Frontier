@@ -1,7 +1,7 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.type.FClass;
 
 public class FBoolLiteral implements FLiteral {
 

@@ -1,6 +1,6 @@
 package tys.frontier.code.identifier;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
 import java.util.List;

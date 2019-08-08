@@ -2,14 +2,14 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.*;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 

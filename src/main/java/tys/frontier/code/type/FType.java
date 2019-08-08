@@ -1,7 +1,9 @@
-package tys.frontier.code;
+package tys.frontier.code.type;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FField;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;

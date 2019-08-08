@@ -2,13 +2,17 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import tys.frontier.code.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.*;
+import tys.frontier.code.type.FClass;
 
 import java.util.ArrayList;
 import java.util.Collections;

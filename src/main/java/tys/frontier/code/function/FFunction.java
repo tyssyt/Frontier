@@ -9,6 +9,8 @@ import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.util.StringBuilderToString;
 

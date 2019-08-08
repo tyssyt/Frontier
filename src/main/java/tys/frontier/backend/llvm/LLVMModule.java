@@ -5,10 +5,14 @@ import com.koloboke.collect.map.hash.HashObjIntMap;
 import com.koloboke.collect.map.hash.HashObjIntMaps;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
-import tys.frontier.code.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;

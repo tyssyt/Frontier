@@ -4,6 +4,8 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;

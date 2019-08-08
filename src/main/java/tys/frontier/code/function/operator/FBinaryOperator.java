@@ -2,12 +2,12 @@ package tys.frontier.code.function.operator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.type.FClass;
 
 public class FBinaryOperator extends FOperator {
 

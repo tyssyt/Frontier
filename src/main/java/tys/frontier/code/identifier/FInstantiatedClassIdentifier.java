@@ -1,7 +1,7 @@
 package tys.frontier.code.identifier;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FType;
+import tys.frontier.code.type.FType;
 
 public class FInstantiatedClassIdentifier extends FTypeIdentifier {
 

@@ -1,7 +1,7 @@
 package tys.frontier.code.identifier;
 
-import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.type.FType;
 
 public class FInstantiatedFunctionIdentifier extends FFunctionIdentifier {
 

@@ -1,8 +1,8 @@
 package tys.frontier.code.visitor;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.type.FClass;
 
 public interface ClassWalker<Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
 

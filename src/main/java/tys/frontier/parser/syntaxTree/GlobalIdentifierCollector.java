@@ -1,7 +1,9 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.*;
+import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -10,6 +12,9 @@ import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.Delegates;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;

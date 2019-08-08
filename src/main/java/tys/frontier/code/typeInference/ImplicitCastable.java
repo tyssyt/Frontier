@@ -1,7 +1,7 @@
 package tys.frontier.code.typeInference;
 
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.Utils;
 
 public class ImplicitCastable extends TypeConstraint {

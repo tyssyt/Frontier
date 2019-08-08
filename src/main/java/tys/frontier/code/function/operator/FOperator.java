@@ -1,10 +1,10 @@
 package tys.frontier.code.function.operator;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FClass;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.type.FClass;
 
 public abstract class FOperator extends FBaseFunction {
 

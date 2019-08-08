@@ -1,8 +1,8 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.type.FClass;
 
 public class FStringLiteral implements FLiteral { //TODO make sure string literals are immutable
 

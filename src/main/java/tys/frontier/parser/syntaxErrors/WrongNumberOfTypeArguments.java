@@ -1,8 +1,8 @@
 package tys.frontier.parser.syntaxErrors;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FType;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.type.FType;
 
 import java.util.List;
 

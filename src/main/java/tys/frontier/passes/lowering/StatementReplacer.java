@@ -1,10 +1,10 @@
 package tys.frontier.passes.lowering;
 
-import tys.frontier.code.FType;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.FModuleVisitor;
 
 import java.util.List;

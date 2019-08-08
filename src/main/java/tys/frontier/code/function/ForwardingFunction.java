@@ -1,11 +1,16 @@
 package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
-import tys.frontier.code.*;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 
 import java.util.List;
 import java.util.Map;

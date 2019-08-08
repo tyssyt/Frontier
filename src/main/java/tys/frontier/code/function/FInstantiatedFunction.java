@@ -2,14 +2,14 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.passes.GenericBaking;
 
 import java.util.*;

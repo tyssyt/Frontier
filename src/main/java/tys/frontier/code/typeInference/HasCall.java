@@ -1,9 +1,9 @@
 package tys.frontier.code.typeInference;
 
-import tys.frontier.code.FType;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.type.FType;
 
 import java.util.List;
 

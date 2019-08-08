@@ -1,7 +1,7 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FFloat64;
+import tys.frontier.code.type.FClass;
 
 public class FFloat64Literal implements FLiteral {
 

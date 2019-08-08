@@ -1,7 +1,11 @@
-package tys.frontier.code;
+package tys.frontier.code.type;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;

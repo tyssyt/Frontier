@@ -1,6 +1,6 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.FType;
+import tys.frontier.code.type.FType;
 
 public class IncompatibleTypes extends SyntaxError {
 

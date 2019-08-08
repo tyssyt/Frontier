@@ -1,7 +1,7 @@
 package tys.frontier.code.literal;
 
-import tys.frontier.code.FClass;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.type.FClass;
 
 import java.math.BigInteger;
 

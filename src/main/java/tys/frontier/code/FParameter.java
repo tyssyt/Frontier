@@ -2,6 +2,7 @@ package tys.frontier.code;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.type.FType;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 

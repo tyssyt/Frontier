@@ -1,11 +1,11 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FType;
-import tys.frontier.code.FTypeVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionTypeIdentifier;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 

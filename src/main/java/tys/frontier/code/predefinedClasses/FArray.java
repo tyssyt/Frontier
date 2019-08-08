@@ -2,11 +2,11 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
-import tys.frontier.code.FType;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.type.FType;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
