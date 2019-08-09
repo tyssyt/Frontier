@@ -187,18 +187,20 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitIf(FIf fIf) {
-        //TODO there might be a bug where the after_if block gets appended but bever used because if.redirectsControlFlow is true
+        boolean hasElse = fIf.getElse().isPresent();
+        boolean hasContinue = !fIf.redirectsControlFlow().isPresent();
+
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef ifBlock = LLVMAppendBasicBlock(currentFunction, "if");
         LLVMBasicBlockRef thenBlock = LLVMAppendBasicBlock(currentFunction, "then");
-        LLVMBasicBlockRef continueBlock = LLVMAppendBasicBlock(currentFunction, "after_if");
-        LLVMBasicBlockRef elseBlock = fIf.getElse().isPresent() ? LLVMInsertBasicBlock(continueBlock, "else") : continueBlock;
+        LLVMBasicBlockRef elseBlock = hasElse ? LLVMAppendBasicBlock(currentFunction, "else") : null;
+        LLVMBasicBlockRef continueBlock = hasContinue ? LLVMAppendBasicBlock(currentFunction, "after_if") : null;
 
         LLVMBuildBr(builder, ifBlock);
 
         LLVMPositionBuilderAtEnd(builder, ifBlock);
         LLVMValueRef condition = fIf.getCondition().accept(this);
-        LLVMBuildCondBr(builder, condition, thenBlock, elseBlock);
+        LLVMBuildCondBr(builder, condition, thenBlock, hasElse ? elseBlock : continueBlock);
 
         LLVMPositionBuilderAtEnd(builder, thenBlock);
         fIf.getThen().accept(this);
@@ -212,7 +214,8 @@ class LLVMTransformer implements
                 LLVMBuildBr(builder, continueBlock);
         });
 
-        LLVMPositionBuilderAtEnd(builder, continueBlock);
+        if (hasContinue)
+            LLVMPositionBuilderAtEnd(builder, continueBlock);
         return null;
     }
 
