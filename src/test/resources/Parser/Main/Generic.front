@@ -1,0 +1,36 @@
+import IO;
+import List;
+
+class Generic<T,O>:
+
+T t;
+O o;
+
+static create(T t, O o) -> Generic<T,O> {
+    return new Generic<T, O>(o, t);
+}
+
+generic <S> (T, O -> S mapper) -> S {
+    return mapper(t, o);
+}
+
+
+export class Main:
+
+static mapper (int32 t, float64 o) -> char[] {
+    if t + (int32)o =*= 32 {
+        return "aye";
+    } else {
+        return "ney";
+    }
+}
+
+export static main () {
+    Generic<int32, float64> gen1 := Generic<int32, float64>.create(-8, 40.0);
+    str := gen1.generic(mapper*);
+    IO.print(str);
+
+    gen2 := Generic<int32, float64>.create(1, 30.0);
+    str = gen2.generic(mapper*);
+    IO.print(str);
+}
