@@ -28,7 +28,7 @@ public class ClassInstantiationFunction extends ForwardingFunction {
         super(base);
         TypeInstantiation typeInstantiation = memberOf.getTypeInstantiation();
         assert base.getMemberOf() == memberOf.getProxy();
-        assert !(base instanceof ClassInstantiationFunction);
+        assert (base instanceof FBaseFunction);
         assert typeInstantiation.intersect(base.getParametersList()).isEmpty();
         newReturnType = typeInstantiation.getType(base.getType());
         newParams = createParams(base.getParams(), typeInstantiation);

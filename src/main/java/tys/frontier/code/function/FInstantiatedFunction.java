@@ -27,7 +27,7 @@ public class FInstantiatedFunction extends ForwardingFunction {
 
     private FInstantiatedFunction(FFunction base, TypeInstantiation typeInstantiation) {
         super(base);
-        assert !(base instanceof ClassInstantiationFunction);
+        assert !(base instanceof FInstantiatedFunction);
         assert typeInstantiation.fits(base);
         this.typeInstantiation = typeInstantiation;
         newIdentifier = new FInstantiatedFunctionIdentifier(base.getIdentifier(), typeInstantiation);

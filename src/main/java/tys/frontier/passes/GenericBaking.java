@@ -83,10 +83,9 @@ public class GenericBaking implements FClassVisitor {
     }
 
     public static void bake (FInstantiatedFunction instantiatedFunction) {
-        assert !(instantiatedFunction.getMemberOf() instanceof FInstantiatedClass);
         GenericBaking visitor = new GenericBaking(instantiatedFunction.getTypeInstantiation());
         visitor.currentFunction = instantiatedFunction;
-        instantiatedFunction.getBaseR().accept(visitor);
+        instantiatedFunction.getProxy().accept(visitor);
         instantiatedFunction.setBaked();
         ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
     }
