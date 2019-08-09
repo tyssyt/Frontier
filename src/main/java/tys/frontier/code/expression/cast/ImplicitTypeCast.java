@@ -4,6 +4,7 @@ import com.google.common.collect.Multimap;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FVoid;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
@@ -52,6 +53,18 @@ public abstract class ImplicitTypeCast {
         //first check if either base or targetType is a TypeVariable and do a type variable cast
         if (baseType instanceof FTypeVariable || targetType instanceof FTypeVariable) {
             return TypeVariableCast.createTVC(baseType, targetType, variance, constraints);
+        }
+
+        //special case where we cast T? to void (or vice versa)
+        if (baseType == FVoid.INSTANCE || targetType == FVoid.INSTANCE) {
+            if (baseType instanceof FOptional && ((FOptional) baseType).getBaseType() instanceof FTypeVariable) {
+                FTypeVariable typeVariable = (FTypeVariable) ((FOptional) baseType).getBaseType();
+                return TypeVariableCast.createTVC(typeVariable, FVoid.INSTANCE, variance, constraints);
+            }
+            if (targetType instanceof FOptional && ((FOptional) targetType).getBaseType() instanceof FTypeVariable) {
+                FTypeVariable typeVariable = (FTypeVariable) ((FOptional) targetType).getBaseType();
+                return TypeVariableCast.createTVC(FVoid.INSTANCE, typeVariable, variance, constraints);
+            }
         }
 
         //if we are invariant, there can't be an implicit cast
