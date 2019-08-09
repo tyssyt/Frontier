@@ -1,4 +1,4 @@
 class A:
     test () -> float64 {
-        return;
+        return 13;
     }

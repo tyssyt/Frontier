@@ -119,6 +119,12 @@ public class ParserTest {
         assertTrue(e instanceof IncompatibleTypes);
     }
     @Test
+    public void parseMissingReturn() throws Exception {
+        SyntaxError e = parseSyntaxError("MissingReturn.front");
+        assertTrue(e instanceof MissingReturn);
+        assertEquals("haveFun2", ((MissingReturn) e).function.getIdentifier().name);
+    }
+    @Test
     public void parseNonOptionalExMark() throws Exception {
         SyntaxError e = parseSyntaxError("NonOptionalExMark.front");
         assertTrue(e instanceof NonOptionalExMark);

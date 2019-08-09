@@ -1,0 +1,11 @@
+class MissingReturn:
+
+static doNothing  (int32->() t) {}
+
+static haveFun1 <R> (int32 i) -> R? {return null;} //should not err
+static haveFun2 <R> (int32 i) -> R {} //should err because of missing return
+
+export static main () {
+    doNothing(haveFun1*);
+    doNothing(haveFun2*);
+}

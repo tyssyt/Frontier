@@ -254,7 +254,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         try {
             currentFunction().declaredVars.push(Utils.asMap(f.getParams()));
             ctx.methodHeader().accept(this);
-            f.setBody(visitBlock(ctx.block()));
+            FBlock body = visitBlock(ctx.block());
+            if (f.getType() != FVoid.INSTANCE && f != body.redirectsControlFlow().orElse(null) && errors.isEmpty()) { //TODO make a flag that checks if there are any errors thrown in the current method instead of errors.isEmpty
+                //f should return something, but doesn't
+                errors.add(new MissingReturn(f));
+            }
+            f.setBody(body);
             return f;
         } finally {
             functionContextStack.removeLast();
