@@ -7,6 +7,7 @@ import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
+import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
@@ -79,11 +80,13 @@ public class FOptional extends FPredefinedClass {
         };
     }
 
-    public static FOptional from(FType baseClass) {
+    public static FBaseClass from(FType baseClass) {
+        if (baseClass == FVoid.INSTANCE)
+            return FVoid.INSTANCE;
         return existing.computeIfAbsent(baseClass, FOptional::new);
     }
 
-    public static FOptional fromFlatten(FType baseClass) {
+    public static FBaseClass fromFlatten(FType baseClass) {
         if (baseClass instanceof FOptional)
             return (FOptional) baseClass;
         else

@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.ImplicitCastable;
@@ -27,7 +28,7 @@ public class FOptElse implements FExpression {
     private void checkTypes() throws IncompatibleTypes { //TODO the inner type of the optional could be allowed to implicitly cast to type of else I guess?
         if (optional.getType() instanceof FTypeVariable) {
             FTypeVariable var = (FTypeVariable) optional.getType();
-            FOptional opt = FOptional.from(elze.getType());
+            FClass opt = FOptional.from(elze.getType());
             if (!var.tryAddConstraint(new ImplicitCastable(this, opt, Variance.Invariant)))
                 throw new IncompatibleTypes(var, opt);
             return;
