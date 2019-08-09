@@ -1011,7 +1011,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if (params == null) {
             Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
             if (fun.size() != 1)
-                throw new FunctionNotFound(identifier, params);
+                throw new FunctionNotFound(identifier, Collections.emptyList());
             return fun.iterator().next();
         } else {
             FFunction f = fClass.resolveFunction(identifier, params, null, TypeInstantiation.EMPTY);
