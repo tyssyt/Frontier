@@ -9,6 +9,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
@@ -95,6 +96,7 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
         llvmTypes.put(FTypeType.INSTANCE, bytePointer);
+        llvmTypes.put(FNull.NULL_TYPE, bytePointer);
     }
 
     @Override

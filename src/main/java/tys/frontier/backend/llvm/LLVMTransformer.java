@@ -656,6 +656,8 @@ class LLVMTransformer implements
         } else if (literal instanceof  FBoolLiteral) {
             return LLVMConstInt(type, ((FBoolLiteral) literal).value ? TRUE : FALSE, FALSE);
         } else if (literal instanceof FNull) {
+            if (literal == FNull.UNTYPED)
+                return LLVMConstPointerNull(type);
             return module.getNull((FOptional)literal.getType());
         } else {
             return Utils.cantHappen();
