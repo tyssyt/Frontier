@@ -3,14 +3,16 @@ package tys.frontier.main;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
-import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.util.Utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -21,25 +23,22 @@ import static org.junit.Assert.assertEquals;
 
 public class MainTest {
 
-    private static final String endl = System.getProperty("line.separator");
-    private static final String prefix = "Parser/Main/";
-    private static final String out = "tmp/";
+    private static final String prefix = "Parser" + Utils.filesep + "Main" + Utils.filesep;
 
-    @Before
-    public void setUp() {
-        for (File file : new File("tmp/").listFiles()) {
-            //noinspection ResultOfMethodCallIgnored
-            file.delete();
-        }
+    @Rule
+    public TemporaryFolder folder= new TemporaryFolder();
 
+    @BeforeClass
+    public static void setUp() {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
             ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
     }
 
-    private static String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
-        Main.main(prefix + fileName + ".front", out + fileName);
-        Process p = new ProcessBuilder(out + fileName + ".exe").start();
+    private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
+        String out = this.folder.newFolder(fileName).getPath() + Utils.filesep + fileName;
+        Main.main(prefix + fileName + ".front", out);
+        Process p = new ProcessBuilder(out + ".exe").start();
         if (input != null) {
             OutputStreamWriter writer = new OutputStreamWriter(p.getOutputStream());
             writer.write(input);
@@ -51,13 +50,13 @@ public class MainTest {
 
     private static String loadOut(String fileName) throws IOException {
         URL url = Resources.getResource(prefix + fileName);
-        return Resources.toString(url, Charsets.UTF_8).replaceAll("\r?\n", endl);
+        return Resources.toString(url, Charsets.UTF_8).replaceAll("\r?\n", Utils.endl);
     }
 
     @Test
     public void mainHelloWorld() throws IOException, InterruptedException, SyntaxErrors {
         String res = doMain("HelloWorld", null);
-        assertEquals("Hello, World!" + endl, res);
+        assertEquals("Hello, World!" + Utils.endl, res);
     }
     @Test
     public void mainEcho() throws IOException, InterruptedException, SyntaxErrors {
@@ -97,7 +96,7 @@ public class MainTest {
         String res = doMain("HigherOrder", null);
         StringBuilder expected = new StringBuilder();
         for(int i=1; i<=5; i++) {
-            expected.append(i).append(":0123456789101112").append(endl);
+            expected.append(i).append(":0123456789101112").append(Utils.endl);
         }
         expected.append("done");
         assertEquals(expected.toString(), res);

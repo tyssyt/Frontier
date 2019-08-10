@@ -19,14 +19,21 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.UnaryOperator;
 
 public final class Utils {
+
+    public static final String endl = System.getProperty("line.separator");
+    public static final String filesep = System.getProperty("file.separator");
+
     private Utils() {}
+
 
     public static <T> T handleException (Exception e) {
         throw new RuntimeException(e);
@@ -79,6 +86,18 @@ public final class Utils {
         if (input == null)
             input = new FileInputStream(file);
         return input;
+    }
+
+    public static boolean deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                if (!Files.isSymbolicLink(f.toPath())) {
+                    deleteDir(f);
+                }
+            }
+        }
+        return file.delete();
     }
 
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps) {

@@ -1,5 +1,6 @@
 package tys.frontier.backend.llvm;
 
+import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.koloboke.collect.map.hash.HashObjIntMap;
 import com.koloboke.collect.map.hash.HashObjIntMaps;
@@ -14,8 +15,10 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.logging.Log;
 import tys.frontier.util.Utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -403,9 +406,11 @@ public class LLVMModule implements AutoCloseable {
                 errorId = emitToFile(fileName, LLVMObjectFile, error);
                 break;
             case EXECUTABLE:
-                String tempName = fileName + "_temp.o";
-                errorId = emitToFile(tempName, LLVMObjectFile, error); //TODO dirty hacks :D
-                if (errorId == 0){
+                File tempDir = Files.createTempDir();
+                String tempName = tempDir.getPath() + fileName.substring(fileName.lastIndexOf(Utils.filesep)) + "_temp.o";
+                Log.info(this, "writing temporary object file to: " + tempName);
+                errorId = emitToFile(tempName, LLVMObjectFile, error);
+                if (errorId == 0) {
                     try {
                         Process p = Linker.buildCall(tempName, fileName).inheritIO().start();
                         p.waitFor();
@@ -413,6 +418,7 @@ public class LLVMModule implements AutoCloseable {
                         Utils.handleException(e);
                     }
                 }
+                Utils.deleteDir(tempDir);
                 break;
         }
         if (errorId != 0) {

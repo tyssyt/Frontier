@@ -10,6 +10,7 @@ import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.style.Style;
+import tys.frontier.util.Utils;
 
 import java.io.IOException;
 
@@ -18,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ParserTest {
 
-    private static final String prefix = "Parser/SyntaxErrors/";
+    private static final String prefix = "Parser" + Utils.filesep + "SyntaxErrors" + Utils.filesep;
 
     @Before
     public void setUp() {

@@ -4,7 +4,6 @@
 # generated files
 bin/
 gen/
-tmp/
 
 # Intellij project files
 *.iml
@@ -16,7 +15,6 @@ tmp/
 .gradletasknamecache
 .gradle/
 build/
-bin/ 
 
 #OS
 .directory
