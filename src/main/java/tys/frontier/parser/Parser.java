@@ -4,9 +4,11 @@ import com.google.common.collect.MoreCollectors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
+import tys.frontier.State;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -36,9 +38,8 @@ public class Parser {
         INITIALIZING,
         IMPORT_RESOLVING,
         IDENTIFIER_COLLECTION,
-        IDENTIFIER_CHECKS,
+        CLASS_PREP,
         TO_INTERNAL_REPRESENTATION,
-        CHECKS,
         FINISHED;
 
         @Override
@@ -49,7 +50,9 @@ public class Parser {
 
     private String file;
     private Style style;
+    private Module module;
     private ImportResolver importResolver;
+    private List<FInstantiatedClass> classesToPrepare = new ArrayList<>();
 
     private Stage stage = Stage.CREATED;
 
@@ -69,10 +72,18 @@ public class Parser {
         return stage;
     }
 
+    public Module getModule() {
+        return module;
+    }
+
     public Module parse() throws SyntaxErrors, IOException {
         assert stage == Stage.CREATED;
         stage = Stage.INITIALIZING;
-        Module res = new Module(file, "1", null); //TODO properly extract this info from the module
+        State state = State.get();
+        module = new Module(file, "1", null); //TODO properly extract this info from the module
+        if (state.getEntryPointParser() == null)
+            state.setEntryPointParser(this);
+        state.setCurrentParser(this);
 
         if (!file.endsWith(".front")) {
             file = "Frontier Libs/" + file + ".front";
@@ -93,53 +104,63 @@ public class Parser {
             }
 
             stage = Stage.IMPORT_RESOLVING;
-            res.getImportedModules().addAll(ImportFinder.resolve(context, importResolver));
+            state.setCurrentParser(null);
+            module.getImportedModules().addAll(ImportFinder.resolve(context, importResolver));
+            state.setCurrentParser(this);
+
 
             stage = Stage.IDENTIFIER_COLLECTION;
-            Pair<SyntaxTreeData, Delegates> treeDataAndDelegates = GlobalIdentifierCollector.getIdentifiers(context, res);
+            Pair<SyntaxTreeData, Delegates> treeDataAndDelegates = GlobalIdentifierCollector.getIdentifiers(context, module);
             SyntaxTreeData treeData = treeDataAndDelegates.a;
-            treeDataAndDelegates.b.createDelegatedFunctions();
             for (FClass fClass : treeData.classes.values()) {
-                res.addClass(fClass);
+                module.addClass(fClass);
             }
             {
                 Log.info(this, "parsed identifiers");
-                Log.debug(this, res.toString());
+                Log.debug(this, module.toString());
             }
 
-            stage = Stage.IDENTIFIER_CHECKS;
+            stage = Stage.CLASS_PREP;
+            treeDataAndDelegates.b.createDelegatedFunctions();
+            treeData.classes.values().forEach(FClass::generateConstructor);
+            classesToPrepare.forEach(FInstantiatedClass::prepare);
+            classesToPrepare.clear();
 
             stage = Stage.TO_INTERNAL_REPRESENTATION;
-            List<Warning> warnings = ToInternalRepresentation.toInternal(treeData, res);
+            List<Warning> warnings = ToInternalRepresentation.toInternal(treeData, module);
             treeDataAndDelegates.b.createDelegatedFunctionBodies();
             {
                 Log.info(this, "parsed classes");
-                Log.debug(this, res.toString());
+                Log.debug(this, module.toString());
                 if (!warnings.isEmpty()) {
                     Log.warning(this, warnings.toString());
                 }
             }
 
-            /*
-            stage = Stage.CHECKS;
-            Log.info(this, "checks passed");
-            */
-
             stage = Stage.FINISHED;
             //search for entry Point
             try {
-                FFunction entryPoint = res.getExportedClasses().values().stream()
+                FFunction entryPoint = module.getExportedClasses().values().stream()
                         .flatMap(cl -> cl.getFunctions().values().stream())
                         .filter(FFunction::isMain)
                         .collect(MoreCollectors.onlyElement());
-                res.setEntryPoint(entryPoint);
+                module.setEntryPoint(entryPoint);
             } catch (IllegalArgumentException e) {
                 Log.warning(this, "more then 1 entry Point found in File", e);
             } catch (NoSuchElementException e) {
                 Log.info(this, "no entry Point found in File", e);
             }
-            return res;
+            return module;
+        } finally {
+            state.setCurrentParser(null);
         }
+    }
+
+    public void registerInstantiatedClass(FInstantiatedClass toRegister) {
+        if (stage.compareTo(Stage.CLASS_PREP) < 0)
+            classesToPrepare.add(toRegister);
+        else
+            toRegister.prepare();
     }
 
     @Override

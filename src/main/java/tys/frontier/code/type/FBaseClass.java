@@ -1,6 +1,7 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.*;
+import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
@@ -144,7 +145,7 @@ public class FBaseClass implements FClass {
         if (res == null) {
             res = new FInstantiatedClass(this, args);
             instantiations.put(args, res);
-            res.prepare();
+            State.get().getCurrentParser().registerInstantiatedClass(res);
         }
         return res;
     }

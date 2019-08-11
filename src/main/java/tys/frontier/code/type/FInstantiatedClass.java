@@ -43,7 +43,7 @@ public class FInstantiatedClass extends FForwardingClass {
         return newIdentifier;
     }
 
-    void prepare() {
+    public void prepare() {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add fields
         for (FField baseField : proxy.getFields()) {
