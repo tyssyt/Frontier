@@ -154,23 +154,6 @@ public class FBaseClass implements FClass {
         return delegates;
     }
 
-    //TODO yeah that is not clean code, I know...
-    static boolean getDelegate(FClass _this, FType toType, List<FField> res) {
-        FField f = _this.getDirectDelegates().get(toType);
-        if (f != null) {
-            res.add(f);
-            return true;
-        }
-
-        for (Map.Entry<FType, FField> entry : _this.getDirectDelegates().entrySet()) {
-            res.add(entry.getValue());
-            if (entry.getKey() instanceof FClass && getDelegate((FClass) entry.getKey(), toType, res))
-                return true;
-            res.remove(res.size() - 1);
-        }
-        return false;
-    }
-
     @Override
     public FFunctionIdentifier getFreshLambdaName() {
         return new FFunctionIdentifier(lambdaNames.next());

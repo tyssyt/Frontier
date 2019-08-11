@@ -1,6 +1,7 @@
 package tys.frontier.code.expression.cast;
 
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FField;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -10,6 +11,7 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import static tys.frontier.code.typeInference.Variance.Contravariant;
@@ -22,7 +24,7 @@ public class TypeConversion extends ImplicitTypeCast {
         FLOAT_PROMOTION(32, 0),
         TO_OPTIONAL(32, 0),
         OPTIONAL_TO_BOOL(32, 0), //this is a special case and should never be done as an inner cast
-        DELEGATE(0, 32);
+        DELEGATE(32, 0);
 
         public final int baseCost;
         public final int costPerStep;
@@ -77,11 +79,18 @@ public class TypeConversion extends ImplicitTypeCast {
             return new TypeConversion(baseType, targetType, variance, CastType.OPTIONAL_TO_BOOL, null);
         if (variance == Contravariant && targetType instanceof FOptional && baseType == FBool.INSTANCE)
             return new TypeConversion(baseType, targetType, variance, CastType.OPTIONAL_TO_BOOL, null);
-        if (variance == Covariant && baseType.getDelegate(targetType) != null)
-            return new TypeConversion(baseType, targetType, variance, CastType.DELEGATE, null); //TODO there are more complex cast paths here, base could be instantiated and the instantiation delegates to target
-        if (variance == Contravariant && targetType.getDelegate(baseType) != null)
-            return new TypeConversion(baseType, targetType, variance, CastType.DELEGATE, null); //TODO there are more complex cast paths here
-
+        if (variance == Covariant) {
+            Pair<FField, ImplicitTypeCast> delegate = baseType.getDelegate(targetType, constraints);
+            if (delegate != null) {
+                ImplicitTypeCast outer = delegate.b;
+                return new TypeConversion(baseType, targetType, variance, CastType.DELEGATE, outer);
+            }
+        }
+        if (variance == Contravariant) {
+            Pair<FField, ImplicitTypeCast> delegate = targetType.getDelegate(baseType, constraints);
+            if (delegate != null)
+                return new TypeConversion(baseType, targetType, variance, CastType.DELEGATE, delegate.b);
+        }
         throw new IncompatibleTypes(targetType, baseType);
     }
 
@@ -110,16 +119,10 @@ public class TypeConversion extends ImplicitTypeCast {
             case INTEGER_PROMOTION:
                 return i + castType.getCost(variance.sign * (((FIntN) target).getN() - ((FIntN) base).getN()));
             case FLOAT_PROMOTION:
-                return i + castType.getCost(0);
             case TO_OPTIONAL:
-                return i + castType.getCost(0);
             case OPTIONAL_TO_BOOL:
-                return i + castType.getCost(0);
             case DELEGATE:
-                if (variance == Covariant)
-                    return i + castType.getCost(32 * getBase().getDelegate(target).size());
-                else
-                    return i + castType.getCost(32 * getTarget().getDelegate(base).size());
+                return i + castType.getCost(1);
             default:
                 return Utils.cantHappen();
         }

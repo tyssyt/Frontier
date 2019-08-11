@@ -7,6 +7,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.HasVisibility;
 import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -72,12 +73,17 @@ public interface FClass extends FType, HasVisibility {
             getDirectDelegates().put(field.getType(), field);
     }
 
-    default List<FField> getDelegate(FType toType) {
-        List<FField> res = new ArrayList<>();
-        if (FBaseClass.getDelegate(this, toType, res))
-            return res;
-        else
-            return null;
+    default Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, TypeConstraint> constraints) {
+        FField res = getDirectDelegates().get(toType);
+        if (res != null)
+            return new Pair<>(res, null);
+        for (Map.Entry<FType, FField> entry : getDirectDelegates().entrySet()) {
+            try {
+                ImplicitTypeCast outer = ImplicitTypeCast.create(entry.getKey(), toType, Variance.Covariant, constraints);
+                return new Pair<>(entry.getValue(), outer);
+            } catch (IncompatibleTypes ignored) {}
+        }
+        return null;
     }
 
     @Override

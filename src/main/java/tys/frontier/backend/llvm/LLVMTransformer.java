@@ -19,6 +19,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.util.Pair;
@@ -362,6 +363,19 @@ class LLVMTransformer implements
 
     private LLVMValueRef visitTypeConversion(LLVMValueRef base, TypeConversion conversion) {
         assert conversion.getVariance() == Variance.Covariant;
+
+        //TODO the "special handling" in front here is ugly, whenever we make further changes to casts we should reevaluate the construct as a whole and maybe change it in a way that allows both delegate and other conversions to be handled similar again
+        if (conversion.getCastType() == TypeConversion.CastType.DELEGATE) {
+            FType target = conversion.getInner() == null ? conversion.getTarget() : conversion.getInner().getBase();
+            FField field = conversion.getBase().getDirectDelegates().get(target);
+            LLVMValueRef addr = LLVMBuildStructGEP(builder, base, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);
+            LLVMValueRef res = LLVMBuildLoad(builder, addr, "load_delegate_" + field.getIdentifier().name);
+            if (conversion.getInner() != null)
+                return visitImplicitTypeCast(res, conversion.getInner());
+            else
+                return res;
+        }
+
         FClass baseClass;
         if (conversion.getInner() != null) {
             base = visitImplicitTypeCast(base, conversion.getInner());
@@ -383,14 +397,6 @@ class LLVMTransformer implements
                     return base;
             case OPTIONAL_TO_BOOL:
                 return LLVMBuildICmp(builder, LLVMIntNE, base, module.getNull((FOptional) baseClass), "ne");
-            case DELEGATE:
-                List<FField> path = baseClass.getDelegate(conversion.getTarget());
-                LLVMValueRef cur = base;
-                for (FField field : path) {
-                    LLVMValueRef addr = LLVMBuildStructGEP(builder, cur, module.getFieldIndex(field), "GEP_delegate_" + field.getIdentifier().name);
-                    cur = LLVMBuildLoad(builder, addr, "load_delegate_" + field.getIdentifier().name);
-                }
-                return cur;
             default:
                 return Utils.cantHappen();
         }

@@ -26,6 +26,7 @@ import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.Pair;
+import tys.frontier.util.Utils;
 
 import java.util.*;
 
@@ -78,7 +79,7 @@ public class Delegates {
 
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
         if (!(d.field.getType() instanceof FClass))
-            return;
+            Utils.NYI("delegate from non classes: " + d.field.getMemberOf().getIdentifier() + "." + d.field.getIdentifier());
         FClass from = (FClass) d.field.getType();
         FClass to = d.field.getMemberOf();
         for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getFunctions().asMap().entrySet()) {

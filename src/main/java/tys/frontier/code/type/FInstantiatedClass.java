@@ -28,6 +28,8 @@ public class FInstantiatedClass extends FForwardingClass {
     private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
     private Multimap<FFunctionIdentifier, FFunction> newFunctions = ArrayListMultimap.create();
 
+    private Map<FType, FField> newDelegates;
+
     FInstantiatedClass(FClass baseClass, ImmutableList<FType> instantiatedParameters) {
         super(baseClass);
         assert !(baseClass instanceof FInstantiatedClass);
@@ -48,6 +50,12 @@ public class FInstantiatedClass extends FForwardingClass {
             FField instantiatedField = new FField(baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
                     this, baseField.getVisibility(), !baseField.isInstance(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
+        }
+
+        //delegates
+        newDelegates = new HashMap<>();
+        for (Map.Entry<FType, FField> entry : proxy.getDirectDelegates().entrySet()) {
+            newDelegates.put(typeInstantiation.getType(entry.getKey()), newInstanceFields.get(entry.getValue().getIdentifier()));
         }
 
         //add functions
@@ -108,6 +116,11 @@ public class FInstantiatedClass extends FForwardingClass {
                 return true;
         }
         return false;
+    }
+
+    @Override
+    public Map<FType, FField> getDirectDelegates() {
+        return newDelegates;
     }
 
     @Override
