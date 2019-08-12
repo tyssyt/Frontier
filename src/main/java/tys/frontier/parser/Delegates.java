@@ -20,6 +20,7 @@ import tys.frontier.code.statement.FExpressionStatement;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.parser.syntaxErrors.CyclicDelegate;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
@@ -51,7 +52,7 @@ public class Delegates {
         delegateToMap.put(to, d);
     }
 
-    public void createDelegatedFunctions() throws SyntaxErrors {
+    public void createDelegatedFunctions(Set<FInstantiatedClass> classesToPrepare) throws SyntaxErrors {
         List<SyntaxError> errors = new ArrayList<>();
         Set<FType> toDo = new HashSet<>(delegateToMap.keySet());
 
@@ -63,6 +64,8 @@ public class Delegates {
                     FType from = d.field.getType();
                     if (toDo.contains(from))
                         continue classLoop; //dependency found, wait
+                    if (from instanceof FInstantiatedClass && classesToPrepare.remove(from))
+                        ((FInstantiatedClass) from).prepare();
                 }
                 for (Delegate d : delegateToMap.get(cur)) {
                     createDelegatedFunctions(d, errors);

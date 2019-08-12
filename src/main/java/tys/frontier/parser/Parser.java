@@ -26,10 +26,7 @@ import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class Parser {
 
@@ -52,7 +49,7 @@ public class Parser {
     private Style style;
     private Module module;
     private ImportResolver importResolver;
-    private List<FInstantiatedClass> classesToPrepare = new ArrayList<>();
+    private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
     private Stage stage = Stage.CREATED;
 
@@ -121,8 +118,9 @@ public class Parser {
             }
 
             stage = Stage.CLASS_PREP;
-            treeDataAndDelegates.b.createDelegatedFunctions();
+            //these steps need to be in exactly that order, because I prepare some in createDelegate and prepare needs contructors
             treeData.classes.values().forEach(FClass::generateConstructor);
+            treeDataAndDelegates.b.createDelegatedFunctions(classesToPrepare);
             classesToPrepare.forEach(FInstantiatedClass::prepare);
             classesToPrepare.clear();
 
