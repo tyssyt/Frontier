@@ -66,9 +66,10 @@ public interface FClass extends FType, HasVisibility {
     @Override
     String toString();
 
-    default void addDelegate(FField field) {
+    default void addDelegate(FField field) throws DelegateFromTypeVar {
         assert field.getMemberOf() == this;
-        assert field.getType() instanceof FClass;
+        if (!(field.getType() instanceof FClass))
+            throw new DelegateFromTypeVar(field);
         if (field.getVisibility() != FVisibilityModifier.PRIVATE)
             getDirectDelegates().put(field.getType(), field);
     }

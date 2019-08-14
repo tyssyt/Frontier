@@ -77,6 +77,11 @@ public class ParserTest {
         assertTrue(e instanceof CyclicDelegate);
     }
     @Test
+    public void parseDelegateFromTypeVar() throws Exception {
+        SyntaxError e = parseSyntaxError("DelegateFromTypeVar.front");
+        assertTrue(e instanceof DelegateFromTypeVar);
+    }
+    @Test
     public void parseFieldIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("FieldIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);
