@@ -13,7 +13,7 @@ public class FFunctionTypeIdentifier extends FTypeIdentifier {
 
     public static String getName(List<FType> in, FType out) {
         StringBuilder sb = new StringBuilder();
-        Utils.joinIdentifiers(sb, in, ", ");
+        Utils.joinIdentifiers(sb, in, " ");
         sb.append(" -> ").append(out.getIdentifier());
         return sb.toString();
     }
