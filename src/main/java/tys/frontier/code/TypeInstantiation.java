@@ -212,6 +212,11 @@ public class TypeInstantiation {
     }
 
     @Override
+    public String toString() {
+        return typeMap.toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TypeInstantiation)) return false;

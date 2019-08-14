@@ -34,6 +34,11 @@ public class HasCall extends TypeConstraint {
     }
 
     @Override
+    public String toString() {
+        return "HasCall{" + identifier + '(' + argumentTypes + "), " + typeInstantiation + '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof HasCall)) return false;
