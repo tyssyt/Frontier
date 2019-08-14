@@ -22,6 +22,7 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.CyclicDelegate;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
@@ -87,16 +88,8 @@ public class Delegates {
             if (d.selector.has(entry.getKey())) {
                 for (FFunction toDelegate : entry.getValue()) {
                     if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE && toDelegate.isInstance()) {
-                        //replace first param to match the class delegating to replaceing the class delegating from
-                        ImmutableList<FParameter> params = toDelegate.getParams();
-                        ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
-                        builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
-                        builder.addAll(params.subList(1, params.size()));
-
-                        FFunction del = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build());
                         try {
-                            to.addFunction(del);
-                            d.functions.add(new Pair<>(del, toDelegate));
+                            d.functions.add(new Pair<>(createFunction(to, toDelegate), toDelegate));
                         } catch (SignatureCollision signatureCollision) {
                             errors.add(signatureCollision);
                         }
@@ -104,6 +97,19 @@ public class Delegates {
                 }
             }
         }
+    }
+
+    private static FBaseFunction createFunction(FClass to, FFunction toDelegate) throws SignatureCollision {
+        //replace first param to match the class delegating to replaceing the class delegating from
+        ImmutableList<FParameter> params = toDelegate.getParams();
+        ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
+        builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
+        builder.addAll(params.subList(1, params.size()));
+        assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
+
+        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build(), toDelegate.getParameters());
+        to.addFunction(res);
+        return res;
     }
 
     public void createDelegatedFunctionBodies() {
