@@ -172,9 +172,14 @@ public class ParserTest {
         assertEquals("S", ((UndeclaredVariable)e).identifier.name);
     }
     @Test
-    public void parseUnfullfillableConstraintFixed() throws Exception {
-        SyntaxError e = parseSyntaxError("UnfullfillableConstraintFixed.front");
+    public void parseUnfulfillableConstraintFixed() throws Exception {
+        SyntaxError e = parseSyntaxError("UnfulfillableConstraintFixed.front");
         assertTrue(e instanceof IncompatibleTypes);
+    }
+    @Test
+    public void parseUnfulfillableConstraint() throws Exception {
+        SyntaxError e = parseSyntaxError("UnfulfillableConstraints.front");
+        assertTrue(e instanceof UnfulfillableConstraints);
     }
     @Test
     public void parseUntypedVariable() throws Exception {

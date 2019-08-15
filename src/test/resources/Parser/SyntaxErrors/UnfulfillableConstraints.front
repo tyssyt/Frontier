@@ -1,0 +1,40 @@
+import List;
+
+class IntList:
+
+delegate * : List<int64> l;
+
+static create() -> IntList {
+    return new IntList(List<int64>.create());
+}
+
+
+class Generic<T>:
+delegate * : int32 i;
+T t;
+
+static create(T t, int32 i) -> Generic<T> {
+    return new Generic<T>(i ,t);
+}
+
+doSthUseful<R>(T, int32 -> R fun) -> R {
+    return fun(t,i);
+}
+
+getT() -> T {
+    return t;
+}
+
+class MoreGenerix<U>:
+delegate doSthUseful, getT : Generic<U> baseGeneric;
+
+static create(Generic<U> baseGeneric) -> MoreGenerix<U> {
+    return new MoreGenerix<U>(baseGeneric);
+}
+
+export class Outside:
+
+export static main () {
+    moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(IntList.create(),49));
+    int32 i := moregen.doSthUseful(\i j -> j.get(0) + i); //borked cause i and j is switched
+}

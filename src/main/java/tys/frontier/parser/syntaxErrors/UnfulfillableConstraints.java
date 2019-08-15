@@ -17,12 +17,8 @@ public class UnfulfillableConstraints extends SyntaxError {
     }
 
     public UnfulfillableConstraints(TypeConstraints constraints, TypeConstraint a, TypeConstraint b) {
-        this("Constraints are unfullfillable" +
+        this("Constraints are unfulfillable" +
                 (a == null ? "" : ", contradicing: " + a + " and " + b),
                 constraints, a, b);
-    }
-
-    public static UnfulfillableConstraints empty(TypeConstraints constraints) {
-        return new UnfulfillableConstraints("Cannot resolve, no constraints were given", constraints, null, null);
     }
 }
