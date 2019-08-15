@@ -1,0 +1,102 @@
+import IO;
+import List;
+
+class IntList:
+
+delegate * : List<int64> l;
+
+static create() -> IntList {
+    return new IntList(List<int64>.create());
+}
+
+
+class Generic<T>:
+delegate * : int32 i;
+T t;
+
+static create(T t, int32 i) -> Generic<T> {
+    return new Generic<T>(i ,t);
+}
+
+doSthUseful<R>(T, int32 -> R fun) -> R {
+    return fun(t,i);
+}
+
+getT() -> T {
+    return t;
+}
+
+class MoreGenerix<U>:
+delegate doSthUseful, getT : Generic<U> baseGeneric;
+
+static create(Generic<U> baseGeneric) -> MoreGenerix<U> {
+    return new MoreGenerix<U>(baseGeneric);
+}
+
+export class Outside:
+
+static forEach <T, R> (List<T> l, T->R f) { //das geht nicht aber sollte mit delegate cast gehen?
+    for int32 i := 0; i < l.size(); ++i {
+        f(l.elements()[i]);
+    }
+}
+
+
+static createGenericWithDelegateFromOutside() -> Generic<int32> {
+    return Generic<int32>.create(5,6);
+}
+
+static overload (Generic<int32> i) {
+    IO.print("one");
+}
+
+static overload <T> (Generic<T> i) {
+    IO.print("two");
+}
+
+static overload (int32 i) {
+    IO.print("three");
+}
+
+static overload2 <T> (Generic<T> i) {
+    IO.print("two");
+}
+
+static overload2 (int32 i) {
+    IO.print("three");
+}
+
+
+export static main () {
+    //instantiated generic in non generic
+    intList := IntList.create();
+    intList.add(10);
+    intList.add(9);
+    intList.add(8);
+    forEach(intList, IO.printInt*);
+
+    IO.print("|");
+
+    //forwarding non generic in generic
+    gen := createGenericWithDelegateFromOutside();
+    //IO.printInt(gen.doSthUseful(\i j -> i+j)); //TODO i32<returnvalue<i64, so maybe this is correct to fail here, should analyse
+    IO.printInt(gen.doSthUseful(\int32 i int32 j -> i+j)); //so giving types is enough, nice
+    IO.printInt(gen);
+
+    IO.print("|");
+
+    //in a generic class, forward from a generic class, but in the instantiation we use a type parameter of the current class
+    moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(intList,49));
+    moregen.getT().add(51);
+    forEach(intList, IO.printInt*);
+    IO.printInt(moregen.getT().get(3));
+
+    IO.print("|");
+
+    IO.printInt(moregen.doSthUseful(\i j -> i.get(0) + j));
+
+    IO.print("|");
+
+    overload(gen);
+    overload2(gen);
+}

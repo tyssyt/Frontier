@@ -106,4 +106,9 @@ public class MainTest {
         String res = doMain("Lambda", null);
         assertEquals(loadOut("LambdaOut.txt"), res);
     }
+    @Test
+    public void mainDelegateGeneric() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("DelegateGeneric", null);
+        assertEquals("1098|116|10985151|59|onetwo", res);
+    }
 }
