@@ -1,8 +1,6 @@
 package tys.frontier.parser.syntaxTree;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
@@ -22,7 +20,6 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.ImplicitCastable;
-import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -31,7 +28,6 @@ import tys.frontier.parser.warnings.UnreachableStatements;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -303,17 +299,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         if(currentFunction().genericFunctionAddressToInstantiate.isEmpty())
             return untyped;
 
-        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
         for (FTypeVariable toInstantiate : currentFunction().genericFunctionAddressToInstantiate) {
-            Pair<FType, Multimap<FTypeVariable, TypeConstraint>> pair = toInstantiate.getConstraints().resolve();
-            assert !(pair.a instanceof FTypeVariable);
-            newConstraints.putAll(pair.b);
+            toInstantiate.getConstraints().hardResolve();
         }
-        for (Map.Entry<FTypeVariable, TypeConstraint> entry : newConstraints.entries()) {
-            entry.getKey().tryAddConstraint(entry.getValue());
-        }
+        FStatement res = GenericBaking.bake(untyped);
         currentFunction().genericFunctionAddressToInstantiate.clear();
-        return GenericBaking.bake(untyped);
+        return res;
     }
 
     @Override

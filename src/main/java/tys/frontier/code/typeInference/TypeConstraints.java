@@ -1,7 +1,6 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.type.FClass;
@@ -10,7 +9,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -277,9 +275,23 @@ public class TypeConstraints {
         return false;
     }
 
-    public Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolve() throws UnfulfillableConstraints {
+    public FType softResolve(Multimap<FTypeVariable, TypeConstraint> newConstraints) throws UnfulfillableConstraints {
+        FClass resolve = resolve(true, newConstraints);
+        if (resolve == null)
+            return equivalenceGroup.iterator().next();
+        return resolve;
+    }
+
+    private static final Multimap<FTypeVariable, TypeConstraint> EMPTY = ArrayListMultimap.create();
+    public FClass hardResolve() throws UnfulfillableConstraints {
+        FClass res = resolve(false, EMPTY);
+        assert res != null && EMPTY.isEmpty();
+        return res;
+    }
+
+    private FClass resolve(boolean soft, Multimap<FTypeVariable, TypeConstraint> newConstraints) throws UnfulfillableConstraints {
         if (isResolved())
-            return new Pair<>(resolvedAs, ImmutableListMultimap.of());
+            return resolvedAs;
 
         // collect all upper bounds (contravariant constraints) including transitive ones, same for lowers
         Set<FClass> contraClasses = new HashSet<>();
@@ -293,10 +305,11 @@ public class TypeConstraints {
         FClass proposition = this.proposeType(contraClasses, coClasses);
 
         if (proposition == null)
-            return new Pair<>(equivalenceGroup.iterator().next(), ImmutableListMultimap.of());
+            return null;
 
         //resolve
-        return new Pair<>(proposition, this.doResolve(proposition, true));
+        newConstraints.putAll(this.doResolve(proposition, soft));
+        return proposition;
     }
 
     public FType getResolved() {

@@ -105,9 +105,7 @@ class FunctionResolver {
 
             TypeConstraints c = v.getConstraints();
             c = TypeConstraints.addAll(c, constraints.get(v));
-            Pair<FType, Multimap<FTypeVariable, TypeConstraint>> resolvePair = c.resolve();
-            typeVariableMap.put(key, resolvePair.a);
-            newConstraints.putAll(resolvePair.b);
+            typeVariableMap.put(key, c.softResolve(newConstraints));
             if (cleanConstraints)
                 constraints.removeAll(v);
         }
