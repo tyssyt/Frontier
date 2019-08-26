@@ -17,7 +17,6 @@ public class ClassInstantiationFunction extends ForwardingFunction {
     private FBlock newBody;
     private FType newReturnType;
     private ImmutableList<FParameter> newParams;
-    private Signature newSignature;
     private FInstantiatedClass newMemberOf;
 
     private Map<TypeInstantiation, FInstantiatedFunction> newInstantiations;
@@ -34,7 +33,6 @@ public class ClassInstantiationFunction extends ForwardingFunction {
         newParams = createParams(base.getParams(), typeInstantiation);
         newMemberOf = memberOf;
         newInstantiations = base.getParameters().isEmpty() ? Collections.emptyMap() : new MapMaker().concurrencyLevel(1).weakValues().makeMap();
-        newSignature = new Signature(this);
     }
 
     private static ImmutableList<FParameter> createParams(ImmutableList<FParameter> original, TypeInstantiation typeInstantiation) {
@@ -68,11 +66,6 @@ public class ClassInstantiationFunction extends ForwardingFunction {
     @Override
     public FType getType() {
         return newReturnType;
-    }
-
-    @Override
-    public Signature getSignature() {
-        return newSignature;
     }
 
     @Override

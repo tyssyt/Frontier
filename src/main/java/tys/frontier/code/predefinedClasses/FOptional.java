@@ -6,6 +6,7 @@ import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FType;
@@ -15,6 +16,7 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 public class FOptional extends FPredefinedClass {
@@ -55,12 +57,12 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        if (argumentTypes.size() > 0 && argumentTypes.get(0) == this) {
-            argumentTypes = new ArrayList<>(argumentTypes); //copy to not modify the original list
-            argumentTypes.set(0, baseType);
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+        if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
+            positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
+            positionalArgs.set(0, baseType);
         }
-        FFunction base = baseType.resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
+        FFunction base = baseType.resolveFunction(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, constraints);
         return shimMap.computeIfAbsent(base, this::createShim);
     }
 

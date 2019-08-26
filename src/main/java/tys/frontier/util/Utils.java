@@ -107,6 +107,13 @@ public final class Utils {
         return res;
     }
 
+    public static <T> Map<T, FType> typesFromExpressionMap(Map<T, ? extends Typed> exps) {
+        Map<T, FType> res = new HashMap<>();
+        for (Map.Entry<T, ? extends Typed> entry : exps.entrySet())
+            res.put(entry.getKey(), entry.getValue().getType());
+        return res;
+    }
+
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps, UnaryOperator<FType> op) {
         List<FType> res = new ArrayList<>(exps.size());
         for (Typed exp : exps)
@@ -123,7 +130,7 @@ public final class Utils {
         }
     }
 
-    public static FFunction findFunctionInstantiation(FFunction function, List<FType> argumentTypes, TypeInstantiation typeInstantiation) {
+    public static FFunction findFunctionInstantiation(FFunction function, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
         FType oldNamespace = function.getMemberOf();
         FType newNamespace = typeInstantiation.getType(oldNamespace);
@@ -142,7 +149,7 @@ public final class Utils {
             FType returnType = typeInstantiation.getType(function.getType());
 
             try {
-                return newNamespace.resolveFunction(identifier, argumentTypes, returnType, TypeInstantiation.EMPTY);
+                return newNamespace.resolveFunction(identifier, positionalArgs, keywordArgs, returnType, TypeInstantiation.EMPTY);
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
@@ -263,4 +270,5 @@ public final class Utils {
         }
         return res;
     }
+
 }

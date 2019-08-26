@@ -7,7 +7,7 @@ T t;
 O o;
 
 static create(T t, O o) -> Generic<T,O> {
-    return new Generic<T, O>(o, t);
+    return new Generic<T, O>(o=o, t=t);
 }
 
 generic <S> (T, O -> S mapper) -> S {

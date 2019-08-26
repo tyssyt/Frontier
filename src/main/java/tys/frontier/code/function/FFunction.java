@@ -53,8 +53,6 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
 
     boolean isPredefined();
 
-    Signature getSignature();
-
     boolean isMain();
 
     FLocalVariable getFreshVariable(FType type);

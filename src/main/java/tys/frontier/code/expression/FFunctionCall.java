@@ -1,32 +1,74 @@
 package tys.frontier.code.expression;
 
 import com.google.common.base.Joiner;
+import tys.frontier.code.FParameter;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FFunctionCall implements FExpression {
+    private boolean prepared;
     private FFunction function;
     private List<FExpression> arguments;
 
-    private FFunctionCall(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
+    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
+        this.prepared = prepared;
         this.function = function;
         this.arguments = arguments;
         checkTypes();
     }
 
-    public static FFunctionCall create(FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
-        return new FFunctionCall(function, arguments);
+    private void prepare() { //fills in default arguments
+        if (prepared)
+            return;
+        prepared = true;
+
+        if (function.isInstantiation()) {
+            List<FParameter> params = function.getBaseR().getParams();
+            List<FParameter> targetParams = function.getParams();
+            TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
+            for (int i = 0; i < arguments.size(); i++)
+                if (arguments.get(i) == null) {
+                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue().get(), typeInstantiation); //TODO is there a smart way to figure out when we don't need baking?
+                    try {
+                        arguments.set(i, bake.typeCheck(targetParams.get(i).getType()));
+                    } catch (IncompatibleTypes incompatibleTypes) {
+                        Utils.cantHappen();
+                    }
+                }
+        } else {
+            List<FParameter> params = function.getParams();
+            for (int i = 0; i < arguments.size(); i++)
+                if (arguments.get(i) == null)
+                    arguments.set(i, params.get(i).getDefaultValue().get());
+        }
+    }
+
+    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, Map<FIdentifier, FExpression> keywordArgs) throws IncompatibleTypes {
+        List<FExpression> args = new ArrayList<>(positionalArgs);
+        boolean needsPrepare = false;
+        for (int i=positionalArgs.size(); i < function.getParams().size(); i++) {
+            FParameter p = function.getParams().get(i);
+            FExpression arg = keywordArgs.get(p.getIdentifier());
+            if (arg == null)
+                needsPrepare = true;
+            args.add(arg); //adds null for default args
+        }
+        return new FFunctionCall(!needsPrepare, function, args);
     }
     public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
         try {
-            return create(function, arguments);
+            return new FFunctionCall(false, function, arguments);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
@@ -41,6 +83,7 @@ public class FFunctionCall implements FExpression {
     }
 
     public List<? extends FExpression> getArguments() {
+        prepare();
         return arguments;
     }
 
@@ -50,14 +93,16 @@ public class FFunctionCall implements FExpression {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        List<FType> paramTypes = function.getSignature().getAllParamTypes();
+        List<FParameter> params = function.getParams();
         for (int i = 0; i < arguments.size(); i++) {
-            arguments.set(i, arguments.get(i).typeCheck(paramTypes.get(i)));
+            if (arguments.get(i) != null)
+                arguments.set(i, arguments.get(i).typeCheck(params.get(i).getType()));
         }
     }
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
+        prepare();
         visitor.enterFunctionCall(this);
         List<E> params = new ArrayList<>(this.arguments.size());
         for (FExpression arg : this.arguments)
@@ -67,6 +112,7 @@ public class FFunctionCall implements FExpression {
 
     @Override
     public <E> E accept(ExpressionWalker<E> walker) {
+        prepare();
         return walker.visitFunctionCall(this);
     }
 

@@ -59,7 +59,7 @@ public class FFunctionType extends FPredefinedClass {
     }
 
     public static FFunctionType from(FFunction function) {
-        return existing.computeIfAbsent(new Pair<>(function.getSignature().getAllParamTypes(), function.getType()), p -> new FFunctionType(p.a, p.b));
+        return existing.computeIfAbsent(new Pair<>(Utils.typesFromExpressionList(function.getParams()), function.getType()), p -> new FFunctionType(p.a, p.b));
     }
 
     public static Pair<FFunctionType, TypeInstantiation> instantiableFrom(FFunction function) {

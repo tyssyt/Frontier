@@ -21,7 +21,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     private FFunctionIdentifier newIdentifier;
     private FType newReturnType;
     private ImmutableList<FParameter> newParams;
-    private Signature newSignature;
 
     private boolean baked = false;
 
@@ -33,7 +32,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
         newIdentifier = new FInstantiatedFunctionIdentifier(base.getIdentifier(), typeInstantiation);
         newReturnType = typeInstantiation.getType(base.getType());
         newParams = createParams(base.getParams(), typeInstantiation);
-        newSignature = new Signature(this);
     }
 
     private static ImmutableList<FParameter> createParams(ImmutableList<FParameter> original, TypeInstantiation typeInstantiation) {
@@ -66,11 +64,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     @Override
     public FType getType() {
         return newReturnType;
-    }
-
-    @Override
-    public Signature getSignature() {
-        return newSignature;
     }
 
     @Override

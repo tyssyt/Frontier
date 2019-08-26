@@ -3,7 +3,7 @@ export class List<T>:
     int32 size := 0;
 
     export static create(int32 startSize:=5) -> List<T> {
-        List<T> res := new List<T>(new T[startSize]);
+        List<T> res := new List<T>(elements = new T[startSize]);
         return res;
     }
 

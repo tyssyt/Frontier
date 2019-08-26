@@ -23,17 +23,17 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation) throws FunctionNotFound {
         ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-        FFunction res = resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
+        FFunction res = resolveFunction(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
-                throw new FunctionNotFound(identifier, argumentTypes);
+                throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
         }
         return res;
     }
 
-    FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
+    FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
 
     FField getField(FIdentifier identifier) throws FieldNotFound;
 

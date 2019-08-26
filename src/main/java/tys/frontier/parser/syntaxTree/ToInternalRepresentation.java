@@ -28,6 +28,7 @@ import tys.frontier.parser.warnings.UnreachableStatements;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -636,7 +637,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
 
         try {
-            return functionCall(expression.getType(), identifier, Arrays.asList(expression));
+            return functionCall(expression.getType(), identifier, Arrays.asList(expression), Collections.emptyMap());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
@@ -657,10 +658,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(1).getText());
 
         try {
-            return functionCall(first.getType(), identifier, Arrays.asList(first, second));
+            return functionCall(first.getType(), identifier, Arrays.asList(first, second), Collections.emptyMap());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e1) {
             try {
-                return functionCall(second.getType(), identifier, Arrays.asList(first, second));
+                return functionCall(second.getType(), identifier, Arrays.asList(first, second), Collections.emptyMap());
             } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
                 errors.add(e1);
                 errors.add(e2);
@@ -737,6 +738,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
+    public Pair<List<FExpression>, Map<FIdentifier, FExpression>> visitArguments(FrontierParser.ArgumentsContext ctx) {
+        if (ctx == null)
+            return new Pair<>(Collections.emptyList(), Collections.emptyMap());
+        return new Pair<>(visitExpressionList(ctx.expressionList()), visitNamedExpressionList(ctx.namedExpressionList()));
+    }
+
+    @Override
     public List<FExpression> visitExpressionList(FrontierParser.ExpressionListContext ctx) {
         if (ctx == null)
             return Collections.emptyList();
@@ -755,23 +763,37 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         return res;
     }
 
-    private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier, List<FExpression> params)
+    @Override
+    public Map<FIdentifier, FExpression> visitNamedExpressionList(FrontierParser.NamedExpressionListContext ctx) { //TODO this doesn't follow the fail paradigm
+        if (ctx == null)
+            return Collections.emptyMap();
+        Map<FIdentifier, FExpression> res = new LinkedHashMap<>();
+        for (FrontierParser.NamedExpressionContext c : ctx.namedExpression()) {
+            res.put(ParserContextUtils.getVarIdentifier(c.identifier()), visitExpression(c.expression()));
+        }
+        return res;
+    }
+
+    private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
+                                        List<FExpression> positionalArgs, Map<FIdentifier, FExpression> keywordArgs)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(params), null, TypeInstantiation.EMPTY);
+        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, TypeInstantiation.EMPTY);
         checkAccessForbidden(f);
-        return FFunctionCall.create(f, params);
+        return FFunctionCall.create(f, positionalArgs, keywordArgs);
     }
 
     @Override
     public FExpression visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
-        List<FExpression> params = new ArrayList<>();
         FType namespace;
 
         try {
             FExpression object = visitExpression(ctx.expression());
+            Pair<List<FExpression>, Map<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
             if (object.getType() instanceof FFunctionType) {
-                return DynamicFunctionCall.create(object, visitExpressionList(ctx.expressionList()));
+                if (!arguments.b.isEmpty())
+                    return Utils.NYI("keyword arguments in a dynamic call"); //TODO proper error and test
+                return DynamicFunctionCall.create(object, arguments.a);
             } else  if (object.getType() == FTypeType.INSTANCE) {
                 if (object instanceof FClassExpression)
                     namespace = ((FClassExpression) object).getfClass();
@@ -779,10 +801,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                     return Utils.NYI("a call on an expression of Type FTypeType that is not an FClassExpression");
             } else {
                 namespace = object.getType();
-                params.add(object);
+                if (arguments.a.isEmpty())
+                    arguments.a = Collections.singletonList(object);
+                else
+                    arguments.a.add(0, object);
             }
-            params.addAll(visitExpressionList(ctx.expressionList()));
-            return functionCall(namespace, identifier, params);
+            return functionCall(namespace, identifier, arguments.a, arguments.b);
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
@@ -876,11 +900,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
         //first check if we have a variable of function type
         FIdentifier identifier = new FVariableIdentifier(ctx.LCIdentifier().getText());
-        List<FExpression> params = visitExpressionList(ctx.expressionList());
+        Pair<List<FExpression>, Map<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
         try {
             FVariableExpression var = findLocal(identifier);
             if (var.getType() instanceof FFunctionType) {
-                return DynamicFunctionCall.create(var, params);
+                if (!arguments.b.isEmpty())
+                    return Utils.NYI("asd"); //TODO s.o.
+                return DynamicFunctionCall.create(var, arguments.a);
             }
         } catch (UndeclaredVariable ignored) {
         } catch (IncompatibleTypes incompatibleTypes) {
@@ -891,14 +917,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         //now check for instance/static functions
         FFunctionIdentifier fIdentifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         try {
-            List<FExpression> params2 = new ArrayList<>(params.size() + 1);
+            List<FExpression> params2 = new ArrayList<>(arguments.a.size() + 1);
             params2.add(getThisExpr());
-            params2.addAll(params);
-            return functionCall(currentType, fIdentifier, params2);
+            params2.addAll(arguments.a);
+            return functionCall(currentType, fIdentifier, params2, arguments.b);
         } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden | IncompatibleTypes e) {
             //instance method not found, check for static method
             try {
-                return functionCall(currentType, fIdentifier, params);
+                return functionCall(currentType, fIdentifier, arguments.a, arguments.b);
             } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
                 errors.add(e2);
                 throw new Failed();
@@ -913,12 +939,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             type = ParserContextUtils.getType(ctx.typeType(), this::findType);
         } catch (SyntaxError e) {
             errors.add(e);
-            visitExpressionList(ctx.expressionList()); //parse param list to find more errors
+            visitNamedExpressionList(ctx.namedExpressionList()); //parse param list to find more errors
             throw new Failed();
         }
-        List<FExpression> params = visitExpressionList(ctx.expressionList());
+        Map<FIdentifier, FExpression> namedArguments = visitNamedExpressionList(ctx.namedExpressionList());
         try {
-            return functionCall(type, FConstructor.IDENTIFIER, params);
+            return functionCall(type, FConstructor.IDENTIFIER, Collections.emptyList(), namedArguments);
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
@@ -939,7 +965,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FArray array = FArray.getArrayFrom(baseType);
         try {
-            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression));
+            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), Collections.emptyMap());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
@@ -996,14 +1022,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     //TODO check why this is different/more complex then functionCall (should functionCall call this?, comment why not)
     private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(fClass instanceof FClass))
-            throw new FunctionNotFound(identifier, params);
+            throw new FunctionNotFound(identifier, params, Collections.emptyMap());
         if (params == null) {
             Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
             if (fun.size() != 1)
-                throw new FunctionNotFound(identifier, Collections.emptyList());
+                throw new FunctionNotFound(identifier, Collections.emptyList(), Collections.emptyMap());
             return fun.iterator().next();
         } else {
-            FFunction f = fClass.resolveFunction(identifier, params, null, TypeInstantiation.EMPTY);
+            FFunction f = fClass.resolveFunction(identifier, params, Collections.emptyMap(), null, TypeInstantiation.EMPTY);
             checkAccessForbidden(f);
             return f;
         }

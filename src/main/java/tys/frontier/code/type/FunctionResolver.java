@@ -3,19 +3,20 @@ package tys.frontier.code.type;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
-import tys.frontier.util.IntIntPair;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -26,69 +27,96 @@ import java.util.Map;
 
 class FunctionResolver {
 
-    private FFunction bestFunction;
-    private Multimap<FTypeVariable, TypeConstraint> bestConstraints;
-    private IntIntPair bestCosts;
+    public static class Result {
+        public FFunction function;
+        public Multimap<FTypeVariable, TypeConstraint> constraints;
+        public int casts;
+        public int costs;
+    }
 
     private FFunctionIdentifier identifier;
-    private List<FType> argumentTypes;
+    private List<FType> positionalArgs;
+    private Map<FIdentifier, FType> keywordArgs;
     private FType returnType;
     private TypeInstantiation typeInstantiation;
-    private Iterable<FFunction> candidates;
 
-    FunctionResolver(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Iterable<FFunction> candidates) {
-        this.identifier = identifier;
-        this.argumentTypes = argumentTypes;
-        this.typeInstantiation = typeInstantiation;
-        this.returnType = returnType;
-        this.candidates = candidates;
+    private Result bestResult;
+
+    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Iterable<FFunction> candidates) throws FunctionNotFound {
+        return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation).resolve(candidates);
     }
 
-    Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
+    private FunctionResolver(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation) {
+        this.identifier = identifier;
+        this.positionalArgs = positionalArgs;
+        this.keywordArgs = keywordArgs;
+        this.returnType = returnType;
+        this.typeInstantiation = typeInstantiation;
+    }
+
+    private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
         for (FFunction f : candidates) {
             try {
-                List<FType> argumentTypes = getArgumentTypes(f.getSignature());
+                Result result = new Result();
 
-                Multimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
+                List<FType> argumentTypes = getArgumentTypes(f.getParams());
+
+                result.constraints = ArrayListMultimap.create();
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
                 FFunctionType call = FFunctionType.from(argumentTypes, returnType != null ? returnType : pair.a.getOut());
-                if (call == pair.a) //perfect fit
-                    return new Pair<>(f, ImmutableMultimap.of());
+                if (call == pair.a) { //perfect fit
+                    result.function = f;
+                    result.constraints = ImmutableMultimap.of();
+                    return result;
+                }
 
-                TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, constraints); //this contravariant is hard to explain, but correct
+                TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, result.constraints); //this contravariant is hard to explain, but correct
 
                 //compute instantiations
-                TypeInstantiation instantiation = computeTypeInstantiation(pair.b, constraints, true);
-                f = f.getInstantiation(instantiation);
+                TypeInstantiation instantiation = computeTypeInstantiation(pair.b, result.constraints, true);
+                result.function = f.getInstantiation(instantiation);
 
                 //handle other constraints
-                if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(constraints) != null)
+                if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(result.constraints) != null)
                     continue;
 
-                int numberOfCastParameters = Utils.countNonNull(cast.getCasts());
-                int castCost = cast.getCost();
-                updateCost(new IntIntPair(numberOfCastParameters, castCost), f, constraints);
-            } catch (Signature.IncompatibleSignatures | IncompatibleTypes | UnfulfillableConstraints ignored) {}
+                result.casts = Utils.countNonNull(cast.getCasts());
+                result.costs = cast.getCost();
+                updateCost(result);
+            } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NoArgumentsForParameter ignored) {}
         }
 
-        if (bestFunction == null)
-            throw new FunctionNotFound(identifier, this.argumentTypes);
-        return new Pair<>(bestFunction, bestConstraints);
+        if (bestResult == null)
+            throw new FunctionNotFound(identifier, this.positionalArgs, this.keywordArgs);
+        return bestResult;
     }
 
-    private List<FType> getArgumentTypes(Signature signature) throws Signature.IncompatibleSignatures {
-        //reject when too many or too few arguments are given
-        if (argumentTypes.size() > signature.getAllParamTypes().size() || argumentTypes.size() < signature.getParamTypes().size())
-            throw new Signature.IncompatibleSignatures(signature, argumentTypes);
+    private List<FType> getArgumentTypes(List<FParameter> params) throws TooManyArguments, NoArgumentsForParameter {
+        //too many arguments
+        if (positionalArgs.size() + keywordArgs.size() > params.size())
+            throw new TooManyArguments();
 
-        List<FType> argumentTypes = new ArrayList<>(this.argumentTypes); //create a copy that shadows the original argumentTypes, because we do not want to modify them
-        //if not enough arguments are given, fill up with default arguments
-        for (int i=argumentTypes.size(); i<signature.getAllParamTypes().size(); i++) {
-            FType defaultArgType = signature.getAllParamTypes().get(i);
-            //default arguments come from the function, thus we might need to instantiate types
-            defaultArgType = typeInstantiation.getType(defaultArgType);
-            argumentTypes.add(defaultArgType);
+        //start with filling in positional arguments
+        List<FType> argumentTypes = new ArrayList<>(this.positionalArgs);
+        int usedKeywordArgs = 0;
+
+        //fill in the missing with keywordArguments or default Values
+        for (int i = positionalArgs.size(); i<params.size(); i++) {
+            FParameter param = params.get(i);
+            FType argType = keywordArgs.get(param.getIdentifier());
+            if (argType != null) {
+                argumentTypes.add(argType);
+                usedKeywordArgs++;
+            } else if (param.hasDefaultValue()) {
+                //default arguments come from the function, thus we might need to instantiate types
+                argumentTypes.add(typeInstantiation.getType(param.getType()));
+            } else {
+                throw new NoArgumentsForParameter(param);
+            }
         }
+
+        if (usedKeywordArgs != keywordArgs.size())
+            throw new TooManyArguments();
         return argumentTypes;
     }
 
@@ -113,23 +141,33 @@ class FunctionResolver {
         return TypeInstantiation.create(typeVariableMap);
     }
 
-    private void updateCost(IntIntPair newCosts, FFunction newFunction, Multimap<FTypeVariable, TypeConstraint> constraints) {
-        if (bestCosts == null) {
-            bestCosts = newCosts;
-            bestFunction = newFunction;
-            bestConstraints = constraints;
+    private void updateCost(Result newResult) {
+        if (bestResult == null) {
+            bestResult = newResult;
             return;
         }
-        if (!bestConstraints.isEmpty() || !constraints.isEmpty()) {
+        if (!bestResult.constraints.isEmpty() || !newResult.constraints.isEmpty()) {
             Utils.NYI("ambiguous function call with constraints");
         }
 
-        int res = newCosts.compareTo(bestCosts);
-        if (res < 0) {
-            bestCosts = newCosts;
-            bestFunction = newFunction;
-        } else if (res == 0) {
-            bestFunction = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+        if (newResult.casts < bestResult.casts || (newResult.casts == bestResult.casts && newResult.costs < bestResult.costs)) {
+            bestResult = newResult;
+            return;
         }
+        if (newResult.casts == bestResult.casts && newResult.costs == bestResult.costs) {
+            bestResult = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
+        }
+    }
+
+    private static class NoArgumentsForParameter extends SyntaxError {
+        public final FParameter parameter;
+
+        public NoArgumentsForParameter(FParameter parameter) {
+            this.parameter = parameter;
+        }
+    }
+
+    private static class TooManyArguments extends SyntaxError {
+        //TODO
     }
 }

@@ -23,19 +23,32 @@ import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
 import java.util.List;
+import java.util.Map;
 
 public class FTypeVariable implements FType {
 
     public static class ReturnTypeOf extends FTypeVariable {
 
         private FFunction function;
+        private List<FType> positionalArgs;
+        private  Map<FIdentifier, FType> keywordArgs;
 
-        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed) {
+        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs) {
             super(identifier, fixed, TypeConstraints.create());
+            this.positionalArgs = positionalArgs;
+            this.keywordArgs = keywordArgs;
         }
 
         public FFunction getFunction() {
             return function;
+        }
+
+        public List<FType> getPositionalArgs() {
+            return positionalArgs;
+        }
+
+        public Map<FIdentifier, FType> getKeywordArgs() {
+            return keywordArgs;
         }
     }
 
@@ -106,30 +119,29 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         if (this.constraints.isResolved())
-            return this.constraints.getResolved().resolveFunction(identifier, argumentTypes, returnType, typeInstantiation, constraints);
+            return this.constraints.getResolved().resolveFunction(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, constraints);
 
-        HasCall constraint = new HasCall(null, identifier, argumentTypes, typeInstantiation);
+        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs, typeInstantiation);
         constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
-            throw new FunctionNotFound(identifier, argumentTypes);
+            throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
 
         //just return some fitting dummy function
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
-        for (FType arg : argumentTypes) {
-            FIdentifier id;
-            if (arg == FTypeType.INSTANCE) {
-                id = new FTypeIdentifier(paramNames.next());
-            } else {
-                id = new FVariableIdentifier(paramNames.next());
-            }
+        for (FType arg : positionalArgs) {
+            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
+            params.add(FParameter.create(id, arg, false));
+        }
+        for (FType arg : keywordArgs.values()) {
+            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
             params.add(FParameter.create(id, arg, false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
-            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed());
+            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         FBaseFunction res = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build());
         if (returnType instanceof ReturnTypeOf)

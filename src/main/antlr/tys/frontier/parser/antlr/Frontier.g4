@@ -219,20 +219,16 @@ ifStatement
 
 // EXPRESSIONS -----------------------------------------------------------------------------
 
-expressionList
-    :   expression (COMMA expression)*
-    ;
-
 expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
     |   expression LBRACK expression RBRACK                        #arrayAccess
     |   expression DOT identifier                                  #fieldAccess
-    |   expression DOT LCIdentifier LPAREN expressionList? RPAREN  #externalFunctionCall
-    |   LCIdentifier LPAREN expressionList? RPAREN                 #internalFunctionCall
+    |   expression DOT LCIdentifier LPAREN arguments? RPAREN       #externalFunctionCall
+    |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
-    |   NEW typeType LPAREN expressionList? RPAREN                 #newObject
+    |   NEW typeType LPAREN namedExpressionList? RPAREN            #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast
@@ -254,6 +250,24 @@ expression
 expression2
     :   expression
     ;
+
+arguments
+    :   expressionList (COMMA namedExpressionList)?
+    |   namedExpressionList
+    ;
+
+expressionList
+    :   expression (COMMA expression)*
+    ;
+
+namedExpressionList
+    :   namedExpression (COMMA namedExpression)*
+    ;
+
+namedExpression
+    :   identifier ASSIGN expression
+    ;
+
 
 lambda
     :   lambdaHeader (expression|block)

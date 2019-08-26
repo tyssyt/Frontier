@@ -126,7 +126,7 @@ public interface FClass extends FType, HasVisibility {
 
     default void addFunction(FFunction function) throws SignatureCollision {
         for (FFunction other : getFunctions().get(function.getIdentifier())) {
-            if (function.getSignature().collidesWith(other.getSignature()))
+            if (SignatureCollision.collide(function, other))
                 throw new SignatureCollision(function, other);
         }
         getFunctions().put(function.getIdentifier(), function);
@@ -162,11 +162,11 @@ public interface FClass extends FType, HasVisibility {
         getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
     }
 
-    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         Collection<FFunction> candidates = getFunctions().get(identifier);
-        Pair<FFunction, Multimap<FTypeVariable, TypeConstraint>> pair = new FunctionResolver(identifier, argumentTypes, returnType, typeInstantiation, candidates).resolve();
-        constraints.putAll(pair.b);
-        return pair.a;
+        FunctionResolver.Result result = FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, candidates);
+        constraints.putAll(result.constraints);
+        return result.function;
     }
 
     default  <C,Fi,Fu,S,E> C accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {

@@ -28,7 +28,7 @@ export static main() {
         }
     }
     {
-        test := new O<int64>(2);
+        test := new O<int64>(t=2);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
@@ -40,24 +40,24 @@ export static main() {
         }
     }
     {
-        test := new O<int64?>(4);
+        test := new O<int64?>(t=4);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
 
     {
-        test := new G<int64>(5);
+        test := new G<int64>(t=5);
         IO.printInt(test.get());
     }
     {
-        test := new G<int64?>(6);
+        test := new G<int64?>(t=6);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
     {
-        test := new G<int64?>(null); //TODO this null should not be necessary, but in the current state of constructors it is, the ToDo document has a note on this
+        test := new G<int64?>(t=null); //TODO this null should not be necessary, but in the current state of constructors it is, the ToDo document has a note on this
         if (test.get()) {
             IO.printInt(test.get()!);
         }

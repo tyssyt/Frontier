@@ -88,11 +88,6 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public Signature getSignature() {
-        return proxy.getSignature();
-    }
-
-    @Override
     public boolean isMain() {
         return proxy.isMain();
     }

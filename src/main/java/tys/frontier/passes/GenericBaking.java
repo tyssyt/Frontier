@@ -23,10 +23,7 @@ import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Utils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * mhhhhhhh... cookies
@@ -96,6 +93,10 @@ public class GenericBaking implements FClassVisitor {
         return statement.accept(visitor);
     }
 
+    public static FExpression bake (FExpression expression, TypeInstantiation typeInstantiation) {
+        return expression.accept(new GenericBaking(typeInstantiation));
+    }
+
     @Override
     public void enterField(FField field) {
         if (field.isInstance())
@@ -116,9 +117,6 @@ public class GenericBaking implements FClassVisitor {
             FParameter p = currentFunction.getParams().get(i);
             FParameter old = function.getParams().get(i);
             varMap.put(old, p);
-            if (p.hasDefaultValue())
-                //noinspection OptionalGetWithoutIsPresent
-                p.setDefaultValueTrusted(old.getDefaultValue().get().accept(this));
         }
     }
     @Override
@@ -250,7 +248,7 @@ public class GenericBaking implements FClassVisitor {
             }
         }
 
-        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), typeInstantiation);
+        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), Collections.emptyMap(), typeInstantiation);
         return FFunctionCall.createTrusted(function, params);
     }
 
@@ -299,7 +297,7 @@ public class GenericBaking implements FClassVisitor {
     public FExpression visitFunctionAddress(FFunctionAddress address) {
         FFunction old = address.getFunction();
         List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParams(), typeInstantiation::getType);
-        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, typeInstantiation);
+        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, Collections.emptyMap(), typeInstantiation);
         return new FFunctionAddress(function);
     }
 }

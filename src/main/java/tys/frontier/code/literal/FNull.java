@@ -14,6 +14,7 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.util.Utils;
 
 import java.util.List;
+import java.util.Map;
 
 public class FNull implements FLiteral {
 
@@ -36,7 +37,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> argumentTypes, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) {
+        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) {
             return Utils.cantHappen();
         }
 

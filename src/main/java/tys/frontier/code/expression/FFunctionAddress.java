@@ -5,6 +5,7 @@ import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.util.Utils;
 
 public class FFunctionAddress implements FExpression {
 
@@ -35,7 +36,8 @@ public class FFunctionAddress implements FExpression {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        return function.getSignature().toString(sb).append('*');
+        sb.append(function.getIdentifier()).append('(');
+        return Utils.joinIdentifiers(sb, function.getParams(), ",").append(")*");
     }
 
     @Override

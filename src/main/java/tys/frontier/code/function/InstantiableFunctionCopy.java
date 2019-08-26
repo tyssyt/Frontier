@@ -17,7 +17,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
 
     private FType newReturnType;
     private ImmutableList<FParameter> newParams;
-    private Signature newSignature;
 
     private Map<FTypeIdentifier, FTypeVariable> newParameters;
     private List<FTypeVariable> newParametersList;
@@ -43,7 +42,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
         newParams = createParams(base.getParams(), typeInstantiation);
         newParameters = Utils.asTypeMap(varMap.values());
         newParametersList = new ArrayList<>(varMap.values());
-        newSignature = new Signature(this);
     }
 
     private static ImmutableList<FParameter> createParams(ImmutableList<FParameter> original, TypeInstantiation typeInstantiation) {
@@ -78,11 +76,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
     @Override
     public FType getType() {
         return newReturnType;
-    }
-
-    @Override
-    public Signature getSignature() {
-        return newSignature;
     }
 
     @Override

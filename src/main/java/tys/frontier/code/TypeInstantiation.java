@@ -144,14 +144,17 @@ public class TypeInstantiation {
                 return getType(constraints.getResolved());
 
             if (original instanceof FTypeVariable.ReturnTypeOf) {
-                FFunction function = ((FTypeVariable.ReturnTypeOf) original).getFunction();
+                FTypeVariable.ReturnTypeOf returnTypeOf = (FTypeVariable.ReturnTypeOf) original;
+                FFunction function = returnTypeOf.getFunction();
                 FType oldMemberOf = function.getMemberOf();
                 FType newMemberOf = getType(oldMemberOf);
 
-                if (newMemberOf != oldMemberOf) {
+                if (newMemberOf != oldMemberOf) { //TODO too much indention, too much complexity, extract
                     List<FType> argumentTypes = Utils.typesFromExpressionList(function.getParams(), this::getType);
                     try {
-                        FFunction instantiation = newMemberOf.resolveFunction(function.getIdentifier(), argumentTypes, null, TypeInstantiation.EMPTY);
+                        FFunction instantiation = newMemberOf.resolveFunction(function.getIdentifier(),
+                                returnTypeOf.getPositionalArgs(), returnTypeOf.getKeywordArgs(),
+                                null, TypeInstantiation.EMPTY);
                         //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
                         return getType(instantiation.getType());
                     } catch (FunctionNotFound functionNotFound) {

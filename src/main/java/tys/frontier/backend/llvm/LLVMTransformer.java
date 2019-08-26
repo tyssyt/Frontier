@@ -607,11 +607,6 @@ class LLVMTransformer implements
         //given arguments
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        List<FParameter> params = function.getParams();
-        //use default values for non specified parameters
-        for (int i=functionCall.getArguments().size(); i<params.size(); i++)
-            //noinspection ConstantConditions,OptionalGetWithoutIsPresent
-            args.add(params.get(i).getDefaultValue().get().accept(this));
         String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
         return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
     }

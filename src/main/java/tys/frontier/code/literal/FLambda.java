@@ -6,7 +6,6 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.type.FType;
@@ -42,7 +41,6 @@ public class FLambda extends FBaseFunction {
         for (FParameter param : params) {
             param.setType(typeInstantiation.getType(param.getType())); //TODO delete public setter of Variable Type...
         }
-        signature = new Signature(this);
     }
 
     @Override

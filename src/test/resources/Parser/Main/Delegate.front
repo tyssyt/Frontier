@@ -20,7 +20,7 @@ export class Main:
     }
 
     export static main () {
-        C c := new C(new B(new A("castSuccessfull!")));
+        C c := new C(b=new B(a=new A(member="castSuccessfull!")));
         IO.print(c.getString());
         IO.print(",");
         IO.print(testCast(c));

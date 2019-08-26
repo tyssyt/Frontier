@@ -28,7 +28,6 @@ public class FBaseFunction implements FFunction {
     private boolean natiwe;
     protected FType returnType;
     protected ImmutableList<FParameter> params;
-    protected Signature signature;
     private FBlock body;
 
     protected Map<FTypeIdentifier, FTypeVariable> parameters;
@@ -48,7 +47,6 @@ public class FBaseFunction implements FFunction {
         this.natiwe = natiwe;
         this.returnType = returnType;
         this.params = params;
-        this.signature = new Signature(this);
         if (parameters.isEmpty()) {
             this.parameters = Collections.emptyMap();
             this.parametersList = Collections.emptyList();
@@ -113,16 +111,12 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public Signature getSignature() {
-        return signature;
-    }
-
-    @Override
     public boolean isMain() {
-        return signature.isMain()
+        return identifier.name.equals("main")
+                && params.isEmpty()
+                && returnType == FVoid.INSTANCE
                 && modifier == FVisibilityModifier.EXPORT
-                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT
-                && returnType == FVoid.INSTANCE;
+                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT;
     }
 
     private NameGenerator freshVariableNames = new NameGenerator("?", "");
