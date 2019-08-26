@@ -81,15 +81,15 @@ public class Parser {
         if (state.getEntryPointParser() == null)
             state.setEntryPointParser(this);
         state.setCurrentParser(this);
+        try {
 
-        if (!file.endsWith(".front")) {
-            file = "Frontier Libs/" + file + ".front";
-        }
+            if (!file.endsWith(".front")) {
+                file = "Frontier Libs/" + file + ".front";
+            }
 
-        //create Lexer & Parser & parse
-        try (InputStream input = Utils.loadFile(file)) {
+            //create Lexer & Parser & parse
             FrontierParser.FileContext context;
-            {
+            try (InputStream input = Utils.loadFile(file)) {
                 FrontierLexer lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 FrontierParser parser = new FrontierParser(tokens);
