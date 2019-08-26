@@ -6,11 +6,9 @@ import tys.frontier.code.type.FType;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
-import java.util.Optional;
-
 public class FParameter extends FLocalVariable {
     private boolean hasDefaultValue;
-    private FExpression defaultValue; //optional
+    private FExpression defaultValue;
 
     private FParameter(FIdentifier identifier, FType type, boolean hasDefaultValue) {
         super(identifier, type);
@@ -45,8 +43,8 @@ public class FParameter extends FLocalVariable {
         return hasDefaultValue;
     }
 
-    public Optional<FExpression> getDefaultValue() {
-        return Optional.ofNullable(defaultValue);
+    public FExpression getDefaultValue() {
+        return defaultValue;
     }
 
     public void setDefaultValue(FExpression defaultValue) throws IncompatibleTypes {

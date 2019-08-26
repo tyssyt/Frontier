@@ -561,8 +561,7 @@ class LLVMTransformer implements
         List<FParameter> params = toCall.getParams();
         //use default values for non specified parameters
         for (int i = fArgs.size(); i<params.size(); i++)
-            //noinspection ConstantConditions,OptionalGetWithoutIsPresent
-            llvmArgs.add(params.get(i).getDefaultValue().get().accept(this));
+            llvmArgs.add(params.get(i).getDefaultValue().accept(this));
         String instructionName = toCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
         LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(llvmArgs), llvmArgs.size(), instructionName);
         LLVMBuildBr(builder, continueBlock);

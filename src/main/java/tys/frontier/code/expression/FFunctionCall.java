@@ -39,7 +39,7 @@ public class FFunctionCall implements FExpression {
             TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null) {
-                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue().get(), typeInstantiation); //TODO is there a smart way to figure out when we don't need baking?
+                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue(), typeInstantiation); //TODO is there a smart way to figure out when we don't need baking?
                     try {
                         arguments.set(i, bake.typeCheck(targetParams.get(i).getType()));
                     } catch (IncompatibleTypes incompatibleTypes) {
@@ -50,7 +50,7 @@ public class FFunctionCall implements FExpression {
             List<FParameter> params = function.getParams();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null)
-                    arguments.set(i, params.get(i).getDefaultValue().get());
+                    arguments.set(i, params.get(i).getDefaultValue());
         }
     }
 
