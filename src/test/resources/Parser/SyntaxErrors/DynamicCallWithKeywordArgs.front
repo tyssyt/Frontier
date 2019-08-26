@@ -1,0 +1,7 @@
+class A:
+    static f(int32 i) {}
+
+    static test() {
+        fun := f*;
+        fun(i=2);
+    }

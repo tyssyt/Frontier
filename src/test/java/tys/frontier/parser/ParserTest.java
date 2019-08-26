@@ -82,6 +82,11 @@ public class ParserTest {
         assertTrue(e instanceof DelegateFromTypeVar);
     }
     @Test
+    public void parseDynamicCallWithKeywordArgs() throws Exception {
+        SyntaxError e = parseSyntaxError("DynamicCallWithKeywordArgs.front");
+        assertTrue(e instanceof DynamicCallWithKeywordArgs);
+    }
+    @Test
     public void parseFieldIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("FieldIdentifierCollision.front");
         assertTrue(e instanceof IdentifierCollision);

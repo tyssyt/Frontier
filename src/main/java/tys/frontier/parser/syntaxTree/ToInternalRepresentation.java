@@ -792,7 +792,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             Pair<List<FExpression>, Map<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
             if (object.getType() instanceof FFunctionType) {
                 if (!arguments.b.isEmpty())
-                    return Utils.NYI("keyword arguments in a dynamic call"); //TODO proper error and test
+                    throw new DynamicCallWithKeywordArgs(object, arguments.b);
                 return DynamicFunctionCall.create(object, arguments.a);
             } else  if (object.getType() == FTypeType.INSTANCE) {
                 if (object instanceof FClassExpression)
@@ -807,7 +807,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                     arguments.a.add(0, object);
             }
             return functionCall(namespace, identifier, arguments.a, arguments.b);
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
+        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes | DynamicCallWithKeywordArgs e) {
             errors.add(e);
             throw new Failed();
         }
@@ -905,12 +905,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             FVariableExpression var = findLocal(identifier);
             if (var.getType() instanceof FFunctionType) {
                 if (!arguments.b.isEmpty())
-                    return Utils.NYI("asd"); //TODO s.o.
+                    throw new DynamicCallWithKeywordArgs(var, arguments.b);
                 return DynamicFunctionCall.create(var, arguments.a);
             }
         } catch (UndeclaredVariable ignored) {
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+        } catch (IncompatibleTypes | DynamicCallWithKeywordArgs e) {
+            errors.add(e);
             throw new Failed();
         }
 
