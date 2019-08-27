@@ -111,4 +111,9 @@ public class MainTest {
         String res = doMain("DelegateGeneric", null);
         assertEquals("1098|116|10985151|59|onetwo", res);
     }
+    @Test
+    public void mainParams() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("Params", ";");
+        assertEquals("20@#;" + Utils.endl, res);
+    }
 }
