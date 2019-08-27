@@ -135,9 +135,8 @@ public class FTypeVariable implements FType {
             FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
             params.add(FParameter.create(id, arg, false));
         }
-        for (FType arg : keywordArgs.values()) {
-            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
-            params.add(FParameter.create(id, arg, false));
+        for (Map.Entry<FIdentifier, FType> entry : keywordArgs.entrySet()) {
+            params.add(FParameter.create(entry.getKey(), entry.getValue(), false));
         }
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
