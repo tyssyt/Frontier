@@ -10,7 +10,6 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.typeInference.Variance;
 import tys.frontier.passes.GenericBaking;
 
 import java.util.HashMap;
@@ -102,20 +101,6 @@ public class FInstantiatedClass extends FForwardingClass {
         if (res == Long.MAX_VALUE) //avoid overflow
             return Long.MAX_VALUE;
         return res+1;
-    }
-
-    @Override
-    public boolean canImplicitlyCast() {
-        if (!getDirectDelegates().isEmpty())
-            return true;
-        for (int i = 0; i < instantiatedParameters.size(); i++) {
-            Variance var = getParameterVariance(i);
-            if (var == Variance.Covariant && instantiatedParameters.get(i).canImplicitlyCast())
-                return true;
-            if (var == Variance.Contravariant)
-                return true;
-        }
-        return false;
     }
 
     @Override

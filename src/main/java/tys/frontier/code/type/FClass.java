@@ -33,9 +33,6 @@ public interface FClass extends FType, HasVisibility {
     long concreteness();
 
     @Override
-    boolean canImplicitlyCast();
-
-    @Override
     FTypeIdentifier getIdentifier();
 
     @Override
@@ -65,6 +62,20 @@ public interface FClass extends FType, HasVisibility {
 
     @Override
     String toString();
+
+    @Override
+    default boolean canImplicitlyCast() {
+        if (!getDirectDelegates().isEmpty())
+            return true;
+        for (int i = 0; i < getParametersList().size(); i++) {
+            Variance var = getParameterVariance(i);
+            if (var == Variance.Covariant && getParametersList().get(i).canImplicitlyCast())
+                return true;
+            if (var == Variance.Contravariant)
+                return true;
+        }
+        return false;
+    }
 
     default void addDelegate(FField field) throws DelegateFromTypeVar {
         assert field.getMemberOf() == this;

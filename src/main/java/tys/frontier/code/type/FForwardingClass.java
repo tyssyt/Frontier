@@ -37,11 +37,6 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public boolean canImplicitlyCast() {
-        return proxy.canImplicitlyCast();
-    }
-
-    @Override
     public FTypeIdentifier getIdentifier() {
         return proxy.getIdentifier();
     }

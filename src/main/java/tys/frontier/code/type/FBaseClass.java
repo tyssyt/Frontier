@@ -77,11 +77,6 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public boolean canImplicitlyCast() {
-        return Utils.cantHappen();
-    }
-
-    @Override
     public FTypeIdentifier getIdentifier() {
         return identifier;
     }
