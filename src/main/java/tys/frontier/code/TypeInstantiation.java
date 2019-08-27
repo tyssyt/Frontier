@@ -1,6 +1,7 @@
 package tys.frontier.code;
 
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -145,23 +146,12 @@ public class TypeInstantiation {
 
             if (original instanceof FTypeVariable.ReturnTypeOf) {
                 FTypeVariable.ReturnTypeOf returnTypeOf = (FTypeVariable.ReturnTypeOf) original;
-                FFunction function = returnTypeOf.getFunction();
-                FType oldMemberOf = function.getMemberOf();
+                FType oldMemberOf = returnTypeOf.getFunction().getMemberOf();
                 FType newMemberOf = getType(oldMemberOf);
 
-                if (newMemberOf != oldMemberOf) { //TODO too much indention, too much complexity, extract
-                    List<FType> argumentTypes = Utils.typesFromExpressionList(function.getParams(), this::getType);
-                    try {
-                        FFunction instantiation = newMemberOf.resolveFunction(function.getIdentifier(),
-                                returnTypeOf.getPositionalArgs(), returnTypeOf.getKeywordArgs(),
-                                null, TypeInstantiation.EMPTY);
-                        //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
-                        return getType(instantiation.getType());
-                    } catch (FunctionNotFound functionNotFound) {
-                        return Utils.handleException(functionNotFound);
-                    }
+                if (newMemberOf != oldMemberOf) {
+                    return instantiatedReturnType(returnTypeOf, newMemberOf);
                 }
-
             }
 
             FType res = typeMap.get(original);
@@ -171,6 +161,19 @@ public class TypeInstantiation {
                 return getType(res);
         } else {
             return Utils.cantHappen();
+        }
+    }
+
+    private FType instantiatedReturnType(FTypeVariable.ReturnTypeOf returnTypeOf, FType newMemberOf) {
+        List<FType> positionalArgs = Utils.map(returnTypeOf.getPositionalArgs(), this::getType);
+        Map<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
+        try {
+            FFunction instantiation = newMemberOf.resolveFunction(returnTypeOf.getFunction().getIdentifier(),
+                    positionalArgs, keywordArgs, null, TypeInstantiation.EMPTY);
+            //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
+            return getType(instantiation.getType());
+        } catch (FunctionNotFound functionNotFound) {
+            return Utils.handleException(functionNotFound);
         }
     }
 

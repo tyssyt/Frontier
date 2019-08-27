@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 public final class Utils {
@@ -98,6 +99,20 @@ public final class Utils {
             }
         }
         return file.delete();
+    }
+
+    public static <S,T> ArrayList<T> map(Collection<S> source, Function<S, T> mapper) {
+        ArrayList<T> res = new ArrayList<>(source.size());
+        for (S s : source)
+            res.add(mapper.apply(s));
+        return res;
+    }
+
+    public static <K,S,T> HashMap<K,T> map(Map<K,S> source, Function<S, T> mapper) {
+        HashMap<K,T> res = new HashMap<>();
+        for (Map.Entry<K, S> entry : source.entrySet())
+            res.put(entry.getKey(), mapper.apply(entry.getValue()));
+        return res;
     }
 
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps) {
