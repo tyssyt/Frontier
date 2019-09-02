@@ -1,5 +1,6 @@
 package tys.frontier.backend.llvm;
 
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import com.koloboke.collect.map.hash.HashObjIntMap;
@@ -412,7 +413,9 @@ public class LLVMModule implements AutoCloseable {
                 errorId = emitToFile(tempName, LLVMObjectFile, error);
                 if (errorId == 0) {
                     try {
-                        Process p = Linker.buildCall(tempName, fileName).inheritIO().start();
+                        ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName);
+                        Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
+                        Process p = linkerCall.inheritIO().start();
                         p.waitFor();
                     } catch (IOException | InterruptedException e) {
                         Utils.handleException(e);
