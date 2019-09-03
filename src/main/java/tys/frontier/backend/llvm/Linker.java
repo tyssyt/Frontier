@@ -1,6 +1,7 @@
 package tys.frontier.backend.llvm;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.util.JarUtils;
 import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
@@ -24,7 +25,10 @@ public class Linker {
     }
 
     public static ProcessBuilder buildCallWindows(String inputFile, String outputFile, String targetTriple) {
-        //TODO make this work when running as jar
+        if (JarUtils.isRunningInJar()) {
+            return Utils.NYI("running in Jar"); //TODO
+        }
+
         String linker = Linker.class.getResource("lld-link.exe").getFile();
         List<String> libDirs = new ArrayList<>();
         String pathToLib = "lib/" + getArch(targetTriple) + '/';
