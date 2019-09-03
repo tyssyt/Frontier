@@ -418,7 +418,7 @@ public class LLVMModule implements AutoCloseable {
                     errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
                     if (errorId != 0)
                         break;
-                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName);
+                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, target.getTargetTriple());
                     Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
                     Process p = linkerCall.inheritIO().start();
                     p.waitFor();
