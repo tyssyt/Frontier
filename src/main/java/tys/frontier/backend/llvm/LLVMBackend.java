@@ -8,8 +8,6 @@ import tys.frontier.passes.analysis.reachability.Reachability;
 
 import java.util.ArrayList;
 
-import static org.bytedeco.javacpp.LLVM.*;
-
 public class LLVMBackend implements Backend {
 
     public  enum OutputFileType { //TODO this will change, see the todo in tofile of Module
@@ -27,20 +25,6 @@ public class LLVMBackend implements Backend {
     }
 
     //TODO see if LTO is anything worth investing time into
-
-    private static boolean initialized = false;
-
-    synchronized static void initialize() {
-        if (initialized)
-            return;
-        initialized = true;
-
-        LLVMInitializeAllTargetInfos();
-        LLVMInitializeAllTargets();
-        LLVMInitializeAllTargetMCs();
-        LLVMInitializeAllAsmParsers();
-        LLVMInitializeAllAsmPrinters();
-    }
 
     public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
         Iterable<FClass> classes;

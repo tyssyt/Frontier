@@ -401,27 +401,32 @@ public class LLVMModule implements AutoCloseable {
                 errorId = LLVMWriteBitcodeToFile(module, fileName);
                 break;
             case TEXTUAL_ASSEMBLY:
-                errorId = emitToFile(fileName, LLVMAssemblyFile, error);
+                try (Target target = Target.getDefault()) {
+                    errorId = target.emitToFile(module, fileName, LLVMAssemblyFile, error);
+                }
                 break;
             case NATIVE_OBJECT:
-                errorId = emitToFile(fileName, LLVMObjectFile, error);
+                try (Target target = Target.getDefault()) {
+                    errorId = target.emitToFile(module, fileName, LLVMObjectFile, error);
+                }
                 break;
             case EXECUTABLE:
                 File tempDir = Files.createTempDir();
                 String tempName = tempDir.getPath() + fileName.substring(fileName.lastIndexOf(Utils.filesep)) + "_temp.o";
                 Log.info(this, "writing temporary object file to: " + tempName);
-                errorId = emitToFile(tempName, LLVMObjectFile, error);
-                if (errorId == 0) {
-                    try {
-                        ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName);
-                        Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
-                        Process p = linkerCall.inheritIO().start();
-                        p.waitFor();
-                    } catch (IOException | InterruptedException e) {
-                        Utils.handleException(e);
-                    }
+                try (Target target = Target.getDefault()) {
+                    errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
+                    if (errorId != 0)
+                        break;
+                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName);
+                    Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
+                    Process p = linkerCall.inheritIO().start();
+                    p.waitFor();
+                } catch (IOException | InterruptedException e) {
+                    Utils.handleException(e);
+                } finally {
+                    Utils.deleteDir(tempDir);
                 }
-                Utils.deleteDir(tempDir);
                 break;
         }
         if (errorId != 0) {
@@ -429,36 +434,6 @@ public class LLVMModule implements AutoCloseable {
             LLVMDisposeMessage(error);
             Utils.handleError(message);
         }
-    }
-
-    //TODO find taget triples and other config options we want to make available and make them params & prolly enum them
-    private int emitToFile(String file, int fileType, BytePointer error) {
-        LLVMBackend.initialize();
-        BytePointer tt = LLVMGetDefaultTargetTriple();
-        BytePointer targetTriple = LLVMNormalizeTargetTriple(tt);
-        LLVMTargetRef target = new LLVMTargetRef();
-        if (LLVMGetTargetFromTriple(targetTriple, target, error) != 0) {
-            String message = error.getString();
-            LLVMDisposeMessage(error);
-            Utils.handleError(message);
-        }
-
-        BytePointer cpu = LLVMGetHostCPUName();
-        BytePointer features = LLVMGetHostCPUFeatures();
-        LLVMTargetMachineRef targetMachine = LLVMCreateTargetMachine(target, targetTriple, cpu, features, LLVMCodeGenLevelAggressive, LLVMRelocDefault, LLVMCodeModelDefault);
-
-        LLVMTargetDataRef dataLayout = LLVMCreateTargetDataLayout(targetMachine);
-        LLVMSetModuleDataLayout(module, dataLayout);
-        LLVMSetTarget(module, targetTriple);
-
-        int res = LLVMTargetMachineEmitToFile(targetMachine, module, new BytePointer(file), fileType, error);
-        LLVMDisposeTargetData(dataLayout);
-        LLVMDisposeTargetMachine(targetMachine);
-        LLVMDisposeMessage(features);
-        LLVMDisposeMessage(cpu);
-        LLVMDisposeMessage(targetTriple);
-        LLVMDisposeMessage(tt);
-        return res;
     }
 
     private void setGlobalAttribs(LLVMValueRef global, Linkage linkage, boolean unnamedAddr) {
