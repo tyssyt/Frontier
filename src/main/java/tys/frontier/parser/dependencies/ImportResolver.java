@@ -32,7 +32,7 @@ public class ImportResolver {
                 queuedRequests.add(name);
                 res = new Parser(name, style, this).parse(); //TODO are the libs present in the user style, are other files?
             } catch (IOException e) {
-                throw new UnresolvableImport(name);
+                throw new UnresolvableImport(name, e);
             }
 
             resolvedModules.put(name, res);
