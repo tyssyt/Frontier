@@ -6,8 +6,12 @@ import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.jar.JarFile;
 
 public class Linker { //TODO clean up seperators
 
@@ -35,7 +39,11 @@ public class Linker { //TODO clean up seperators
             folderName = folderName.substring(0, folderName.length() - 4); //remove .jar
             final File targetFolder = new File(runningJar.getParent() + '/' + folderName);
             if (!targetFolder.exists()) {
-                copyLinkerFromJar(targetFolder);
+                try {
+                    copyLinkerFromJar(targetFolder); //unpack if they don't
+                } catch (IOException e) {
+                    return Utils.handleException(e);
+                }
             }
 
             //get linker & libs dir
@@ -73,7 +81,11 @@ public class Linker { //TODO clean up seperators
         }
     }
 
-    private static void copyLinkerFromJar(File targetFolder) {
-        //TODO
+    private static void copyLinkerFromJar(File targetFolder) throws IOException {
+        Path path = targetFolder.toPath();
+        //copy the lib folder
+        JarUtils.copyFolderFromJar(new JarFile(JarUtils.getRunningJar()), "tys/frontier/backend/llvm/lib", path.resolve("lib"));
+        //copy the linker
+        Files.copy(Linker.class.getResourceAsStream("lld-link.exe"), path.resolve("lld-link.exe"));
     }
 }

@@ -1,8 +1,12 @@
 package tys.frontier.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class JarUtils {
@@ -19,8 +23,21 @@ public class JarUtils {
         return pathToRunningJar;
     }
 
-    public static void copyFolderFromJar(JarFile jar, Path folder) {
-        Utils.NYI(""); //TODO
+    public static void copyFolderFromJar(JarFile jar, String nameInJar, Path targetFolder) throws IOException {
+        for (Enumeration<JarEntry> entries = jar.entries(); entries.hasMoreElements(); ) {
+            JarEntry entry = entries.nextElement();
+            if (entry.getName().startsWith(nameInJar + "/") && !entry.isDirectory()) {
+                String subPath = entry.getName().substring(nameInJar.length() + 1);
+                Path dest = targetFolder.resolve(subPath);
+
+                File parent = dest.getParent().toFile();
+                if (parent != null) {
+                    //noinspection ResultOfMethodCallIgnored
+                    parent.mkdirs();
+                }
+                Files.copy(jar.getInputStream(entry), dest);
+            }
+        }
     }
 
     private static File getPathToRunningJar() {
