@@ -6,9 +6,7 @@ Self-made Programming Language
 
 ### Prerequisites
 
-Clang needs to be installed and in your PATH.
-
-For Windows user Visual Studio needs to be installed on your sytem (as it required by LLVM).
+For Linux Users, clang needs to be installed and in your PATH (until I get a Linux System up & running so I can do proper Linking)
 
 ### Installing
 
