@@ -5,15 +5,15 @@ import tys.frontier.util.JarUtils;
 import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
-import java.util.ArrayList;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-public class Linker {
+public class Linker { //TODO clean up seperators
 
-    public static ProcessBuilder buildCall(String inputFile, String outputFile, String targetTriple) {
+    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<String> libDirs, String targetTriple) {
         if (OS.isWindows()) {
-            return buildCallWindows(inputFile, outputFile, targetTriple);
+            return buildCallWindows(inputFile, outputFile, libDirs, targetTriple);
         } else {
             return buildCallClang(inputFile, outputFile); //TODO linux linker call
         }
@@ -24,15 +24,29 @@ public class Linker {
         return new ProcessBuilder(Arrays.asList(command)); //TODO maybe this can actually be called from the clang api?
     }
 
-    public static ProcessBuilder buildCallWindows(String inputFile, String outputFile, String targetTriple) {
+    public static ProcessBuilder buildCallWindows(String inputFile, String outputFile, List<String> libDirs, String targetTriple) {
+        String linker;
         if (JarUtils.isRunningInJar()) {
-            return Utils.NYI("running in Jar"); //TODO
+            //we must unpack the linker and the libraries from the jar
+
+            //check if the folder already exist
+            final File runningJar = JarUtils.getRunningJar();
+            String folderName = runningJar.getName();
+            folderName = folderName.substring(0, folderName.length() - 4); //remove .jar
+            final File targetFolder = new File(runningJar.getParent() + '/' + folderName);
+            if (!targetFolder.exists()) {
+                copyLinkerFromJar(targetFolder);
+            }
+
+            //get linker & libs dir
+            linker = targetFolder.getPath() + "/lld-link.exe";
+            libDirs.add(targetFolder.getPath() + "/lib/" + getArch(targetTriple) + '/');
+        } else {
+            linker = Linker.class.getResource("lld-link.exe").getFile();
+            String pathToLib = "lib/" + getArch(targetTriple) + '/';
+            libDirs.add(Linker.class.getResource(pathToLib).getFile().substring(1)); //getResource adds a slash at the beginning
         }
 
-        String linker = Linker.class.getResource("lld-link.exe").getFile();
-        List<String> libDirs = new ArrayList<>();
-        String pathToLib = "lib/" + getArch(targetTriple) + '/';
-        libDirs.add(Linker.class.getResource(pathToLib).getFile().substring(1)); //getResource adds a slash at the beginning
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         builder.add(linker).add("-nologo").add("-defaultlib:libcmt").add("-out:" + outputFile);
@@ -57,5 +71,9 @@ public class Linker {
             default:
                 return Utils.handleError("unknown Architecture: " + llvmArch);
         }
+    }
+
+    private static void copyLinkerFromJar(File targetFolder) {
+        //TODO
     }
 }

@@ -1,7 +1,6 @@
 package tys.frontier.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.jar.JarFile;
@@ -16,8 +15,8 @@ public class JarUtils {
         return pathToRunningJar != null;
     }
 
-    public static JarFile getRunningJar() throws IOException {
-        return new JarFile(pathToRunningJar);
+    public static File getRunningJar() {
+        return pathToRunningJar;
     }
 
     public static void copyFolderFromJar(JarFile jar, Path folder) {
