@@ -27,7 +27,6 @@ public class Linker {
         String linker = Linker.class.getResource("lld-link.exe").getFile();
         List<String> libDirs = new ArrayList<>();
         libDirs.add(Linker.class.getResource("lib/x64/").getFile().substring(1)); //TODO un-hard-code //getResource adds a slash at the beginning
-        libDirs.add(Linker.class.getResource("lib/amd64/").getFile().substring(1)); //getResource adds a slash at the beginning
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         builder.add(linker).add("-nologo").add("-defaultlib:libcmt").add("-out:" + outputFile);
