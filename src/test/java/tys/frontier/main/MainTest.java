@@ -7,9 +7,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import tys.frontier.logging.Log;
-import tys.frontier.logging.Logger;
-import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.Utils;
 
@@ -27,13 +24,6 @@ public class MainTest {
 
     @Rule
     public TemporaryFolder folder= new TemporaryFolder();
-
-    @BeforeClass
-    public static void setUp() {
-        Logger logger = Log.DEFAULT_LOGGER;
-        if (logger instanceof StdOutLogger)
-            ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
-    }
 
     private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
         String out = this.folder.newFolder(fileName).getPath() + Utils.filesep + fileName;

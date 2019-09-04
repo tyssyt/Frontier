@@ -5,9 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import tys.frontier.code.FField;
 import tys.frontier.code.type.FClass;
-import tys.frontier.logging.Log;
-import tys.frontier.logging.Logger;
-import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.style.Style;
 import tys.frontier.util.Utils;
@@ -20,13 +17,6 @@ import static org.junit.Assert.assertTrue;
 public class ParserTest {
 
     private static final String prefix = "Parser" + Utils.filesep + "SyntaxErrors" + Utils.filesep;
-
-    @Before
-    public void setUp() {
-        Logger logger = Log.DEFAULT_LOGGER;
-        if (logger instanceof StdOutLogger)
-            ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
-    }
 
     private SyntaxError parseSyntaxError(String file) throws IOException {
         try {

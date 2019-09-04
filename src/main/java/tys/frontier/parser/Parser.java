@@ -4,10 +4,12 @@ import com.google.common.collect.MoreCollectors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
+import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
-import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.dependencies.ImportFinder;
@@ -46,6 +48,8 @@ public class Parser {
             return this.name().toLowerCase();
         }
     }
+
+    Logger logger = LogManager.getLogger(Parser.class);
 
     private String file;
     private Style style;
@@ -103,8 +107,8 @@ public class Parser {
                 res.addClass(fClass);
             }
             {
-                Log.info(this, "parsed identifiers");
-                Log.debug(this, res.toString());
+                logger.info("parsed identifiers");
+                logger.debug(res.toString());
             }
 
             stage = Stage.IDENTIFIER_CHECKS;
@@ -113,10 +117,10 @@ public class Parser {
             List<Warning> warnings = ToInternalRepresentation.toInternal(treeData, res);
             treeDataAndDelegates.b.createDelegatedFunctionBodies();
             {
-                Log.info(this, "parsed classes");
-                Log.debug(this, res.toString());
+                logger.info("parsed classes");
+                logger.debug(res.toString());
                 if (!warnings.isEmpty()) {
-                    Log.warning(this, warnings.toString());
+                    logger.warn(warnings.toString());
                 }
             }
 
@@ -134,9 +138,9 @@ public class Parser {
                         .collect(MoreCollectors.onlyElement());
                 res.setEntryPoint(entryPoint);
             } catch (IllegalArgumentException e) {
-                Log.warning(this, "more then 1 entry Point found in File", e);
+                logger.warn("more then 1 entry Point found in File", e);
             } catch (NoSuchElementException e) {
-                Log.info(this, "no entry Point found in File", e);
+                logger.info("no entry Point found in File", e);
             }
             return res;
         }

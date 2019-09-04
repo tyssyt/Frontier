@@ -5,7 +5,6 @@ import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import tys.frontier.logging.Log;
 
 import java.io.IOException;
 import java.net.URL;
@@ -31,8 +30,8 @@ public class Style {
             styleFile = new JSONObject(new JSONTokener(url.openStream()));
             name = url.toString();
         } catch (JSONException | IOException e) {
-            if (logWarning)
-                Log.warning(Style.class,  e);
+            if (logWarning);
+                //Log.warning(Style.class,  e);
             return DEFAULT_STYLE;
         }
 
@@ -40,8 +39,8 @@ public class Style {
         try {
             keywords = Keywords.fromStyleFile(styleFile.getJSONObject("keywords"));
         } catch (JSONException e) {
-            if (logWarning)
-                Log.warning(Style.class,  e);
+            if (logWarning);
+                //Log.warning(Style.class,  e);
             keywords = Keywords.DEFAULT_KEYWORDS;
         }
 
@@ -49,8 +48,8 @@ public class Style {
         try {
             options = StyleOptions.fromStyleFile(styleFile.getJSONObject("options"));
         } catch (JSONException e) {
-            if (logWarning)
-                Log.warning(Style.class,  e);
+            if (logWarning);
+                //Log.warning(Style.class,  e);
             options = StyleOptions.DEFAULT_STYLE_OPTIONS;
         }
 

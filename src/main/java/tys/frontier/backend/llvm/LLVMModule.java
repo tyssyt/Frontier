@@ -15,7 +15,6 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.logging.Log;
 import tys.frontier.util.Utils;
 
 import java.io.File;
