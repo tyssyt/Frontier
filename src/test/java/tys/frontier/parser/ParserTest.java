@@ -40,23 +40,23 @@ public class ParserTest {
     @Test
     public void parseAccessForbidden() throws Exception {
         SyntaxError e = parseSyntaxError("AccessForbidden.front");
-        assertTrue(e instanceof AccessForbidden);
+        assertEquals(AccessForbidden.class, e.getClass());
         assertTrue(((AccessForbidden) e).accessed instanceof FField);
     }
     @Test
     public void parseAvoidCastingEverythingToBool() throws Exception {
         SyntaxError e = parseSyntaxError("AvoidCastingEverythingToBool.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseBreakOutsideLoop() throws Exception {
         SyntaxError e = parseSyntaxError("BreakOutsideLoop.front");
-        assertTrue(e instanceof StatementOutsideLoop);
+        assertEquals(StatementOutsideLoop.class, e.getClass());
     }
     @Test
     public void parseClassIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("ClassIdentifierCollision.front");
-        assertTrue(e instanceof IdentifierCollision);
+        assertEquals(IdentifierCollision.class, e.getClass());
         IdentifierCollision c = ((IdentifierCollision) e);
         assertTrue(c.a instanceof FClass);
         assertTrue(c.b instanceof FClass);
@@ -64,32 +64,32 @@ public class ParserTest {
     @Test
     public void parseContinueOutsideLoop() throws Exception {
         SyntaxError e = parseSyntaxError("ContinueOutsideLoop.front");
-        assertTrue(e instanceof StatementOutsideLoop);
+        assertEquals(StatementOutsideLoop.class, e.getClass());
     }
     @Test
     public void parseCyclicDelegate() throws Exception {
         SyntaxError e = parseSyntaxError("CyclicDelegate.front");
-        assertTrue(e instanceof CyclicDelegate);
+        assertEquals(CyclicDelegate.class, e.getClass());
     }
     @Test
     public void parseCyclicDelegate2() throws Exception {
         SyntaxError e = parseSyntaxError("CyclicDelegate2.front");
-        assertTrue(e instanceof CyclicDelegate);
+        assertEquals(CyclicDelegate.class, e.getClass());
     }
     @Test
     public void parseDelegateFromTypeVar() throws Exception {
         SyntaxError e = parseSyntaxError("DelegateFromTypeVar.front");
-        assertTrue(e instanceof DelegateFromTypeVar);
+        assertEquals(DelegateFromTypeVar.class, e.getClass());
     }
     @Test
     public void parseDynamicCallWithKeywordArgs() throws Exception {
         SyntaxError e = parseSyntaxError("DynamicCallWithKeywordArgs.front");
-        assertTrue(e instanceof DynamicCallWithKeywordArgs);
+        assertEquals(DynamicCallWithKeywordArgs.class, e.getClass());
     }
     @Test
     public void parseFieldIdentifierCollision() throws Exception {
         SyntaxError e = parseSyntaxError("FieldIdentifierCollision.front");
-        assertTrue(e instanceof IdentifierCollision);
+        assertEquals(IdentifierCollision.class, e.getClass());
         IdentifierCollision c = ((IdentifierCollision) e);
         assertTrue(c.a instanceof FField);
         assertTrue(c.b instanceof FField);
@@ -97,113 +97,113 @@ public class ParserTest {
     @Test
     public void parseFieldNotFound() throws Exception {
         SyntaxError e = parseSyntaxError("FieldNotFound.front");
-        assertTrue(e instanceof FieldNotFound);
+        assertEquals(FieldNotFound.class, e.getClass());
     }
     @Test
     public void parseFunctionNotFound() throws Exception {
         SyntaxError e = parseSyntaxError("FunctionNotFound.front");
-        assertTrue(e instanceof FunctionNotFound);
+        assertEquals(FunctionNotFound.class, e.getClass());
     }
     @Test
     public void parseIncompatibleTypesAssignment() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesAssignment.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseIncompatibleTypesFor() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesFor.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseIncompatibleTypesIf() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesIf.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseIncompatibleTypesReturn() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesReturn.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseIncompatibleTypesWhile() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesWhile.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseMissingReturn() throws Exception {
         SyntaxError e = parseSyntaxError("MissingReturn.front");
-        assertTrue(e instanceof MissingReturn);
+        assertEquals(MissingReturn.class, e.getClass());
         assertEquals("haveFun2", ((MissingReturn) e).function.getIdentifier().name);
     }
     @Test
     public void parseNonOptionalExMark() throws Exception {
         SyntaxError e = parseSyntaxError("NonOptionalExMark.front");
-        assertTrue(e instanceof NonOptionalExMark);
+        assertEquals(NonOptionalExMark.class, e.getClass());
     }
     @Test
     public void parseParameterizedTypeVariable() throws Exception {
         SyntaxError e = parseSyntaxError("ParameterizedTypeVariable.front");
-        assertTrue(e instanceof ParameterizedTypeVariable);
+        assertEquals(ParameterizedTypeVariable.class, e.getClass());
     }
     @Test
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
-        assertTrue(e instanceof SignatureCollision);
+        assertEquals(SignatureCollision.class, e.getClass());
     }
     @Test
     public void parseSignatureCollisionGeneric() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollisionGeneric.front");
-        assertTrue(e instanceof SignatureCollision);
+        assertEquals(SignatureCollision.class, e.getClass());
     }
     @Test
     public void parseTwiceDefinedLocalVariable() throws Exception {
         SyntaxError e = parseSyntaxError("TwiceDefinedLocalVariable.front");
-        assertTrue(e instanceof TwiceDefinedLocalVariable);
+        assertEquals(TwiceDefinedLocalVariable.class, e.getClass());
     }
     @Test
     public void parseTypeNotFound() throws Exception {
         SyntaxError e = parseSyntaxError("TypeNotFound.front");
-        assertTrue(e instanceof TypeNotFound);
+        assertEquals(TypeNotFound.class, e.getClass());
     }
     @Test
     public void parseUndeclaredVariable() throws Exception {
         SyntaxError e = parseSyntaxError("UndeclaredVariable.front");
-        assertTrue(e instanceof UndeclaredVariable);
+        assertEquals(UndeclaredVariable.class, e.getClass());
     }
     @Test
     public void parseUndeclaredVariableWhere() throws Exception {
         SyntaxError e = parseSyntaxError("UndeclaredVariableWhere.front");
-        assertTrue(e instanceof UndeclaredVariable);
+        assertEquals(UndeclaredVariable.class, e.getClass());
         assertEquals("S", ((UndeclaredVariable)e).identifier.name);
     }
     @Test
     public void parseUnfulfillableConstraintFixed() throws Exception {
         SyntaxError e = parseSyntaxError("UnfulfillableConstraintFixed.front");
-        assertTrue(e instanceof IncompatibleTypes);
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseUnfulfillableConstraint() throws Exception {
         SyntaxError e = parseSyntaxError("UnfulfillableConstraints.front");
-        assertTrue(e instanceof UnfulfillableConstraints);
+        assertEquals(UnfulfillableConstraints.class, e.getClass());
     }
     @Test
     public void parseUntypedVariable() throws Exception {
         SyntaxError e = parseSyntaxError("UntypedVariable.front");
-        assertTrue(e instanceof UntypedVariable);
+        assertEquals(UntypedVariable.class, e.getClass());
     }
     @Test
     public void parseUntypedFunctionAddress() throws Exception {
         SyntaxError e = parseSyntaxError("UntypedFunctionAddress.front");
-        assertTrue(e instanceof UnfulfillableConstraints);
+        assertEquals(UnfulfillableConstraints.class, e.getClass());
     }
     @Test
     public void parseWrongNumberOfTypeArguments() throws Exception {
         SyntaxError e = parseSyntaxError("WrongNumberOfTypeArguments.front");
-        assertTrue(e instanceof WrongNumberOfTypeArguments);
+        assertEquals(WrongNumberOfTypeArguments.class, e.getClass());
     }
     @Test
     public void parseWrongNumberOfTypeArguments2() throws Exception {
         SyntaxError e = parseSyntaxError("WrongNumberOfTypeArguments2.front");
-        assertTrue(e instanceof WrongNumberOfTypeArguments);
+        assertEquals(WrongNumberOfTypeArguments.class, e.getClass());
     }
 }
