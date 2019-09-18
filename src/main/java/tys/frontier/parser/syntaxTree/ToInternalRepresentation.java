@@ -333,7 +333,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     @Override
     public FVarAssignment visitAssignment(FrontierParser.AssignmentContext ctx) {
         List<FExpression> values = visitTupleExpression(ctx.tupleExpression());
-        List<FType> types = Utils.typesFromExpressionList(values);
+        List<FType> types = FTuple.unpackType(FTuple.fromExpressionList(values));
 
         List<FrontierParser.AssignLhsContext> contexts = ctx.assignLhss().assignLhs();
 
