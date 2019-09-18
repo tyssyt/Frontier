@@ -12,13 +12,13 @@ do(int32 y, int32 x) -> int32 {
 }
 
 /*
-static crazy <V,R> (V->R f := \t -> t.do(x=1, y=100), V v) -> R {
+static crazy <V,R> ((V->R) f := \t -> t.do(x=1, y=100), V v) -> R {
     return f(v);
 }
 */
 
 export static main () {
-    Main -> int32 fun := \t -> t.do(x=15, y=5);
+    fun : (Main -> int32) = \t -> t.do(x=15, y=5);
     IO.printInt(fun(new Main()));
     IO.print(getChar("@"));
     IO.print(getChar("#"));

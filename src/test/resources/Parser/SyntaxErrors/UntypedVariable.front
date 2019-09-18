@@ -1,4 +1,4 @@
 class A:
     test () {
-        a;
+        a := null;
     }

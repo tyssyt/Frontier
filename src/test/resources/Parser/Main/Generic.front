@@ -10,7 +10,7 @@ static create(T t, O o) -> Generic<T,O> {
     return new Generic<T, O>(o=o, t=t);
 }
 
-generic <S> (T, O -> S mapper) -> S {
+generic <S> ((T, O -> S) mapper) -> S {
     return mapper(t, o);
 }
 
@@ -26,7 +26,7 @@ static mapper (int32 t, float64 o) -> char[] {
 }
 
 export static main () {
-    Generic<int32, float64> gen1 := Generic<int32, float64>.create(-8, 40.0);
+    gen1 : Generic<int32, float64> = Generic<int32, float64>.create(-8, 40.0);
     str := gen1.generic(mapper*);
     IO.print(str);
 

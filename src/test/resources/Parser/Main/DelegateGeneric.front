@@ -18,7 +18,7 @@ static create(T t, int32 i) -> Generic<T> {
     return new Generic<T>(i=i ,t=t);
 }
 
-doSthUseful<R>(T, int32 -> R fun) -> R {
+doSthUseful<R>((T, int32 -> R) fun) -> R {
     return fun(t,i);
 }
 
@@ -35,9 +35,11 @@ static create(Generic<U> baseGeneric) -> MoreGenerix<U> {
 
 export class Outside:
 
-static forEach <T, R> (List<T> l, T->R f) { //das geht nicht aber sollte mit delegate cast gehen?
-    for int32 i := 0; i < l.size(); ++i {
+static forEach <T, R> (List<T> l, (T->R) f) { //das geht nicht aber sollte mit delegate cast gehen?
+    i:int32 = 0;
+    while i < l.size() {
         f(l.elements()[i]);
+        ++i;
     }
 }
 

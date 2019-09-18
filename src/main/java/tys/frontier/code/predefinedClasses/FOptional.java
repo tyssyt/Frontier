@@ -13,6 +13,7 @@ import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class FOptional extends FPredefinedClass {
     private FOptional(FType baseType) {
         super(new FOptionalIdentifier(baseType.getIdentifier()));
         assert !(baseType instanceof FOptional);
-        assert baseType != FVoid.INSTANCE;
+        assert baseType != FTuple.VOID;
         this.baseType = baseType;
         addDefaultFunctions();
     }
@@ -67,7 +68,7 @@ public class FOptional extends FPredefinedClass {
     }
 
     private FFunction createShim(FFunction original) {
-        FType returnType = original.getType() == FVoid.INSTANCE ? FVoid.INSTANCE : FOptional.fromFlatten(original.getType());
+        FType returnType = original.getType() == FTuple.VOID ? FTuple.VOID : FOptional.fromFlatten(original.getType());
         ImmutableList<FParameter> params = original.getParams();
         if (original.isInstance()) {
             ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
@@ -83,8 +84,10 @@ public class FOptional extends FPredefinedClass {
     }
 
     public static FBaseClass from(FType baseClass) {
-        if (baseClass == FVoid.INSTANCE)
-            return FVoid.INSTANCE;
+        if (baseClass == FTuple.VOID)
+            return FTuple.VOID;
+        if (baseClass instanceof FTuple)
+            return Utils.NYI("optional of Tuple"); //TODO
         return existing.computeIfAbsent(baseClass, FOptional::new);
     }
 

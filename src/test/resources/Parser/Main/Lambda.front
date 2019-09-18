@@ -3,18 +3,21 @@ import List;
 
 export class Lambda:
 
-static forEach <T, R> (List<T> l, T->R f) {
-    for int32 i := 0; i < l.size(); ++i {
+static forEach <T, R> (List<T> l, (T->R) f) {
+    i:int32 = 0;
+    while i < l.size() {
         f(l.elements()[i]);
+        ++i;
     }
 }
 
-
-static filter <F> (List<F> l, F->bool filter) {
-    for int32 i := 0; i < l.size(); ++i {
+static filter <F> (List<F> l, (F->bool) filter) {
+    i:int32 = 0;
+    while i < l.size() {
         if filter(l.elements()[i]) {
             l.remove(i);
-            --i;
+        } else {
+            ++i;
         }
     }
 }
@@ -25,16 +28,19 @@ static even (int64 i) -> bool {
 
 static buildMat() -> List<List<int64>> {
     matrix := List<List<int64>>.create();
-    for int32 i:= 0; i<=9; ++i {
+    i:int32 = 0;
+    while i<=9 {
         inner := List<int64>.create();
         matrix.add(inner);
-        for int32 j:= 0; j<=9; ++j {
+        j:int32 = 0;
+        while j<=9 {
             inner.add(i*10+j);
+            ++j;
         }
+        ++i;
     }
     return matrix;
 }
-
 
 static printMat(List<List<int64>> mat) {
     forEach(mat, \inner -> {
@@ -46,8 +52,7 @@ static printMat(List<List<int64>> mat) {
     });
 }
 
-
-static int64 -> bool filterLambda := \i -> i%3 == 0 ^ i%5 == 0;
+static (int64 -> bool) filterLambda := \i -> i%3 == 0 ^ i%5 == 0;
 
 export static main () {
     if (filterLambda(12)) {
@@ -57,7 +62,6 @@ export static main () {
     forEach(matrix, \inner -> filter(inner, \e -> even(e)));
     IO.printLine("\nfilter even 1:");
     printMat(matrix);
-
 
     forEach(matrix, \inner -> filter(inner, even*));
     IO.printLine("\nfilter even 2:");
@@ -77,5 +81,4 @@ export static main () {
     forEach(matrix, \inner -> filter(inner, \e -> filterLambda(e)));
     IO.printLine("\nfilter fizz2:");
     printMat(matrix);
-
 }

@@ -89,7 +89,7 @@ public class LLVMModule implements AutoCloseable {
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
         fillInPredefinedTypes();
 
-        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FVoid.INSTANCE), (PointerPointer) null, 0, FALSE));
+        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FTuple.VOID), (PointerPointer) null, 0, FALSE));
         LLVMAppendBasicBlock(sfInit, "entry");
     }
 
@@ -98,7 +98,7 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FOptional.from(FBool.INSTANCE), LLVMIntTypeInContext(context, 2));
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
-        llvmTypes.put(FVoid.INSTANCE, LLVMVoidTypeInContext(context));
+        llvmTypes.put(FTuple.VOID, LLVMVoidTypeInContext(context));
         llvmTypes.put(FTypeType.INSTANCE, bytePointer);
         llvmTypes.put(FNull.NULL_TYPE, bytePointer);
     }
@@ -130,6 +130,8 @@ public class LLVMModule implements AutoCloseable {
             res = getLlvmType(((FOptional) fClass).getBaseType());
         } else if (fClass instanceof FFunctionType) {
             res = functionType(((FFunctionType) fClass));
+        } else if (fClass instanceof FTuple) {
+            res = tupleType((FTuple) fClass);
         } else {
             Utils.NYI("LLVM type for: " + fClass);
         }
@@ -145,9 +147,21 @@ public class LLVMModule implements AutoCloseable {
     }
 
     private LLVMTypeRef functionType(FFunctionType functionType) {
-        PointerPointer<LLVMTypeRef> params = LLVMUtil.createPointerPointer(functionType.getIn(), this::getLlvmType);
-        LLVMTypeRef baseType = LLVMFunctionType(getLlvmType(functionType.getOut()), params, functionType.getIn().size(), FALSE);
+        LLVMTypeRef baseType;
+        if (functionType.getIn() instanceof FTuple) {
+            List<FType> types = ((FTuple) functionType.getIn()).getTypes();
+            PointerPointer<LLVMTypeRef> params = LLVMUtil.createPointerPointer(types, this::getLlvmType);
+            baseType = LLVMFunctionType(getLlvmType(functionType.getOut()), params, types.size(), FALSE);
+        } else {
+            baseType = LLVMFunctionType(getLlvmType(functionType.getOut()), getLlvmType(functionType.getIn()), 1, FALSE);
+        }
         return LLVMPointerType(baseType, 0);
+    }
+
+    private LLVMTypeRef tupleType(FTuple tuple) {
+        assert tuple != FTuple.VOID;
+        PointerPointer<LLVMTypeRef> types = createPointerPointer(tuple.getTypes(), this::getLlvmType);
+        return LLVMStructTypeInContext(context, types, tuple.getTypes().size(), FALSE);
     }
 
     LLVMValueRef getNull(FOptional fOptional) {
@@ -158,6 +172,8 @@ public class LLVMModule implements AutoCloseable {
             return LLVMConstInt(getLlvmType(base), ((FIntN) base).minValue().subtract(BigInteger.ONE).longValue(), FALSE);
         } else if (base instanceof FFloat32 || base instanceof FFloat64) {
             return Utils.NYI("null literal for floating point types");
+        } else if (base instanceof FTuple) {
+            return Utils.NYI("null for tuples"); //TODO
         } else {
             return LLVMConstPointerNull(getLlvmType(base));
         }
@@ -262,7 +278,7 @@ public class LLVMModule implements AutoCloseable {
         }
 
         //set return type attributes
-        if (function.getType() != FVoid.INSTANCE
+        if (function.getType() != FTuple.VOID
                 && LLVMGetTypeKind(getLlvmType(function.getType())) == LLVMPointerTypeKind
                 && !(function.getType() instanceof FOptional))
             LLVMAddAttributeAtIndex(res, 0, nonNullAttr);

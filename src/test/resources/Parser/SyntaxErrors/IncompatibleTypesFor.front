@@ -1,4 +1,0 @@
-class A:
-    test () {
-        for;1;{}
-    }

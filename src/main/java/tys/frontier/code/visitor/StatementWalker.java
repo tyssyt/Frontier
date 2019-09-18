@@ -1,7 +1,12 @@
 package tys.frontier.code.visitor;
 
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.statement.*;
-import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.statement.loop.FBreak;
+import tys.frontier.code.statement.loop.FContinue;
+import tys.frontier.code.statement.loop.FForEach;
+import tys.frontier.code.statement.loop.FWhile;
 
 public interface StatementWalker<Statement, Expression> extends ExpressionWalker<Expression> {
 
@@ -25,31 +30,22 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
     }
 
     default Statement visitReturn(FReturn fReturn) {
-        fReturn.getExpression().ifPresent(expression -> expression.accept(this));
-        return null;
-    }
-
-    default Statement visitVarDeclaration(FVarDeclaration declaration) {
-        declaration.getAssignment().map(assignment -> assignment.getValue().accept(this));
+        for (FExpression expression : fReturn.getExpressions())
+            expression.accept(this);
         return null;
     }
 
     default Statement visitVarAssignment(FVarAssignment assignment) {
-        assignment.getVariableExpression().accept(this);
-        assignment.getValue().accept(this);
+        for (FVariableExpression variable : assignment.getVariables())
+            variable.accept(this);
+        for (FExpression value : assignment.getValues())
+            value.accept(this);
         return null;
     }
 
     default Statement visitWhile(FWhile fWhile) {
         fWhile.getCondition().accept(this);
         return fWhile.getBody().accept(this);
-    }
-
-    default Statement visitFor(FFor fFor) {
-        fFor.getDeclaration().ifPresent(declaration -> declaration.accept(this));
-        fFor.getCondition().ifPresent(condition -> condition.accept(this));
-        fFor.getIncrement().ifPresent(increment -> increment.accept(this));
-        return fFor.getBody().accept(this);
     }
 
     default Statement visitForEach(FForEach forEach) {

@@ -11,7 +11,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -127,17 +127,17 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         }
 
         //return type
-        FrontierParser.TypeTypeContext c = ctx.typeType();
+        FrontierParser.TypeListContext c = ctx.typeList();
         FType returnType;
         if (c != null) {
             try {
-                returnType = ParserContextUtils.getType(c, typeResolver);
+                returnType = ParserContextUtils.tupleFromList(c, typeResolver);
             } catch (SyntaxError e) {
                 errors.add(e);
-                returnType = FVoid.INSTANCE; //TODO do we want some error related type here?
+                returnType = FTuple.VOID; //TODO do we want some error related type here?
             }
         } else {
-            returnType = FVoid.INSTANCE;
+            returnType = FTuple.VOID;
         }
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();

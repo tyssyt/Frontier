@@ -2,7 +2,7 @@ import IO;
 
 export class HelloWorld:
     export static main() {
-        char c := IO.getChar();
+        c:char = IO.getChar();
         while(c =!*= "\n") {
             IO.print(c);
             c = IO.getChar();

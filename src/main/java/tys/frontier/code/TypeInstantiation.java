@@ -5,6 +5,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -118,16 +119,19 @@ public class TypeInstantiation {
         if (original instanceof FArray) {
             FArray array = (FArray) original;
             return FArray.getArrayFrom(getType(array.getBaseType()));
-        } else if (original instanceof FOptional) {
+        } else if (original instanceof FOptional) { //TODO can this be removed when Optionals use TypeVaribles?
                 FOptional optional = (FOptional) original;
                 return FOptional.fromFlatten(getType(optional.getBaseType()));
-        } else if (original instanceof FFunctionType) {
+        } else if (original instanceof FFunctionType) { //TODO can this be removed when Functions use TypeVaribles?
             FFunctionType fFunctionType = (FFunctionType) original;
-            List<FType> in = new ArrayList<>(fFunctionType.getIn().size());
-            for (FType fType : fFunctionType.getIn()) {
-                in.add(getType(fType));
+            return FFunctionType.from(getType(fFunctionType.getIn()), getType(fFunctionType.getOut()));
+        } else if (original instanceof FTuple) {
+            FTuple fTuple = (FTuple) original;
+            List<FType> newTypes = new ArrayList<>(fTuple.getTypes().size());
+            for (FType type : fTuple.getTypes()) {
+                newTypes.add(getType(type));
             }
-            return FFunctionType.from(in, getType(fFunctionType.getOut()));
+            return FTuple.from(newTypes);
         } else if (original instanceof FClass) {
             FClass fClass = (FClass) original;
             List<FType> args = new ArrayList<>(fClass.getParametersList().size());

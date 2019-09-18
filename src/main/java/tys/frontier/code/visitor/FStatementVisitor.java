@@ -2,7 +2,10 @@ package tys.frontier.code.visitor;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.statement.*;
-import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.statement.loop.FBreak;
+import tys.frontier.code.statement.loop.FContinue;
+import tys.frontier.code.statement.loop.FForEach;
+import tys.frontier.code.statement.loop.FWhile;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,28 +27,18 @@ public interface FStatementVisitor extends FExpressionVisitor, StatementVisitor<
     }
 
     @Override
-    default FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
+    default FStatement exitReturn(FReturn fReturn, List<FExpression> values) {
         return fReturn;
     }
 
     @Override
-    default FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FExpression> value) {
-        return declaration;
-    }
-
-    @Override
-    default FStatement exitVarAssignment(FVarAssignment assignment, FExpression variable, FExpression value) {
+    default FStatement exitVarAssignment(FVarAssignment assignment, List<FExpression> variables, List<FExpression> values) {
         return assignment;
     }
 
     @Override
     default FStatement exitWhile(FWhile fWhile, FExpression cond, FStatement body) {
         return fWhile;
-    }
-
-    @Override
-    default FStatement exitFor(FFor fFor, Optional<FStatement> declaration, Optional<FExpression> condition, Optional<FExpression> increment, FStatement body) {
-        return fFor;
     }
 
     @Override

@@ -162,7 +162,7 @@ class LLVMTransformer implements
 
         //finish
         LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
-        if (function.getType() == FVoid.INSTANCE && !function.getBody().get().redirectsControlFlow().isPresent())
+        if (function.getType() == FTuple.VOID && !function.getBody().get().redirectsControlFlow().isPresent())
             LLVMBuildRetVoid(builder);
         localVars.clear();
         /*
@@ -222,15 +222,14 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitReturn(FReturn fReturn) {
-        return fReturn.getExpression()
-                .map(expression -> LLVMBuildRet(builder, expression.accept(this)))
-                .orElseGet(() -> LLVMBuildRetVoid(builder));
-    }
-
-    @Override
-    public LLVMValueRef visitVarDeclaration(FVarDeclaration declaration) {
-        LLVMValueRef alloc = createEntryBlockAlloca(declaration.getVar());
-        return declaration.getAssignment().map(assignment -> assignment.accept(this)).orElse(alloc);
+        switch (fReturn.getExpressions().size()) {
+            case 0:
+                return LLVMBuildRetVoid(builder);
+            case 1:
+                return LLVMBuildRet(builder, Iterables.getOnlyElement(fReturn.getExpressions()).accept(this));
+            default:
+                return LLVMBuildAggregateRet(builder, LLVMUtil.createPointerPointer(fReturn.getExpressions(), e -> e.accept(this)), fReturn.getExpressions().size());
+        }
     }
 
     @Override
@@ -238,9 +237,29 @@ class LLVMTransformer implements
         if (assignment.getOperator() != FVarAssignment.Operator.ASSIGN) {
             Utils.NYI("operator " + assignment.getOperator());
         }
-        LLVMValueRef value = assignment.getValue().accept(this);
-        LLVMValueRef variableAddress = assignment.getVariableExpression().accept(this);
-        return LLVMBuildStore(builder, value, variableAddress);
+
+        List<LLVMValueRef> llvmValues = new ArrayList<>(assignment.getVariables().size());
+        for (FExpression value : assignment.getValues()) {
+            LLVMValueRef valueRef = value.accept(this);
+            if (value.getType() instanceof FTuple) {
+                //unpack the tuple
+                int size = ((FTuple) value.getType()).getTypes().size();
+                for (int i = 0; i < size; i++) {
+                    LLVMValueRef unpacked = LLVMBuildStructGEP(builder, valueRef, i, "unpack_" + i);
+                    llvmValues.add(LLVMBuildLoad(builder, unpacked, "load_unpacked_" + i));
+                }
+            } else
+                llvmValues.add(valueRef);
+        }
+
+        for (Pair<FVariableExpression, LLVMValueRef> pair : Utils.zip(assignment.getVariables(), llvmValues)) {
+            FVariableExpression variable = pair.a;
+            if (variable instanceof FVarDeclaration) {
+                createEntryBlockAlloca(((FVarDeclaration) variable).getVariable());
+            }
+            LLVMBuildStore(builder, pair.b, variable.accept(this));
+        }
+        return null;
     }
 
     @Override
@@ -261,35 +280,6 @@ class LLVMTransformer implements
         fWhile.getBody().accept(this);
         if (!fWhile.getBody().redirectsControlFlow().isPresent())
             LLVMBuildBr(builder, condBlock);
-
-        LLVMPositionBuilderAtEnd(builder, afterBlock);
-        return null;
-    }
-
-    @Override
-    public LLVMValueRef visitFor(FFor fFor) {
-        LLVMValueRef currentFunction = getCurrentFunction();
-        LLVMBasicBlockRef condBlock = LLVMAppendBasicBlock(currentFunction, "for_cond");
-        LLVMBasicBlockRef bodyBlock = LLVMAppendBasicBlock(currentFunction, "for_body");
-        LLVMBasicBlockRef incBlock = LLVMAppendBasicBlock(currentFunction, "for_inc");
-        LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after_for");
-        loopJumpPoints.put(fFor, new Pair<>(incBlock, afterBlock));
-
-        fFor.getDeclaration().ifPresent(decl -> decl.accept(this));
-        LLVMBuildBr(builder, condBlock);
-
-        LLVMPositionBuilderAtEnd(builder, condBlock);
-        LLVMValueRef condition = fFor.getCondition().map( c -> c.accept(this)).orElse(boolLiteral(true));
-        LLVMBuildCondBr(builder, condition, bodyBlock, afterBlock);
-
-        LLVMPositionBuilderAtEnd(builder, bodyBlock);
-        fFor.getBody().accept(this);
-        if (!fFor.getBody().redirectsControlFlow().isPresent())
-            LLVMBuildBr(builder, incBlock);
-
-        LLVMPositionBuilderAtEnd(builder, incBlock);
-        fFor.getIncrement().ifPresent(inc -> inc.accept(this));
-        LLVMBuildBr(builder, condBlock);
 
         LLVMPositionBuilderAtEnd(builder, afterBlock);
         return null;
@@ -562,12 +552,12 @@ class LLVMTransformer implements
         //use default values for non specified parameters
         for (int i = fArgs.size(); i<params.size(); i++)
             llvmArgs.add(params.get(i).getDefaultValue().accept(this));
-        String instructionName = toCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        String instructionName = toCall.getType() == FTuple.VOID ? "" : "callTmp";
         LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(llvmArgs), llvmArgs.size(), instructionName);
         LLVMBuildBr(builder, continueBlock);
 
         LLVMPositionBuilderAtEnd(builder, continueBlock);
-        if (function.getType() == FVoid.INSTANCE) {
+        if (function.getType() == FTuple.VOID) {
             return null;
         } else {
             LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(function.getType()), "phi_optcall");
@@ -606,7 +596,7 @@ class LLVMTransformer implements
         //given arguments
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        String instructionName = function.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        String instructionName = function.getType() == FTuple.VOID ? "" : "callTmp";
         return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
     }
 
@@ -617,7 +607,7 @@ class LLVMTransformer implements
         List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        String instructionName = functionCall.getType() == FVoid.INSTANCE ? "" : "callTmp";
+        String instructionName = functionCall.getType() == FTuple.VOID ? "" : "callTmp";
         return LLVMBuildCall(builder, function, createPointerPointer(args), args.size(), instructionName);
     }
 

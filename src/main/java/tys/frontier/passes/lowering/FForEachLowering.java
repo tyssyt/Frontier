@@ -4,19 +4,23 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.FBinaryOperator;
-import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.statement.FVarDeclaration;
-import tys.frontier.code.statement.loop.FFor;
+import tys.frontier.code.statement.FVarAssignment;
+import tys.frontier.code.statement.FVarAssignment.Operator;
 import tys.frontier.code.statement.loop.FForEach;
+import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.util.Utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 public class FForEachLowering extends StatementReplacer {
 
@@ -37,50 +41,67 @@ public class FForEachLowering extends StatementReplacer {
         if (!(forEach.getContainer().getType() instanceof FArray)) {
             Utils.NYI("non array for each");
         }
+        FArray arrayType = ((FArray) forEach.getContainer().getType());
+        List<FStatement> res = new ArrayList<>(4);
 
-        //first store the array expression in a fresh variable, if necessary
-        FExpression array = forEach.getContainer();
-        FArray arrayType = ((FArray) array.getType());
-        FLocalVariable arrayVar;
-        FVarDeclaration arrayDecl = null;
-        if (array instanceof FLocalVariableExpression) {
-            arrayVar = ((FLocalVariableExpression) array).getVariable();
-        } else {
-            arrayVar = function.getFreshVariable(arrayType);
-            arrayDecl = FVarDeclaration.createTrusted(arrayVar, array);
+        //first store the array expression in a local variable, if necessary
+        FLocalVariable container;
+        {
+            FExpression array = forEach.getContainer();
+            if (array instanceof FLocalVariableExpression) {
+                container = ((FLocalVariableExpression) array).getVariable();
+            } else {
+                container = function.getFreshVariable(arrayType);
+                res.add(FVarAssignment.createDecl(container, array));
+            }
         }
 
-        //counter declatation
+        //store the size in a local variable
+        FLocalVariable size = function.getFreshVariable(FIntN._32);
+        {
+            FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
+            FFieldAccess sizeAcc = FFieldAccess.createInstanceTrusted(arrayType.getInstanceFields().get(FArray.SIZE), containerAccess);
+            res.add(FVarAssignment.createDecl(size, sizeAcc));
+        }
+
+        //declare counter
         FLocalVariable counter = function.getFreshVariable(FIntN._32);
-        FLiteralExpression zero = new FLiteralExpression(new FIntNLiteral(0));
-        FVarDeclaration decl = FVarDeclaration.createTrusted(counter, zero);
+        {
+            res.add(FVarAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
+        }
 
         //condition
-        FFunction less = FBinaryOperator.Bool.LESS.getFunction(FIntN._32);
-        FFieldAccess size = FFieldAccess.createInstanceTrusted(arrayType.getInstanceFields().get(FArray.SIZE), array);
-        FExpression cond = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), size));
-
-        //increment
-        FFunction inc = FUnaryOperator.Pre.INC.getFunction(FIntN._32);
-        FLocalVariableExpression invVarExpre = new FLocalVariableExpression(counter);
-        invVarExpre.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE); //TODO setting this here explicitly is ugly, but fine for now
-        FExpression incCall = FFunctionCall.createTrusted(inc, Arrays.asList(invVarExpre));
+        FExpression condition;
+        {
+            FFunction less = FBinaryOperator.Bool.LESS.getFunction(FIntN._32);
+            condition = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), new FLocalVariableExpression(size)));
+        }
 
         //as first statement of loop accessing the array and storing the result in the iterator var
-        FLocalVariable iterator = forEach.getIterator();
-        FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(arrayVar), new FLocalVariableExpression(counter));
-        FVarDeclaration itDecl = FVarDeclaration.createTrusted(iterator, arrayAccess);
+        FStatement itDecl;
+        {
+            FLocalVariable iterator = forEach.getIterator();
+            FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
+            itDecl = FVarAssignment.createDecl(iterator, arrayAccess);
+        }
 
-        FBlock body = FBlock.from(itDecl, forEach.getBody());
+        //increment
+        FStatement increment;
+        {
+            FLocalVariableExpression counterExp = new FLocalVariableExpression(counter);
+            FLiteralExpression one = new FLiteralExpression(new FIntNLiteral(1));
+            increment = FVarAssignment.createTrusted(singletonList(counterExp), Operator.ADD_ASSIGN, Arrays.asList(one));
+        }
 
-        //create for and update loop identifier
-        FFor ffor = FFor.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), decl, cond, incCall, body);
-        forEach.getIdentifier().setLoop(ffor);
+        //Loop Body
+        FBlock loopBody = FBlock.from(itDecl, forEach.getBody(), increment);
 
-        if (arrayDecl == null)
-            return ffor;
-        else
-            return FBlock.from(arrayDecl, ffor);
+        //While Loop
+        FWhile fWhile = FWhile.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), condition, loopBody);
+        forEach.getIdentifier().setLoop(fWhile);
+        res.add(fWhile);
+
+        return FBlock.from(res);
     }
 
 

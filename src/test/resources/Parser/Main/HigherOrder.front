@@ -4,35 +4,39 @@ import List;
 export class Test:
 
 static doNothing <T> (T t) -> T {
-    T alsoT := t;
+    alsoT:T = t;
     return alsoT;
 }
 
-static call <R,T,S> (T,S->R f, T t, S s) -> R {
+static call <R,T,S> ((T,S->R) f, T t, S s) -> R {
     return f(t, s);
 }
 
-static call2 <R,T> (T->R f, T t) -> R {
+static call2 <R,T> ((T->R) f, T t) -> R {
     return f(t);
 }
 
-static forEach <T,R> (List<T> l, T->R f) {
-    for int32 i := 0; i < l.size(); ++i {
+static forEach <T,R> (List<T> l, (T->R) f) {
+    i:int32 = 0;
+    while i<l.size() {
         f(l.elements()[i]);
+        ++i;
     }
 }
 
 export static main() {
     list := List<int64>.create();
-    for int32 i:= 0; i<=12; ++i {
+    i:int32 = 0;
+    while i<=12 {
         list.add(i);
+        ++i;
     }
     IO.print("1:");
     Test.forEach(list, IO.printInt*);
     IO.print("\n2:");
     forEach(doNothing(list), doNothing(IO.printInt*));
     IO.print("\n3:");
-    List<int64>, (int64->()) -> () asdf := forEach*;
+    asdf : (List<int64>, (int64->()) -> ()) = forEach*;
     call(asdf, list, IO.printInt*);
     IO.print("\n4:");
     call(forEach*, list, IO.printInt*);

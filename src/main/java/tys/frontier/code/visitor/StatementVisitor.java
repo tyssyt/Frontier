@@ -1,7 +1,10 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.statement.*;
-import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.statement.loop.FBreak;
+import tys.frontier.code.statement.loop.FContinue;
+import tys.frontier.code.statement.loop.FForEach;
+import tys.frontier.code.statement.loop.FWhile;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +19,6 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default void enterVarDeclaration(FVarDeclaration declaration) {}
     default void enterVarAssignment(FVarAssignment assignment) {}
     default void enterWhile(FWhile fWhile) {}
-    default void enterFor(FFor fFor) {}
     default void enterForEach(FForEach forEach) {}
 
     //Bottom Up
@@ -29,20 +31,13 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default Statement exitIf(FIf fIf, Expression cond, Statement then, Optional<Statement> elze) {
         return null;
     }
-    default Statement exitReturn(FReturn fReturn, Optional<Expression> value) {
+    default Statement exitReturn(FReturn fReturn, List<Expression> values) {
         return null;
     }
-    default Statement exitVarDeclaration(FVarDeclaration declaration, Optional<Expression> value) {
-        return null;
-    }
-    default Statement exitVarAssignment(FVarAssignment assignment, Expression variable, Expression value) {
+    default Statement exitVarAssignment(FVarAssignment assignment, List<Expression> variables, List<Expression> values) {
         return null;
     }
     default Statement exitWhile(FWhile fWhile, Expression cond, Statement body) {
-        return null;
-    }
-    default Statement exitFor(FFor fFor, Optional<Statement> declaration, Optional<Expression> condition,
-                      Optional<Expression> increment, Statement body) {
         return null;
     }
     default Statement exitForEach(FForEach forEach, Expression container, Statement body) {

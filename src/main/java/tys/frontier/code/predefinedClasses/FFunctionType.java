@@ -10,19 +10,18 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 public class FFunctionType extends FPredefinedClass {
 
     //classes do not override equals, so we need to make sure we get the same object every time
-    private static ConcurrentMap<Pair<List<FType>, FType>, FFunctionType> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
+    private static ConcurrentMap<Pair<FType, FType>, FFunctionType> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
-    private List<FType> in;
+    private FType in;
     private FType out;
 
-    private FFunctionType(List<FType> in, FType out) {
+    private FFunctionType(FType in, FType out) {
         super(new FFunctionTypeIdentifier(in, out));
         this.in = in;
         this.out = out;
@@ -30,10 +29,7 @@ public class FFunctionType extends FPredefinedClass {
 
     @Override
     public long concreteness() { //TODO remove once function types are implemented with parameterized classes
-        long res = out.concreteness();
-        for (FType type : in) {
-            res = Long.min(res, type.concreteness());
-        }
+        long res = Long.min(in.concreteness(), out.concreteness());
         if (res == Long.MAX_VALUE) //avoid overflow
             return Long.MAX_VALUE;
         return res+1;
@@ -41,12 +37,10 @@ public class FFunctionType extends FPredefinedClass {
 
     @Override
     public boolean canImplicitlyCast() { //TODO remove once function types are implemented with parameterized classes
-        if (!in.isEmpty())
-            return true;
-        return out.canImplicitlyCast();
+        return in != FTuple.VOID || out.canImplicitlyCast();
     }
 
-    public List<FType> getIn() {
+    public FType getIn() {
         return in;
     }
 
@@ -54,12 +48,13 @@ public class FFunctionType extends FPredefinedClass {
         return out;
     }
 
-    public static FFunctionType from(List<FType> in, FType out) {
+    public static FFunctionType from(FType in, FType out) {
         return existing.computeIfAbsent(new Pair<>(in, out), p -> new FFunctionType(in, out));
     }
 
     public static FFunctionType from(FFunction function) {
-        return existing.computeIfAbsent(new Pair<>(Utils.typesFromExpressionList(function.getParams()), function.getType()), p -> new FFunctionType(p.a, p.b));
+        FType in = FTuple.fromExpressionList(function.getParams());
+        return existing.computeIfAbsent(new Pair<>(in, function.getType()), p -> new FFunctionType(p.a, p.b));
     }
 
     public static Pair<FFunctionType, TypeInstantiation> instantiableFrom(FFunction function) {
@@ -79,9 +74,7 @@ public class FFunctionType extends FPredefinedClass {
         TypeInstantiation typeInstantiation = TypeInstantiation.create((Map)varMap);
 
         //no need to store, the entire point of this function is to return a fresh version of the types on each call
-        return new Pair<>(
-            new FFunctionType(Utils.typesFromExpressionList(function.getParams(), typeInstantiation::getType), typeInstantiation.getType(function.getType())),
-            typeInstantiation
-        );
+        FType in = FTuple.from(Utils.typesFromExpressionList(function.getParams(), typeInstantiation::getType));
+        return new Pair<>(new FFunctionType(in, typeInstantiation.getType(function.getType())), typeInstantiation);
     }
 }

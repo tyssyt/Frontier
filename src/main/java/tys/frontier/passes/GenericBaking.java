@@ -14,7 +14,7 @@ import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.function.operator.FUnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.type.FClass;
@@ -144,48 +144,32 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
+    public FStatement exitReturn(FReturn fReturn, List<FExpression> values) {
         if (useOriginal)
-            return FReturn.createTrusted(value.orElse(null), fReturn.getFunction());
+            return FReturn.createTrusted(values, fReturn.getFunction());
 
-        if (currentFunction.getType() == FVoid.INSTANCE && value.isPresent()) {
-            /* the return value was a type parameter that got instantiated with void
-               now we have a statement of the form return expr;
-               this is invalid for a void, so we need to change it to {expr; return;}
-             */
-            return FBlock.from(
-                    new FExpressionStatement(value.get()),
-                    FReturn.createTrusted(null, currentFunction)
-            );
+        List<FExpression> returnExps = new ArrayList<>();
+        List<FStatement> voidStatements = new ArrayList<>();
+        for (FExpression value : values) {
+            if (value.getType() == FTuple.VOID)
+                voidStatements.add(new FExpressionStatement(value));
+            else
+                returnExps.add(value);
         }
-        return FReturn.createTrusted(value.orElse(null), currentFunction);
+
+        voidStatements.add(FReturn.createTrusted(returnExps, currentFunction));
+        return FBlock.from(voidStatements);
     }
 
     @Override
-    public FStatement exitVarDeclaration(FVarDeclaration declaration, Optional<FExpression> value) {
-        FLocalVariable old = declaration.getVar();
-        FLocalVariable _new;
-        if(useOriginal)
-            _new = old;
-        else
-            _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
-        varMap.put(old, _new);
-        return FVarDeclaration.createTrusted(_new, value.orElse(null));
-    }
-
-    @Override
-    public FStatement exitVarAssignment(FVarAssignment assignment, FExpression variable, FExpression value) {
-        return FVarAssignment.createTrusted((FVariableExpression) variable, assignment.getOperator(), value);
+    public FStatement exitVarAssignment(FVarAssignment assignment, List<FExpression> variables, List<FExpression> values) {
+        //noinspection unchecked TODO remove rawtypes hack
+        return FVarAssignment.createTrusted(((List) variables), assignment.getOperator(), values);
     }
 
     @Override
     public void enterWhile(FWhile fWhile) {
         loopMap.put(fWhile.getIdentifier(), new FLoopIdentifier());
-    }
-
-    @Override
-    public void enterFor(FFor fFor) {
-        loopMap.put(fFor.getIdentifier(), new FLoopIdentifier());
     }
 
     @Override
@@ -196,13 +180,6 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FStatement exitWhile(FWhile fWhile, FExpression cond, FStatement body) {
         return FWhile.createTrusted(fWhile.getNestedDepth(), loopMap.get(fWhile.getIdentifier()), cond, (FBlock) body);
-    }
-
-    @Override
-    public FStatement exitFor(FFor fFor, Optional<FStatement> declaration, Optional<FExpression> condition, Optional<FExpression> increment, FStatement body) {
-        return FFor.createTrusted(fFor.getNestedDepth(), loopMap.get(fFor.getIdentifier()),
-                (FVarDeclaration) declaration.orElse(null), condition.orElse(null), increment.orElse(null),
-                (FBlock) body);
     }
 
     @Override
@@ -284,7 +261,18 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FExpression visitVariable(FLocalVariableExpression expression) {
+    public FExpression visitVariable(FLocalVariableExpression expression) { //TODO decl
+        if (expression instanceof FVarDeclaration) {
+            FLocalVariable old = expression.getVariable();
+            FLocalVariable _new;
+            if(useOriginal)
+                _new = old;
+            else
+                _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+            varMap.put(old, _new);
+            return new FVarDeclaration(_new);
+        }
+
         return new FLocalVariableExpression(useOriginal ? expression.getVariable() : varMap.get(expression.getVariable()));
     }
 

@@ -10,6 +10,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
@@ -59,7 +60,7 @@ class FunctionResolver {
             try {
                 Result result = new Result();
 
-                List<FType> argumentTypes = getArgumentTypes(f.getParams());
+                FType argumentTypes = getArgumentTypes(f.getParams());
 
                 result.constraints = ArrayListMultimap.create();
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
@@ -91,7 +92,7 @@ class FunctionResolver {
         return bestResult;
     }
 
-    private List<FType> getArgumentTypes(List<FParameter> params) throws TooManyArguments, NoArgumentsForParameter {
+    private FType getArgumentTypes(List<FParameter> params) throws TooManyArguments, NoArgumentsForParameter {
         //too many arguments
         if (positionalArgs.size() + keywordArgs.size() > params.size())
             throw new TooManyArguments();
@@ -117,7 +118,7 @@ class FunctionResolver {
 
         if (usedKeywordArgs != keywordArgs.size())
             throw new TooManyArguments();
-        return argumentTypes;
+        return FTuple.from(argumentTypes);
     }
 
     private TypeInstantiation computeTypeInstantiation(TypeInstantiation baseInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints, boolean cleanConstraints) throws UnfulfillableConstraints {

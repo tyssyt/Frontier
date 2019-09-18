@@ -1,6 +1,6 @@
 package tys.frontier.code.expression;
 
-public interface HasInstanceObject extends FExpression {
+public interface HasInstanceObject extends FVariableExpression {
 
     HasInstanceObject copy();
 

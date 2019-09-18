@@ -11,13 +11,12 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.statement.*;
+import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.statement.FReturn;
+import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.code.type.FClass;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class FConstructor extends FBaseFunction {
 
@@ -81,18 +80,23 @@ public class FConstructor extends FBaseFunction {
 
     private void generateBody() {
         FClass memberOf = (FClass) getMemberOf();
-        List<FStatement> statements = new ArrayList<>();
         FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
 
         FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions().get(MALLOC_ID)), Collections.emptyList());
-        statements.add(FVarDeclaration.createTrusted(_this, functionCall));
+        FVarAssignment thisDecl = FVarAssignment.createDecl(_this, functionCall);
 
+        List<FVariableExpression> fields = new ArrayList<>(getParams().size());
+        List<FExpression> params = new ArrayList<>(getParams().size());
         for (FParameter param : getParams()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = memberOf.getInstanceFields().get(param.getIdentifier());
-            statements.add(FVarAssignment.createTrusted(FFieldAccess.createInstanceTrusted(field, thisExpr), FVarAssignment.Operator.ASSIGN, new FLocalVariableExpression(param)));
+            fields.add(FFieldAccess.createInstanceTrusted(field, thisExpr));
+            params.add(new FLocalVariableExpression(param));
         }
-        statements.add(FReturn.createTrusted(new FLocalVariableExpression(_this), this));
-        setBody(FBlock.from(statements));
+        FVarAssignment fieldAssign = FVarAssignment.createTrusted(fields, FVarAssignment.Operator.ASSIGN, params);
+
+        FReturn _return = FReturn.createTrusted(Arrays.asList(new FLocalVariableExpression(_this)), this);
+
+        setBody(FBlock.from(thisDecl, fieldAssign, _return));
     }
 }

@@ -2,7 +2,7 @@ package tys.frontier.code.expression;
 
 import com.google.common.base.Joiner;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -48,12 +48,18 @@ public class DynamicFunctionCall implements FExpression {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (!(function.getType() instanceof FFunctionType))
-            throw new IncompatibleTypes(FFunctionType.from(Utils.typesFromExpressionList(arguments), FVoid.INSTANCE), function.getType());
-        FFunctionType type = (FFunctionType) function.getType();
-        List<FType> params = type.getIn();
-        if (arguments.size() != params.size()) //TODO consider default args
-            throw new IncompatibleTypes(FFunctionType.from(Utils.typesFromExpressionList(arguments), type.getOut()), function.getType());
+        if (!(function.getType() instanceof FFunctionType)) {
+            FType argType = FTuple.fromExpressionList(arguments);
+            throw new IncompatibleTypes(FFunctionType.from(argType, FTuple.VOID), function.getType());
+        }
+
+        FType type = ((FFunctionType) function.getType()).getIn();
+        List<FType> params = FTuple.unpackType(type);
+
+        if (arguments.size() != params.size()) { //TODO consider default args
+            FType argType = FTuple.fromExpressionList(arguments);
+            throw new IncompatibleTypes(FFunctionType.from(argType, FTuple.VOID), function.getType());
+        }
         for (int i = 0; i < arguments.size(); i++) {
             arguments.set(i, arguments.get(i).typeCheck(params.get(i)));
         }

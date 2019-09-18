@@ -110,11 +110,6 @@ public class ParserTest {
         assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
-    public void parseIncompatibleTypesFor() throws Exception {
-        SyntaxError e = parseSyntaxError("IncompatibleTypesFor.front");
-        assertEquals(IncompatibleTypes.class, e.getClass());
-    }
-    @Test
     public void parseIncompatibleTypesIf() throws Exception {
         SyntaxError e = parseSyntaxError("IncompatibleTypesIf.front");
         assertEquals(IncompatibleTypes.class, e.getClass());

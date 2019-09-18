@@ -14,7 +14,7 @@ export class Test:
     }
 
     export static main () {
-        Test? t := null;
+        t:Test? = null;
         if t {
             t!.print();
         }

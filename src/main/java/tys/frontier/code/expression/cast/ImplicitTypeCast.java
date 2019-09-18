@@ -4,7 +4,7 @@ import com.google.common.collect.Multimap;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
@@ -56,14 +56,14 @@ public abstract class ImplicitTypeCast {
         }
 
         //special case where we cast T? to void (or vice versa)
-        if (baseType == FVoid.INSTANCE || targetType == FVoid.INSTANCE) {
+        if (baseType == FTuple.VOID || targetType == FTuple.VOID) {
             if (baseType instanceof FOptional && ((FOptional) baseType).getBaseType() instanceof FTypeVariable) {
                 FTypeVariable typeVariable = (FTypeVariable) ((FOptional) baseType).getBaseType();
-                return TypeVariableCast.createTVC(typeVariable, FVoid.INSTANCE, variance, constraints);
+                return TypeVariableCast.createTVC(typeVariable, FTuple.VOID, variance, constraints);
             }
             if (targetType instanceof FOptional && ((FOptional) targetType).getBaseType() instanceof FTypeVariable) {
                 FTypeVariable typeVariable = (FTypeVariable) ((FOptional) targetType).getBaseType();
-                return TypeVariableCast.createTVC(FVoid.INSTANCE, typeVariable, variance, constraints);
+                return TypeVariableCast.createTVC(FTuple.VOID, typeVariable, variance, constraints);
             }
         }
 
@@ -77,6 +77,8 @@ public abstract class ImplicitTypeCast {
             return TypeParameterCast.createTPC((FOptional) baseType, (FOptional) targetType, variance, constraints); //TODO optional will be made generic some day
         if (targetType instanceof FFunctionType && baseType instanceof FFunctionType)
             return TypeParameterCast.createTPC((FFunctionType) baseType, (FFunctionType) targetType, variance, constraints); //TODO function types will be made generic some day
+        if (targetType instanceof FTuple && baseType instanceof FTuple)
+            return TypeParameterCast.createTPC((FTuple) baseType, (FTuple) targetType, variance, constraints);
         return TypeConversion.createTC((FClass) baseType, (FClass) targetType, variance, constraints);
     }
 

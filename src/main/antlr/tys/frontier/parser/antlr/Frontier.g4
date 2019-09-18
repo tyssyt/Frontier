@@ -127,12 +127,12 @@ methodDeclaration
     :   methodHeader block
     ;
 
-methodHeader
-    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeType)? typeParameterSpecification*
+methodHeader //Tuple-ize
+    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeList)? typeParameterSpecification*
     ;
 
 fieldDeclaration
-    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType identifier (DECL expression)? SEMI
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType identifier (COLON ASSIGN expression)? SEMI //TODO change to match local var declaration
     ;
 
 formalParameters
@@ -140,7 +140,7 @@ formalParameters
     ;
 
 formalParameter
-    : typeType identifier (DECL expression)?
+    : typeType identifier (COLON ASSIGN expression)?
     ;
 
 nameSelector
@@ -154,15 +154,15 @@ nameSelector
 typeType
     :   typeType Array
     |   typeType QUESTION
-    |   typeType (COMMA typeType)* ARROW typeType
+    |   LPAREN typeList ARROW typeList RPAREN //TODO decide whether brackets are necessary
     |   predefinedType (LT typeList GT)?
     |   TypeIdentifier (LT typeList GT)?
     |   LPAREN typeType RPAREN
-    |   LPAREN RPAREN
     ;
 
 typeList
     :   typeType (COMMA typeType)*
+    |   LPAREN RPAREN
     ;
 
 predefinedType
@@ -185,17 +185,15 @@ block
 
 statement
     :   block                                                                               #blockStatement
-    |   localVariableDeclaration SEMI                                                       #localVariableDeclarationStatement
     |   ifStatement                                                                         #ifStatement_
-    |   FOR  localVariableDeclaration? SEMI expression? SEMI expression2?  block            #forStatement
     |   FOR  LCIdentifier COLON expression  block                                           #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
-    |   RETURN expression? SEMI                                                             #returnStatement
+    |   RETURN tupleExpression? SEMI                                                        #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
     |   CONTINUE SEMI                                                                       #continueStatement
     |   SEMI                                                                                #emptyStatement
     |   expression SEMI                                                                     #expressionStatement
-    |   <assoc=right> expression
+    |   assignLhss
         (   ASSIGN
         |   ADD_ASSIGN
         |   SUB_ASSIGN
@@ -206,15 +204,20 @@ statement
         |   XOR_ASSIGN
         |   MOD_ASSIGN
         )
-        expression SEMI                                                                     #assignment
+        tupleExpression SEMI                                                                #assignment
     ;
 
-localVariableDeclaration
-    :  typeType? identifier (DECL expression)?
+assignLhss
+    :   assignLhs (COMMA assignLhs)*
+    ;
+
+assignLhs
+    :   identifier COLON typeType?
+    |   expression
     ;
 
 ifStatement
-    :  IF expression block (ELSE block | ELSE ifStatement)?
+    :   IF expression block (ELSE block | ELSE ifStatement)?
     ;
 
 // EXPRESSIONS -----------------------------------------------------------------------------
@@ -228,10 +231,10 @@ expression
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
-    |   NEW typeType LPAREN namedExpressionList? RPAREN            #newObject
+    |   NEW typeType LPAREN namedExpressions? RPAREN            #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
-    |   LPAREN typeType RPAREN expression                          #cast
+    |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
     |   expression (STAR|DIV|MOD) expression                       #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp
@@ -247,27 +250,22 @@ expression
     |   identifier                                                 #variableExpr
     ;
 
-expression2
-    :   expression
-    ;
-
 arguments
-    :   expressionList (COMMA namedExpressionList)?
-    |   namedExpressionList
+    :   tupleExpression (COMMA namedExpressions)?
+    |   namedExpressions
     ;
 
-expressionList
+tupleExpression
     :   expression (COMMA expression)*
     ;
 
-namedExpressionList
+namedExpressions
     :   namedExpression (COMMA namedExpression)*
     ;
 
 namedExpression
     :   identifier ASSIGN expression
     ;
-
 
 lambda
     :   lambdaHeader (expression|block)
@@ -324,7 +322,6 @@ BACKSLASH       : '\\';
 
 //Operators-----------------------------------------------------------------
 ASSIGN          : '=';
-DECL            : ':=';
 GT              : '>';
 LT              : '<';
 EQUAL           : '==';

@@ -3,7 +3,7 @@ export class List<T>:
     int32 size := 0;
 
     export static create(int32 startSize:=5) -> List<T> {
-        List<T> res := new List<T>(elements = new T[startSize]);
+        res:List<T> = new List<T>(elements = new T[startSize]);
         return res;
     }
 
@@ -27,9 +27,7 @@ export class List<T>:
         if size >= elements.size {
             expand();
         }
-        for int32 i := size; i>pos; --i {
-            elements[i] = elements[i-1]; //TODO replace by arrayCopy... once we have that
-        }
+        rShift(pos);
         elements[pos] = e;
         ++size;
     }
@@ -52,23 +50,43 @@ export class List<T>:
     }
 
     export remove(int32 pos) -> T {
-        T res := elements[pos];
-        for int32 i := pos; i<size-1; ++i {
-            elements[i] = elements[i+1]; //TODO replace by arrayCopy... once we have that
-        }
+        res:T = elements[pos];
+        lShift(pos);
         --size;
         return res;
     }
 
     private expand() {
-        int32 newSize := 2*elements.size;
+        newSize:int32 = 2*elements.size;
         if newSize < 10 {
             newSize = 10;
         }
 
         newElements := new T[newSize];
-        for int32 i:=0; i<elements.size; ++i {
-            newElements[i] = elements[i]; //TODO replace by arrayCopy... once we have that
-        }
+        arrayCopy(elements, newElements);
         elements = newElements;
+    }
+
+    private rShift(int32 start) { //TODO replace by arrayCopy... once we have that
+        i := size;
+        while i>start {
+            elements[i] = elements[i-1];
+            --i;
+        }
+    }
+
+    private lShift(int32 end) { //TODO replace by arrayCopy... once we have that
+        i := end;
+        while i<size-1 {
+            elements[i] = elements[i+1];
+            ++i;
+        }
+    }
+
+    private static arrayCopy(T[] from, T[] to) { //TODO replace by arrayCopy... once we have that
+        i:int32 = 0;
+        while i<from.size {
+            to[i] = from[i];
+            ++i;
+        }
     }

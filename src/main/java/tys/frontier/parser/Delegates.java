@@ -13,7 +13,7 @@ import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.selector.Selector;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FExpressionStatement;
@@ -140,10 +140,10 @@ public class Delegates {
             FFunctionCall functionCall = FFunctionCall.createTrusted(toDoPair.b, arguments);
 
             FStatement res;
-            if (toDo.getType() == FVoid.INSTANCE)
+            if (toDo.getType() == FTuple.VOID)
                 res = new FExpressionStatement(functionCall);
             else
-                res = FReturn.createTrusted(functionCall, toDo);
+                res = FReturn.createTrusted(Arrays.asList(functionCall), toDo);
 
             toDo.setBody(FBlock.from(res));
         }

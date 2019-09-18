@@ -1,39 +1,42 @@
 package tys.frontier.code.statement;
 
+import com.google.common.base.Joiner;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.predefinedClasses.FVoid;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class FReturn  implements FStatement {
 
-    private FExpression expression; //optional, null if function is void
+    private List<FExpression> expressions;
     private FFunction function;
 
-    private FReturn(FExpression expression, FFunction function) throws IncompatibleTypes {
-        this.expression = expression;
+    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes {
+        this.expressions = expressions;
         this.function = function;
         checkTypes();
     }
 
-    public static FReturn create(FExpression expression, FFunction function) throws IncompatibleTypes {
-        return new FReturn(expression, function);
+    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes {
+        return new FReturn(expressions, function);
     }
-    public static FReturn createTrusted(FExpression expression, FFunction function) {
+    public static FReturn createTrusted(List<FExpression> expressions, FFunction function) {
         try {
-            return create(expression, function);
+            return create(expressions, function);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
-    public Optional<FExpression> getExpression() {
-        return Optional.ofNullable(expression);
+    public List<FExpression> getExpressions() {
+        return expressions;
     }
 
     public FFunction getFunction() {
@@ -46,18 +49,16 @@ public class FReturn  implements FStatement {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        if (expression == null) {
-            if (function.getType() != FVoid.INSTANCE)
-                throw new IncompatibleTypes(function.getType(), FVoid.INSTANCE);
-        } else {
-            expression = expression.typeCheck(function.getType());
-        }
+        FTuple.checkTypes(expressions, FTuple.unpackType(function.getType()));
     }
 
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterReturn(this);
-        return visitor.exitReturn(this, getExpression().map(expression -> expression.accept(visitor)));
+        List<E> expressions = new ArrayList<>(this.expressions.size());
+        for (FExpression e : this.expressions)
+            expressions.add(e.accept(visitor));
+        return visitor.exitReturn(this, expressions);
     }
 
     @Override
@@ -68,8 +69,8 @@ public class FReturn  implements FStatement {
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
-        sb.append("return ");
-        getExpression().ifPresent(e -> e.toString(sb));
+        sb.append("return");
+        sb.append(Joiner.on(", ").join(expressions));
         return sb.append(';');
     }
 }

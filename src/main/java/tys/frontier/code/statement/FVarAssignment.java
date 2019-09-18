@@ -1,58 +1,72 @@
 package tys.frontier.code.statement;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static tys.frontier.code.function.operator.FBinaryOperator.Arith.*;
 
 public class FVarAssignment implements FStatement {
 
-    private FVariableExpression variableExpression;
+    private List<FVariableExpression> variables;
     private Operator operator;
-    private FExpression value;
+    private List<FExpression> values;
 
-    private FVarAssignment(FVariableExpression variable, Operator operator, FExpression value) throws IncompatibleTypes {
-        this.variableExpression = variable;
+    public FVarAssignment(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes {
+        assert operator == Operator.ASSIGN || variables.stream().noneMatch(v -> v instanceof FVarDeclaration);
+        this.variables = variables;
         this.operator = operator;
-        this.value = value;
-        variable.setAccessType(FVariableExpression.AccessType.STORE);
+        this.values = values;
+        for (FVariableExpression variable : variables) {
+            variable.setAccessType(FVariableExpression.AccessType.STORE);
+        }
         checkTypes();
     }
 
-    public static FVarAssignment create(FVariableExpression variable, Operator operator, FExpression value) throws IncompatibleTypes {
-        return new FVarAssignment(variable, operator, value);
+    public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes {
+        return new FVarAssignment(variables, operator, values);
     }
-    public static FVarAssignment createTrusted(FVariableExpression variable, Operator operator, FExpression value) {
+
+    public static FVarAssignment createTrusted(List<FVariableExpression> variables, Operator operator, List<FExpression> values) {
         try {
-            return create(variable, operator, value);
+            return create(variables, operator, values);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
-    public FVariableExpression getVariableExpression() {
-        return variableExpression;
+    public static FVarAssignment createDecl(FLocalVariable variable, FExpression value) {
+        try {
+            return new FVarAssignment(Collections.singletonList(new FVarDeclaration(variable)), Operator.ASSIGN, Arrays.asList(value));
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
+    }
+
+    public List<FVariableExpression> getVariables() {
+        return variables;
     }
 
     public Operator getOperator() {
         return operator;
     }
 
-    public FExpression getValue() {
-        return value;
+    public List<FExpression> getValues() {
+        return values;
     }
 
     @Override
@@ -63,7 +77,13 @@ public class FVarAssignment implements FStatement {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterVarAssignment(this);
-        return visitor.exitVarAssignment(this, variableExpression.accept(visitor), value.accept(visitor));
+        List<E> variables = new ArrayList<>(this.variables.size());
+        for (FExpression v : this.variables)
+            variables.add(v.accept(visitor));
+        List<E> values = new ArrayList<>(this.values.size());
+        for (FExpression v : this.values)
+            values.add(v.accept(visitor));
+        return visitor.exitVarAssignment(this, variables, values);
     }
 
     @Override
@@ -72,13 +92,15 @@ public class FVarAssignment implements FStatement {
     }
 
     private void checkTypes() throws IncompatibleTypes {
-        value = value.typeCheck(variableExpression.getType());
+        FTuple.checkTypes(values, Utils.typesFromExpressionList(variables));
     }
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        variableExpression.toString(sb).append(' ').append(operator).append(' ');
-        return value.toString(sb).append(';');
+        sb.append(Joiner.on(", ").join(variables));
+        sb.append(' ').append(operator).append(' ');
+        sb.append(Joiner.on(", ").join(values));
+        return sb.append(';');
     }
     @Override
     public String toString() {

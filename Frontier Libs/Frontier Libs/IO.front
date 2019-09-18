@@ -11,20 +11,22 @@ export class IO:
             print("0");
             return;
         }
-        bool pos := l >= 0;
+        pos:bool = l >= 0;
         if !pos {
             l *= -1;
         }
-        int32 size := (int32) Native.ceil(Native.log10((float64)l+1.0));
+        size:int32 = (int32) Native.ceil(Native.log10((float64)l+1.0));
         if (!pos) {
             size += 1;
         }
 
-        char[] digits := new char[size];
-        for int32 i:=1; i<=size; ++i {
-            int64 remainder := l % 10;
+        digits:char[] = new char[size];
+        i:int32 = 1;
+        while i<=size {
+            remainder:int64 = l % 10;
             digits[size-i] = (char) remainder + 48;
             l /= 10;
+            ++i;
         }
 
         if (!pos) {

@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 public final class Utils {
 
@@ -284,6 +285,34 @@ public final class Utils {
             }
         }
         return res;
+    }
+
+    public static <T, S extends T> Stream<S> filterCast(Stream<T> stream, Class<S> target) {
+        return stream.filter(target::isInstance).map(target::cast);
+    }
+
+    public static <T,S> Iterator<Pair<T,S>> zip(Iterator<T> it1, Iterator<S> it2) {
+        return new Iterator<Pair<T, S>>() {
+            @Override
+            public boolean hasNext() {
+                return it1.hasNext() && it2.hasNext() ;
+            }
+
+            @Override
+            public Pair<T, S> next() {
+                return new Pair<>(it1.next(), it2.next());
+            }
+
+            @Override
+            public void remove() {
+                it1.remove();
+                it2.remove();
+            }
+        };
+    }
+
+    public static <T,S> Iterable<Pair<T,S>> zip(Iterable<T> it1, Iterable<S> it2) {
+        return () -> zip(it1.iterator(), it2.iterator());
     }
 
 }

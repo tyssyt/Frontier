@@ -94,12 +94,12 @@ public final class ParserContextUtils {
         TypeConstraints constraints = TypeConstraints.create();
         UpperBoundContext uC = ctx.upperBound();
         if (uC != null) {
-            for (FType type : typesFromList(uC.typeList().typeType(), possibleTypes))
+            for (FType type : typeListFromList(uC.typeList(), possibleTypes))
                 constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Contravariant));
         }
         LowerBoundContext lC = ctx.lowerBound();
         if (lC != null) {
-            for (FType type : typesFromList(lC.typeList().typeType(), possibleTypes))
+            for (FType type : typeListFromList(lC.typeList(), possibleTypes))
                 constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Covariant));
         }
         typeVariable.setConstraints(constraints);
@@ -137,10 +137,16 @@ public final class ParserContextUtils {
         return type;
     }
 
-    public static List<FType> typesFromList(List<TypeTypeContext> contexts, Function<FTypeIdentifier, FType> possibleTypes)
+    public static FType tupleFromList(TypeListContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
-        List<FType> res = new ArrayList<>(contexts.size());
-        for (TypeTypeContext c : contexts) {
+        return FTuple.from(typeListFromList(ctx, possibleTypes));
+    }
+
+    public static List<FType> typeListFromList(TypeListContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+            throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        List<TypeTypeContext> cs = ctx.typeType();
+        List<FType> res = new ArrayList<>(cs.size());
+        for (TypeTypeContext c : cs) {
             res.add(getType(c, possibleTypes));
         }
         return res;
@@ -150,30 +156,32 @@ public final class ParserContextUtils {
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType base;
         if (ctx.Array() != null) {
-            base = getType(ctx.typeType(0), possibleTypes);
+            base = getType(ctx.typeType(), possibleTypes);
             return FArray.getArrayFrom(base);
         } else if (ctx.QUESTION() != null) {
-            base = getType(ctx.typeType(0), possibleTypes);
+            base = getType(ctx.typeType(), possibleTypes);
             return FOptional.from(base);
         } else if (ctx.ARROW() != null) {
-            List<FType> types = typesFromList(ctx.typeType(), possibleTypes);
-            return FFunctionType.from(types.subList(0, types.size()-1), types.get(types.size()-1));
+            List<TypeListContext> typeListContexts = ctx.typeList();
+            FType  in = tupleFromList(typeListContexts.get(0), possibleTypes);
+            FType out = tupleFromList(typeListContexts.get(1), possibleTypes);
+            return FFunctionType.from(in, out);
         } else if (ctx.predefinedType() != null) {
             base = getPredefined(ctx.predefinedType());
         } else if (ctx.TypeIdentifier() != null) {
             base = getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
-        } else if (ctx.typeType(0) != null) {
-            return getType(ctx.typeType(0), possibleTypes);
+        } else if (ctx.typeType() != null) {
+            return getType(ctx.typeType(), possibleTypes);
         } else {
-            return FVoid.INSTANCE;
+            return Utils.cantHappen();
         }
 
         //handle Type Parameters
         List<FType> parameters;
-        if (ctx.typeList() == null)
+        if (ctx.typeList(0) == null)
             parameters = Collections.emptyList();
         else
-            parameters = typesFromList(ctx.typeList().typeType(), possibleTypes);
+            parameters = typeListFromList(ctx.typeList(0), possibleTypes);
         if (base instanceof FClass)
             return ((FClass) base).getInstantiation(parameters);
         else if (parameters.size() != 0)
