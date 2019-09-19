@@ -245,8 +245,7 @@ class LLVMTransformer implements
                 //unpack the tuple
                 int size = ((FTuple) value.getType()).getTypes().size();
                 for (int i = 0; i < size; i++) {
-                    LLVMValueRef unpacked = LLVMBuildStructGEP(builder, valueRef, i, "unpack_" + i);
-                    llvmValues.add(LLVMBuildLoad(builder, unpacked, "load_unpacked_" + i));
+                    llvmValues.add(LLVMBuildExtractValue(builder, valueRef, i, "unpack_" + i));
                 }
             } else
                 llvmValues.add(valueRef);
