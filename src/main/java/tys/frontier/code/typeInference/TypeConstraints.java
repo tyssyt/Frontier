@@ -3,6 +3,7 @@ package tys.frontier.code.typeInference;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -260,6 +261,13 @@ public class TypeConstraints {
             if (target instanceof FTypeVariable) { //special case if the target is a type variable
                 for (TypeConstraints v : vars) {
                     if (v.equivalenceGroup.contains(target))
+                        return true;
+                }
+            }
+            if (target instanceof FOptional && ((FOptional) target).getBaseType() instanceof FTypeVariable) { //even more special case
+                FTypeVariable targetBase = (FTypeVariable) ((FOptional) target).getBaseType();
+                for (TypeConstraints v : vars) {
+                    if (v.equivalenceGroup.contains(targetBase))
                         return true;
                 }
             }
