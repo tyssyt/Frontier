@@ -2,6 +2,7 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
@@ -93,16 +94,29 @@ class FunctionResolver {
     }
 
     private FType getArgumentTypes(List<FParameter> params) throws TooManyArguments, NoArgumentsForParameter {
-        //too many arguments
-        if (positionalArgs.size() + keywordArgs.size() > params.size())
+        //TODO this has optimization potential!
+
+        //see how many params can be filled with positional args
+        int p = 0;
+        for (FType positionalArg : this.positionalArgs) {
+            p += FTuple.unpackType(positionalArg).size();
+        }
+        int i = 0;
+        for (; i < params.size() && p > 0; i++) {
+            FParameter param = params.get(i);
+            p -= FTuple.unpackType(typeInstantiation.getType(param.getType())).size();
+            if (p < 0)
+                throw new NoArgumentsForParameter(param);
+        }
+        if (p > 0)
             throw new TooManyArguments();
 
         //start with filling in positional arguments
         List<FType> argumentTypes = new ArrayList<>(this.positionalArgs);
-        int usedKeywordArgs = 0;
 
         //fill in the missing with keywordArguments or default Values
-        for (int i = positionalArgs.size(); i<params.size(); i++) {
+        int usedKeywordArgs = 0;
+        for (; i<params.size(); i++) {
             FParameter param = params.get(i);
             FType argType = keywordArgs.get(param.getIdentifier());
             if (argType != null) {

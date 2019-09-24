@@ -269,7 +269,7 @@ namedExpressions
     ;
 
 namedExpression
-    :   identifier ASSIGN expression
+    :   identifier ASSIGN tupleExpression
     ;
 
 lambda

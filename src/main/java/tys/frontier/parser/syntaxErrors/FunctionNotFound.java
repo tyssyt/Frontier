@@ -21,8 +21,7 @@ public class FunctionNotFound extends SyntaxError {
         super("Function not found: "
                 + identifier + '(' + Utils.joinIdentifiers(new StringBuilder(), positionalArgs, ",")
                 + keywordArgs.entrySet().stream().collect(new StringBuilderStringCollector<>(
-                        (sb, e) -> sb.append(',').append(e.getKey()).append('=').append(e.getValue().getIdentifier()
-                ))));
+                        (sb, e) -> sb.append(',').append(e.getKey()).append('=').append(e.getValue()))));
         this.identifier = identifier;
         this.positionalArgs = ImmutableList.copyOf(positionalArgs);
         this.keywordArgs = ImmutableMap.copyOf(keywordArgs);

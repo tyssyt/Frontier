@@ -83,7 +83,6 @@ class LLVMTransformer implements
     private LLVMModule module;
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
-    private Map<FField, LLVMValueRef> fields = new HashMap<>(); //TODO why this not used?
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
     private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
 

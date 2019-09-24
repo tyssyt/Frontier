@@ -1,6 +1,9 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
@@ -603,7 +606,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         }
 
         try {
-            return functionCall(expression.getType(), identifier, Arrays.asList(expression), Collections.emptyMap());
+            return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();
@@ -624,10 +627,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(1).getText());
 
         try {
-            return functionCall(first.getType(), identifier, Arrays.asList(first, second), Collections.emptyMap());
+            return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e1) {
             try {
-                return functionCall(second.getType(), identifier, Arrays.asList(first, second), Collections.emptyMap());
+                return functionCall(second.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
             } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
                 errors.add(e1);
                 errors.add(e2);
@@ -704,9 +707,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public Pair<List<FExpression>, Map<FIdentifier, FExpression>> visitArguments(FrontierParser.ArgumentsContext ctx) {
+    public Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> visitArguments(FrontierParser.ArgumentsContext ctx) {
         if (ctx == null)
-            return new Pair<>(Collections.emptyList(), Collections.emptyMap());
+            return new Pair<>(Collections.emptyList(), ImmutableListMultimap.of());
         return new Pair<>(visitTupleExpression(ctx.tupleExpression()), visitNamedExpressions(ctx.namedExpressions()));
     }
 
@@ -730,18 +733,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     @Override
-    public Map<FIdentifier, FExpression> visitNamedExpressions(FrontierParser.NamedExpressionsContext ctx) { //TODO this doesn't follow the fail paradigm
+    public ListMultimap<FIdentifier, FExpression> visitNamedExpressions(FrontierParser.NamedExpressionsContext ctx) { //TODO this doesn't follow the fail paradigm
         if (ctx == null)
-            return Collections.emptyMap();
-        Map<FIdentifier, FExpression> res = new LinkedHashMap<>();
+            return ImmutableListMultimap.of();
+        ListMultimap<FIdentifier, FExpression> res = MultimapBuilder.linkedHashKeys().arrayListValues().build();
         for (FrontierParser.NamedExpressionContext c : ctx.namedExpression()) {
-            res.put(ParserContextUtils.getVarIdentifier(c.identifier()), visitExpression(c.expression()));
+            res.putAll(ParserContextUtils.getVarIdentifier(c.identifier()), visitTupleExpression(c.tupleExpression()));
         }
         return res;
     }
 
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
-                                        List<FExpression> positionalArgs, Map<FIdentifier, FExpression> keywordArgs)
+                                        List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
         FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, TypeInstantiation.EMPTY);
         checkAccessForbidden(f);
@@ -755,7 +758,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             FExpression object = visitExpression(ctx.expression());
-            Pair<List<FExpression>, Map<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
+            Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
             if (object.getType() instanceof FFunctionType) {
                 if (!arguments.b.isEmpty())
                     throw new DynamicCallWithKeywordArgs(object, arguments.b);
@@ -871,7 +874,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
         //first check if we have a variable of function type
         FIdentifier identifier = new FVariableIdentifier(ctx.LCIdentifier().getText());
-        Pair<List<FExpression>, Map<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
+        Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
         try {
             FVariableExpression var = findLocal(identifier);
             if (var.getType() instanceof FFunctionType) {
@@ -913,7 +916,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             visitNamedExpressions(ctx.namedExpressions()); //parse param list to find more errors
             throw new Failed();
         }
-        Map<FIdentifier, FExpression> namedArguments = visitNamedExpressions(ctx.namedExpressions());
+        ListMultimap<FIdentifier, FExpression> namedArguments = visitNamedExpressions(ctx.namedExpressions());
         try {
             return functionCall(type, FConstructor.IDENTIFIER, Collections.emptyList(), namedArguments);
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
@@ -936,7 +939,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         FArray array = FArray.getArrayFrom(baseType);
         try {
-            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), Collections.emptyMap());
+            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), ImmutableListMultimap.of());
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
             errors.add(e);
             throw new Failed();

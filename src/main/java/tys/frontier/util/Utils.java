@@ -1,7 +1,6 @@
 package tys.frontier.util;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.FField;
@@ -13,6 +12,7 @@ import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -116,6 +116,13 @@ public final class Utils {
         return res;
     }
 
+    public static <K,S,T> ListMultimap<K,T> map(Multimap<K,S> source, Function<S, T> mapper) {
+        ListMultimap<K,T> res = MultimapBuilder.hashKeys().arrayListValues().build();
+        for (Map.Entry<K, S> entry : source.entries())
+            res.put(entry.getKey(), mapper.apply(entry.getValue()));
+        return res;
+    }
+
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps) {
         List<FType> res = new ArrayList<>(exps.size());
         for (Typed exp : exps)
@@ -123,10 +130,10 @@ public final class Utils {
         return res;
     }
 
-    public static <T> Map<T, FType> typesFromExpressionMap(Map<T, ? extends Typed> exps) {
-        Map<T, FType> res = new HashMap<>();
-        for (Map.Entry<T, ? extends Typed> entry : exps.entrySet())
-            res.put(entry.getKey(), entry.getValue().getType());
+    public static <T> Map<T, FType> typesFromExpressionMap(ListMultimap<T, ? extends Typed> exps) {
+        Map<T, FType> res = new LinkedHashMap<>();
+        for (Map.Entry<T, ? extends List<? extends Typed>> entry : Multimaps.asMap(exps).entrySet())
+            res.put(entry.getKey(), FTuple.from(typesFromExpressionList(entry.getValue())));
         return res;
     }
 

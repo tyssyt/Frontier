@@ -1,10 +1,12 @@
 package tys.frontier.code.expression;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -14,7 +16,6 @@ import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class FFunctionCall implements FExpression {
     private boolean prepared;
@@ -54,15 +55,17 @@ public class FFunctionCall implements FExpression {
         }
     }
 
-    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, Map<FIdentifier, FExpression> keywordArgs) throws IncompatibleTypes {
+    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs) throws IncompatibleTypes {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         boolean needsPrepare = false;
-        for (int i=positionalArgs.size(); i < function.getParams().size(); i++) {
+        for (int i=positionalArgs.size(); i < function.getParams().size(); i++) { //TODO adapt to tuple args & params
             FParameter p = function.getParams().get(i);
-            FExpression arg = keywordArgs.get(p.getIdentifier());
-            if (arg == null)
+            List<FExpression> arg = keywordArgs.get(p.getIdentifier());
+            if (arg.isEmpty()) {
                 needsPrepare = true;
-            args.add(arg); //adds null for default args
+                args.add(null);
+            } else
+                args.addAll(arg); //adds null for default args
         }
         return new FFunctionCall(!needsPrepare, function, args);
     }
@@ -93,10 +96,15 @@ public class FFunctionCall implements FExpression {
     }
 
     private void checkTypes() throws IncompatibleTypes {
+        FTuple.checkTypes(arguments, Utils.typesFromExpressionList(function.getParams())); //TODO account for null (default value)
+
+
         List<FParameter> params = function.getParams();
         for (int i = 0; i < arguments.size(); i++) {
-            if (arguments.get(i) != null)
-                arguments.set(i, arguments.get(i).typeCheck(params.get(i).getType()));
+            if (arguments.get(i) == null)
+                continue; //default value
+            //TODO account for tuple types
+            arguments.set(i, arguments.get(i).typeCheck(params.get(i).getType()));
         }
     }
 

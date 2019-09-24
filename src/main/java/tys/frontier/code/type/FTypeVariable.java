@@ -31,7 +31,7 @@ public class FTypeVariable implements FType {
 
         private FFunction function;
         private List<FType> positionalArgs;
-        private  Map<FIdentifier, FType> keywordArgs;
+        private Map<FIdentifier, FType> keywordArgs;
 
         public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs) {
             super(identifier, fixed, TypeConstraints.create());
