@@ -177,11 +177,17 @@ public final class ParserContextUtils {
         }
 
         //handle Type Parameters
-        List<FType> parameters;
-        if (ctx.typeList(0) == null)
-            parameters = Collections.emptyList();
-        else
-            parameters = typeListFromList(ctx.typeList(0), possibleTypes);
+        List<TypeOrTupleContext> ttCtxs = ctx.typeOrTuple();
+
+        List<FType> parameters = new ArrayList<>();
+        for (TypeOrTupleContext ttc : ttCtxs) {
+            TypeTypeContext c = ttc.typeType();
+            if (c != null)
+                parameters.add(getType(c, possibleTypes));
+            else
+                parameters.add(tupleFromList(ttc.typeList(), possibleTypes));
+        }
+
         if (base instanceof FClass)
             return ((FClass) base).getInstantiation(parameters);
         else if (parameters.size() != 0)

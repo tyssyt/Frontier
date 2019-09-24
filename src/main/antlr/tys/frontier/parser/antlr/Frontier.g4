@@ -154,10 +154,15 @@ nameSelector
 typeType
     :   typeType Array
     |   typeType QUESTION
-    |   LPAREN typeList ARROW typeList RPAREN //TODO decide whether brackets are necessary
-    |   predefinedType (LT typeList GT)?
-    |   TypeIdentifier (LT typeList GT)?
-    |   LPAREN typeType RPAREN
+    |   LPAREN typeList ARROW typeList RPAREN
+    |   predefinedType (LT typeOrTuple (COMMA typeOrTuple)* GT)?
+    |   TypeIdentifier (LT typeOrTuple (COMMA typeOrTuple)* GT)?
+    ;
+
+typeOrTuple
+    :   typeType
+    |   LPAREN typeList RPAREN
+    |   LPAREN RPAREN
     ;
 
 typeList
