@@ -173,7 +173,7 @@ public class TypeInstantiation {
         Map<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
             FFunction instantiation = newMemberOf.resolveFunction(returnTypeOf.getFunction().getIdentifier(),
-                    positionalArgs, keywordArgs, null, TypeInstantiation.EMPTY);
+                    positionalArgs, keywordArgs, null);
             //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
             return getType(instantiation.getType());
         } catch (FunctionNotFound functionNotFound) {

@@ -5,7 +5,6 @@ import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -119,11 +118,11 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         if (this.constraints.isResolved())
-            return this.constraints.getResolved().resolveFunction(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, constraints);
+            return this.constraints.getResolved().resolveFunction(identifier, positionalArgs, keywordArgs, returnType, constraints);
 
-        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs, typeInstantiation);
+        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs);
         constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
             throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);

@@ -46,20 +46,18 @@ class FunctionResolver {
     private List<FType> positionalArgs;
     private Map<FIdentifier, FType> keywordArgs;
     private FType returnType;
-    private TypeInstantiation typeInstantiation;
 
     private Result bestResult;
 
-    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Iterable<FFunction> candidates) throws FunctionNotFound {
-        return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation).resolve(candidates);
+    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Iterable<FFunction> candidates) throws FunctionNotFound {
+        return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType).resolve(candidates);
     }
 
-    private FunctionResolver(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation) {
+    private FunctionResolver(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) {
         this.identifier = identifier;
         this.positionalArgs = positionalArgs;
         this.keywordArgs = keywordArgs;
         this.returnType = returnType;
-        this.typeInstantiation = typeInstantiation;
     }
 
     private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
@@ -108,7 +106,7 @@ class FunctionResolver {
         int i = 0;
         for (; i < params.size() && p > 0; i++) {
             FParameter param = params.get(i);
-            p -= FTuple.unpackType(typeInstantiation.getType(param.getType())).size();
+            p -= FTuple.unpackType(param.getType()).size();
             if (p < 0)
                 throw new NoArgumentsForParameter(param);
         }
@@ -127,8 +125,7 @@ class FunctionResolver {
                 argumentTypes.add(argType);
                 usedKeywordArgs++;
             } else if (param.hasDefaultValue()) {
-                //default arguments come from the function, thus we might need to instantiate types
-                argumentTypes.add(typeInstantiation.getType(param.getType()));
+                argumentTypes.add(param.getType());
             } else {
                 throw new NoArgumentsForParameter(param);
             }

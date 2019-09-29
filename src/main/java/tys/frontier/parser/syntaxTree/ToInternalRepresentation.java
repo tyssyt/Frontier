@@ -746,7 +746,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
                                         List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, TypeInstantiation.EMPTY);
+        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null);
         checkAccessForbidden(f);
         return FFunctionCall.create(f, positionalArgs, keywordArgs);
     }
@@ -1003,7 +1003,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 throw new FunctionNotFound(identifier, Collections.emptyList(), Collections.emptyMap());
             return fun.iterator().next();
         } else {
-            FFunction f = fClass.resolveFunction(identifier, params, Collections.emptyMap(), null, TypeInstantiation.EMPTY);
+            FFunction f = fClass.resolveFunction(identifier, params, Collections.emptyMap(), null);
             checkAccessForbidden(f);
             return f;
         }

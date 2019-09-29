@@ -3,7 +3,6 @@ package tys.frontier.code.type;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -23,9 +22,9 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
-        FFunction res = resolveFunction(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, constraints);
+        FFunction res = resolveFunction(identifier, positionalArgs, keywordArgs, returnType, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
                 throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
@@ -33,7 +32,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
         return res;
     }
 
-    FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
+    FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound;
 
     FField getField(FIdentifier identifier) throws FieldNotFound;
 

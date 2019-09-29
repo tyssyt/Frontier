@@ -2,7 +2,6 @@ package tys.frontier.code.literal;
 
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -37,7 +36,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) {
+        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) {
             return Utils.cantHappen();
         }
 

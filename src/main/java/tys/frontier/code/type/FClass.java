@@ -6,7 +6,6 @@ import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.HasVisibility;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
@@ -173,9 +172,9 @@ public interface FClass extends FType, HasVisibility {
         getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
     }
 
-    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, TypeInstantiation typeInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
         Collection<FFunction> candidates = getFunctions().get(identifier);
-        FunctionResolver.Result result = FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, typeInstantiation, candidates);
+        FunctionResolver.Result result = FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, candidates);
         constraints.putAll(result.constraints);
         return result.function;
     }
