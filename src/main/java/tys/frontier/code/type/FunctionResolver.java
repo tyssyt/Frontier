@@ -2,7 +2,6 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
@@ -34,6 +33,13 @@ class FunctionResolver {
         public Multimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
         public int costs;
+
+        public static Result perfectFit(FFunction function) {
+            Result res = new Result();
+            res.function = function;
+            res.constraints = ImmutableMultimap.of();
+            return res;
+        }
     }
 
     private FFunctionIdentifier identifier;
@@ -59,18 +65,16 @@ class FunctionResolver {
     private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
         for (FFunction f : candidates) {
             try {
-                Result result = new Result();
-
                 FType argumentTypes = getArgumentTypes(f.getParams());
 
-                result.constraints = ArrayListMultimap.create();
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
                 FFunctionType call = FFunctionType.from(argumentTypes, returnType != null ? returnType : pair.a.getOut());
                 if (call == pair.a) { //perfect fit
-                    result.function = f;
-                    result.constraints = ImmutableMultimap.of();
-                    return result;
+                    return Result.perfectFit(f);
                 }
+
+                Result result = new Result();
+                result.constraints = ArrayListMultimap.create();
 
                 TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, result.constraints); //this contravariant is hard to explain, but correct
 
