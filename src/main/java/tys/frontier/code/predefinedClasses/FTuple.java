@@ -49,6 +49,10 @@ public class FTuple extends FPredefinedClass {
         return false;
     }
 
+    public int arity() {
+        return types.size();
+    }
+
     public List<FType> getTypes() {
         return types;
     }
@@ -84,14 +88,20 @@ public class FTuple extends FPredefinedClass {
         return type instanceof FTuple ? ((FTuple) type).getTypes() : Collections.singletonList(type);
     }
 
+    public static int arity(FType type) {
+        return type instanceof FTuple ? ((FTuple) type).arity() : 1;
+    }
+
     public static void checkTypes(List<FExpression> expressions, List<FType> targetTypes) throws IncompatibleTypes {
         int j=0;
         for (int i=0; i < expressions.size(); i++) {
             FExpression exp = expressions.get(i);
+            if (exp == null)
+                continue;
 
             if (exp.getType() instanceof FTuple) {
                 //pack target types to match tuple expression
-                int size = ((FTuple) exp.getType()).getTypes().size();
+                int size = ((FTuple) exp.getType()).arity();
                 if (j+size > targetTypes.size())
                     throw new IncompatibleTypes(from(targetTypes), fromExpressionList(expressions));
                 FType targetType = from(targetTypes.subList(j, j + size));

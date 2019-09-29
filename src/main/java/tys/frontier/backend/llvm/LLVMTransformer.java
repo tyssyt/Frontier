@@ -242,7 +242,7 @@ class LLVMTransformer implements
             LLVMValueRef valueRef = value.accept(this);
             if (value.getType() instanceof FTuple) {
                 //unpack the tuple
-                int size = ((FTuple) value.getType()).getTypes().size();
+                int size = ((FTuple) value.getType()).arity();
                 for (int i = 0; i < size; i++) {
                     llvmValues.add(LLVMBuildExtractValue(builder, valueRef, i, "unpack_" + i));
                 }

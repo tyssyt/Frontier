@@ -127,7 +127,7 @@ public class TypeInstantiation {
             return FFunctionType.from(getType(fFunctionType.getIn()), getType(fFunctionType.getOut()));
         } else if (original instanceof FTuple) {
             FTuple fTuple = (FTuple) original;
-            List<FType> newTypes = new ArrayList<>(fTuple.getTypes().size());
+            List<FType> newTypes = new ArrayList<>(fTuple.arity());
             for (FType type : fTuple.getTypes()) {
                 newTypes.add(getType(type));
             }

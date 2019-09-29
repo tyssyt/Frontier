@@ -161,7 +161,7 @@ public class LLVMModule implements AutoCloseable {
     private LLVMTypeRef tupleType(FTuple tuple) {
         assert tuple != FTuple.VOID;
         PointerPointer<LLVMTypeRef> types = createPointerPointer(tuple.getTypes(), this::getLlvmType);
-        return LLVMStructTypeInContext(context, types, tuple.getTypes().size(), FALSE);
+        return LLVMStructTypeInContext(context, types, tuple.arity(), FALSE);
     }
 
     LLVMValueRef getNull(FOptional fOptional) {
