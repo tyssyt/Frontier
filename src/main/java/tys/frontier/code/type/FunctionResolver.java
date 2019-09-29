@@ -3,25 +3,24 @@ package tys.frontier.code.type;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping.NoArgumentsForParameter;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping.TooManyArguments;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +62,9 @@ class FunctionResolver {
     private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
         for (FFunction f : candidates) {
             try {
-                FType argumentTypes = getArgumentTypes(f.getParams());
+                ExpressionListToTypeListMapping argMapping = ExpressionListToTypeListMapping.create(positionalArgs, keywordArgs, f.getParams());
+
+                FType argumentTypes = argMapping.getGlue();
 
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
                 FFunctionType call = FFunctionType.from(argumentTypes, returnType != null ? returnType : pair.a.getOut());
@@ -93,47 +94,6 @@ class FunctionResolver {
         if (bestResult == null)
             throw new FunctionNotFound(identifier, this.positionalArgs, this.keywordArgs);
         return bestResult;
-    }
-
-    private FType getArgumentTypes(List<FParameter> params) throws TooManyArguments, NoArgumentsForParameter {
-        //TODO this has optimization potential!
-
-        //see how many params can be filled with positional args
-        int p = 0;
-        for (FType positionalArg : this.positionalArgs) {
-            p += FTuple.unpackType(positionalArg).size();
-        }
-        int i = 0;
-        for (; i < params.size() && p > 0; i++) {
-            FParameter param = params.get(i);
-            p -= FTuple.unpackType(param.getType()).size();
-            if (p < 0)
-                throw new NoArgumentsForParameter(param);
-        }
-        if (p > 0)
-            throw new TooManyArguments();
-
-        //start with filling in positional arguments
-        List<FType> argumentTypes = new ArrayList<>(this.positionalArgs);
-
-        //fill in the missing with keywordArguments or default Values
-        int usedKeywordArgs = 0;
-        for (; i<params.size(); i++) {
-            FParameter param = params.get(i);
-            FType argType = keywordArgs.get(param.getIdentifier());
-            if (argType != null) {
-                argumentTypes.add(argType);
-                usedKeywordArgs++;
-            } else if (param.hasDefaultValue()) {
-                argumentTypes.add(param.getType());
-            } else {
-                throw new NoArgumentsForParameter(param);
-            }
-        }
-
-        if (usedKeywordArgs != keywordArgs.size())
-            throw new TooManyArguments();
-        return FTuple.from(argumentTypes);
     }
 
     private TypeInstantiation computeTypeInstantiation(TypeInstantiation baseInstantiation, Multimap<FTypeVariable, TypeConstraint> constraints, boolean cleanConstraints) throws UnfulfillableConstraints {
@@ -173,17 +133,5 @@ class FunctionResolver {
         if (newResult.casts == bestResult.casts && newResult.costs == bestResult.costs) {
             bestResult = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
         }
-    }
-
-    private static class NoArgumentsForParameter extends SyntaxError {
-        public final FParameter parameter;
-
-        public NoArgumentsForParameter(FParameter parameter) {
-            this.parameter = parameter;
-        }
-    }
-
-    private static class TooManyArguments extends SyntaxError {
-        //TODO
     }
 }
