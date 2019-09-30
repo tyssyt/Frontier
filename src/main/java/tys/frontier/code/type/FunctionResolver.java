@@ -1,14 +1,14 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.expression.cast.TypeParameterCast;
+import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
@@ -29,16 +29,10 @@ class FunctionResolver {
 
     public static class Result {
         public FFunction function;
+        public ExpressionListToTypeListMapping argMapping;
         public Multimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
         public int costs;
-
-        public static Result perfectFit(FFunction function) {
-            Result res = new Result();
-            res.function = function;
-            res.constraints = ImmutableMultimap.of();
-            return res;
-        }
     }
 
     private FFunctionIdentifier identifier;
@@ -62,20 +56,25 @@ class FunctionResolver {
     private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
         for (FFunction f : candidates) {
             try {
-                ExpressionListToTypeListMapping argMapping = ExpressionListToTypeListMapping.create(positionalArgs, keywordArgs, f.getParams());
-
-                FType argumentTypes = argMapping.getGlue();
-
+                Result result = new Result();
+                //pack/unpack tuples, map keyword Args and use default parameters
+                result.argMapping = ExpressionListToTypeListMapping.create(positionalArgs, keywordArgs, f.getParams());
+                //prepare f
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
-                FFunctionType call = FFunctionType.from(argumentTypes, returnType != null ? returnType : pair.a.getOut());
-                if (call == pair.a) { //perfect fit
-                    return Result.perfectFit(f);
+                //cast arguments
+                result.constraints = result.argMapping.computeCasts(FTuple.unpackType(pair.a.getIn()));
+
+                //check for return Type if specified
+                if (returnType != null && returnType != pair.a.getOut()) {
+                    ImplicitTypeCast.create(returnType, pair.a.getOut(), Variance.Contravariant, result.constraints);
                 }
 
-                Result result = new Result();
-                result.constraints = ArrayListMultimap.create();
-
-                TypeParameterCast cast = TypeParameterCast.createTPC(call, pair.a, Variance.Contravariant, result.constraints); //this contravariant is hard to explain, but correct
+                //fast path for perfect fit
+                result.casts = result.argMapping.getNUmberOfCasts();
+                if (result.casts == 0 && result.constraints.isEmpty()) {
+                    result.function = f;
+                    return result; //perfect fit
+                }
 
                 //compute instantiations
                 TypeInstantiation instantiation = computeTypeInstantiation(pair.b, result.constraints, true);
@@ -85,8 +84,7 @@ class FunctionResolver {
                 if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(result.constraints) != null)
                     continue;
 
-                result.casts = Utils.countNonNull(cast.getCasts());
-                result.costs = cast.getCost();
+                result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);
             } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NoArgumentsForParameter ignored) {}
         }

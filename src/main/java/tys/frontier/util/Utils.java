@@ -254,9 +254,9 @@ public final class Utils {
         return null;
     }
 
-    public static <T> int countNonNull(T[] array) {
+    public static <T> int countNonNull(Iterable<T> iterable) {
         int res=0;
-        for (T t : array)
+        for (T t : iterable)
             if (t != null)
                 res++;
         return res;
