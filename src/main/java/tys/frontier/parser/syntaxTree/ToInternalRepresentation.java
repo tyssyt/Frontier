@@ -608,7 +608,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of());
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
+        } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
         }
@@ -629,10 +629,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         try {
             return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e1) {
+        } catch (FunctionNotFound | AccessForbidden e1) {
             try {
                 return functionCall(second.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
-            } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
+            } catch (FunctionNotFound | AccessForbidden e2) {
                 errors.add(e1);
                 errors.add(e2);
                 throw new Failed();
@@ -746,7 +746,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
                                         List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
-            throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
+            throws FunctionNotFound, AccessForbidden {
         FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null);
         checkAccessForbidden(res.function);
         return FFunctionCall.create(res.function, positionalArgs, keywordArgs, res.argMapping);
@@ -896,11 +896,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
             params2.add(getThisExpr());
             params2.addAll(arguments.a);
             return functionCall(currentType, fIdentifier, params2, arguments.b);
-        } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden | IncompatibleTypes e) {
+        } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden e) {
             //instance method not found, check for static method
             try {
                 return functionCall(currentType, fIdentifier, arguments.a, arguments.b);
-            } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e2) {
+            } catch (FunctionNotFound | AccessForbidden e2) {
                 errors.add(e2);
                 throw new Failed();
             }
@@ -920,7 +920,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         ListMultimap<FIdentifier, FExpression> namedArguments = visitNamedExpressions(ctx.namedExpressions());
         try {
             return functionCall(type, FConstructor.IDENTIFIER, Collections.emptyList(), namedArguments);
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
+        } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
         }
@@ -941,7 +941,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FArray array = FArray.getArrayFrom(baseType);
         try {
             return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), ImmutableListMultimap.of());
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes e) {
+        } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
         }
