@@ -6,13 +6,14 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +22,13 @@ public class FFunctionCall implements FExpression {
     private boolean prepared;
     private FFunction function;
     private List<FExpression> arguments;
+    private ExpressionListToTypeListMapping argMapping;
 
-    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments) throws IncompatibleTypes {
+    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments, ExpressionListToTypeListMapping argMapping) {
         this.prepared = prepared;
         this.function = function;
         this.arguments = arguments;
-        checkTypes();
+        this.argMapping = argMapping;
     }
 
     private void prepare() { //fills in default arguments
@@ -55,10 +57,10 @@ public class FFunctionCall implements FExpression {
         }
     }
 
-    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs) throws IncompatibleTypes {
+    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ExpressionListToTypeListMapping argMapping) {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         boolean needsPrepare = false;
-        for (int i=positionalArgs.size(); i < function.getParams().size(); i++) { //TODO adapt to tuple args & params
+        for (int i=argMapping.getNumberOfParamsFilledWithPositionalArgs(); i < function.getParams().size(); i++) {
             FParameter p = function.getParams().get(i);
             List<FExpression> arg = keywordArgs.get(p.getIdentifier());
             if (arg.isEmpty()) {
@@ -67,12 +69,14 @@ public class FFunctionCall implements FExpression {
             } else
                 args.addAll(arg); //adds null for default args
         }
-        return new FFunctionCall(!needsPrepare, function, args);
+        return new FFunctionCall(!needsPrepare, function, args, argMapping);
     }
+
     public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
         try {
-            return new FFunctionCall(false, function, arguments);
-        } catch (IncompatibleTypes incompatibleTypes) {
+            ExpressionListToTypeListMapping argMapping = ExpressionListToTypeListMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getParams()));
+            return new FFunctionCall(false, function, arguments, argMapping);
+        } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
     }
@@ -95,17 +99,8 @@ public class FFunctionCall implements FExpression {
         return function.getType();
     }
 
-    private void checkTypes() throws IncompatibleTypes {
-        FTuple.checkTypes(arguments, Utils.typesFromExpressionList(function.getParams())); //TODO account for null (default value)
-
-
-        List<FParameter> params = function.getParams();
-        for (int i = 0; i < arguments.size(); i++) {
-            if (arguments.get(i) == null)
-                continue; //default value
-            //TODO account for tuple types
-            arguments.set(i, arguments.get(i).typeCheck(params.get(i).getType()));
-        }
+    public ExpressionListToTypeListMapping getArgMapping() {
+        return argMapping;
     }
 
     @Override

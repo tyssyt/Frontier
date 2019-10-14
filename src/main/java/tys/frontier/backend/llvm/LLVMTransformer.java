@@ -24,6 +24,7 @@ import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -241,11 +242,7 @@ class LLVMTransformer implements
         for (FExpression value : assignment.getValues()) {
             LLVMValueRef valueRef = value.accept(this);
             if (value.getType() instanceof FTuple) {
-                //unpack the tuple
-                int size = ((FTuple) value.getType()).arity();
-                for (int i = 0; i < size; i++) {
-                    llvmValues.add(LLVMBuildExtractValue(builder, valueRef, i, "unpack_" + i));
-                }
+                unpackTuple(valueRef, (FTuple) value.getType(), llvmValues);
             } else
                 llvmValues.add(valueRef);
         }
@@ -328,24 +325,27 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitImplicitCast(FImplicitCast implicitCast) {
         LLVMValueRef toCast = implicitCast.getCastedExpression().accept(this);
-        LLVMTypeRef targetType = module.getLlvmType(implicitCast.getType());
-        if (implicitCast.isNoOpCast()) {
-            if (LLVMTypeOf(toCast).equals(targetType))
-                return toCast;
-            else
-                return LLVMBuildBitCast(builder, toCast, targetType, "noOpCast");
-        }
         return visitImplicitTypeCast(toCast, implicitCast.getTypeCast());
     }
 
     private LLVMValueRef visitImplicitTypeCast(LLVMValueRef base, ImplicitTypeCast cast) {
+        LLVMTypeRef targetType = module.getLlvmType(cast.getTarget());
+        if (cast.isNoOpCast()) {
+            if (LLVMTypeOf(base).equals(targetType))
+                return base;
+            else
+                return LLVMBuildBitCast(builder, base, targetType, "noOpCast");
+        }
+
         if (cast instanceof TypeVariableCast)
             return Utils.cantHappen();
         else if (cast instanceof TypeConversion)
             return visitTypeConversion(base, (TypeConversion) cast);
         else if (cast instanceof TypeParameterCast)
             return Utils.NYI("Type Parameter Cast");
-        else
+        else if (cast.getBase() == FNull.NULL_TYPE) {
+            return module.getNull((FOptional)cast.getTarget()); //TODO this is a hack on top of a hack, if this stays I can removed type nulls in frontend, only need null and cast
+        }
             return Utils.cantHappen();
     }
 
@@ -428,9 +428,9 @@ class LLVMTransformer implements
         return LLVMBuildSelect(builder, cond, then, elze, "ifExpr");
     }
 
-    private LLVMValueRef predefinedUnary(FFunctionCall functionCall) {
+    private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
-        LLVMValueRef arg = functionCall.getArguments().get(0).accept(this);
+        LLVMValueRef arg = Iterables.getOnlyElement(args);
         if (id.equals(FUnaryOperator.Pre.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
@@ -450,18 +450,17 @@ class LLVMTransformer implements
         return modified;
     }
 
-    private LLVMValueRef predefinedBinary(FFunctionCall functionCall) {
+    private LLVMValueRef predefinedBinary(FFunctionCall functionCall, List<LLVMValueRef> args) {
+        assert args.size() == 2;
+        LLVMValueRef left = args.get(0);
+        LLVMValueRef right = args.get(1);
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
-        FExpression l = functionCall.getArguments().get(0);
-        FExpression r = functionCall.getArguments().get(1);
 
         if (id.equals(FBinaryOperator.Bool.AND.identifier))
-            return shortCircuitLogic(l, r, true);
+            return shortCircuitLogic(left, right, true);
         else if (id.equals(FBinaryOperator.Bool.OR.identifier))
-            return shortCircuitLogic(l, r, false);
+            return shortCircuitLogic(left, right, false);
 
-        LLVMValueRef left = l.accept(this);
-        LLVMValueRef right = r.accept(this);
         if (functionCall.getFunction().getMemberOf() instanceof FIntN || functionCall.getFunction().getMemberOf() == FBool.INSTANCE) {
             Integer arith = arithOpMap.get(id);
             if (arith != null)
@@ -477,36 +476,34 @@ class LLVMTransformer implements
         }
     }
 
-    private LLVMValueRef shortCircuitLogic(FExpression first, FExpression second, boolean isAnd) {
+    private LLVMValueRef shortCircuitLogic(LLVMValueRef first, LLVMValueRef second, boolean isAnd) {
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef startBlock = LLVMGetInsertBlock(builder);
         LLVMBasicBlockRef otherBlock = LLVMAppendBasicBlock(currentFunction, "other");
         LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after");
 
-        LLVMValueRef f = first.accept(this);
         if (isAnd)
-            LLVMBuildCondBr(builder, f, otherBlock, afterBlock);
+            LLVMBuildCondBr(builder, first, otherBlock, afterBlock);
         else
-            LLVMBuildCondBr(builder, f, afterBlock, otherBlock);
+            LLVMBuildCondBr(builder, first, afterBlock, otherBlock);
 
         LLVMPositionBuilderAtEnd(builder, otherBlock);
-        LLVMValueRef s = second.accept(this);
         LLVMBuildBr(builder, afterBlock);
 
         LLVMPositionBuilderAtEnd(builder, afterBlock);
         LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(FBool.INSTANCE), "ss_logic");
-        LLVMAddIncoming(phi, f, startBlock, 1);
-        LLVMAddIncoming(phi, s, otherBlock, 1);
+        LLVMAddIncoming(phi, first, startBlock, 1);
+        LLVMAddIncoming(phi, second, otherBlock, 1);
         return phi;
     }
 
-    private LLVMValueRef predefinedArray (FFunctionCall functionCall) {
+    private LLVMValueRef predefinedArray (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
         if (function.isConstructor()) {
             LLVMTypeRef arrayType = module.getLlvmType(functionCall.getType());
 
             //compute the array size
-            LLVMValueRef sizeRef = Iterables.getOnlyElement(functionCall.getArguments()).accept(this);
+            LLVMValueRef sizeRef = Iterables.getOnlyElement(args);
 
             LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
             LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
@@ -520,14 +517,14 @@ class LLVMTransformer implements
             return Utils.NYI(function.headerToString() + " in the backend");
     }
 
-    private LLVMValueRef predefinedOptional (FFunctionCall functionCall) { //TODO this is copy & paste from if and call...
+    private LLVMValueRef predefinedOptional (FFunctionCall functionCall, List<LLVMValueRef> args) { //TODO this is copy & paste from if and call...
         FFunction function = functionCall.getFunction();
         FOptional optional = (FOptional) function.getMemberOf();
         FFunction toCall = optional.getShimMap().inverse().get(function);
         assert toCall != null;
 
         List<? extends FExpression> fArgs = functionCall.getArguments();
-        LLVMValueRef This = fArgs.get(0).accept(this);
+        LLVMValueRef This = args.get(0);
 
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef originalBlock = LLVMGetInsertBlock(builder);
@@ -539,19 +536,8 @@ class LLVMTransformer implements
 
         LLVMPositionBuilderAtEnd(builder, thenBlock);
         //call
-        LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(toCall));
-        List<LLVMValueRef> llvmArgs = new ArrayList<>();
-        //this parameter
-        llvmArgs.add(This);
-        //given arguments besides "this"
-        for (int i = 1; i < fArgs.size(); i++)
-            llvmArgs.add(fArgs.get(i).accept(this));
-        List<FParameter> params = toCall.getParams();
-        //use default values for non specified parameters
-        for (int i = fArgs.size(); i<params.size(); i++)
-            llvmArgs.add(params.get(i).getDefaultValue().accept(this));
-        String instructionName = toCall.getType() == FTuple.VOID ? "" : "callTmp";
-        LLVMValueRef call = LLVMBuildCall(builder, func, createPointerPointer(llvmArgs), llvmArgs.size(), instructionName);
+        //TODO why don't I need to cast first param to non optional?
+        LLVMValueRef call = buildCall(toCall, args);
         LLVMBuildBr(builder, continueBlock);
 
         LLVMPositionBuilderAtEnd(builder, continueBlock);
@@ -565,17 +551,18 @@ class LLVMTransformer implements
         }
     }
 
-    private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall) {
+    private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
         if (function instanceof FUnaryOperator) {
-            return predefinedUnary(functionCall);
+            return predefinedUnary(functionCall, args);
         } else if (function instanceof FBinaryOperator) {
-            return predefinedBinary(functionCall);
+            return predefinedBinary(functionCall, args);
         } else if (function.getMemberOf() instanceof FArray) {
-            return predefinedArray(functionCall);
+            return predefinedArray(functionCall, args);
         } else if (function.getMemberOf() instanceof FOptional) {
-            return predefinedOptional(functionCall);
+            return predefinedOptional(functionCall, args);
         } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
+            assert args.isEmpty();
             return LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(functionCall.getType())), "malloc_" + functionCall.getType().getIdentifier());
         } else {
             return Utils.cantHappen();
@@ -584,17 +571,70 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFunctionCall(FFunctionCall functionCall) {
-        FFunction function = functionCall.getFunction();
-        if (function.isPredefined())
-            return predefinedFunctionCall(functionCall);
-
-        LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(function));
-        assert func != null && !func.isNull() : function.getIdentifier() + "could not be found in module";
-        List<LLVMValueRef> args = new ArrayList<>();
         //given arguments
+        List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        String instructionName = function.getType() == FTuple.VOID ? "" : "callTmp";
+        args = prepareArgs(args, functionCall.getArgMapping());
+
+        FFunction function = functionCall.getFunction();
+        if (function.isPredefined())
+            return predefinedFunctionCall(functionCall, args);
+
+        return buildCall(function, args);
+    }
+
+    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, ExpressionListToTypeListMapping argMapping) {
+        //unpack
+        List<LLVMValueRef> unpacked;
+        if (argMapping.hasUnpacking()) {
+            unpacked = new ArrayList<>();
+            for (int i = 0; i < args.size(); i++) {
+                LLVMValueRef arg = args.get(i);
+                if (argMapping.getUnpackArg(i)) {
+                    unpackTuple(arg, (FTuple) argMapping.getArgumentTypes().get(i), unpacked);
+                } else {
+                    unpacked.add(arg);
+                }
+            }
+        } else {
+            unpacked = args;
+        }
+
+        //cast
+        assert unpacked.size() == argMapping.getCasts().size();
+        for (int i = 0; i < unpacked.size(); i++) {
+            ImplicitTypeCast cast = argMapping.getCasts().get(i);
+            if (cast == null)
+                continue;
+            unpacked.set(i, visitImplicitTypeCast(unpacked.get(i), cast));
+        }
+
+        //repack
+        List<LLVMValueRef> packed;
+        if (argMapping.hasPacking()) {
+            packed = new ArrayList<>();
+            for (int i = 0; i < packed.size(); i++) {
+                LLVMValueRef arg = packed.get(i);
+                if (argMapping.getPackParam(i)) {
+                    Utils.NYI("packing");
+                    //TODO see what i means, and pack
+                } else {
+                    packed.add(arg);
+                }
+            }
+
+        } else {
+            packed = unpacked;
+        }
+
+        return packed;
+    }
+
+    private LLVMValueRef buildCall(FFunction toCall, List<LLVMValueRef> args) {
+        LLVMValueRef func = LLVMGetNamedFunction(module.getModule(), getFunctionName(toCall));
+        assert func != null && !func.isNull() : toCall.getIdentifier() + " could not be found in module";
+        String instructionName = toCall.getType() == FTuple.VOID ? "" : "callTmp";
         return LLVMBuildCall(builder, func, createPointerPointer(args), args.size(), instructionName);
     }
 
@@ -648,7 +688,7 @@ class LLVMTransformer implements
             return LLVMConstInt(type, ((FBoolLiteral) literal).value ? TRUE : FALSE, FALSE);
         } else if (literal instanceof FNull) {
             if (literal == FNull.UNTYPED)
-                return LLVMConstPointerNull(type);
+                return LLVMConstPointerNull(type); //TODO
             return module.getNull((FOptional)literal.getType());
         } else {
             return Utils.cantHappen();
@@ -703,5 +743,11 @@ class LLVMTransformer implements
     private LLVMValueRef arrayOffsetOf(LLVMTypeRef type, LLVMValueRef index) {
         LLVMValueRef asPointer = arrayGep(LLVMConstNull(type), index);
         return LLVMBuildPtrToInt(builder, asPointer, module.getLlvmType(FIntN._64), "offsetOf_array");
+    }
+
+    private void unpackTuple(LLVMValueRef tuple, FTuple type, List<LLVMValueRef> llvmValues) {
+        for (int i = 0; i < type.arity(); i++) {
+            llvmValues.add(LLVMBuildExtractValue(builder, tuple, i, "unpack_" + i));
+        }
     }
 }

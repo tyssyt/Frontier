@@ -22,6 +22,7 @@ import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
@@ -746,9 +747,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
                                         List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
             throws FunctionNotFound, AccessForbidden, IncompatibleTypes {
-        FFunction f = clazz.resolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null);
-        checkAccessForbidden(f);
-        return FFunctionCall.create(f, positionalArgs, keywordArgs);
+        FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null);
+        checkAccessForbidden(res.function);
+        return FFunctionCall.create(res.function, positionalArgs, keywordArgs, res.argMapping);
     }
 
     @Override
@@ -1003,7 +1004,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
                 throw new FunctionNotFound(identifier, Collections.emptyList(), Collections.emptyMap());
             return fun.iterator().next();
         } else {
-            FFunction f = fClass.resolveFunction(identifier, params, Collections.emptyMap(), null);
+            FFunction f = fClass.hardResolveFunction(identifier, params, Collections.emptyMap(), null).function;
             checkAccessForbidden(f);
             return f;
         }

@@ -1,15 +1,12 @@
 package tys.frontier.code.literal;
 
-import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
-import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.util.Utils;
 
 import java.util.List;
@@ -36,7 +33,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) {
+        public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) {
             return Utils.cantHappen();
         }
 

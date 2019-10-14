@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class FunctionResolver {
+public class FunctionResolver {
 
     public static class Result {
         public FFunction function;
@@ -83,6 +83,9 @@ class FunctionResolver {
                 //handle other constraints
                 if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(result.constraints) != null)
                     continue;
+
+                //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
+                result.argMapping.computeCasts(Utils.typesFromExpressionList(result.function.getParams()));
 
                 result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);

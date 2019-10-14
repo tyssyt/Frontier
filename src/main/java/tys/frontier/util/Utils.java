@@ -172,7 +172,7 @@ public final class Utils {
             FType returnType = typeInstantiation.getType(function.getType());
 
             try {
-                return newNamespace.resolveFunction(identifier, positionalArgs, keywordArgs, returnType);
+                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType).function;
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }

@@ -1,6 +1,9 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.*;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MapMaker;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
@@ -9,8 +12,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.Utils;
 
@@ -57,13 +59,14 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
             positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
             positionalArgs.set(0, baseType);
         }
-        FFunction base = baseType.resolveFunction(identifier, positionalArgs, keywordArgs, returnType, constraints);
-        return shimMap.computeIfAbsent(base, this::createShim);
+        FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
+        res.function = shimMap.computeIfAbsent(res.function, this::createShim);
+        return res;
     }
 
     private FFunction createShim(FFunction original) {

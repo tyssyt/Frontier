@@ -13,6 +13,7 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
+import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -21,13 +22,18 @@ public class ExpressionListToTypeListMapping {
 
     private List<FType> argumentTypes;
     private List<ImplicitTypeCast> casts;
+    private boolean hasUnpacking;
     private BitSet unpackArg;
+    private boolean hasPacking;
     private BitSet packParam;
+    private int numberOfParamsFilledWithPositionalArgs;
 
     //TODO make sure all functions in here have reasonable quickpaths for "non tuple" cases
 
     public static ExpressionListToTypeListMapping create(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
+        boolean hasUnpacking = false;
         BitSet unpackArg = new BitSet();
+        boolean hasPacking = false;
         BitSet packParam = new BitSet(params.size());
 
         //start with positional args
@@ -37,6 +43,7 @@ public class ExpressionListToTypeListMapping {
             FType arg = argIt.next();
             if (arg instanceof FTuple) {
                 unpack((FTuple)arg, paramIt);
+                hasUnpacking = true;
                 unpackArg.set(argIt.previousIndex());
             } else {
                 if (!paramIt.hasNext())
@@ -46,14 +53,13 @@ public class ExpressionListToTypeListMapping {
                 if (param instanceof FTuple) {
                     argIt.previous();
                     pack(argIt, (FTuple)param);
+                    hasPacking = true;
                     packParam.set(paramIt.previousIndex());
-                } else {
-                    //TODO one to one with maybe casting
                 }
-
             }
         }
         List<FType> argumentTypes = new ArrayList<>(positionalArgs);
+        int numberOfParamsFilledWithPositionalArgs = paramIt.nextIndex();
 
         //fill the remaining params with keyword args or default values
         int usedKeywordArgs = 0;
@@ -76,8 +82,35 @@ public class ExpressionListToTypeListMapping {
 
         ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
         res.argumentTypes = argumentTypes;
+        res.hasUnpacking = hasUnpacking;
         res.unpackArg = unpackArg;
+        res.hasPacking = hasPacking;
         res.packParam = packParam;
+        res.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
+        return res;
+    }
+
+    // argTypes = paramTypes
+    public static ExpressionListToTypeListMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
+        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
+        res.argumentTypes = types;
+        res.unpackArg = new BitSet(types.size());
+        res.packParam = new BitSet(types.size());
+        res.casts = Arrays.asList(new ImplicitTypeCast[types.size()]);
+        res.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
+        return res;
+    }
+
+    // no packaing/unpacking, types are casted
+    public static ExpressionListToTypeListMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
+        assert positionalArgs.size() == target.size();
+        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
+        res.argumentTypes = positionalArgs;
+        res.unpackArg = new BitSet(positionalArgs.size());
+        res.packParam = new BitSet(positionalArgs.size());
+        res.numberOfParamsFilledWithPositionalArgs = positionalArgs.size();
+        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(target);
+        TypeConstraint.addAll(constraints);
         return res;
     }
 
@@ -117,12 +150,24 @@ public class ExpressionListToTypeListMapping {
         return casts;
     }
 
-    public BitSet getUnpackArg() {
-        return unpackArg;
+    public boolean hasUnpacking() {
+        return hasUnpacking;
     }
 
-    public BitSet getPackParam() {
-        return packParam;
+    public boolean getUnpackArg(int i) {
+        return unpackArg.get(i);
+    }
+
+    public boolean hasPacking() {
+        return hasPacking;
+    }
+
+    public boolean getPackParam(int i) {
+        return packParam.get(i);
+    }
+
+    public int getNumberOfParamsFilledWithPositionalArgs() {
+        return numberOfParamsFilledWithPositionalArgs;
     }
 
     public int getNUmberOfCasts() {

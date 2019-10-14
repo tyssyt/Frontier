@@ -21,7 +21,6 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -172,11 +171,8 @@ public interface FClass extends FType, HasVisibility {
         getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
     }
 
-    default FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
-        Collection<FFunction> candidates = getFunctions().get(identifier);
-        FunctionResolver.Result result = FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, candidates);
-        constraints.putAll(result.constraints);
-        return result.function;
+    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions().get(identifier));
     }
 
     default  <C,Fi,Fu,S,E> C accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {

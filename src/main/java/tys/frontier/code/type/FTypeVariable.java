@@ -1,7 +1,7 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ImmutableMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
@@ -20,6 +20,7 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
+import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
 
 import java.util.List;
 import java.util.Map;
@@ -118,32 +119,38 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FFunction resolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Multimap<FTypeVariable, TypeConstraint> constraints) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         if (this.constraints.isResolved())
-            return this.constraints.getResolved().resolveFunction(identifier, positionalArgs, keywordArgs, returnType, constraints);
+            return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
 
         HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs);
-        constraints.put(this, constraint);
         if (!tryAddConstraint(constraint))
             throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
 
         //just return some fitting dummy function
         NameGenerator paramNames = new NameGenerator("?", "");
-        ImmutableList.Builder<FParameter> params = ImmutableList.builder();
+        ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
             FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
-            params.add(FParameter.create(id, arg, false));
+            paramsBuilder.add(FParameter.create(id, arg, false));
         }
         for (Map.Entry<FIdentifier, FType> entry : keywordArgs.entrySet()) {
-            params.add(FParameter.create(entry.getKey(), entry.getValue(), false));
+            paramsBuilder.add(FParameter.create(entry.getKey(), entry.getValue(), false));
         }
+        ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
             returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        FBaseFunction res = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params.build());
+        FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params);
         if (returnType instanceof ReturnTypeOf)
-            ((ReturnTypeOf) returnType).function = res;
+            ((ReturnTypeOf) returnType).function = f;
+
+        FunctionResolver.Result res = new FunctionResolver.Result();
+        res.function = f;
+        List<FType> paramTypes = Utils.typesFromExpressionList(params);
+        res.argMapping = ExpressionListToTypeListMapping.createBasic(paramTypes, positionalArgs.size());
+        res.constraints = ImmutableMultimap.of(this, constraint);
         return res;
     }
 
