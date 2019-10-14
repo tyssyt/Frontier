@@ -40,7 +40,7 @@ public abstract class ImplicitTypeCast {
                     }
                     @Override
                     public boolean isNoOpCast() {
-                        return true;
+                        return false;
                     }
                 };
             else
