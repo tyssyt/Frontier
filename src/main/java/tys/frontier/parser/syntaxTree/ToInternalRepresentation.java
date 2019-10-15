@@ -34,7 +34,7 @@ import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.*;
 
@@ -357,7 +357,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FVarAssignment.Operator operator = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
         try {
             return FVarAssignment.create(vars, operator, values);
-        } catch (IncompatibleTypes | ExpressionListToTypeListMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
+        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();
         }

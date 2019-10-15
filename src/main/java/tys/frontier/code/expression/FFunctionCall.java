@@ -13,7 +13,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +22,9 @@ public class FFunctionCall implements FExpression {
     private boolean prepared;
     private FFunction function;
     private List<FExpression> arguments;
-    private ExpressionListToTypeListMapping argMapping;
+    private ArgMapping argMapping;
 
-    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments, ExpressionListToTypeListMapping argMapping) {
+    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments, ArgMapping argMapping) {
         this.prepared = prepared;
         this.function = function;
         this.arguments = arguments;
@@ -57,7 +57,7 @@ public class FFunctionCall implements FExpression {
         }
     }
 
-    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ExpressionListToTypeListMapping argMapping) {
+    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         boolean needsPrepare = false;
         for (int i=argMapping.getNumberOfParamsFilledWithPositionalArgs(); i < function.getParams().size(); i++) {
@@ -74,7 +74,7 @@ public class FFunctionCall implements FExpression {
 
     public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
         try {
-            ExpressionListToTypeListMapping argMapping = ExpressionListToTypeListMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getParams()));
+            ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getParams()));
             return new FFunctionCall(false, function, arguments, argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
@@ -99,7 +99,7 @@ public class FFunctionCall implements FExpression {
         return function.getType();
     }
 
-    public ExpressionListToTypeListMapping getArgMapping() {
+    public ArgMapping getArgMapping() {
         return argMapping;
     }
 

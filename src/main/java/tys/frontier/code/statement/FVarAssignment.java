@@ -15,7 +15,7 @@ import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,9 +31,9 @@ public class FVarAssignment implements FStatement {
     private List<FVariableExpression> variables;
     private Operator operator;
     private List<FExpression> values;
-    private ExpressionListToTypeListMapping argMap;
+    private ArgMapping argMap;
 
-    public FVarAssignment(List<FVariableExpression> variables, Operator operator, List<FExpression> values, ExpressionListToTypeListMapping argMap) {
+    public FVarAssignment(List<FVariableExpression> variables, Operator operator, List<FExpression> values, ArgMapping argMap) {
         assert operator == Operator.ASSIGN || variables.stream().noneMatch(v -> v instanceof FVarDeclaration);
         this.variables = variables;
         this.operator = operator;
@@ -44,22 +44,22 @@ public class FVarAssignment implements FStatement {
         }
     }
 
-    public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes, ExpressionListToTypeListMapping.TooManyArguments, UnfulfillableConstraints {
-        ExpressionListToTypeListMapping argMap = ExpressionListToTypeListMapping.createCasted(Utils.typesFromExpressionList(values), variables);
+    public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
+        ArgMapping argMap = ArgMapping.createCasted(Utils.typesFromExpressionList(values), variables);
         return new FVarAssignment(variables, operator, values, argMap);
     }
 
     public static FVarAssignment createTrusted(List<FVariableExpression> variables, Operator operator, List<FExpression> values) {
         try {
             return create(variables, operator, values);
-        } catch (IncompatibleTypes | ExpressionListToTypeListMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
+        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
     public static FVarAssignment createDecl(FLocalVariable variable, FExpression value) {
         try {
-            ExpressionListToTypeListMapping argMapping = ExpressionListToTypeListMapping.createBasic(singletonList(value.getType()), singletonList(variable.getType()));
+            ArgMapping argMapping = ArgMapping.createBasic(singletonList(value.getType()), singletonList(variable.getType()));
             return new FVarAssignment(singletonList(new FVarDeclaration(variable)), Operator.ASSIGN, Arrays.asList(value), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();

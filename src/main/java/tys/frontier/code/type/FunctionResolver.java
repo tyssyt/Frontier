@@ -17,9 +17,9 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping.NoArgumentsForParameter;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping.TooManyArguments;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping.NoArgumentsForParameter;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping.TooManyArguments;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +29,7 @@ public class FunctionResolver {
 
     public static class Result {
         public FFunction function;
-        public ExpressionListToTypeListMapping argMapping;
+        public ArgMapping argMapping;
         public Multimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
         public int costs;
@@ -58,7 +58,7 @@ public class FunctionResolver {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
-                result.argMapping = ExpressionListToTypeListMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
+                result.argMapping = ArgMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
                 //prepare f
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
                 //cast arguments

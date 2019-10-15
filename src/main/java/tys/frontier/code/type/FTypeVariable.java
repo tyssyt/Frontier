@@ -20,7 +20,7 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.List;
 import java.util.Map;
@@ -149,7 +149,7 @@ public class FTypeVariable implements FType {
         FunctionResolver.Result res = new FunctionResolver.Result();
         res.function = f;
         List<FType> paramTypes = Utils.typesFromExpressionList(params);
-        res.argMapping = ExpressionListToTypeListMapping.createBasic(paramTypes, positionalArgs.size());
+        res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
         res.constraints = ImmutableMultimap.of(this, constraint);
         return res;
     }

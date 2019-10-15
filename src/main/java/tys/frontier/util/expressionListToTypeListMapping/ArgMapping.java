@@ -19,7 +19,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class ExpressionListToTypeListMapping {
+public class ArgMapping {
 
     private List<FType> argumentTypes; //TODO fairly certain I can remove this field
     private List<ImplicitTypeCast> casts;
@@ -29,14 +29,14 @@ public class ExpressionListToTypeListMapping {
 
     //TODO make sure all functions in here have reasonable quickpaths for "non tuple" cases
 
-    public ExpressionListToTypeListMapping(List<FType> argumentTypes, BitSet unpackArg, BitSet packParam, int numberOfParamsFilledWithPositionalArgs) {
+    public ArgMapping(List<FType> argumentTypes, BitSet unpackArg, BitSet packParam, int numberOfParamsFilledWithPositionalArgs) {
         this.argumentTypes = argumentTypes;
         this.unpackArg = unpackArg;
         this.packParam = packParam;
         this.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
     }
 
-    public static ExpressionListToTypeListMapping createCasted(List<FType> expressions, List<? extends Typed> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
+    public static ArgMapping createCasted(List<FType> expressions, List<? extends Typed> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
         BitSet unpackArg = new BitSet(expressions.size());
         BitSet packParam = new BitSet(target.size());
 
@@ -45,12 +45,12 @@ public class ExpressionListToTypeListMapping {
 
         unpackAndPack(unpackArg, packParam, argIt, paramIt);
 
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(expressions, unpackArg, packParam, target.size());
+        ArgMapping res = new ArgMapping(expressions, unpackArg, packParam, target.size());
         ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(Utils.typesFromExpressionList(target));
         TypeConstraint.addAll(constraints);
         return res;
     }
-    public static ExpressionListToTypeListMapping createForCall(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
+    public static ArgMapping createForCall(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
         BitSet unpackArg = new BitSet();
         BitSet packParam = new BitSet(params.size());
 
@@ -81,20 +81,20 @@ public class ExpressionListToTypeListMapping {
         if (usedKeywordArgs != keywordArgs.size())
             throw new TooManyArguments();
 
-        return new ExpressionListToTypeListMapping(argumentTypes, unpackArg, packParam, numberOfParamsFilledWithPositionalArgs);
+        return new ArgMapping(argumentTypes, unpackArg, packParam, numberOfParamsFilledWithPositionalArgs);
     }
 
     // argTypes = paramTypes
-    public static ExpressionListToTypeListMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(types, new BitSet(types.size()), new BitSet(types.size()), numberOfParamsFilledWithPositionalArgs);
+    public static ArgMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
+        ArgMapping res = new ArgMapping(types, new BitSet(types.size()), new BitSet(types.size()), numberOfParamsFilledWithPositionalArgs);
         res.casts = Arrays.asList(new ImplicitTypeCast[types.size()]);
         return res;
     }
 
     // no packaing/unpacking, types are casted
-    public static ExpressionListToTypeListMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
+    public static ArgMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
         assert positionalArgs.size() == target.size();
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(positionalArgs, new BitSet(positionalArgs.size()), new BitSet(positionalArgs.size()), positionalArgs.size());
+        ArgMapping res = new ArgMapping(positionalArgs, new BitSet(positionalArgs.size()), new BitSet(positionalArgs.size()), positionalArgs.size());
         ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(target);
         TypeConstraint.addAll(constraints);
         return res;

@@ -24,7 +24,7 @@ import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ExpressionListToTypeListMapping;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -584,7 +584,7 @@ class LLVMTransformer implements
         return buildCall(function, args);
     }
 
-    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, ExpressionListToTypeListMapping argMapping) {
+    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, ArgMapping argMapping) {
         //unpack
         List<LLVMValueRef> unpacked;
         if (argMapping.hasUnpacking()) {
