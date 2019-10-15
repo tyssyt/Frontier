@@ -58,7 +58,7 @@ public class FunctionResolver {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
-                result.argMapping = ExpressionListToTypeListMapping.create(positionalArgs, keywordArgs, f.getParams());
+                result.argMapping = ExpressionListToTypeListMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
                 //prepare f
                 Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
                 //cast arguments

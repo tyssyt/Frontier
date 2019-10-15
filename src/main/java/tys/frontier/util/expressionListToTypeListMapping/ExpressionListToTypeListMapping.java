@@ -3,6 +3,7 @@ package tys.frontier.util.expressionListToTypeListMapping;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.Typed;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.identifier.FIdentifier;
@@ -20,44 +21,44 @@ import java.util.*;
 
 public class ExpressionListToTypeListMapping {
 
-    private List<FType> argumentTypes;
+    private List<FType> argumentTypes; //TODO fairly certain I can remove this field
     private List<ImplicitTypeCast> casts;
-    private boolean hasUnpacking;
     private BitSet unpackArg;
-    private boolean hasPacking;
     private BitSet packParam;
     private int numberOfParamsFilledWithPositionalArgs;
 
     //TODO make sure all functions in here have reasonable quickpaths for "non tuple" cases
 
-    public static ExpressionListToTypeListMapping create(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
-        boolean hasUnpacking = false;
+    public ExpressionListToTypeListMapping(List<FType> argumentTypes, BitSet unpackArg, BitSet packParam, int numberOfParamsFilledWithPositionalArgs) {
+        this.argumentTypes = argumentTypes;
+        this.unpackArg = unpackArg;
+        this.packParam = packParam;
+        this.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
+    }
+
+    public static ExpressionListToTypeListMapping createCasted(List<FType> expressions, List<? extends Typed> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
+        BitSet unpackArg = new BitSet(expressions.size());
+        BitSet packParam = new BitSet(target.size());
+
+        ListIterator<FType> argIt = expressions.listIterator();
+        ListIterator<? extends Typed> paramIt = target.listIterator();
+
+        unpackAndPack(unpackArg, packParam, argIt, paramIt);
+
+        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(expressions, unpackArg, packParam, target.size());
+        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(Utils.typesFromExpressionList(target));
+        TypeConstraint.addAll(constraints);
+        return res;
+    }
+    public static ExpressionListToTypeListMapping createForCall(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
         BitSet unpackArg = new BitSet();
-        boolean hasPacking = false;
         BitSet packParam = new BitSet(params.size());
 
-        //start with positional args
         ListIterator<FType> argIt = positionalArgs.listIterator();
         ListIterator<FParameter> paramIt = params.listIterator();
-        while (argIt.hasNext()) {
-            FType arg = argIt.next();
-            if (arg instanceof FTuple) {
-                unpack((FTuple)arg, paramIt);
-                hasUnpacking = true;
-                unpackArg.set(argIt.previousIndex());
-            } else {
-                if (!paramIt.hasNext())
-                    throw new TooManyArguments();
 
-                FType param = paramIt.next().getType();
-                if (param instanceof FTuple) {
-                    argIt.previous();
-                    pack(argIt, (FTuple)param);
-                    hasPacking = true;
-                    packParam.set(paramIt.previousIndex());
-                }
-            }
-        }
+        //start with positional args
+        unpackAndPack(unpackArg, packParam, argIt, paramIt);
         List<FType> argumentTypes = new ArrayList<>(positionalArgs);
         int numberOfParamsFilledWithPositionalArgs = paramIt.nextIndex();
 
@@ -80,41 +81,46 @@ public class ExpressionListToTypeListMapping {
         if (usedKeywordArgs != keywordArgs.size())
             throw new TooManyArguments();
 
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
-        res.argumentTypes = argumentTypes;
-        res.hasUnpacking = hasUnpacking;
-        res.unpackArg = unpackArg;
-        res.hasPacking = hasPacking;
-        res.packParam = packParam;
-        res.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
-        return res;
+        return new ExpressionListToTypeListMapping(argumentTypes, unpackArg, packParam, numberOfParamsFilledWithPositionalArgs);
     }
 
     // argTypes = paramTypes
     public static ExpressionListToTypeListMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
-        res.argumentTypes = types;
-        res.unpackArg = new BitSet(types.size());
-        res.packParam = new BitSet(types.size());
+        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(types, new BitSet(types.size()), new BitSet(types.size()), numberOfParamsFilledWithPositionalArgs);
         res.casts = Arrays.asList(new ImplicitTypeCast[types.size()]);
-        res.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
         return res;
     }
 
     // no packaing/unpacking, types are casted
     public static ExpressionListToTypeListMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
         assert positionalArgs.size() == target.size();
-        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping();
-        res.argumentTypes = positionalArgs;
-        res.unpackArg = new BitSet(positionalArgs.size());
-        res.packParam = new BitSet(positionalArgs.size());
-        res.numberOfParamsFilledWithPositionalArgs = positionalArgs.size();
+        ExpressionListToTypeListMapping res = new ExpressionListToTypeListMapping(positionalArgs, new BitSet(positionalArgs.size()), new BitSet(positionalArgs.size()), positionalArgs.size());
         ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(target);
         TypeConstraint.addAll(constraints);
         return res;
     }
 
-    private static int unpack(FTuple tuple, Iterator<FParameter> params) throws TooManyArguments {
+    private static void unpackAndPack(BitSet unpackArg, BitSet packParam, ListIterator<FType> argIt, ListIterator<? extends Typed> paramIt) throws TooManyArguments {
+        while (argIt.hasNext()) {
+            FType arg = argIt.next();
+            if (arg instanceof FTuple) {
+                unpack((FTuple) arg, paramIt);
+                unpackArg.set(argIt.previousIndex());
+            } else {
+                if (!paramIt.hasNext())
+                    throw new TooManyArguments();
+
+                FType param = paramIt.next().getType();
+                if (param instanceof FTuple) {
+                    argIt.previous();
+                    pack(argIt, (FTuple) param);
+                    packParam.set(paramIt.previousIndex());
+                }
+            }
+        }
+    }
+
+    private static int unpack(FTuple tuple, Iterator<? extends Typed> params) throws TooManyArguments {
         int size = tuple.arity();
         int filledTypes = 0;
 
@@ -151,7 +157,7 @@ public class ExpressionListToTypeListMapping {
     }
 
     public boolean hasUnpacking() {
-        return hasUnpacking;
+        return !unpackArg.isEmpty();
     }
 
     public boolean getUnpackArg(int i) {
@@ -159,7 +165,7 @@ public class ExpressionListToTypeListMapping {
     }
 
     public boolean hasPacking() {
-        return hasPacking;
+        return !packParam.isEmpty();
     }
 
     public boolean getPackParam(int i) {
