@@ -6,6 +6,7 @@ import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.Typed;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
@@ -238,16 +239,12 @@ class LLVMTransformer implements
             Utils.NYI("operator " + assignment.getOperator());
         }
 
-        List<LLVMValueRef> llvmValues = new ArrayList<>(assignment.getVariables().size());
-        for (FExpression value : assignment.getValues()) {
-            LLVMValueRef valueRef = value.accept(this);
-            if (value.getType() instanceof FTuple) {
-                unpackTuple(valueRef, (FTuple) value.getType(), llvmValues);
-            } else
-                llvmValues.add(valueRef);
-        }
+        List<LLVMValueRef> values = new ArrayList<>();
+        for (FExpression arg : assignment.getValues())
+            values.add(arg.accept(this));
+        values = prepareArgs(values, assignment.getVariables(), assignment.getArgMapping());
 
-        for (Pair<FVariableExpression, LLVMValueRef> pair : Utils.zip(assignment.getVariables(), llvmValues)) {
+        for (Pair<FVariableExpression, LLVMValueRef> pair : Utils.zip(assignment.getVariables(), values)) {
             FVariableExpression variable = pair.a;
             if (variable instanceof FVarDeclaration) {
                 createEntryBlockAlloca(((FVarDeclaration) variable).getVariable());
@@ -575,7 +572,7 @@ class LLVMTransformer implements
         List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        args = prepareArgs(args, functionCall.getArgMapping());
+        args = prepareArgs(args, functionCall.getFunction().getParams(), functionCall.getArgMapping());
 
         FFunction function = functionCall.getFunction();
         if (function.isPredefined())
@@ -584,7 +581,7 @@ class LLVMTransformer implements
         return buildCall(function, args);
     }
 
-    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, ArgMapping argMapping) {
+    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, List<? extends Typed> target, ArgMapping argMapping) { //TODO prolly store the info we get via target in argMapping
         //unpack
         List<LLVMValueRef> unpacked;
         if (argMapping.hasUnpacking()) {
@@ -592,7 +589,7 @@ class LLVMTransformer implements
             for (int i = 0; i < args.size(); i++) {
                 LLVMValueRef arg = args.get(i);
                 if (argMapping.getUnpackArg(i)) {
-                    unpackTuple(arg, (FTuple) argMapping.getArgumentTypes().get(i), unpacked);
+                    unpacked.addAll(unpackTuple(arg));
                 } else {
                     unpacked.add(arg);
                 }
@@ -613,17 +610,18 @@ class LLVMTransformer implements
         //repack
         List<LLVMValueRef> packed;
         if (argMapping.hasPacking()) {
-            packed = new ArrayList<>();
-            for (int i = 0; i < packed.size(); i++) {
-                LLVMValueRef arg = packed.get(i);
-                if (argMapping.getPackParam(i)) {
-                    Utils.NYI("packing");
-                    //TODO see what i means, and pack
+            packed = new ArrayList<>(target.size());
+            int i=0;
+            for (int t = 0; t < target.size(); t++) {
+                if (argMapping.getPackParam(t)) {
+                    int arity = FTuple.arity(target.get(t).getType());
+                    packed.add(packTuple(unpacked.subList(i, i+arity)));
+                    i += arity;
                 } else {
-                    packed.add(arg);
+                    packed.add(unpacked.get(i));
+                    i++;
                 }
             }
-
         } else {
             packed = unpacked;
         }
@@ -745,9 +743,25 @@ class LLVMTransformer implements
         return LLVMBuildPtrToInt(builder, asPointer, module.getLlvmType(FIntN._64), "offsetOf_array");
     }
 
-    private void unpackTuple(LLVMValueRef tuple, FTuple type, List<LLVMValueRef> llvmValues) {
-        for (int i = 0; i < type.arity(); i++) {
-            llvmValues.add(LLVMBuildExtractValue(builder, tuple, i, "unpack_" + i));
-        }
+    private List<LLVMValueRef> unpackTuple(LLVMValueRef tuple) {
+        int size = LLVMCountStructElementTypes(LLVMTypeOf(tuple));
+        ArrayList<LLVMValueRef> res = new ArrayList<>(size);
+        for (int i = 0; i < size; i++)
+            res.add(LLVMBuildExtractValue(builder, tuple, i, "unpack_" + i));
+        return res;
+    }
+
+    private LLVMValueRef packTuple(List<LLVMValueRef> values) {
+        assert values.size() > 1;
+
+        PointerPointer<LLVMTypeRef> types = new PointerPointer<>(values.size());
+        for (int i=0; i<values.size(); i++)
+            types.put(i, LLVMTypeOf(values.get(i)));
+        LLVMTypeRef structType = LLVMStructTypeInContext(module.getContext(), types, values.size(), FALSE);
+
+        LLVMValueRef agg = LLVMGetUndef(structType);
+        for (int i = 0; i < values.size(); i++)
+            agg = LLVMBuildInsertValue(builder, agg, values.get(i), i, "pack_" + i);
+        return agg;
     }
 }

@@ -31,14 +31,14 @@ public class FVarAssignment implements FStatement {
     private List<FVariableExpression> variables;
     private Operator operator;
     private List<FExpression> values;
-    private ArgMapping argMap;
+    private ArgMapping argMapping;
 
-    public FVarAssignment(List<FVariableExpression> variables, Operator operator, List<FExpression> values, ArgMapping argMap) {
+    public FVarAssignment(List<FVariableExpression> variables, Operator operator, List<FExpression> values, ArgMapping argMapping) {
         assert operator == Operator.ASSIGN || variables.stream().noneMatch(v -> v instanceof FVarDeclaration);
         this.variables = variables;
         this.operator = operator;
         this.values = values;
-        this.argMap = argMap;
+        this.argMapping = argMapping;
         for (FVariableExpression variable : variables) {
             variable.setAccessType(FVariableExpression.AccessType.STORE);
         }
@@ -76,6 +76,10 @@ public class FVarAssignment implements FStatement {
 
     public List<FExpression> getValues() {
         return values;
+    }
+
+    public ArgMapping getArgMapping() {
+        return argMapping;
     }
 
     @Override

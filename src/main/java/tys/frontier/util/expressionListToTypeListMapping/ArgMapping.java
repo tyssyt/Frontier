@@ -104,8 +104,8 @@ public class ArgMapping {
         while (argIt.hasNext()) {
             FType arg = argIt.next();
             if (arg instanceof FTuple) {
-                unpack((FTuple) arg, paramIt);
-                unpackArg.set(argIt.previousIndex());
+                if (unpack((FTuple) arg, paramIt) > 1)
+                    unpackArg.set(argIt.previousIndex());
             } else {
                 if (!paramIt.hasNext())
                     throw new TooManyArguments();
@@ -190,27 +190,42 @@ public class ArgMapping {
     }
 
     public ListMultimap<FTypeVariable, TypeConstraint> computeCasts(List<FType> target) throws IncompatibleTypes {
+        //TODO I could optimize this by storing more info when computing packing
         ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
+        casts = new ArrayList<>();
 
-        casts = Arrays.asList(new ImplicitTypeCast[argumentTypes.size()]);
         int targetIndex = 0;
-        for (int i = 0; i < argumentTypes.size(); i++) {
-            FType argType = argumentTypes.get(i);
-            if (argType instanceof FTuple) {
-                FTuple baseType = (FTuple) argType;
-                FTuple targetType = (FTuple) FTuple.from(target.subList(targetIndex, targetIndex + baseType.arity()));
-                if (argType != targetType) {
-                    casts.set(i, TypeParameterCast.createTPC(baseType, targetType, Variance.Covariant, constraints));
+        int argIndex = 0;
+        while (argIndex < argumentTypes.size()) {
+            if (unpackArg.get(argIndex)) {
+                for (FType baseType : FTuple.unpackType(argumentTypes.get(argIndex++))) {
+                    //TODO I think in theory I could also repack the unpacked args? like split a 4 arity in to 2-1-1?
+                    assert !packParam.get(targetIndex);
+                    FType targetType = target.get(targetIndex++);
+                    if (baseType != targetType)
+                        casts.add(TypeParameterCast.create(baseType, targetType, Variance.Covariant, constraints));
+                    else
+                        casts.add(null);
                 }
-                targetIndex += baseType.arity();
+            } else if (packParam.get(targetIndex)) { //TODO see above note onto first unpack then repack
+                for (FType targetType : FTuple.unpackType(target.get(targetIndex++))) {
+                    assert !unpackArg.get(argIndex);
+                    FType baseType = argumentTypes.get(argIndex++);
+                    if (baseType != targetType)
+                        casts.add(TypeParameterCast.create(baseType, targetType, Variance.Covariant, constraints));
+                    else
+                        casts.add(null);
+                }
             } else {
-                FType targetType = target.get(targetIndex);
-                if (argType != targetType) {
-                    casts.set(i, ImplicitTypeCast.create(argType, targetType, Variance.Covariant, constraints));
-                }
-                targetIndex++;
+                FType argType = argumentTypes.get(argIndex++);
+                FType targetType = target.get(targetIndex++);
+                if (argType != targetType)
+                    casts.add(TypeParameterCast.create(argType, targetType, Variance.Covariant, constraints));
+                else
+                    casts.add(null);
             }
         }
+        assert targetIndex == target.size();
 
         return constraints;
     }

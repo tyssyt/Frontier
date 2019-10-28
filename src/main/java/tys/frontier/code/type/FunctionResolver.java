@@ -8,14 +8,13 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
-import tys.frontier.util.Pair;
+import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping.NoArgumentsForParameter;
@@ -60,13 +59,13 @@ public class FunctionResolver {
                 //pack/unpack tuples, map keyword Args and use default parameters
                 result.argMapping = ArgMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
                 //prepare f
-                Pair<FFunctionType, TypeInstantiation> pair = FFunctionType.instantiableFrom(f);
+                Triple<List<FType>, FType, TypeInstantiation> triple = FFunctionType.instantiableFrom(f); //TODO unbutcher this?
                 //cast arguments
-                result.constraints = result.argMapping.computeCasts(FTuple.unpackType(pair.a.getIn()));
+                result.constraints = result.argMapping.computeCasts(triple.a);
 
                 //check for return Type if specified
-                if (returnType != null && returnType != pair.a.getOut()) {
-                    ImplicitTypeCast.create(returnType, pair.a.getOut(), Variance.Contravariant, result.constraints);
+                if (returnType != null && returnType != triple.b) {
+                    ImplicitTypeCast.create(returnType, triple.b, Variance.Contravariant, result.constraints);
                 }
 
                 //fast path for perfect fit
@@ -77,7 +76,7 @@ public class FunctionResolver {
                 }
 
                 //compute instantiations
-                TypeInstantiation instantiation = computeTypeInstantiation(pair.b, result.constraints, true);
+                TypeInstantiation instantiation = computeTypeInstantiation(triple.c, result.constraints, true);
                 result.function = f.getInstantiation(instantiation);
 
                 //handle other constraints

@@ -7,9 +7,11 @@ import tys.frontier.code.identifier.FFunctionTypeIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.Pair;
+import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
@@ -57,9 +59,9 @@ public class FFunctionType extends FPredefinedClass {
         return existing.computeIfAbsent(new Pair<>(in, function.getType()), p -> new FFunctionType(p.a, p.b));
     }
 
-    public static Pair<FFunctionType, TypeInstantiation> instantiableFrom(FFunction function) {
+    public static Triple<List<FType>, FType, TypeInstantiation> instantiableFrom(FFunction function) { //TODO this was butchered because I needed the List of parameters non-flattened
         if (function.getParameters().isEmpty())
-            return new Pair<>(from(function), TypeInstantiation.EMPTY);
+            return new Triple<>(Utils.typesFromExpressionList(function.getParams()), function.getType(), TypeInstantiation.EMPTY);
 
         //create a type instantiation mapping params to non fixed copies
         boolean baseFinished = function.getBody().isPresent();
@@ -74,7 +76,7 @@ public class FFunctionType extends FPredefinedClass {
         TypeInstantiation typeInstantiation = TypeInstantiation.create((Map)varMap);
 
         //no need to store, the entire point of this function is to return a fresh version of the types on each call
-        FType in = FTuple.from(Utils.typesFromExpressionList(function.getParams(), typeInstantiation::getType));
-        return new Pair<>(new FFunctionType(in, typeInstantiation.getType(function.getType())), typeInstantiation);
+        List<FType> in = Utils.typesFromExpressionList(function.getParams(), typeInstantiation::getType);
+        return new Triple<>(in, typeInstantiation.getType(function.getType()), typeInstantiation);
     }
 }

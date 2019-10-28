@@ -114,6 +114,10 @@ public class LLVMModule implements AutoCloseable {
         return module;
     }
 
+    LLVMContextRef getContext() {
+        return context;
+    }
+
     LLVMBuilderRef createBuilder() {
         return LLVMCreateBuilderInContext(this.context);
     }
