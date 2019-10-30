@@ -35,7 +35,7 @@ public class FFunctionAddress implements FExpression {
     }
 
     @Override
-    public StringBuilder toString(StringBuilder sb) {
+    public StringBuilder toString(StringBuilder sb) { //TODO print types instead of identifiers of params
         sb.append(function.getIdentifier()).append('(');
         return Utils.joinIdentifiers(sb, function.getParams(), ",").append(")*");
     }

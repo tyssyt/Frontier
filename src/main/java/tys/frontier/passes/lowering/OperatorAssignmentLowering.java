@@ -34,6 +34,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
         return replace(assignment, currentFunction);
     }
 
+    //TODO adapt to argMap...
     public FStatement replace (FVarAssignment assignment, FFunction function) { //TODO this code contains a lot of duplicates and introduce a stupid interface, but I was tired and it works...
         if (assignment.getOperator() == Operator.ASSIGN)
             return assignment;
