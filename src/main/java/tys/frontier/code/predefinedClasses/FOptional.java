@@ -88,8 +88,15 @@ public class FOptional extends FPredefinedClass {
     public static FBaseClass from(FType baseClass) {
         if (baseClass == FTuple.VOID)
             return FTuple.VOID;
-        if (baseClass instanceof FTuple)
-            return Utils.NYI("optional of Tuple"); //TODO
+        if (baseClass instanceof FTuple) {
+            //the optional of a Tuple is a Tuple of Optionals
+            FTuple tuple = (FTuple) baseClass;
+            List<FType> optionalBases = new ArrayList<>(tuple.arity());
+            for (FType base : tuple.getTypes()) {
+                optionalBases.add(fromFlatten(base));
+            }
+            return (FTuple) FTuple.from(optionalBases);
+        }
         return existing.computeIfAbsent(baseClass, FOptional::new);
     }
 
