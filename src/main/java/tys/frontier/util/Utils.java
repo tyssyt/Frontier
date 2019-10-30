@@ -12,7 +12,6 @@ import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -124,17 +123,11 @@ public final class Utils {
     }
 
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps) {
-        List<FType> res = new ArrayList<>(exps.size());
-        for (Typed exp : exps)
-            res.add(exp.getType());
-        return res;
+        return Lists.transform(exps, Typed::getType);
     }
 
-    public static <T> Map<T, FType> typesFromExpressionMap(ListMultimap<T, ? extends Typed> exps) {
-        Map<T, FType> res = new LinkedHashMap<>();
-        for (Map.Entry<T, ? extends List<? extends Typed>> entry : Multimaps.asMap(exps).entrySet())
-            res.put(entry.getKey(), FTuple.from(typesFromExpressionList(entry.getValue())));
-        return res;
+    public static <T> ListMultimap<T, FType> typesFromExpressionMap(ListMultimap<T, ? extends Typed> exps) {
+        return Multimaps.transformValues(exps, Typed::getType);
     }
 
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps, UnaryOperator<FType> op) {
@@ -153,7 +146,7 @@ public final class Utils {
         }
     }
 
-    public static FFunction findFunctionInstantiation(FFunction function, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
+    public static FFunction findFunctionInstantiation(FFunction function, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
         FType oldNamespace = function.getMemberOf();
         FType newNamespace = typeInstantiation.getType(oldNamespace);

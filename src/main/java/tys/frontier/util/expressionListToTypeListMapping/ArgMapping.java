@@ -50,7 +50,7 @@ public class ArgMapping {
         TypeConstraint.addAll(constraints);
         return res;
     }
-    public static ArgMapping createForCall(List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
+    public static ArgMapping createForCall(List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
         BitSet unpackArg = new BitSet();
         BitSet packParam = new BitSet(params.size());
 
@@ -67,10 +67,13 @@ public class ArgMapping {
         while (paramIt.hasNext()) {
             FParameter param = paramIt.next();
 
-            FType arg = keywordArgs.get(param.getIdentifier());
-            if (arg != null) {
-                argumentTypes.add(arg);
+            List<FType> arg = keywordArgs.get(param.getIdentifier());
+            if (!arg.isEmpty()) {
+                if (arg.size() > 1)
+                    packParam.set(paramIt.previousIndex());
+                argumentTypes.addAll(arg);
                 usedKeywordArgs++;
+                //TODO type check for the packed ones? or at least arity check?
             } else if (param.hasDefaultValue()) {
                 argumentTypes.add(param.getType());
             } else {
@@ -78,7 +81,7 @@ public class ArgMapping {
             }
         }
 
-        if (usedKeywordArgs != keywordArgs.size())
+        if (usedKeywordArgs != keywordArgs.keySet().size())
             throw new TooManyArguments();
 
         return new ArgMapping(argumentTypes, unpackArg, packParam, numberOfParamsFilledWithPositionalArgs);

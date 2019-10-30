@@ -2,6 +2,8 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
@@ -11,6 +13,7 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.TypeConstraint;
@@ -31,9 +34,9 @@ public class FTypeVariable implements FType {
 
         private FFunction function;
         private List<FType> positionalArgs;
-        private Map<FIdentifier, FType> keywordArgs;
+        private ListMultimap<FIdentifier, FType> keywordArgs;
 
-        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs) {
+        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs) {
             super(identifier, fixed, TypeConstraints.create());
             this.positionalArgs = positionalArgs;
             this.keywordArgs = keywordArgs;
@@ -47,7 +50,7 @@ public class FTypeVariable implements FType {
             return positionalArgs;
         }
 
-        public Map<FIdentifier, FType> getKeywordArgs() {
+        public ListMultimap<FIdentifier, FType> getKeywordArgs() {
             return keywordArgs;
         }
     }
@@ -119,7 +122,7 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         if (this.constraints.isResolved())
             return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
 
@@ -134,8 +137,8 @@ public class FTypeVariable implements FType {
             FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
             paramsBuilder.add(FParameter.create(id, arg, false));
         }
-        for (Map.Entry<FIdentifier, FType> entry : keywordArgs.entrySet()) {
-            paramsBuilder.add(FParameter.create(entry.getKey(), entry.getValue(), false));
+        for (Map.Entry<FIdentifier, List<FType>> entry : Multimaps.asMap(keywordArgs).entrySet()) {
+            paramsBuilder.add(FParameter.create(entry.getKey(), FTuple.from(entry.getValue()), false));
         }
         ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?

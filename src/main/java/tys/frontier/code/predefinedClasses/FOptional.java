@@ -1,9 +1,6 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapMaker;
+import com.google.common.collect.*;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
@@ -14,11 +11,9 @@ import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 public class FOptional extends FPredefinedClass {
@@ -59,7 +54,7 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
             positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
             positionalArgs.set(0, baseType);

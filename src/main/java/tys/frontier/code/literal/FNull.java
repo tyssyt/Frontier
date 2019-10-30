@@ -1,5 +1,6 @@
 package tys.frontier.code.literal;
 
+import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -10,7 +11,6 @@ import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.util.Utils;
 
 import java.util.List;
-import java.util.Map;
 
 public class FNull implements FLiteral {
 
@@ -33,7 +33,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) {
+        public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) {
             return Utils.cantHappen();
         }
 

@@ -1,5 +1,6 @@
 package tys.frontier.code;
 
+import com.google.common.collect.ListMultimap;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
@@ -170,7 +171,7 @@ public class TypeInstantiation {
 
     private FType instantiatedReturnType(FTypeVariable.ReturnTypeOf returnTypeOf, FType newMemberOf) {
         List<FType> positionalArgs = Utils.map(returnTypeOf.getPositionalArgs(), this::getType);
-        Map<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
+        ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
             FFunction instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
                     positionalArgs, keywordArgs, null).function;

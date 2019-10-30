@@ -1,5 +1,6 @@
 package tys.frontier.code.type;
 
+import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -12,7 +13,6 @@ import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.List;
-import java.util.Map;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
@@ -20,7 +20,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    default FunctionResolver.Result hardResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    default FunctionResolver.Result hardResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         FunctionResolver.Result res = softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
         try {
             TypeConstraint.addAll(res.constraints);
@@ -30,7 +30,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
         return res;
     }
 
-    FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound;
+    FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound;
 
     FField getField(FIdentifier identifier) throws FieldNotFound;
 

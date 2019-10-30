@@ -998,14 +998,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     //TODO check why this is different/more complex then functionCall (should functionCall call this?, comment why not)
     private FFunction getFunction(FType fClass, FFunctionIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(fClass instanceof FClass))
-            throw new FunctionNotFound(identifier, params, Collections.emptyMap());
+            throw new FunctionNotFound(identifier, params, ImmutableListMultimap.of());
         if (params == null) {
             Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
             if (fun.size() != 1)
-                throw new FunctionNotFound(identifier, Collections.emptyList(), Collections.emptyMap());
+                throw new FunctionNotFound(identifier, Collections.emptyList(), ImmutableListMultimap.of());
             return fun.iterator().next();
         } else {
-            FFunction f = fClass.hardResolveFunction(identifier, params, Collections.emptyMap(), null).function;
+            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null).function;
             checkAccessForbidden(f);
             return f;
         }

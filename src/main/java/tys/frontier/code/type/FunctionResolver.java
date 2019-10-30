@@ -1,6 +1,7 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
@@ -36,16 +37,16 @@ public class FunctionResolver {
 
     private FFunctionIdentifier identifier;
     private List<FType> positionalArgs;
-    private Map<FIdentifier, FType> keywordArgs;
+    private ListMultimap<FIdentifier, FType> keywordArgs;
     private FType returnType;
 
     private Result bestResult;
 
-    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, Iterable<FFunction> candidates) throws FunctionNotFound {
+    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, Iterable<FFunction> candidates) throws FunctionNotFound {
         return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType).resolve(candidates);
     }
 
-    private FunctionResolver(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) {
+    private FunctionResolver(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) {
         this.identifier = identifier;
         this.positionalArgs = positionalArgs;
         this.keywordArgs = keywordArgs;

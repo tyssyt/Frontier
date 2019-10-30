@@ -2,6 +2,7 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
@@ -171,7 +172,8 @@ public interface FClass extends FType, HasVisibility {
         getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
     }
 
-    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    @Override
+    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
         return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions().get(identifier));
     }
 

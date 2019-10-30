@@ -1,5 +1,6 @@
 package tys.frontier.passes;
 
+import com.google.common.collect.ImmutableListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
@@ -225,7 +226,7 @@ public class GenericBaking implements FClassVisitor {
             }
         }
 
-        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), Collections.emptyMap(), typeInstantiation);
+        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
         return FFunctionCall.createTrusted(function, params);
     }
 
@@ -285,7 +286,7 @@ public class GenericBaking implements FClassVisitor {
     public FExpression visitFunctionAddress(FFunctionAddress address) {
         FFunction old = address.getFunction();
         List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParams(), typeInstantiation::getType);
-        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, Collections.emptyMap(), typeInstantiation);
+        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
         return new FFunctionAddress(function);
     }
 }
