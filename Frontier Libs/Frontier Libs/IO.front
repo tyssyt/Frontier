@@ -3,6 +3,9 @@ import Native;
 export class IO:
 
     export static print(char chara) {
+        //TODO remove this hack once I improved char
+        i : int64 = chara;
+        i %= 256;
         Native.putchar(chara);
     }
 
