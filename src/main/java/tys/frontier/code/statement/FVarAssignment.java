@@ -8,7 +8,6 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.operator.FBinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
@@ -102,10 +101,6 @@ public class FVarAssignment implements FStatement {
     @Override
     public <S, E> S accept(StatementWalker<S, E> walker) {
         return walker.visitVarAssignment(this);
-    }
-
-    private void checkTypes() throws IncompatibleTypes {
-        FTuple.checkTypes(values, Utils.typesFromExpressionList(variables));
     }
 
     @Override
