@@ -15,6 +15,7 @@ import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
@@ -58,11 +59,12 @@ public class FunctionResolver {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
-                result.argMapping = ArgMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
+                Pair<ArgMapping, List<FType>> argMappingAndArgumentTypes = ArgMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
+                result.argMapping = argMappingAndArgumentTypes.a;
                 //prepare f
                 Triple<List<FType>, FType, TypeInstantiation> triple = FFunctionType.instantiableFrom(f); //TODO unbutcher this?
                 //cast arguments
-                result.constraints = result.argMapping.computeCasts(triple.a);
+                result.constraints = result.argMapping.computeCasts(argMappingAndArgumentTypes.b, triple.a);
 
                 //check for return Type if specified
                 if (returnType != null && returnType != triple.b) {
@@ -85,7 +87,7 @@ public class FunctionResolver {
                     continue;
 
                 //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
-                result.argMapping.computeCasts(Utils.typesFromExpressionList(result.function.getParams()));
+                result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.function.getParams()));
 
                 result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);
