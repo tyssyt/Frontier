@@ -45,7 +45,7 @@ public class FVarAssignment implements FStatement {
     }
 
     public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
-        ArgMapping argMap = ArgMapping.createCasted(Utils.typesFromExpressionList(values), variables);
+        ArgMapping argMap = ArgMapping.createCasted(Utils.typesFromExpressionList(values), Utils.typesFromExpressionList(variables));
         return new FVarAssignment(variables, operator, values, argMap);
     }
 

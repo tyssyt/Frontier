@@ -16,6 +16,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Pair;
+import tys.frontier.util.TransformedListIterator;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -35,17 +36,17 @@ public class ArgMapping {
         this.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
     }
 
-    public static ArgMapping createCasted(List<FType> expressions, List<? extends Typed> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
+    public static ArgMapping createCasted(List<FType> expressions, List<FType> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
         BitSet unpackArg = new BitSet(expressions.size());
         BitSet packParam = new BitSet(target.size());
 
         ListIterator<FType> argIt = expressions.listIterator();
-        ListIterator<? extends Typed> paramIt = target.listIterator();
+        ListIterator<FType> paramIt = target.listIterator();
 
         unpackAndPack(unpackArg, packParam, argIt, paramIt);
 
         ArgMapping res = new ArgMapping(unpackArg, packParam, target.size());
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(expressions, Utils.typesFromExpressionList(target));
+        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(expressions, target);
         TypeConstraint.addAll(constraints);
         return res;
     }
@@ -57,7 +58,7 @@ public class ArgMapping {
         ListIterator<FParameter> paramIt = params.listIterator();
 
         //start with positional args
-        unpackAndPack(unpackArg, packParam, argIt, paramIt);
+        unpackAndPack(unpackArg, packParam, argIt, new TransformedListIterator<>(paramIt, Typed::getType));
         List<FType> argumentTypes = new ArrayList<>(positionalArgs);
         int numberOfParamsFilledWithPositionalArgs = paramIt.nextIndex();
 
@@ -102,7 +103,7 @@ public class ArgMapping {
         return res;
     }
 
-    private static void unpackAndPack(BitSet unpackArg, BitSet packParam, ListIterator<FType> argIt, ListIterator<? extends Typed> paramIt) throws TooManyArguments {
+    private static void unpackAndPack(BitSet unpackArg, BitSet packParam, ListIterator<FType> argIt, ListIterator<FType> paramIt) throws TooManyArguments {
         while (argIt.hasNext()) {
             FType arg = argIt.next();
             if (arg instanceof FTuple) {
@@ -112,7 +113,7 @@ public class ArgMapping {
                 if (!paramIt.hasNext())
                     throw new TooManyArguments();
 
-                FType param = paramIt.next().getType();
+                FType param = paramIt.next();
                 if (param instanceof FTuple) {
                     argIt.previous();
                     pack(argIt, (FTuple) param);
@@ -122,7 +123,7 @@ public class ArgMapping {
         }
     }
 
-    private static int unpack(FTuple tuple, Iterator<? extends Typed> params) throws TooManyArguments {
+    private static int unpack(FTuple tuple, Iterator<FType> params) throws TooManyArguments {
         int size = tuple.arity();
         int filledTypes = 0;
 
@@ -130,7 +131,7 @@ public class ArgMapping {
             if (!params.hasNext())
                 throw new TooManyArguments();
 
-            size -= FTuple.arity(params.next().getType());
+            size -= FTuple.arity(params.next());
             filledTypes++;
         }
 
