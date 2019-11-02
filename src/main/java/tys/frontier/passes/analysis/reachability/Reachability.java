@@ -1,8 +1,8 @@
 package tys.frontier.passes.analysis.reachability;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
@@ -26,7 +26,7 @@ public class Reachability {
 
     public static class ReachableClass {
         public final Set<FField> reachableFields = new HashSet<>();
-        public final Multimap<FFunction, FInstantiatedFunction> reachableFunctions = ArrayListMultimap.create();
+        public final SetMultimap<FFunction, FInstantiatedFunction> reachableFunctions = MultimapBuilder.hashKeys().hashSetValues().build();
     }
 
     private Map<FClass, ReachableClass> reachableClasses = new HashMap<>();

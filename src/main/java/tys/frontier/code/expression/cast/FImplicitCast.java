@@ -1,7 +1,8 @@
 package tys.frontier.code.expression.cast;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.literal.FLiteral;
@@ -28,7 +29,7 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
     }
 
     public static FExpression create(FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
-        ArrayListMultimap<FTypeVariable, TypeConstraint> constraints = ArrayListMultimap.create();
+        ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
         if (castedExpression instanceof FImplicitCast)
             castedExpression = ((FImplicitCast) castedExpression).getCastedExpression();
         FExpression res = create(targetType, castedExpression, variance, constraints);

@@ -1,8 +1,8 @@
 package tys.frontier.parser;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
@@ -33,7 +33,7 @@ import java.util.*;
 
 public class Delegates {
 
-    private Multimap<FType, Delegate> delegateToMap = ArrayListMultimap.create();
+    private ListMultimap<FType, Delegate> delegateToMap = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private static class Delegate{
         FField field;

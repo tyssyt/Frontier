@@ -1,7 +1,8 @@
 package tys.frontier.code.typeInference;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
@@ -155,7 +156,7 @@ public class TypeConstraints {
             }
 
             //remove constraints implied by the to be added
-            Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+            ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
             for (Iterator<TypeConstraint> it = _this.constraints.iterator(); it.hasNext();) {
                 TypeConstraint c = it.next();
                 if (implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
@@ -233,7 +234,7 @@ public class TypeConstraints {
                         new ImplicitCastable(constraint, equivalenceGroup.iterator().next(), implicitCastable.getVariance().opposite())
                 );
             }
-            Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+            ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
             return implies(new ImplicitCastable(this, resolvedAs, Invariant), constraint, newConstraints) && newConstraints.isEmpty();
         }
 
@@ -274,7 +275,7 @@ public class TypeConstraints {
         }
 
         //default case: check with implies
-        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
         for (FClass c : classes) {
             if (implies(new ImplicitCastable(null, c, direction), constraint, newConstraints) && newConstraints.isEmpty())
                 return true;
@@ -290,7 +291,7 @@ public class TypeConstraints {
         return resolve;
     }
 
-    private static final Multimap<FTypeVariable, TypeConstraint> EMPTY = ArrayListMultimap.create();
+    private static final ListMultimap<FTypeVariable, TypeConstraint> EMPTY = MultimapBuilder.hashKeys().arrayListValues().build();
     public FClass hardResolve() throws UnfulfillableConstraints {
         FClass res = resolve(false, EMPTY);
         assert res != null && EMPTY.isEmpty();
@@ -325,9 +326,9 @@ public class TypeConstraints {
         return resolvedAs;
     }
 
-    private Multimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition, boolean soft) throws UnfulfillableConstraints {
+    private ListMultimap<FTypeVariable, TypeConstraint> doResolve(FClass proposition, boolean soft) throws UnfulfillableConstraints {
         //check against constraints, error if not consistent
-        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
         ImplicitCastable typeConstraint = new ImplicitCastable(this, proposition, Invariant);
         for (TypeConstraint constraint : this.constraints) {
             if (!implies(typeConstraint, constraint, newConstraints)) {
@@ -336,7 +337,7 @@ public class TypeConstraints {
         }
 
         //we might create constraint for the class we are resolving right now, handle those first
-        Multimap<FTypeVariable, TypeConstraint> evenNewerConstraints = ArrayListMultimap.create();
+        ListMultimap<FTypeVariable, TypeConstraint> evenNewerConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
         for (FTypeVariable eqVar : equivalenceGroup) {
             for (TypeConstraint c : newConstraints.removeAll(eqVar)) {
                 if (!implies(typeConstraint, c, evenNewerConstraints) || !evenNewerConstraints.isEmpty())

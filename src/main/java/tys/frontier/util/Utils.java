@@ -255,11 +255,9 @@ public final class Utils {
         return res;
     }
 
-    public static Map<FFunction, String> computeUniqueFunctionNames(Multimap<FFunctionIdentifier, FFunction> functions) {
+    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FFunctionIdentifier, FFunction> functions) {
         Map<FFunction, String> res = new HashMap<>();
-        ArrayListMultimap<FFunctionIdentifier, FFunction> allFuncs = ArrayListMultimap.create(functions);
-        for (Collection<FFunction> coll : allFuncs.asMap().values()) {
-            List<FFunction> list = ((List<FFunction>) coll);
+        for (List<FFunction> list : Multimaps.asMap(functions).values()) {
             String name = list.get(0).getIdentifier().name;
 
             if (list.size() == 1) {
@@ -267,6 +265,7 @@ public final class Utils {
                 continue;
             }
 
+            //TODO when multithreading is used we might need to copy the list first before sorting to avoid race conditions while sorting
             list.sort((f1, f2) -> {
                 int c = f1.getParams().size() - f2.getParams().size();
                 if (c != 0)

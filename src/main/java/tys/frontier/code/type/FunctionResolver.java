@@ -1,8 +1,8 @@
 package tys.frontier.code.type;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FFunction;
@@ -104,7 +104,7 @@ public class FunctionResolver {
             return TypeInstantiation.EMPTY;
 
         Map<FTypeVariable, FType> typeVariableMap = new HashMap<>();
-        Multimap<FTypeVariable, TypeConstraint> newConstraints = ArrayListMultimap.create();
+        ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
 
         for (Map.Entry<FTypeVariable, FType> pair : baseInstantiation.getTypeMap().entrySet()) {
             FTypeVariable key = pair.getKey();

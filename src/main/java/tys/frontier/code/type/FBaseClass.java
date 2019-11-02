@@ -31,7 +31,7 @@ public class FBaseClass implements FClass {
 
     private BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
-    private Multimap<FFunctionIdentifier, FFunction> functions = ArrayListMultimap.create();
+    private ListMultimap<FFunctionIdentifier, FFunction> functions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> delegates = new HashMap<>();
 
@@ -107,7 +107,7 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
         return functions;
     }
 

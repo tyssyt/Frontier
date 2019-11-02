@@ -45,7 +45,7 @@ public interface FClass extends FType, HasVisibility {
 
     BiMap<FIdentifier, FField> getStaticFields();
 
-    Multimap<FFunctionIdentifier, FFunction> getFunctions();
+    ListMultimap<FFunctionIdentifier, FFunction> getFunctions();
 
     List<? extends FType> getParametersList();
 

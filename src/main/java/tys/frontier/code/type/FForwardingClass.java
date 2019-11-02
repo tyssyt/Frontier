@@ -1,7 +1,7 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
@@ -67,7 +67,7 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
         return proxy.getFunctions();
     }
 

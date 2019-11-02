@@ -25,7 +25,7 @@ public class FInstantiatedClass extends FForwardingClass {
 
     private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
-    private Multimap<FFunctionIdentifier, FFunction> newFunctions = ArrayListMultimap.create();
+    private ListMultimap<FFunctionIdentifier, FFunction> newFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> newDelegates;
 
@@ -119,7 +119,7 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public Multimap<FFunctionIdentifier, FFunction> getFunctions() {
+    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
         return newFunctions;
     }
 
