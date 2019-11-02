@@ -7,7 +7,9 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
+import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,27 +18,32 @@ import java.util.Optional;
 public class FReturn  implements FStatement {
 
     private List<FExpression> expressions;
+    private ArgMapping argMapping;
     private FFunction function;
 
-    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes {
+    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
         this.expressions = expressions;
         this.function = function;
-        checkTypes();
+        this.argMapping = ArgMapping.createCasted(Utils.typesFromExpressionList(expressions), FTuple.unpackType(function.getType()));
     }
 
-    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes {
+    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
         return new FReturn(expressions, function);
     }
     public static FReturn createTrusted(List<FExpression> expressions, FFunction function) {
         try {
             return create(expressions, function);
-        } catch (IncompatibleTypes incompatibleTypes) {
+        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints e) {
             return Utils.cantHappen();
         }
     }
 
     public List<FExpression> getExpressions() {
         return expressions;
+    }
+
+    public ArgMapping getArgMapping() {
+        return argMapping;
     }
 
     public FFunction getFunction() {
@@ -46,10 +53,6 @@ public class FReturn  implements FStatement {
     @Override
     public Optional<ControlFlowIDontKnow> redirectsControlFlow() {
         return Optional.of(function);
-    }
-
-    private void checkTypes() throws IncompatibleTypes {
-        FTuple.checkTypes(expressions, FTuple.unpackType(function.getType()));
     }
 
     @Override

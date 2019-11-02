@@ -3,10 +3,8 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.Typed;
-import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FTupleIdentifier;
 import tys.frontier.code.type.FType;
-import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -90,33 +88,5 @@ public class FTuple extends FPredefinedClass {
 
     public static int arity(FType type) {
         return type instanceof FTuple ? ((FTuple) type).arity() : 1;
-    }
-
-    public static void checkTypes(List<FExpression> expressions, List<FType> targetTypes) throws IncompatibleTypes {
-        int j=0;
-        for (int i=0; i < expressions.size(); i++) {
-            FExpression exp = expressions.get(i);
-            if (exp == null)
-                continue;
-
-            if (exp.getType() instanceof FTuple) {
-                //pack target types to match tuple expression
-                int size = ((FTuple) exp.getType()).arity();
-                if (j+size > targetTypes.size())
-                    throw new IncompatibleTypes(from(targetTypes), fromExpressionList(expressions));
-                FType targetType = from(targetTypes.subList(j, j + size));
-                expressions.set(i, exp.typeCheck(targetType));
-                j += size;
-
-            } else {
-                //no tuple, we can single match
-                if (j+1 > targetTypes.size())
-                    throw new IncompatibleTypes(from(targetTypes), fromExpressionList(expressions));
-                expressions.set(i, exp.typeCheck(targetTypes.get(j)));
-                j++;
-            }
-        }
-        if (j < targetTypes.size())
-            throw new IncompatibleTypes(from(targetTypes), fromExpressionList(expressions));
     }
 }

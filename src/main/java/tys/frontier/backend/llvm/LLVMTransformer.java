@@ -6,7 +6,6 @@ import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.Typed;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
@@ -223,13 +222,18 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitReturn(FReturn fReturn) {
-        switch (fReturn.getExpressions().size()) {
+        List<LLVMValueRef> values = new ArrayList<>(fReturn.getExpressions().size());
+        for (FExpression arg : fReturn.getExpressions())
+            values.add(arg.accept(this));
+        values = prepareArgs(values, FTuple.unpackType(fReturn.getFunction().getType()), fReturn.getArgMapping());
+
+        switch (values.size()) {
             case 0:
                 return LLVMBuildRetVoid(builder);
             case 1:
-                return LLVMBuildRet(builder, Iterables.getOnlyElement(fReturn.getExpressions()).accept(this));
+                return LLVMBuildRet(builder, Iterables.getOnlyElement(values));
             default:
-                return LLVMBuildAggregateRet(builder, LLVMUtil.createPointerPointer(fReturn.getExpressions(), e -> e.accept(this)), fReturn.getExpressions().size());
+                return LLVMBuildAggregateRet(builder, LLVMUtil.createPointerPointer(values), values.size());
         }
     }
 
@@ -242,7 +246,7 @@ class LLVMTransformer implements
         List<LLVMValueRef> values = new ArrayList<>();
         for (FExpression arg : assignment.getValues())
             values.add(arg.accept(this));
-        values = prepareArgs(values, assignment.getVariables(), assignment.getArgMapping());
+        values = prepareArgs(values, Utils.typesFromExpressionList(assignment.getVariables()), assignment.getArgMapping());
 
         for (Pair<FVariableExpression, LLVMValueRef> pair : Utils.zip(assignment.getVariables(), values)) {
             FVariableExpression variable = pair.a;
@@ -572,7 +576,7 @@ class LLVMTransformer implements
         List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        args = prepareArgs(args, functionCall.getFunction().getParams(), functionCall.getArgMapping());
+        args = prepareArgs(args, Utils.typesFromExpressionList(functionCall.getFunction().getParams()), functionCall.getArgMapping());
 
         FFunction function = functionCall.getFunction();
         if (function.isPredefined())
@@ -581,7 +585,7 @@ class LLVMTransformer implements
         return buildCall(function, args);
     }
 
-    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, List<? extends Typed> target, ArgMapping argMapping) { //TODO prolly store the info we get via target in argMapping
+    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, List<FType> target, ArgMapping argMapping) { //TODO prolly store the info we get via target in argMapping
         //unpack
         List<LLVMValueRef> unpacked;
         if (argMapping.hasUnpacking()) {
@@ -614,7 +618,7 @@ class LLVMTransformer implements
             int i=0;
             for (int t = 0; t < target.size(); t++) {
                 if (argMapping.getPackParam(t)) {
-                    int arity = FTuple.arity(target.get(t).getType());
+                    int arity = FTuple.arity(target.get(t));
                     packed.add(packTuple(unpacked.subList(i, i+arity)));
                     i += arity;
                 } else {

@@ -329,8 +329,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> vals = c == null ? Collections.emptyList() : visitTupleExpression(c);
         try {
             return FReturn.create(vals, currentFunction().function);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints syntaxError) {
+            errors.add(syntaxError);
             throw new Failed();
         }
     }
