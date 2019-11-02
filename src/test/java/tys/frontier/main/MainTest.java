@@ -116,4 +116,9 @@ public class MainTest {
         String res = doMain("Params", ";");
         assertEquals("20@#;" + Utils.endl, res);
     }
+    @Test
+    public void mainPackUnpack() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("PackUnpack", "abc");
+        assertEquals(loadOut("PackUnpackOut.txt"), res);
+    }
 }
