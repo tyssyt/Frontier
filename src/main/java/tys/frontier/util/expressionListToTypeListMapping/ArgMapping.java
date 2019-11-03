@@ -7,6 +7,7 @@ import tys.frontier.code.Typed;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -116,14 +117,14 @@ public class ArgMapping {
                 FType param = paramIt.next();
                 if (param instanceof FTuple) {
                     argIt.previous();
-                    pack(argIt, (FTuple) param);
-                    packParam.set(paramIt.previousIndex());
+                    if (pack(argIt, (FTuple) param) > 1)
+                        packParam.set(paramIt.previousIndex());
                 }
             }
         }
     }
 
-    private static int unpack(FTuple tuple, Iterator<FType> params) throws TooManyArguments {
+    private static int unpack(FTuple tuple, ListIterator<FType> params) throws TooManyArguments {
         int size = tuple.arity();
         int filledTypes = 0;
 
@@ -141,12 +142,27 @@ public class ArgMapping {
     }
 
     private static int pack(ListIterator<FType> expressions, FTuple tuple) {
-        for (int size=tuple.arity(); size>0; size--) {
+        for (int size=0; size<tuple.arity(); size++) {
             if (!expressions.hasNext())
                 return Utils.handleError("not enough positional arguments to fill tuple parameter"); //TODO
 
-            if (expressions.next() instanceof FTuple)
+            FType next = expressions.next();
+            if (next instanceof FTuple)
                 return Utils.handleError("mixed filling for tuple parameter"); //TODO
+
+            if (size == 0 && next == FNull.NULL_TYPE) {
+                /* TODO there are cases where the tuple should be packed but the first argument is null, we need a more complex 2 pass counting approach to distinguish these
+                        some of the above cases would be covered by trying harder to type null, because if we have a typed null we can cover all cases that come from baking
+                        the baking case is the reason we needed to introduce this in the first place, if we cover that we can switch the default behaviour back to first arg of tuple
+
+                        However, once we start having data types we can have the same problem without baking were we actually have an untyped null
+                        then ArgMapping actually is responsible for typing it.
+                        If we introduce counting for the param side to handle generic functions we can also introduce it on arg side.
+
+                        Once we extend the syntax to have brackets, and if counting cannot resolve ambiguity, assuming tuple null is better because the user can use brackets to specify null as first argument
+                 */
+                return 1; //null fills the entire tuple
+            }
         }
         return tuple.getTypes().size();
     }

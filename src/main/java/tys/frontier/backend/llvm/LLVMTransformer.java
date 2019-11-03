@@ -26,10 +26,7 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
@@ -225,7 +222,10 @@ class LLVMTransformer implements
         List<LLVMValueRef> values = new ArrayList<>(fReturn.getExpressions().size());
         for (FExpression arg : fReturn.getExpressions())
             values.add(arg.accept(this));
-        values = prepareArgs(values, FTuple.unpackType(fReturn.getFunction().getType()), fReturn.getArgMapping());
+        FType type = fReturn.getFunction().getType();
+        values = prepareArgs(values,
+                type == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(type),
+                fReturn.getArgMapping());
 
         switch (values.size()) {
             case 0:

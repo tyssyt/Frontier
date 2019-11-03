@@ -12,6 +12,7 @@ import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +25,9 @@ public class FReturn  implements FStatement {
     private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
         this.expressions = expressions;
         this.function = function;
-        this.argMapping = ArgMapping.createCasted(Utils.typesFromExpressionList(expressions), FTuple.unpackType(function.getType()));
+        this.argMapping = ArgMapping.createCasted(
+                Utils.typesFromExpressionList(expressions),
+                function.getType() == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(function.getType()));
     }
 
     public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
