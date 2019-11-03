@@ -105,4 +105,9 @@ public class FOptional extends FPredefinedClass {
     public FType getBaseType() {
         return baseType;
     }
+
+    public static boolean canBeTreatedAsOptional(FType fType) {
+        return fType instanceof FOptional ||
+              (fType instanceof FTuple && Iterables.all(((FTuple) fType).getTypes(), FOptional::canBeTreatedAsOptional));
+    }
 }

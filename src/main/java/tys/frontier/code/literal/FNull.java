@@ -47,11 +47,12 @@ public class FNull implements FLiteral {
             return Utils.cantHappen();
         }
     };
-    public static final FNull UNTYPED = new FNull(null);
+    public static final FNull UNTYPED = new FNull(NULL_TYPE);
 
-    private FOptional type;
+    private FType type;
 
-    public FNull(FOptional type) {
+    public FNull(FType type) {
+        assert type == NULL_TYPE || FOptional.canBeTreatedAsOptional(type);
         this.type = type;
     }
 
@@ -62,7 +63,7 @@ public class FNull implements FLiteral {
 
     @Override
     public FType getType() {
-        return type == null ? NULL_TYPE : type;
+        return type;
     }
 
     @Override

@@ -32,7 +32,7 @@ public abstract class ImplicitTypeCast {
         assert baseType != targetType;
 
         if (baseType == FNull.NULL_TYPE) {
-            if (targetType instanceof FOptional)
+            if (FOptional.canBeTreatedAsOptional(targetType))
                 return new ImplicitTypeCast(baseType, targetType, variance) { //TODO this is a bit of a hack, but atm there is no need for a non Anon class
                     @Override
                     public int getCost() {

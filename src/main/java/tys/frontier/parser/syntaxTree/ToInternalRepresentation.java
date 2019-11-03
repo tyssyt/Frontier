@@ -646,7 +646,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FExpression castedExpression = visitExpression(ctx.expression());
         FType type;
         if (ctx.EXMARK() != null) {
-            if (!(castedExpression.getType() instanceof FOptional)) {
+            if (castedExpression instanceof FTuple)
+                Utils.NYI("! is undefined on tuples (kind of)"); //TODO
+            if (!(castedExpression.getType() instanceof FOptional)) { //TODO this should be changed to FOptional.canBeTreatedAsOptional, but I need to decide on the semantics of using ! on optional tuples
                 errors.add(new NonOptionalExMark(castedExpression));
                 throw new Failed();
             }

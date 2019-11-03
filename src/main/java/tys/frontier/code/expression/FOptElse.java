@@ -26,18 +26,19 @@ public class FOptElse implements FExpression {
     }
 
     private void checkTypes() throws IncompatibleTypes { //TODO the inner type of the optional could be allowed to implicitly cast to type of else I guess?
-        if (optional.getType() instanceof FTypeVariable) {
-            FTypeVariable var = (FTypeVariable) optional.getType();
+        FType optType = optional.getType();
+        if (optType instanceof FTypeVariable) {
+            FTypeVariable var = (FTypeVariable) optType;
             FClass opt = FOptional.from(elze.getType());
             if (!var.tryAddConstraint(new ImplicitCastable(this, opt, Variance.Invariant)))
                 throw new IncompatibleTypes(var, opt);
             return;
         }
 
-        if (!(optional.getType() instanceof FOptional)) {
-            throw new IncompatibleTypes(optional.getType(), FOptional.from(optional.getType()));
+        if (!FOptional.canBeTreatedAsOptional(optType)) {
+            throw new IncompatibleTypes(optType, FOptional.from(optType));
         }
-        elze = elze.typeCheck(((FOptional) optional.getType()).getBaseType());
+        elze = elze.typeCheck(optType instanceof FOptional ? ((FOptional) optType).getBaseType() : optType);
     }
 
     public FExpression getOptional() {

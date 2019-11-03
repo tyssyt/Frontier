@@ -46,8 +46,8 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
             return castedExpression;
         if (castedExpression instanceof FLiteralExpression) {
             FLiteral literal = ((FLiteralExpression) castedExpression).getLiteral();
-            if (literal == FNull.UNTYPED && targetType instanceof FOptional) {
-                return new FLiteralExpression(new FNull((FOptional) targetType));
+            if (literal == FNull.UNTYPED && FOptional.canBeTreatedAsOptional(targetType)) {
+                return new FLiteralExpression(new FNull(targetType));
             }
         }
         FImplicitCast res = new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));

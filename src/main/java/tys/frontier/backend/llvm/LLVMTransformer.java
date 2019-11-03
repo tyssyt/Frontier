@@ -26,6 +26,7 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import static org.bytedeco.javacpp.LLVM.*;
@@ -345,7 +346,7 @@ class LLVMTransformer implements
         else if (cast instanceof TypeParameterCast)
             return Utils.NYI("Type Parameter Cast");
         else if (cast.getBase() == FNull.NULL_TYPE) {
-            return module.getNull((FOptional)cast.getTarget()); //TODO this is a hack on top of a hack, if this stays I can removed type nulls in frontend, only need null and cast
+            return getNull(cast.getTarget()); //TODO this is a hack on top of a hack, if this stays I can removed type nulls in frontend, only need null and cast
         }
             return Utils.cantHappen();
     }
@@ -385,7 +386,7 @@ class LLVMTransformer implements
                 else
                     return base;
             case OPTIONAL_TO_BOOL:
-                return LLVMBuildICmp(builder, LLVMIntNE, base, module.getNull((FOptional) baseClass), "ne");
+                return LLVMBuildICmp(builder, LLVMIntNE, base, getNull(baseClass), "ne");
             default:
                 return Utils.cantHappen();
         }
@@ -419,7 +420,7 @@ class LLVMTransformer implements
     public LLVMValueRef visitOptElse(FOptElse optElse) {
         LLVMValueRef optional = optElse.getOptional().accept(this);
 
-        LLVMValueRef cond = LLVMBuildICmp(builder, LLVMIntNE, optional, module.getNull((FOptional) optElse.getOptional().getType()), "checkNull");
+        LLVMValueRef cond = LLVMBuildICmp(builder, LLVMIntNE, optional, getNull(optElse.getOptional().getType()), "checkNull");
         LLVMValueRef then;
         if (optElse.getType() == FBool.INSTANCE) //TODO this is copy paste from explicit cast
             then = LLVMBuildTrunc(builder, optional, module.getLlvmType(FBool.INSTANCE), "bool!");
@@ -524,7 +525,6 @@ class LLVMTransformer implements
         FFunction toCall = optional.getShimMap().inverse().get(function);
         assert toCall != null;
 
-        List<? extends FExpression> fArgs = functionCall.getArguments();
         LLVMValueRef This = args.get(0);
 
         LLVMValueRef currentFunction = getCurrentFunction();
@@ -532,7 +532,7 @@ class LLVMTransformer implements
         LLVMBasicBlockRef thenBlock = LLVMAppendBasicBlock(currentFunction, "call_nonnull");
         LLVMBasicBlockRef continueBlock = LLVMAppendBasicBlock(currentFunction, "after_call");
 
-        LLVMValueRef If = LLVMBuildICmp(builder, LLVMIntNE, This, module.getNull(optional), "checkNull");
+        LLVMValueRef If = LLVMBuildICmp(builder, LLVMIntNE, This, getNull(optional), "checkNull");
         LLVMBuildCondBr(builder, If, thenBlock, continueBlock);
 
         LLVMPositionBuilderAtEnd(builder, thenBlock);
@@ -547,7 +547,7 @@ class LLVMTransformer implements
         } else {
             LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(function.getType()), "phi_optcall");
             LLVMAddIncoming(phi, call, thenBlock, 1);
-            LLVMAddIncoming(phi, module.getNull((FOptional) function.getType()), originalBlock, 1); //TODO not sure if I should return This or null, if any of them helps the optimizer?
+            LLVMAddIncoming(phi, getNull(function.getType()), originalBlock, 1); //TODO not sure if I should return This or null, if any of them helps the optimizer? - tuples can make null complex, so prefer this?
             return phi;
         }
     }
@@ -691,7 +691,7 @@ class LLVMTransformer implements
         } else if (literal instanceof FNull) {
             if (literal == FNull.UNTYPED)
                 return LLVMConstPointerNull(type); //TODO
-            return module.getNull((FOptional)literal.getType());
+            return getNull(literal.getType());
         } else {
             return Utils.cantHappen();
         }
@@ -767,5 +767,31 @@ class LLVMTransformer implements
         for (int i = 0; i < values.size(); i++)
             agg = LLVMBuildInsertValue(builder, agg, values.get(i), i, "pack_" + i);
         return agg;
+    }
+
+
+    LLVMValueRef getNull(FType fOptional) { //note: this function would belong into module if it weren't for tuples
+        if (fOptional instanceof FTuple) {
+            List<FType> fTypes = ((FTuple) fOptional).getTypes();
+            List<LLVMValueRef> llvmTypes = new ArrayList<>(fTypes.size());
+            for (FType type : fTypes) {
+                llvmTypes.add(getNull(type));
+            }
+            return packTuple(llvmTypes);
+        }
+
+        assert fOptional instanceof FOptional;
+        FType base = ((FOptional) fOptional).getBaseType();
+        if (base == FBool.INSTANCE) {
+            return LLVMConstInt(LLVMIntTypeInContext(module.getContext(), 2), 2, FALSE);
+        } else if (base instanceof FIntN) {
+            return LLVMConstInt(module.getLlvmType(base), ((FIntN) base).minValue().subtract(BigInteger.ONE).longValue(), FALSE);
+        } else if (base instanceof FFloat32 || base instanceof FFloat64) {
+            return Utils.NYI("null literal for floating point types");
+        } else if (base instanceof FTuple) {
+            return Utils.cantHappen();
+        } else {
+            return LLVMConstPointerNull(module.getLlvmType(base));
+        }
     }
 }

@@ -65,8 +65,8 @@ public class FConstructor extends FBaseFunction {
                 defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
             } else if (field.hasAssignment()) {
                 defaultArguments.add(FParameter.create(field.getIdentifier(), field.getType(), true));
-            } else if (field.getType() instanceof FOptional) {
-                FExpression defaultValue = new FLiteralExpression(new FNull((FOptional) field.getType()));
+            } else if (FOptional.canBeTreatedAsOptional(field.getType())) {
+                FExpression defaultValue = new FLiteralExpression(new FNull(field.getType()));
                 defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
             } else {
                 arguments.add(FParameter.create(field.getIdentifier(), field.getType(), false));
