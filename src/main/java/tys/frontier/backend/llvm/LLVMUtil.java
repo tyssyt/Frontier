@@ -49,15 +49,15 @@ public class LLVMUtil {
     }
 
     public static String getFunctionName(FFunction function) {
+        if (function.isNative())
+            return function.getIdentifier().name;
         String uniqueName = uniqueFunctionNameCache.get(function);
         if (uniqueName == null) {
             Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((FClass) function.getMemberOf()).getFunctions());
             uniqueFunctionNameCache.putAll(newNames);
             uniqueName = newNames.get(function);
         }
-        return function.isNative()
-                ? function.getIdentifier().name
-                : "fun." + function.getMemberOf().getIdentifier().name + '.' + uniqueName;
+        return "fun." + function.getMemberOf().getIdentifier().name + '.' + uniqueName;
     }
 
     public static String getConstantStringName(String s) {
