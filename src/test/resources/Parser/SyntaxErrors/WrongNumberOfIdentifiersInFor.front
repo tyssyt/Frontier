@@ -1,0 +1,5 @@
+class A:
+    f() {
+        arr := new bool?[22];
+        for a,b,c : arr {}
+    }

@@ -156,6 +156,11 @@ public class ParserTest {
         assertEquals(TwiceDefinedLocalVariable.class, e.getClass());
     }
     @Test
+    public void parseTwiceDefinedLocalVariableFor() throws Exception {
+        SyntaxError e = parseSyntaxError("TwiceDefinedLocalVariableFor.front");
+        assertEquals(TwiceDefinedLocalVariable.class, e.getClass());
+    }
+    @Test
     public void parseTypeNotFound() throws Exception {
         SyntaxError e = parseSyntaxError("TypeNotFound.front");
         assertEquals(TypeNotFound.class, e.getClass());
@@ -190,6 +195,11 @@ public class ParserTest {
     public void parseUntypedFunctionAddress() throws Exception {
         SyntaxError e = parseSyntaxError("UntypedFunctionAddress.front");
         assertEquals(UnfulfillableConstraints.class, e.getClass());
+    }
+    @Test
+    public void WrongNumberOfIdentifiersInFor() throws Exception {
+        SyntaxError e = parseSyntaxError("WrongNumberOfIdentifiersInFor.front");
+        assertEquals(WrongNumberOfIdentifiersInFor.class, e.getClass());
     }
     @Test
     public void parseWrongNumberOfTypeArguments() throws Exception {

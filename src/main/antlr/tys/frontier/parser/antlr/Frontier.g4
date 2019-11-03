@@ -191,7 +191,7 @@ block
 statement
     :   block                                                                               #blockStatement
     |   ifStatement                                                                         #ifStatement_
-    |   FOR  LCIdentifier COLON expression  block                                           #foreachStatement
+    |   FOR  LCIdentifier (COMMA LCIdentifier)* COLON expression block                      #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
     |   RETURN tupleExpression? SEMI                                                        #returnStatement
     |   BREAK SEMI                                                                          #breakStatement

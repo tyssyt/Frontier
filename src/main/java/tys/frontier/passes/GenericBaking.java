@@ -185,10 +185,21 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitForEach(FForEach forEach, FExpression container, FStatement body) {
-        FLocalVariable old = forEach.getIterator();
-        FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
-        varMap.put(old, _new);
-        return FForEach.create(forEach.getNestedDepth(), loopMap.get(forEach.getIdentifier()), _new, container, (FBlock) body);
+        assert !useOriginal;
+
+        List<FLocalVariable> iterators = new ArrayList<>(forEach.getIterators().size());
+        for (FLocalVariable old : forEach.getIterators()) {
+            varMap.put(old, new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType())));
+        }
+
+        FLocalVariable counter = null;
+        if (forEach.getCounter().isPresent()) {
+            FLocalVariable old = forEach.getCounter().get();
+            counter = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's int32
+            varMap.put(old, counter);
+        }
+
+        return FForEach.create(forEach.getNestedDepth(), loopMap.get(forEach.getIdentifier()), iterators, counter, container, (FBlock) body);
     }
 
     @Override

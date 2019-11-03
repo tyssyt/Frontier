@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
@@ -495,17 +496,46 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FLoopIdentifier identifier = startLoop();
         try {
             FExpression container = visitExpression(ctx.expression());
-            FVariableIdentifier id = new FVariableIdentifier(ctx.LCIdentifier().getText());
-            FType varType;
+            List<FVariableIdentifier> ids = new ArrayList<>();
+            boolean failed = false;
+            for (TerminalNode node : ctx.LCIdentifier()) {
+                FVariableIdentifier id = new FVariableIdentifier(node.getText());
+                if (currentFunction().declaredVars.contains(id)) {
+                    errors.add(new TwiceDefinedLocalVariable(id));
+                    failed = true;
+                }
+                ids.add(id);
+            }
+
+            List<FType> types;
             if (container.getType() instanceof FArray) {
-                varType = ((FArray) container.getType()).getBaseType();
+                types = FTuple.unpackType(((FArray) container.getType()).getBaseType());
             } else {
                 return Utils.NYI("non array for each");
             }
-            FLocalVariable it = new FLocalVariable(id, varType);
-            currentFunction().declaredVars.put(it.getIdentifier(), it);
 
-            FForEach res = FForEach.create(currentFunction().loops.size(), identifier, it, container, null);
+            if (ids.size() < types.size() || ids.size() > types.size()+1) {
+                errors.add(new WrongNumberOfIdentifiersInFor(ids, types));
+                failed = true;
+            }
+
+            if (failed)
+                throw new Failed();
+
+            List<FLocalVariable> vars = new ArrayList<>(ids.size());
+            for (Pair<FVariableIdentifier, FType> pair : Utils.zip(ids, types)) {
+                FLocalVariable var = new FLocalVariable(pair.a, pair.b);
+                vars.add(var);
+                currentFunction().declaredVars.put(var.getIdentifier(), var);
+            }
+
+            FLocalVariable counter = null;
+            if (ids.size() == types.size()+1) {
+                counter = new FLocalVariable(ids.get(ids.size()-1), FIntN._32); //TODO int32 vs int64 (arrays need int32, custom data types might need int64 or more)
+                currentFunction().declaredVars.put(counter.getIdentifier(), counter);
+            }
+
+            FForEach res = FForEach.create(currentFunction().loops.size(), identifier, vars, counter, container, null);
             res = (FForEach) instantiateFunctionAddresses(res);
             res.setBody(visitBlock(ctx.block()));
             return res;

@@ -12,6 +12,7 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.code.statement.FVarAssignment.Operator;
+import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.util.Utils;
@@ -65,7 +66,7 @@ public class FForEachLowering extends StatementReplacer {
         }
 
         //declare counter
-        FLocalVariable counter = function.getFreshVariable(FIntN._32);
+        FLocalVariable counter = forEach.getCounter().orElse(function.getFreshVariable(FIntN._32));
         {
             res.add(FVarAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
         }
@@ -80,9 +81,12 @@ public class FForEachLowering extends StatementReplacer {
         //as first statement of loop accessing the array and storing the result in the iterator var
         FStatement itDecl;
         {
-            FLocalVariable iterator = forEach.getIterator();
+            List<FVariableExpression> decls = new ArrayList<>(forEach.getIterators().size());
+            for (FLocalVariable it : forEach.getIterators()) {
+                decls.add(new FVarDeclaration(it));
+            }
             FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
-            itDecl = FVarAssignment.createDecl(iterator, arrayAccess);
+            itDecl = FVarAssignment.createTrusted(decls, Operator.ASSIGN, Arrays.asList(arrayAccess));
         }
 
         //increment

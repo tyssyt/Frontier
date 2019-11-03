@@ -1,0 +1,6 @@
+class A:
+    test() {
+        i:int32 = 0;
+        arr := new int32[10];
+        for i : arr {}
+    }

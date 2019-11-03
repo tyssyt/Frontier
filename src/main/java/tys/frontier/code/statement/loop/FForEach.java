@@ -5,24 +5,34 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.util.Utils;
+
+import java.util.List;
+import java.util.Optional;
 
 public class FForEach extends FLoop {
 
-    private FLocalVariable iterator;
+    private List<FLocalVariable> iterators;
+    private FLocalVariable counter;
     private FExpression container;
 
-    private FForEach(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) {
+    private FForEach(int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
         super(nestedDepth, identifier, body);
-        this.iterator = iterator;
+        this.iterators = iterators;
+        this.counter = counter;
         this.container = container;
     }
 
-    public static FForEach create(int nestedDepth, FLoopIdentifier identifier, FLocalVariable iterator, FExpression container, FBlock body) {
-        return new FForEach(nestedDepth, identifier, iterator, container, body);
+    public static FForEach create(int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
+        return new FForEach(nestedDepth, identifier, iterators, counter, container, body);
     }
 
-    public FLocalVariable getIterator() {
-        return iterator;
+    public List<FLocalVariable> getIterators() {
+        return iterators;
+    }
+
+    public Optional<FLocalVariable> getCounter() {
+        return Optional.ofNullable(counter);
     }
 
     public FExpression getContainer() {
@@ -42,7 +52,8 @@ public class FForEach extends FLoop {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append("for (").append(iterator).append(" : ");
+        sb.append("for ");
+        Utils.joinIdentifiers(sb, iterators, ", ").append(" : ");
         container.toString(sb).append(") ");
         return getBody().toString(sb);
     }
