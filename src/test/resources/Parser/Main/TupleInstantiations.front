@@ -1,0 +1,119 @@
+import IO;
+import List;
+
+class Coord:
+constructors;
+	int32 x;
+	int32 y;
+
+print() {
+    IO.print("Coord{x=");
+    IO.printInt(x);
+    IO.print(",y=");
+    IO.printInt(y);
+    IO.print("}");
+}
+
+class Generic<T>:
+constructors;
+
+T t;
+
+getOptional(bool n) -> T? {
+	if n {
+		return null;
+	} else {
+		return t;
+	}
+}
+
+getArray(int32 n) -> T[] {
+	res := new T[n];
+	i:int32= 0;
+	while i<n {
+		res[i] = t;
+		++i;
+	}
+    return res;
+}
+
+getTuple() -> T, int32, T {
+	return t, 2, t;
+}
+
+
+export class Main:
+
+static printOpt(char[]? str, Coord? coord, int64? i) {
+    if str {
+        IO.print(str!);
+    } else {
+        IO.print("no Str");
+    }
+    IO.print("|");
+    if coord {
+        coord.print();
+    } else {
+        IO.print("no Coord");
+    }
+    IO.print("|");
+    if i {
+        IO.printInt(i!);
+    } else {
+        IO.print("no Int");
+    }
+}
+
+static print(char[] str, Coord coord, int64? i) {
+    IO.print(str);
+    IO.print("|");
+    coord.print();
+    IO.print("|");
+    if i {
+        IO.printInt(i!);
+    } else {
+        IO.print("no Int");
+    }
+}
+
+export static main () {
+
+	gen := new Generic<(char[], Coord, int64?)>(t="nice", new Coord(x=6, y=9), null);
+
+    { //opt null
+        IO.printLine("--Opt null--");
+        str:, coord:, i: = gen.getOptional(true);
+        printOpt(str, coord, i);
+        IO.printLine("");
+        IO.printLine("");
+    }
+    { //opt exists
+        IO.printLine("--Opt exists--");
+        printOpt(gen.getOptional(false));
+        IO.printLine("");
+        IO.printLine("");
+    }
+
+    { //array
+        IO.printLine("--Array--");
+        arr := gen.getArray(5);
+        for str, coord, i, index : arr {
+            IO.printInt(index);
+            IO.print(": ");
+            print(str, coord, i);
+            IO.printLine("");
+        }
+        IO.printLine("");
+    }
+
+    { //tuple
+        IO.printLine("--Tuple--");
+        str1:, coord1:, i1:, arg2:, str2:, coord2:, i2: = gen.getTuple();
+        print(str1, coord1, i1);
+        IO.print("|");
+        IO.printInt(arg2);
+        IO.print("|");
+        print(str2, coord2, i2);
+        IO.printLine("");
+    }
+}

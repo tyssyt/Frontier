@@ -121,4 +121,9 @@ public class MainTest {
         String res = doMain("PackUnpack", "abc");
         assertEquals(loadOut("PackUnpackOut.txt"), res);
     }
+    @Test
+    public void mainTupleInstantiations() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("TupleInstantiations", null);
+        assertEquals(loadOut("TupleInstantiationsOut.txt"), res);
+    }
 }

@@ -1,0 +1,15 @@
+--Opt null--
+no Str|no Coord|no Int
+
+--Opt exists--
+nice|Coord{x=6,y=9}|no Int
+
+--Array--
+0: nice|Coord{x=6,y=9}|no Int
+1: nice|Coord{x=6,y=9}|no Int
+2: nice|Coord{x=6,y=9}|no Int
+3: nice|Coord{x=6,y=9}|no Int
+4: nice|Coord{x=6,y=9}|no Int
+
+--Tuple--
+nice|Coord{x=6,y=9}|no Int|2|nice|Coord{x=6,y=9}|no Int
