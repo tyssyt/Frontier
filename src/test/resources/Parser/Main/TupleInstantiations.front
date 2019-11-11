@@ -115,5 +115,17 @@ export static main () {
         IO.print("|");
         print(str2, coord2, i2);
         IO.printLine("");
+        IO.printLine("");
+    }
+    
+    { //Field Access
+        IO.printLine("--Field Access--");
+        str:, coord:, i: = gen.t;
+        print(str, coord, i);
+        IO.printLine("");
+        
+        gen.t = "another", new Coord(x=13, y=37), 1;
+        print(gen.t);
+        IO.printLine("");
     }
 }

@@ -13,3 +13,7 @@ nice|Coord{x=6,y=9}|no Int
 
 --Tuple--
 nice|Coord{x=6,y=9}|no Int|2|nice|Coord{x=6,y=9}|no Int
+
+--Field Access--
+nice|Coord{x=6,y=9}|no Int
+another|Coord{x=13,y=37}|1
