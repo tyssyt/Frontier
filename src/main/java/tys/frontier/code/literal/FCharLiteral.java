@@ -1,16 +1,17 @@
 package tys.frontier.code.literal;
 
-import com.koloboke.collect.map.hash.HashCharCharMap;
-import com.koloboke.collect.map.hash.HashCharCharMaps;
+import it.unimi.dsi.fastutil.chars.Char2CharMap;
+import it.unimi.dsi.fastutil.chars.Char2CharMaps;
+import it.unimi.dsi.fastutil.chars.Char2CharOpenHashMap;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.type.FClass;
 
 public class FCharLiteral implements FLiteral {
 
-    public static final HashCharCharMap escapeLiterals = HashCharCharMaps.newImmutableMap(
+    public static final Char2CharMap escapeLiterals = Char2CharMaps.unmodifiable(new Char2CharOpenHashMap(
             new char[] {'n' ,'\\','\''},
             new char[] {'\n','\\','\''}
-    );
+    ));
 
     public final char value;
 
