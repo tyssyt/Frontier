@@ -587,20 +587,7 @@ class LLVMTransformer implements
 
     private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, List<FType> target, ArgMapping argMapping) { //TODO prolly store the info we get via target in argMapping
         //unpack
-        List<LLVMValueRef> unpacked;
-        if (argMapping.hasUnpacking()) {
-            unpacked = new ArrayList<>();
-            for (int i = 0; i < args.size(); i++) {
-                LLVMValueRef arg = args.get(i);
-                if (argMapping.getUnpackArg(i)) {
-                    unpacked.addAll(unpackTuple(arg));
-                } else {
-                    unpacked.add(arg);
-                }
-            }
-        } else {
-            unpacked = args;
-        }
+        List<LLVMValueRef> unpacked = argMapping.unpackBase(args, this::unpackTuple);
 
         //cast
         assert unpacked.size() == argMapping.getCasts().size();
@@ -612,25 +599,7 @@ class LLVMTransformer implements
         }
 
         //repack
-        List<LLVMValueRef> packed;
-        if (argMapping.hasPacking()) {
-            packed = new ArrayList<>(target.size());
-            int i=0;
-            for (int t = 0; t < target.size(); t++) {
-                if (argMapping.getPackParam(t)) {
-                    int arity = FTuple.arity(target.get(t));
-                    packed.add(packTuple(unpacked.subList(i, i+arity)));
-                    i += arity;
-                } else {
-                    packed.add(unpacked.get(i));
-                    i++;
-                }
-            }
-        } else {
-            packed = unpacked;
-        }
-
-        return packed;
+        return argMapping.pack(unpacked, this::packTuple);
     }
 
     private LLVMValueRef buildCall(FFunction toCall, List<LLVMValueRef> args) {

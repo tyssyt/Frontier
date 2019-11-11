@@ -2,10 +2,10 @@ package tys.frontier.util.expressionListToTypeListMapping;
 
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
+import com.pivovarit.function.ThrowingBiConsumer;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.Typed;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
-import tys.frontier.code.expression.cast.TypeParameterCast;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -16,22 +16,24 @@ import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.ArrayUtils;
 import tys.frontier.util.Pair;
 import tys.frontier.util.TransformedListIterator;
 import tys.frontier.util.Utils;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class ArgMapping {
 
     private List<ImplicitTypeCast> casts;
     private BitSet unpackArg;
-    private BitSet packParam;
+    private int[] packParam;
     private int numberOfParamsFilledWithPositionalArgs;
 
     //TODO make sure all functions in here have reasonable quickpaths for "non tuple" cases
 
-    public ArgMapping(BitSet unpackArg, BitSet packParam, int numberOfParamsFilledWithPositionalArgs) {
+    public ArgMapping(BitSet unpackArg, int[] packParam, int numberOfParamsFilledWithPositionalArgs) {
         this.unpackArg = unpackArg;
         this.packParam = packParam;
         this.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
@@ -39,12 +41,12 @@ public class ArgMapping {
 
     public static ArgMapping createCasted(List<FType> expressions, List<FType> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
         BitSet unpackArg = new BitSet(expressions.size());
-        BitSet packParam = new BitSet(target.size());
+        int[] packParam = ArrayUtils.create(target.size(), 1);
 
         ListIterator<FType> argIt = expressions.listIterator();
         ListIterator<FType> paramIt = target.listIterator();
 
-        unpackAndPack(unpackArg, packParam, argIt, paramIt);
+        unpackAndPack(true, unpackArg, packParam, argIt, paramIt);
 
         ArgMapping res = new ArgMapping(unpackArg, packParam, target.size());
         ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(expressions, target);
@@ -53,13 +55,13 @@ public class ArgMapping {
     }
     public static Pair<ArgMapping, List<FType>> createForCall(List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
         BitSet unpackArg = new BitSet();
-        BitSet packParam = new BitSet(params.size());
+        int[] packParam = ArrayUtils.create(params.size(), 1);
 
         ListIterator<FType> argIt = positionalArgs.listIterator();
         ListIterator<FParameter> paramIt = params.listIterator();
 
         //start with positional args
-        unpackAndPack(unpackArg, packParam, argIt, new TransformedListIterator<>(paramIt, Typed::getType));
+        unpackAndPack(false, unpackArg, packParam, argIt, new TransformedListIterator<>(paramIt, Typed::getType));
         List<FType> argumentTypes = new ArrayList<>(positionalArgs);
         int numberOfParamsFilledWithPositionalArgs = paramIt.nextIndex();
 
@@ -71,7 +73,7 @@ public class ArgMapping {
             List<FType> arg = keywordArgs.get(param.getIdentifier());
             if (!arg.isEmpty()) {
                 if (arg.size() > 1)
-                    packParam.set(paramIt.previousIndex());
+                    packParam[paramIt.previousIndex()] = arg.size();
                 argumentTypes.addAll(arg);
                 usedKeywordArgs++;
                 //TODO type check for the packed ones? or at least arity check?
@@ -90,7 +92,7 @@ public class ArgMapping {
 
     // argTypes = paramTypes
     public static ArgMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
-        ArgMapping res = new ArgMapping(new BitSet(types.size()), new BitSet(types.size()), numberOfParamsFilledWithPositionalArgs);
+        ArgMapping res = new ArgMapping(new BitSet(types.size()), ArrayUtils.create(types.size(), 1), numberOfParamsFilledWithPositionalArgs);
         res.casts = Arrays.asList(new ImplicitTypeCast[types.size()]);
         return res;
     }
@@ -98,58 +100,60 @@ public class ArgMapping {
     // no packaing/unpacking, types are casted
     public static ArgMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
         assert positionalArgs.size() == target.size();
-        ArgMapping res = new ArgMapping(new BitSet(positionalArgs.size()), new BitSet(positionalArgs.size()), positionalArgs.size());
+        ArgMapping res = new ArgMapping(new BitSet(positionalArgs.size()), ArrayUtils.create(positionalArgs.size(), 1), positionalArgs.size());
         ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(positionalArgs, target);
         TypeConstraint.addAll(constraints);
         return res;
     }
 
-    private static void unpackAndPack(BitSet unpackArg, BitSet packParam, ListIterator<FType> argIt, ListIterator<FType> paramIt) throws TooManyArguments {
-        while (argIt.hasNext()) {
+    private static void unpackAndPack(boolean useAllParams, BitSet unpackArg, int[] packParam, ListIterator<FType> argIt, ListIterator<FType> paramIt) throws TooManyArguments {
+        while (argIt.hasNext() && paramIt.hasNext()) {
             FType arg = argIt.next();
-            if (arg instanceof FTuple) {
+            FType param = paramIt.next();
+            int argArity = FTuple.arity(arg);
+            int paramArity = FTuple.arity(param);
+            if (argArity > paramArity) {
+                paramIt.previous();
                 if (unpack((FTuple) arg, paramIt) > 1)
                     unpackArg.set(argIt.previousIndex());
-            } else {
-                if (!paramIt.hasNext())
-                    throw new TooManyArguments();
-
-                FType param = paramIt.next();
-                if (param instanceof FTuple) {
-                    argIt.previous();
-                    if (pack(argIt, (FTuple) param) > 1)
-                        packParam.set(paramIt.previousIndex());
-                }
-            }
+            } else if (argArity < paramArity) {
+                argIt.previous();
+                int packedArgs = pack(argIt, (FTuple) param, unpackArg);
+                if (packedArgs > 1)
+                    packParam[paramIt.previousIndex()] = packedArgs;
+            } // else param is passed over without any packing/unpacking
         }
+
+        if (argIt.hasNext())
+            throw new TooManyArguments();
+        if (useAllParams && paramIt.hasNext())
+            Utils.NYI("???"); //TODO
     }
 
     private static int unpack(FTuple tuple, ListIterator<FType> params) throws TooManyArguments {
-        int size = tuple.arity();
+        int size = 0;
         int filledTypes = 0;
 
-        while (size > 0) {
+        while (size < tuple.arity()) {
             if (!params.hasNext())
                 throw new TooManyArguments();
 
-            size -= FTuple.arity(params.next());
+            size += FTuple.arity(params.next());
             filledTypes++;
         }
 
-        if (size < 0)
+        if (size > tuple.arity())
             return Utils.handleError("unpacking does not fill param completly"); //TODO
         return filledTypes;
     }
 
-    private static int pack(ListIterator<FType> expressions, FTuple tuple) {
-        for (int size=0; size<tuple.arity(); size++) {
+    private static int pack(ListIterator<FType> expressions, FTuple tuple, BitSet unpackArg) {
+        int size = 0;
+        while (size < tuple.arity()) {
             if (!expressions.hasNext())
                 return Utils.handleError("not enough positional arguments to fill tuple parameter"); //TODO
 
             FType next = expressions.next();
-            if (next instanceof FTuple)
-                return Utils.handleError("mixed filling for tuple parameter"); //TODO
-
             if (size == 0 && next == FNull.NULL_TYPE) {
                 /* TODO there are cases where the tuple should be packed but the first argument is null, we need a more complex 2 pass counting approach to distinguish these
                         some of the above cases would be covered by trying harder to type null, because if we have a typed null we can cover all cases that come from baking
@@ -163,8 +167,14 @@ public class ArgMapping {
                  */
                 return 1; //null fills the entire tuple
             }
+
+            if (next instanceof FTuple) {
+                unpackArg.set(expressions.previousIndex()); //we need to first unpack tuples if they are packed
+            }
+
+            size += FTuple.arity(next);
         }
-        return tuple.getTypes().size();
+        return size;
     }
 
     public List<ImplicitTypeCast> getCasts() {
@@ -180,11 +190,15 @@ public class ArgMapping {
     }
 
     public boolean hasPacking() {
-        return !packParam.isEmpty();
+        for (int i : packParam) {
+            if (i > 1)
+                return true;
+        }
+        return false;
     }
 
     public boolean getPackParam(int i) {
-        return packParam.get(i);
+        return packParam[i] > 1;
     }
 
     public int getNumberOfParamsFilledWithPositionalArgs() {
@@ -205,44 +219,73 @@ public class ArgMapping {
     }
 
     public ListMultimap<FTypeVariable, TypeConstraint> computeCasts(List<FType> argumentTypes, List<FType> target) throws IncompatibleTypes {
-        //TODO I could optimize this by storing more info when computing packing
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
         casts = new ArrayList<>();
+        ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
+        consumeUnpacked(argumentTypes, target, (baseType, targetType) -> {
+            if (baseType != targetType)
+                casts.add(ImplicitTypeCast.create(baseType, targetType, Variance.Covariant, constraints));
+            else
+                casts.add(null);
+        });
+        return constraints;
+    }
 
-        int targetIndex = 0;
-        int argIndex = 0;
-        while (argIndex < argumentTypes.size()) {
-            if (unpackArg.get(argIndex)) {
-                for (FType baseType : FTuple.unpackType(argumentTypes.get(argIndex++))) {
-                    //TODO I think in theory I could also repack the unpacked args? like split a 4 arity in to 2-1-1?
-                    assert !packParam.get(targetIndex);
-                    FType targetType = target.get(targetIndex++);
-                    if (baseType != targetType)
-                        casts.add(TypeParameterCast.create(baseType, targetType, Variance.Covariant, constraints));
-                    else
-                        casts.add(null);
-                }
-            } else if (packParam.get(targetIndex)) { //TODO see above note onto first unpack then repack
-                for (FType targetType : FTuple.unpackType(target.get(targetIndex++))) {
-                    assert !unpackArg.get(argIndex);
-                    FType baseType = argumentTypes.get(argIndex++);
-                    if (baseType != targetType)
-                        casts.add(TypeParameterCast.create(baseType, targetType, Variance.Covariant, constraints));
-                    else
-                        casts.add(null);
-                }
+    public <E extends Exception> void consumeUnpacked(List<FType> argumentTypes, List<FType> target, ThrowingBiConsumer<FType, FType, E> consumer) throws E {
+        List<FType> unpackedBase = unpackBase(argumentTypes, FTuple::unpackType);
+        List<FType> unpackedTarget = unpackTarget(target, FTuple::unpackType);
+        assert unpackedBase.size() == unpackedTarget.size();
+        for (Pair<FType, FType> pair : Utils.zip(unpackedBase, unpackedTarget))
+            consumer.accept(pair.a, pair.b);
+    }
+
+    public <T> List<T> unpackBase(List<T> items, Function<T, List<T>> unpacker) {
+        if (!hasUnpacking())
+            return items;
+
+        List<T> unpacked = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            T item = items.get(i);
+            if (getUnpackArg(i)) {
+                unpacked.addAll(unpacker.apply(item));
             } else {
-                FType argType = argumentTypes.get(argIndex++);
-                FType targetType = target.get(targetIndex++);
-                if (argType != targetType)
-                    casts.add(TypeParameterCast.create(argType, targetType, Variance.Covariant, constraints));
-                else
-                    casts.add(null);
+                unpacked.add(item);
             }
         }
-        assert targetIndex == target.size();
+        return unpacked;
+    }
 
-        return constraints;
+    public <T> List<T> unpackTarget(List<T> items, Function<T, List<T>> unpacker) {
+        if (!hasPacking())
+            return items;
+
+        List<T> unpacked = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            T item = items.get(i);
+            if (getPackParam(i)) {
+                unpacked.addAll(unpacker.apply(item));
+            } else {
+                unpacked.add(item);
+            }
+        }
+        return unpacked;
+    }
+
+    public <T> List<T> pack(List<T> items, Function<List<T>, T> packer) {
+        if (!hasPacking())
+            return items;
+
+        List<T> packed = new ArrayList<>(packParam.length);
+        int p = 0;
+        for (int i = 0; i < items.size(); p++) {
+            int itemsToPack = packParam[p];
+            if (itemsToPack > 1) {
+                packed.add(packer.apply(items.subList(i, i + itemsToPack)));
+                i += itemsToPack;
+            } else {
+                packed.add(items.get(i++));
+            }
+        }
+        return packed;
     }
 
     public static class TooManyArguments extends SyntaxError {
