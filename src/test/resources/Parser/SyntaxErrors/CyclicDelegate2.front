@@ -1,6 +1,6 @@
 class A:
-    delegate * : B b;
+    delegate * : b: B;
 class B:
-    delegate * : C c;
+    delegate * : c: C;
 class C:
-    delegate * : A a;
+    delegate * : a: A;

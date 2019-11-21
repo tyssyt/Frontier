@@ -1,21 +1,21 @@
 import IO;
 class A:
     constructors;
-    char[] member;
+    member: char[];
     getString() -> char[] {
         return "this is from A";
     }
 
 class B:
     constructors;
-    delegate * : A a;
+    delegate * : a: A;
 
 class C:
     constructors;
-    delegate * : B b;
+    delegate * : b: B;
 
 export class Main:
-    static testCast(A a) -> char[] {
+    static testCast(a: A) -> char[] {
         return a.member;
     }
 

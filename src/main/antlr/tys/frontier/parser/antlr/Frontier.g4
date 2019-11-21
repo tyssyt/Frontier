@@ -132,7 +132,7 @@ methodHeader //Tuple-ize
     ;
 
 fieldDeclaration
-    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? typeType identifier (COLON ASSIGN expression)? SEMI //TODO change to match local var declaration
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? identifier COLON typeType (ASSIGN expression)? SEMI //TODO change to match local var declaration
     ;
 
 formalParameters
@@ -140,7 +140,7 @@ formalParameters
     ;
 
 formalParameter
-    : typeType identifier (COLON ASSIGN expression)?
+    : identifier COLON typeType (ASSIGN expression)?
     ;
 
 nameSelector

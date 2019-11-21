@@ -3,7 +3,7 @@ import List;
 
 export class Lambda:
 
-static forEach <T, R> (List<T> l, (T->R) f) {
+static forEach <T, R> (l: List<T>, f: (T->R)) {
     i:int32 = 0;
     while i < l.size() {
         f(l.elements()[i]);
@@ -11,7 +11,7 @@ static forEach <T, R> (List<T> l, (T->R) f) {
     }
 }
 
-static filter <F> (List<F> l, (F->bool) filter) {
+static filter <F> (l: List<F>, filter: (F->bool)) {
     i:int32 = 0;
     while i < l.size() {
         if filter(l.elements()[i]) {
@@ -22,7 +22,7 @@ static filter <F> (List<F> l, (F->bool) filter) {
     }
 }
 
-static even (int64 i) -> bool {
+static even (i: int64) -> bool {
     return i%2 =*= 0;
 }
 
@@ -42,7 +42,7 @@ static buildMat() -> List<List<int64>> {
     return matrix;
 }
 
-static printMat(List<List<int64>> mat) {
+static printMat(mat: List<List<int64>>) {
     forEach(mat, \inner -> {
         forEach(inner, \e -> {
             IO.printInt(e);
@@ -52,7 +52,7 @@ static printMat(List<List<int64>> mat) {
     });
 }
 
-static (int64 -> bool) filterLambda := \i -> i%3 == 0 ^ i%5 == 0;
+static filterLambda: (int64 -> bool) = \i -> i%3 == 0 ^ i%5 == 0;
 
 export static main () {
     if (filterLambda(12)) {

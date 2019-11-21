@@ -1,2 +1,2 @@
 class A<T>:
-    A a;
+    a: A;

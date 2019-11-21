@@ -3,8 +3,8 @@ import List;
 
 class Coord:
 constructors;
-	int32 x;
-	int32 y;
+	x: int32;
+	y: int32;
 
 print() {
     IO.print("Coord{x=");
@@ -17,9 +17,9 @@ print() {
 class Generic<T>:
 constructors;
 
-T t;
+t: T;
 
-getOptional(bool n) -> T? {
+getOptional(n: bool) -> T? {
 	if n {
 		return null;
 	} else {
@@ -27,7 +27,7 @@ getOptional(bool n) -> T? {
 	}
 }
 
-getArray(int32 n) -> T[] {
+getArray(n: int32) -> T[] {
 	res := new T[n];
 	i:int32= 0;
 	while i<n {
@@ -44,7 +44,7 @@ getTuple() -> T, int32, T {
 
 export class Main:
 
-static printOpt(char[]? str, Coord? coord, int64? i) {
+static printOpt(str: char[]?, coord: Coord?, i: int64?) {
     if str {
         IO.print(str!);
     } else {
@@ -64,7 +64,7 @@ static printOpt(char[]? str, Coord? coord, int64? i) {
     }
 }
 
-static print(char[] str, Coord coord, int64? i) {
+static print(str: char[], coord: Coord, i: int64?) {
     IO.print(str);
     IO.print("|");
     coord.print();

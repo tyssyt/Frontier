@@ -3,7 +3,7 @@ import List;
 
 class IntList:
 
-delegate * : List<int64> l;
+delegate * : l: List<int64>;
 
 static create() -> IntList {
     return new IntList(l=List<int64>.create());
@@ -11,14 +11,14 @@ static create() -> IntList {
 
 
 class Generic<T>:
-delegate * : int32 i;
-T t;
+delegate * : i: int32;
+t: T;
 
-static create(T t, int32 i) -> Generic<T> {
+static create(t: T, i: int32) -> Generic<T> {
     return new Generic<T>(i=i ,t=t);
 }
 
-doSthUseful<R>((T, int32 -> R) fun) -> R {
+doSthUseful<R>(fun: (T, int32 -> R)) -> R {
     return fun(t,i);
 }
 
@@ -27,15 +27,15 @@ getT() -> T {
 }
 
 class MoreGenerix<U>:
-delegate doSthUseful, getT : Generic<U> baseGeneric;
+delegate doSthUseful, getT : baseGeneric: Generic<U>;
 
-static create(Generic<U> baseGeneric) -> MoreGenerix<U> {
+static create(baseGeneric: Generic<U>) -> MoreGenerix<U> {
     return new MoreGenerix<U>(baseGeneric=baseGeneric);
 }
 
 export class Outside:
 
-static forEach <T, R> (List<T> l, (T->R) f) { //das geht nicht aber sollte mit delegate cast gehen?
+static forEach <T, R> (l: List<T>, f: (T->R)) { //das geht nicht aber sollte mit delegate cast gehen?
     i:int32 = 0;
     while i < l.size() {
         f(l.elements()[i]);
@@ -48,23 +48,23 @@ static createGenericWithDelegateFromOutside() -> Generic<int32> {
     return Generic<int32>.create(5,6);
 }
 
-static overload (Generic<int32> i) {
+static overload (i: Generic<int32>) {
     IO.print("one");
 }
 
-static overload <T> (Generic<T> i) {
+static overload <T> (i: Generic<T>) {
     IO.print("two");
 }
 
-static overload (int32 i) {
+static overload (i: int32) {
     IO.print("three");
 }
 
-static overload2 <T> (Generic<T> i) {
+static overload2 <T> (i: Generic<T>) {
     IO.print("two");
 }
 
-static overload2 (int32 i) {
+static overload2 (i: int32) {
     IO.print("three");
 }
 

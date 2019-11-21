@@ -1,2 +1,2 @@
 class A<T>:
-    delegate * : T t;
+    delegate * : t: T;

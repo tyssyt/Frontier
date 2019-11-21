@@ -3,20 +3,20 @@ import List;
 
 export class Test:
 
-static doNothing <T> (T t) -> T {
+static doNothing <T> (t: T) -> T {
     alsoT:T = t;
     return alsoT;
 }
 
-static call <R,T,S> ((T,S->R) f, T t, S s) -> R {
+static call <R,T,S> (f: (T,S->R), t: T, s: S) -> R {
     return f(t, s);
 }
 
-static call2 <R,T> ((T->R) f, T t) -> R {
+static call2 <R,T> (f: (T->R), t: T) -> R {
     return f(t);
 }
 
-static forEach <T,R> (List<T> l, (T->R) f) {
+static forEach <T,R> (l: List<T>, f: (T->R)) {
     i:int32 = 0;
     while i<l.size() {
         f(l.elements()[i]);

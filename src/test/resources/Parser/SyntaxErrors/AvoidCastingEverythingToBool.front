@@ -1,6 +1,6 @@
 class A:
 
-    doNot(A a) {
+    doNot(a: A) {
         if (a) {
 
         }

@@ -1,9 +1,9 @@
 class MissingReturn:
 
-static doNothing  ((int32->()) t) {}
+static doNothing  (t: (int32->())) {}
 
-static haveFun1 <R> (int32 i) -> R? {return null;} //should not err
-static haveFun2 <R> (int32 i) -> R {} //should err because of missing return
+static haveFun1 <R> (i: int32) -> R? {return null;} //should not err
+static haveFun2 <R> (i: int32) -> R {} //should err because of missing return
 
 export static main () {
     doNothing(haveFun1*);

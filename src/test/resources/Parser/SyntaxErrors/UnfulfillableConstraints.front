@@ -2,7 +2,7 @@ import List;
 
 class IntList:
 
-delegate * : List<int64> l;
+delegate * : l: List<int64>;
 
 static create() -> IntList {
     return new IntList(l=List<int64>.create());
@@ -10,14 +10,14 @@ static create() -> IntList {
 
 
 class Generic<T>:
-delegate * : int32 i;
-T t;
+delegate * : i: int32;
+t: T;
 
-static create(T t, int32 i) -> Generic<T> {
+static create(t: T, i: int32) -> Generic<T> {
     return new Generic<T>(i=i ,t=t);
 }
 
-doSthUseful<R>((T, int32 -> R) fun) -> R {
+doSthUseful<R>(fun: (T, int32 -> R)) -> R {
     return fun(t,i);
 }
 
@@ -26,9 +26,9 @@ getT() -> T {
 }
 
 class MoreGenerix<U>:
-delegate doSthUseful, getT : Generic<U> baseGeneric;
+delegate doSthUseful, getT : baseGeneric: Generic<U>;
 
-static create(Generic<U> baseGeneric) -> MoreGenerix<U> {
+static create(baseGeneric: Generic<U>) -> MoreGenerix<U> {
     return new MoreGenerix<U>(baseGeneric=baseGeneric);
 }
 

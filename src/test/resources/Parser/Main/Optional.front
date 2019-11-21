@@ -2,7 +2,7 @@ import IO;
 
 export class Test:
 
-    char c;
+    c: char;
 
     print() -> Test {
         IO.print(c);

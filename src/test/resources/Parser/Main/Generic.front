@@ -3,21 +3,21 @@ import List;
 
 class Generic<T,O>:
 
-T t;
-O o;
+t: T;
+o: O;
 
-static create(T t, O o) -> Generic<T,O> {
+static create(t: T, o: O) -> Generic<T,O> {
     return new Generic<T, O>(o=o, t=t);
 }
 
-generic <S> ((T, O -> S) mapper) -> S {
+generic <S> (mapper: (T, O -> S)) -> S {
     return mapper(t, o);
 }
 
 
 export class Main:
 
-static mapper (int32 t, float64 o) -> char[] {
+static mapper (t: int32, o: float64) -> char[] {
     if t + (int32)o =*= 32 {
         return "aye";
     } else {

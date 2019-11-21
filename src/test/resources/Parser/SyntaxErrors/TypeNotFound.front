@@ -1,2 +1,2 @@
 class A:
-    B b;
+    b: B;

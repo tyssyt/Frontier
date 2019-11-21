@@ -3,7 +3,7 @@ import IO;
 class G<T>:
     constructors;
 
-    T t;
+    t: T;
 
     get() -> T {
         return t;
@@ -11,7 +11,7 @@ class G<T>:
 class O<T>:
     constructors;
 
-    T? t;
+    t: T?;
 
     get() -> T? {
         return t;

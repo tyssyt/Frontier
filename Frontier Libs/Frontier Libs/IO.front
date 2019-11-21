@@ -2,14 +2,14 @@ import Native;
 
 export class IO:
 
-    export static print(char chara) {
+    export static print(chara: char) {
         //TODO remove this hack once I improved char
         i : int64 = chara;
         i %= 256;
         Native.putchar(chara);
     }
 
-    export static printInt(int64 l) { //TODO once we have better Math this can be cleaned up a lot
+    export static printInt(l: int64) { //TODO once we have better Math this can be cleaned up a lot
         if l =*= 0 {
             print("0");
             return;
@@ -38,13 +38,13 @@ export class IO:
         print(digits);
     }
 
-    export static print(char[] string) {
+    export static print(string: char[]) {
         for c : string {
             print(c);
         }
     }
 
-    export static printLine(char[] string) {
+    export static printLine(string: char[]) {
         for c : string {
             print(c);
         }

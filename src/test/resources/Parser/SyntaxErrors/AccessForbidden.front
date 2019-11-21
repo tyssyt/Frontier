@@ -1,5 +1,5 @@
 class A:
-    private static int32 i;
+    private static i: int32;
 
 class B:
     test() {

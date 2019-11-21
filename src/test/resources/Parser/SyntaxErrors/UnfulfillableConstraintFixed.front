@@ -1,7 +1,7 @@
 class A<T>:
     where T > List<float64>
 
-    test(T t) {
+    test(t: T) {
         ((int32) t)+5;
     }
 

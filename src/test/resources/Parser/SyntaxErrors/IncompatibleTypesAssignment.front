@@ -1,6 +1,6 @@
 class A:
-    A a := new B();
+    a: A = new B();
 
 class B:
     constructors;
-    bool? b;
+    b: bool?;

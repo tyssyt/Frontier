@@ -1,8 +1,8 @@
 export class List<T>:
-    T[] elements;
-    int32 size := 0;
+    elements: T[] ;
+    size: int32 = 0;
 
-    export static create(int32 startSize:=5) -> List<T> {
+    export static create(startSize: int32 = 5) -> List<T> {
         res:List<T> = new List<T>(elements = new T[startSize]);
         return res;
     }
@@ -15,7 +15,7 @@ export class List<T>:
         return size; //TODO if we have proper handling of fields in the instantiated shims this is no longer necessary
     }
 
-    export add(T e) {
+    export add(e: T) {
         if size >= elements.size {
             expand();
         }
@@ -23,7 +23,7 @@ export class List<T>:
         ++size;
     }
 
-    export add(T e, int32 pos) {
+    export add(e: T, pos: int32) {
         if size >= elements.size {
             expand();
         }
@@ -32,11 +32,11 @@ export class List<T>:
         ++size;
     }
 
-    export put(T e, int32 pos) {
+    export put(e: T, pos: int32) {
         elements[pos] = e;
     }
 
-    export get(int32 i) -> T {
+    export get(i: int32) -> T {
         return elements[i];
     }
 
@@ -49,7 +49,7 @@ export class List<T>:
         return elements[size];
     }
 
-    export remove(int32 pos) -> T {
+    export remove(pos: int32) -> T {
         res:T = elements[pos];
         lShift(pos);
         --size;
@@ -67,7 +67,7 @@ export class List<T>:
         elements = newElements;
     }
 
-    private rShift(int32 start) { //TODO replace by arrayCopy... once we have that
+    private rShift(start: int32) { //TODO replace by arrayCopy... once we have that
         i := size;
         while i>start {
             elements[i] = elements[i-1];
@@ -75,7 +75,7 @@ export class List<T>:
         }
     }
 
-    private lShift(int32 end) { //TODO replace by arrayCopy... once we have that
+    private lShift(end: int32) { //TODO replace by arrayCopy... once we have that
         i := end;
         while i<size-1 {
             elements[i] = elements[i+1];
@@ -83,7 +83,7 @@ export class List<T>:
         }
     }
 
-    private static arrayCopy(T[] from, T[] to) { //TODO replace by arrayCopy... once we have that
+    private static arrayCopy(from: T[], to: T[]) { //TODO replace by arrayCopy... once we have that
         i:int32 = 0;
         while i<from.size {
             to[i] = from[i];

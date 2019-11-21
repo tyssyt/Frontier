@@ -1,5 +1,5 @@
 class A:
-    static f(int32 i) {}
+    static f(i: int32) {}
 
     static test() {
         fun := f*;
