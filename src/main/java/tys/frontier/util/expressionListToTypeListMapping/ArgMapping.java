@@ -1,5 +1,6 @@
 package tys.frontier.util.expressionListToTypeListMapping;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.pivovarit.function.ThrowingBiConsumer;
@@ -14,7 +15,8 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.SyntaxError;
+import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
+import tys.frontier.parser.syntaxErrors.TooManyArguments;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.ArrayUtils;
 import tys.frontier.util.Pair;
@@ -39,7 +41,7 @@ public class ArgMapping {
         this.numberOfParamsFilledWithPositionalArgs = numberOfParamsFilledWithPositionalArgs;
     }
 
-    public static ArgMapping createCasted(List<FType> expressions, List<FType> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes {
+    public static ArgMapping createCasted(List<FType> expressions, List<FType> target) throws TooManyArguments, UnfulfillableConstraints, IncompatibleTypes, NotEnoughArguments {
         BitSet unpackArg = new BitSet(expressions.size());
         int[] packParam = ArrayUtils.create(target.size(), 1);
 
@@ -53,7 +55,7 @@ public class ArgMapping {
         TypeConstraint.addAll(constraints);
         return res;
     }
-    public static Pair<ArgMapping, List<FType>> createForCall(List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, List<FParameter> params) throws NoArgumentsForParameter, TooManyArguments {
+    public static Pair<ArgMapping, List<FType>> createForCall(List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, List<FParameter> params) throws TooManyArguments, NotEnoughArguments {
         BitSet unpackArg = new BitSet();
         int[] packParam = ArrayUtils.create(params.size(), 1);
 
@@ -80,12 +82,12 @@ public class ArgMapping {
             } else if (param.hasDefaultValue()) {
                 argumentTypes.add(param.getType());
             } else {
-                throw new NoArgumentsForParameter(param);
+                throw new NotEnoughArguments("No Arguments for Parameter", param.getType());
             }
         }
 
         if (usedKeywordArgs != keywordArgs.keySet().size())
-            throw new TooManyArguments();
+            throw new TooManyArguments(Iterables.concat(positionalArgs, keywordArgs.values()), Utils.typesFromExpressionList(params));
 
         return new Pair<>(new ArgMapping(unpackArg, packParam, numberOfParamsFilledWithPositionalArgs), argumentTypes);
     }
@@ -106,7 +108,7 @@ public class ArgMapping {
         return res;
     }
 
-    private static void unpackAndPack(boolean useAllParams, BitSet unpackArg, int[] packParam, ListIterator<FType> argIt, ListIterator<FType> paramIt) throws TooManyArguments {
+    private static void unpackAndPack(boolean useAllParams, BitSet unpackArg, int[] packParam, ListIterator<FType> argIt, ListIterator<FType> paramIt) throws TooManyArguments, NotEnoughArguments {
         while (argIt.hasNext() && paramIt.hasNext()) {
             FType arg = argIt.next();
             FType param = paramIt.next();
@@ -125,33 +127,35 @@ public class ArgMapping {
         }
 
         if (argIt.hasNext())
-            throw new TooManyArguments();
+            throw new TooManyArguments(argIt.next());
         if (useAllParams && paramIt.hasNext())
-            Utils.NYI("???"); //TODO
+            throw new NotEnoughArguments("no Arguments for Parameter", paramIt.next());
     }
 
-    private static int unpack(FTuple tuple, ListIterator<FType> params) throws TooManyArguments {
+    private static int unpack(FTuple tuple, ListIterator<FType> params) throws TooManyArguments, NotEnoughArguments {
         int size = 0;
         int filledTypes = 0;
 
         while (size < tuple.arity()) {
             if (!params.hasNext())
-                throw new TooManyArguments();
+                throw new TooManyArguments(tuple.getTypes().get(size));
 
             size += FTuple.arity(params.next());
             filledTypes++;
         }
 
-        if (size > tuple.arity())
-            return Utils.handleError("unpacking does not fill param completly"); //TODO
+        if (size > tuple.arity()) {
+            params.previous();
+            throw new NotEnoughArguments("unpacking does not fill param completly", params.next());
+        }
         return filledTypes;
     }
 
-    private static int pack(ListIterator<FType> expressions, FTuple tuple, BitSet unpackArg) {
+    private static int pack(ListIterator<FType> expressions, FTuple tuple, BitSet unpackArg) throws NotEnoughArguments {
         int size = 0;
         while (size < tuple.arity()) {
             if (!expressions.hasNext())
-                return Utils.handleError("not enough positional arguments to fill tuple parameter"); //TODO
+                throw new NotEnoughArguments("not enough positional arguments to fill tuple parameter", tuple);
 
             FType next = expressions.next();
             if (size == 0 && next == FNull.NULL_TYPE) {
@@ -286,17 +290,5 @@ public class ArgMapping {
             }
         }
         return packed;
-    }
-
-    public static class TooManyArguments extends SyntaxError {
-        //TODO
-    }
-
-    public static class NoArgumentsForParameter extends SyntaxError {
-        public final FParameter parameter;
-
-        public NoArgumentsForParameter(FParameter parameter) {
-            this.parameter = parameter;
-        }
     }
 }

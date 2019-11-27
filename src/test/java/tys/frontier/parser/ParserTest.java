@@ -136,6 +136,16 @@ public class ParserTest {
         assertEquals(NonOptionalExMark.class, e.getClass());
     }
     @Test
+    public void parseNotEnoughArgumentsAssign() throws Exception {
+        SyntaxError e = parseSyntaxError("NotEnoughArgumentsAssign.front");
+        assertEquals(NotEnoughArguments.class, e.getClass());
+    }
+    @Test
+    public void parseNotEnoughArgumentsReturn() throws Exception {
+        SyntaxError e = parseSyntaxError("NotEnoughArgumentsReturn.front");
+        assertEquals(NotEnoughArguments.class, e.getClass());
+    }
+    @Test
     public void parseParameterizedTypeVariable() throws Exception {
         SyntaxError e = parseSyntaxError("ParameterizedTypeVariable.front");
         assertEquals(ParameterizedTypeVariable.class, e.getClass());
@@ -149,6 +159,16 @@ public class ParserTest {
     public void parseSignatureCollisionGeneric() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollisionGeneric.front");
         assertEquals(SignatureCollision.class, e.getClass());
+    }
+    @Test
+    public void parseTooManyArgumentsAssign() throws Exception {
+        SyntaxError e = parseSyntaxError("TooManyArgumentsAssign.front");
+        assertEquals(TooManyArguments.class, e.getClass());
+    }
+    @Test
+    public void parseTooManyArgumentsReturn() throws Exception {
+        SyntaxError e = parseSyntaxError("TooManyArgumentsReturn.front");
+        assertEquals(TooManyArguments.class, e.getClass());
     }
     @Test
     public void parseTwiceDefinedLocalVariable() throws Exception {

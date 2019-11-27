@@ -7,6 +7,8 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
+import tys.frontier.parser.syntaxErrors.TooManyArguments;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
@@ -22,7 +24,7 @@ public class FReturn  implements FStatement {
     private ArgMapping argMapping;
     private FFunction function;
 
-    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
+    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
         this.expressions = expressions;
         this.function = function;
         this.argMapping = ArgMapping.createCasted(
@@ -30,13 +32,13 @@ public class FReturn  implements FStatement {
                 function.getType() == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(function.getType()));
     }
 
-    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
+    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
         return new FReturn(expressions, function);
     }
     public static FReturn createTrusted(List<FExpression> expressions, FFunction function) {
         try {
             return create(expressions, function);
-        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints e) {
+        } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints e) {
             return Utils.cantHappen();
         }
     }

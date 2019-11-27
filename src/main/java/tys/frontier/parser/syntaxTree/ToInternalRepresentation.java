@@ -35,7 +35,6 @@ import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.MapStack;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.*;
 
@@ -330,7 +329,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         List<FExpression> vals = c == null ? Collections.emptyList() : visitTupleExpression(c);
         try {
             return FReturn.create(vals, currentFunction().function);
-        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints syntaxError) {
+        } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
         }
@@ -343,11 +342,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
 
         List<FrontierParser.AssignLhsContext> contexts = ctx.assignLhss().assignLhs();
 
+        if (contexts.size() > types.size()) {
+            errors.add(new NotEnoughArguments("Not enough arguments in assignment", null)); //TODO can't get I type because we didn't parse it yet
+            throw new Failed();
+        }
+
         boolean failed = false;
         List<FVariableExpression> vars = new ArrayList<>(contexts.size());
-        for (int i = 0; i < contexts.size(); i++) {
+        for (Pair<FrontierParser.AssignLhsContext, FType> pair : Utils.zip(contexts, types)) {
             try {
-                vars.add(visitAssignLhs(contexts.get(i), types.get(i)));
+                vars.add(visitAssignLhs(pair.a, pair.b));
             } catch (Failed f) {
                 failed = true;
             }
@@ -358,7 +362,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
         FVarAssignment.Operator operator = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
         try {
             return FVarAssignment.create(vars, operator, values);
-        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
+        } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();
         }

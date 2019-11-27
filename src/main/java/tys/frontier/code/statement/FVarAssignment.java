@@ -12,6 +12,8 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
+import tys.frontier.parser.syntaxErrors.TooManyArguments;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
@@ -43,7 +45,7 @@ public class FVarAssignment implements FStatement {
         }
     }
 
-    public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes, ArgMapping.TooManyArguments, UnfulfillableConstraints {
+    public static FVarAssignment create(List<FVariableExpression> variables, Operator operator, List<FExpression> values) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
         ArgMapping argMap = ArgMapping.createCasted(Utils.typesFromExpressionList(values), Utils.typesFromExpressionList(variables));
         return new FVarAssignment(variables, operator, values, argMap);
     }
@@ -51,7 +53,7 @@ public class FVarAssignment implements FStatement {
     public static FVarAssignment createTrusted(List<FVariableExpression> variables, Operator operator, List<FExpression> values) {
         try {
             return create(variables, operator, values);
-        } catch (IncompatibleTypes | ArgMapping.TooManyArguments | UnfulfillableConstraints incompatibleTypes) {
+        } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }
     }

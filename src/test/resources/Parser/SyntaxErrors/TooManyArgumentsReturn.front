@@ -1,0 +1,4 @@
+class A:
+    f() -> char[] {
+        return "Hello", 1;
+    }

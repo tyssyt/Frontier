@@ -12,15 +12,11 @@ import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
-import tys.frontier.util.expressionListToTypeListMapping.ArgMapping.NoArgumentsForParameter;
-import tys.frontier.util.expressionListToTypeListMapping.ArgMapping.TooManyArguments;
 
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +87,7 @@ public class FunctionResolver {
 
                 result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);
-            } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NoArgumentsForParameter ignored) {}
+            } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NotEnoughArguments ignored) {}
         }
 
         if (bestResult == null)
