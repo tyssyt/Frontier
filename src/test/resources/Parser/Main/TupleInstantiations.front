@@ -127,5 +127,16 @@ export static main () {
         gen.t = "another", new Coord(x=13, y=37), 1;
         print(gen.t);
         IO.printLine("");
+        IO.printLine("");
+    }
+
+    { //Address
+        IO.printLine("--Address--");
+        f := Generic<(char[], char[])>.getArray*;
+        a := f(new Generic<(char[], char[])>(t="Beep", "Boop"), 3);
+        s1:, s2: = a[2];
+        IO.print(s1);
+        IO.print(s2);
+        IO.printLine("");
     }
 }
