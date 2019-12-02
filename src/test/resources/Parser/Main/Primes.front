@@ -1,0 +1,78 @@
+import IO;
+import List;
+
+
+class Sieb:
+
+    primes: List<int32>;
+
+    static create(expectedPrimes: int32 = 50) -> Sieb {
+        res := new Sieb(primes = List<int32>.create(expectedPrimes));
+        res.primes.add(2);
+        return res;
+    }
+
+    nextPrime() -> int32 {
+        if Main.verbose {
+            IO.print("computing Prime Number ");
+            IO.printInt(primes.size()+1);
+            IO.printLine("");
+        }
+
+        candidate: int32 = primes.get(primes.size()-1);
+
+        prime := false;
+
+        while(!prime) {
+            candidate += 1;
+            prime = true;
+
+            if Main.verbose {
+                IO.print("candidate: ");
+                IO.printInt(candidate);
+                IO.printLine("");
+            }
+
+            //TODO I really need List forEach
+            i: int32 = 0;
+            while i < primes.size() {
+                divisor := primes.get(i);
+
+                if Main.verbose {
+                    IO.print("sieving with: ");
+                    IO.printInt(divisor);
+                    IO.printLine("");
+                }
+
+
+                if candidate % divisor =*= 0 {
+                    prime = false;
+                    break;
+                }
+                i += 1;
+            }
+        }
+        primes.add(candidate);
+        return candidate;
+    }
+
+
+
+export class Main:
+
+static verbose: bool = false;
+
+export static main () {
+    numberOfPrimesToCompute := (int32) IO.getInt();
+    IO.print("computing ");
+    IO.printInt(numberOfPrimesToCompute);
+    IO.print(" primes!");
+    IO.printLine("");
+
+    sieb := Sieb.create(numberOfPrimesToCompute);
+    while numberOfPrimesToCompute > 1 {
+        IO.printInt(sieb.nextPrime());
+        IO.printLine("");
+        numberOfPrimesToCompute -= 1;
+    }
+}

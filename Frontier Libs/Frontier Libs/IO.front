@@ -27,7 +27,7 @@ export class IO:
         i:int32 = 1;
         while i<=size {
             remainder:int64 = l % 10;
-            digits[size-i] = (char) remainder + 48;
+            digits[size-i] = intToChar((int32)remainder);
             l /= 10;
             ++i;
         }
@@ -53,4 +53,40 @@ export class IO:
 
     export static getChar() -> char {
         return (char)Native.getchar();
+    }
+
+    export static getInt() -> int64 {
+        res: int64 = 0;
+
+        //check for first char '-'
+        nextChar := getChar();
+        isNegative := nextChar =*= 45;
+
+        if isNegative {
+            nextChar = getChar();
+        }
+
+        while nextChar >= 48 && nextChar <= 57 {
+            res *= 10;
+            res += charToInt(nextChar);
+            nextChar = getChar();
+        }
+
+        if isNegative {
+            res = -1 * res;
+        }
+
+        return res;
+    }
+
+    static isWhitspace(c: char) -> bool {
+        return (c >= 9 && c <= 13) || c =*= 32;
+    }
+
+    static charToInt(c: char) -> int32 {
+        return c - 48;
+    }
+
+    static intToChar(i: int32) -> char { //input must be between 0 and 9 inclusive
+        return (char) i + 48;
     }

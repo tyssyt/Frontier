@@ -13,8 +13,9 @@ import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.Utils;
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.util.Random;
@@ -36,16 +37,21 @@ public class MainTest {
     }
 
     private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors {
-        String out = this.folder.newFolder(fileName).getPath() + Utils.filesep + fileName;
+        String path = this.folder.newFolder(fileName).getPath();
+        String out = path + Utils.filesep + fileName;
         Main.main(prefix + fileName + ".front", out);
-        Process p = new ProcessBuilder(out + ".exe").start();
+
+        //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
+        File output = new File(path + Utils.filesep + ".txt");
+        Process p = new ProcessBuilder(out + ".exe").redirectOutput(output).start();
+
         if (input != null) {
             OutputStreamWriter writer = new OutputStreamWriter(p.getOutputStream());
             writer.write(input);
             writer.flush();
         }
         p.waitFor();
-        return CharStreams.toString(new InputStreamReader(p.getInputStream()));
+        return CharStreams.toString(new FileReader(output));
     }
 
     private static String loadOut(String fileName) throws IOException {
@@ -125,5 +131,10 @@ public class MainTest {
     public void mainTupleInstantiations() throws IOException, InterruptedException, SyntaxErrors {
         String res = doMain("TupleInstantiations", null);
         assertEquals(loadOut("TupleInstantiationsOut.txt"), res);
+    }
+    @Test
+    public void mainPrimes() throws IOException, InterruptedException, SyntaxErrors {
+        String res = doMain("Primes", "10000\n");
+        assertEquals(loadOut("PrimesOut.txt"), res);
     }
 }
