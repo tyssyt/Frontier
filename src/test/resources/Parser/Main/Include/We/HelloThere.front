@@ -1,0 +1,9 @@
+import IO;
+
+class Test:
+
+static testeroni(list: List<char[]>) {
+    for str : list.elements {
+        IO.printLine(str);
+    }
+}

@@ -25,7 +25,7 @@ public class Parser {
 
     private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
-    public static Module parse(Path file, Style style) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
+    public static Module parse(Path file, Style style) throws IOException, SyntaxErrors, SyntaxError {
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
@@ -44,11 +44,11 @@ public class Parser {
         }
     }
 
-    private static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors {
+    private static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
         return ModuleParser.buildModule(entryPoint, style);
     }
 
-    private static void resolveImports(Module module) throws CyclicModuleDependency, UnresolvableImport, SyntaxErrors {
+    private static void resolveImports(Module module) throws SyntaxError, SyntaxErrors {
         for (ParsedFile file : module.getFiles()) {
             for (String _import : file.findImports()) {
                 Module importedModule = State.get().getImportResolver().requestModule(_import);

@@ -9,9 +9,8 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.dependencies.ImportResolver;
-import tys.frontier.parser.syntaxErrors.CyclicModuleDependency;
+import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
-import tys.frontier.parser.syntaxErrors.UnresolvableImport;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.OperatorAssignmentLowering;
@@ -28,13 +27,13 @@ public class Main {
     private static final LLVMBackend.OutputFileType outputType =
             LLVMBackend.OutputFileType.EXECUTABLE;
 
-    public static void main(String[] args) throws UnresolvableImport, CyclicModuleDependency, SyntaxErrors, IOException {
+    public static void main(String[] args) throws SyntaxError, SyntaxErrors, IOException {
             String input = args[0];
             String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
             main(input, output);
     }
 
-    public static void main(String input, String output) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
+    public static void main(String input, String output) throws IOException, SyntaxErrors, SyntaxError {
         //FrontEnd
         State.get().setImportResolver(new ImportResolver());
         Module module = Parser.parse(Paths.get(input), Style.DEFAULT_STYLE);

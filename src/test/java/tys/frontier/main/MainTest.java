@@ -34,25 +34,28 @@ public class MainTest {
     public static void setUp() {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
-            ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
+            ((StdOutLogger) logger).setLevel(Logger.Level.INFO);
     }
 
     private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
-        String path = this.folder.newFolder(fileName).getPath();
-        String out = path + Utils.filesep + fileName;
-        Main.main(prefix + fileName + ".front", out);
+        String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
+
+        Main.main(prefix + fileName + ".front", tmpFolder);
 
         //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
-        File output = new File(path + Utils.filesep + ".txt");
-        Process p = new ProcessBuilder(out + ".exe").redirectOutput(output).start();
+        File output = new File(tmpFolder + ".txt");
+        Process p = new ProcessBuilder(tmpFolder + ".exe").redirectOutput(output).start();
 
         if (input != null) {
-            OutputStreamWriter writer = new OutputStreamWriter(p.getOutputStream());
-            writer.write(input);
-            writer.flush();
+            try (OutputStreamWriter writer = new OutputStreamWriter(p.getOutputStream())) {
+                writer.write(input);
+                writer.flush();
+            }
         }
         p.waitFor();
-        return CharStreams.toString(new FileReader(output));
+        try (FileReader reader = new FileReader(output)) {
+            return CharStreams.toString(reader);
+        }
     }
 
     private static String loadOut(String fileName) throws IOException {
@@ -137,5 +140,10 @@ public class MainTest {
     public void mainPrimes() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("Primes", "10000\n");
         assertEquals(loadOut("PrimesOut.txt"), res);
+    }
+    @Test
+    public void mainInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("Include/Include", null);
+        assertEquals("Hello" + Utils.endl + "There!" + Utils.endl, res);
     }
 }

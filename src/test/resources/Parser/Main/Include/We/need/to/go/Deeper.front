@@ -1,0 +1,12 @@
+import List;
+
+include ../../../HelloThere.front;
+
+class Deeper:
+
+static isThatAJojoReference() {
+    list := List<char[]>.create(2);
+    list.add("Hello");
+    list.add("There!");
+    Test.testeroni(list);
+}

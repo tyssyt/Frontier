@@ -80,6 +80,11 @@ public class ParserTest {
         assertEquals(CyclicDelegate.class, e.getClass());
     }
     @Test
+    public void parseCyclicInclude() throws Exception {
+        SyntaxError e = parseSyntaxError("CyclicInclude.front");
+        assertEquals(CyclicInclude.class, e.getClass());
+    }
+    @Test
     public void parseDelegateFromTypeVar() throws Exception {
         SyntaxError e = parseSyntaxError("DelegateFromTypeVar.front");
         assertEquals(DelegateFromTypeVar.class, e.getClass());

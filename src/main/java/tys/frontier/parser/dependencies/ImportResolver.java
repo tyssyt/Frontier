@@ -3,6 +3,7 @@ package tys.frontier.parser.dependencies;
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.CyclicModuleDependency;
+import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxErrors.UnresolvableImport;
 import tys.frontier.style.Style;
@@ -19,7 +20,7 @@ public class ImportResolver {
     private Map<String, Module> resolvedModules = new HashMap<>();
     private Set<String> queuedRequests = new HashSet<>();
 
-    public Module requestModule(String name) throws UnresolvableImport, CyclicModuleDependency, SyntaxErrors {
+    public Module requestModule(String name) throws SyntaxError, SyntaxErrors {
         Module res = resolvedModules.get(name);
         if (res == null) {
             try {

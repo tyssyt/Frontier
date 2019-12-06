@@ -1,0 +1,7 @@
+include We/need/to/go/Deeper.front;
+
+export class Main:
+
+export static main () {
+    Deeper.isThatAJojoReference();
+}
