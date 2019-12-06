@@ -15,6 +15,7 @@ import tys.frontier.parser.warnings.Warning;
 import tys.frontier.style.Style;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +25,7 @@ public class Parser {
 
     private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
-    public static Module parse(String file, Style style) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
+    public static Module parse(Path file, Style style) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
@@ -43,7 +44,7 @@ public class Parser {
         }
     }
 
-    private static Module buildModule(String entryPoint, Style style) throws IOException, SyntaxErrors {
+    private static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors {
         return ModuleParser.buildModule(entryPoint, style);
     }
 

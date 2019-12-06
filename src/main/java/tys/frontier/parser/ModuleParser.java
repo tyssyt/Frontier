@@ -6,12 +6,13 @@ import tys.frontier.style.Style;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class ModuleParser {
 
-    public static Module buildModule(String entryPoint, Style style) throws IOException, SyntaxErrors {
+    public static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors {
         Module res = new Module();
         ParsedFile entryFile = FileParser.runAntlr(entryPoint, style);
         entryFile.setModule(res);
@@ -21,9 +22,11 @@ public class ModuleParser {
         while (!toDo.isEmpty()) {
             ParsedFile cur = toDo.remove();
             for (String include : cur.findIncludes()) {
-                if (isCyclicInclude(include, cur))
-                    return Utils.NYI("Error for cyclic include");
-                ParsedFile parsedFile = FileParser.runAntlr(include, style);
+                Path includePath = cur.getFilePath().resolveSibling(include).normalize();
+                if (isCyclicInclude(includePath, cur))
+                    return Utils.NYI("Error for cyclic include"); //TODO
+
+                ParsedFile parsedFile = FileParser.runAntlr(includePath, style);
                 parsedFile.setParent(cur);
                 cur.addInclude(parsedFile);
                 toDo.add(parsedFile);
@@ -34,10 +37,10 @@ public class ModuleParser {
         return res;
     }
 
-    private static boolean isCyclicInclude(String include, ParsedFile includer) {
+    private static boolean isCyclicInclude(Path include, ParsedFile includer) {
         ParsedFile cur = includer;
         while (cur != null) {
-            if (cur.getFileName().equals(include))
+            if (cur.getFilePath().equals(include))
                 return true;
             cur = cur.getParent();
         }

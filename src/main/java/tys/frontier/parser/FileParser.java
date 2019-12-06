@@ -12,14 +12,15 @@ import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
 public class FileParser {
 
-    public static ParsedFile runAntlr(String file, Style style) throws IOException, SyntaxErrors {
-        try (InputStream input = Utils.loadFile(file)) {
+    public static ParsedFile runAntlr(Path file, Style style) throws IOException, SyntaxErrors {
+        try (InputStream input = Utils.loadFile(file.toString())) {
             FrontierLexer lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             FrontierParser parser = new FrontierParser(tokens);

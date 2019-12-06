@@ -52,6 +52,15 @@ public class Module {
                 .collect(toMap(FClass::getIdentifier, Function.identity()));
     }
 
+    public FClass getClass(FTypeIdentifier identifier) {
+        for (ParsedFile file : getFiles()) {
+            FClass _class = file.getClass(identifier);
+            if (_class != null)
+                return _class;
+        }
+        return null;
+    }
+
     public Stream<FClass> getClasses() {
         return getFiles().stream().flatMap(file -> file.getClasses().values().stream());
     }

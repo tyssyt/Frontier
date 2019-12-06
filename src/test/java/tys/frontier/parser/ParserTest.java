@@ -13,6 +13,7 @@ import tys.frontier.style.Style;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,7 +31,7 @@ public class ParserTest {
 
     private SyntaxError parseSyntaxError(String file) throws IOException {
         try {
-            Parser.parse(prefix + file, Style.DEFAULT_STYLE);
+            Parser.parse(Paths.get(prefix + file), Style.DEFAULT_STYLE);
         } catch (SyntaxErrors es) {
             return Iterables.getOnlyElement(es.errors);
         } catch (SyntaxError syntaxError) {

@@ -18,6 +18,7 @@ import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class Main {
     public static void main(String input, String output) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
         //FrontEnd
         State.get().setImportResolver(new ImportResolver());
-        Module module = Parser.parse(input, Style.DEFAULT_STYLE);
+        Module module = Parser.parse(Paths.get(input), Style.DEFAULT_STYLE);
 
         //Lowering Passes
         for (Module m : module.findImportedModulesReflexiveTransitive()) {

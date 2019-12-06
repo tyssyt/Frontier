@@ -37,7 +37,7 @@ public class LLVMBackend implements Backend {
         }
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule.getEntryPoint().getFileName(), classes, fModule.findMain())) {
+        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), classes, fModule.findMain())) {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {

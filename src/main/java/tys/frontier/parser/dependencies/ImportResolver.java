@@ -8,6 +8,7 @@ import tys.frontier.parser.syntaxErrors.UnresolvableImport;
 import tys.frontier.style.Style;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class ImportResolver {
                 queuedRequests.add(name);
                 //TODO are the libs present in the user style, are other files?
                 //TODO remove hard coded path and file extension
-                res = Parser.parse("Frontier Libs/" + name + ".front", Style.DEFAULT_STYLE);
+                res = Parser.parse(Paths.get("Frontier Libs/" + name + ".front"), Style.DEFAULT_STYLE);
             } catch (IOException e) {
                 throw new UnresolvableImport(name, e);
             }

@@ -6,6 +6,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,7 +16,7 @@ public class ParsedFile {
 
     private SyntaxTreeData treeData; //TODO this is only needed in the initial parsing and should maybe be stored on parser level instead
 
-    private String fileName;
+    private Path filePath;
     private Module module;
 
     private ParsedFile parent;
@@ -23,9 +24,9 @@ public class ParsedFile {
     private List<Module> imports = new ArrayList<>();
     private Map<FTypeIdentifier, FClass> classes = new LinkedHashMap<>();
 
-    public ParsedFile(FrontierParser.FileContext fileContext, String fileName) {
+    public ParsedFile(FrontierParser.FileContext fileContext, Path filePath) {
         this.treeData = new SyntaxTreeData(fileContext);
-        this.fileName = fileName;
+        this.filePath = filePath;
     }
 
     public void setParent(ParsedFile parent) {
@@ -39,8 +40,8 @@ public class ParsedFile {
         this.module = module;
     }
 
-    public String getFileName() {
-        return fileName;
+    public Path getFilePath() {
+        return filePath;
     }
 
     public ParsedFile getParent() {
@@ -89,7 +90,7 @@ public class ParsedFile {
         List<FrontierParser.IncludeStatementContext> ctxs = treeData.root.includeStatement();
         List<String> res = new ArrayList<>(ctxs.size());
         for (FrontierParser.IncludeStatementContext ctx : ctxs) {
-            res.add(ctx.identifier().getChild(0).getText());
+            res.add(ctx.path().getText());
         }
         return res;
     }
@@ -100,13 +101,14 @@ public class ParsedFile {
 
     //TODO this does not work multithreaded if any of the parents is worked on!
     public FClass resolveType(FTypeIdentifier identifier) {
+        FClass res = module.getClass(identifier);
+        if (res != null)
+            return res;
+
+
         ParsedFile cur = this;
 
         while (cur != null) {
-            FClass res = cur.getClass(identifier);
-            if (res != null)
-                return res;
-
             for (Module _import : cur.getImports()) {
                 res = _import.getExportedClasses().get(identifier);
                 if (res != null)

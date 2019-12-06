@@ -73,12 +73,16 @@ file
         EOF
     ;
 
-importStatement
+importStatement //TODO this is an ugly mess, I should just change modes (also can't handle paths that contain spaces etc)
     :   IMPORT identifier SEMI
     ;
 
 includeStatement
-    :   INCLUDE identifier SEMI
+    :   INCLUDE path SEMI
+    ;
+
+path
+    :   (DOT DOT SLASH)* (identifier SLASH)* identifier DOT identifier
     ;
 
 classDeclaration
@@ -246,7 +250,7 @@ expression
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
-    |   expression (STAR|DIV|MOD) expression                       #binaryOp
+    |   expression (STAR|SLASH|MOD) expression                       #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp
     |   expression (EQUAL|NOTEQUAL) expression                     #binaryOp
@@ -328,6 +332,7 @@ SEMI            : ';';
 COMMA           : ',';
 DOT             : '.';
 COLON           : ':';
+SLASH           : '/';
 BACKSLASH       : '\\';
 
 
@@ -353,7 +358,6 @@ DEC             : '--';
 ADD             : '+';
 SUB             : '-';
 STAR            : '*';
-DIV             : '/';
 MOD             : '%';
 
 ADD_ASSIGN      : '+=';
