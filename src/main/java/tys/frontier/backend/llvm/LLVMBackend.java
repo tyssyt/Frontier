@@ -6,7 +6,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
 
 public class LLVMBackend implements Backend {
 
@@ -29,16 +29,15 @@ public class LLVMBackend implements Backend {
     public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
         Iterable<FClass> classes;
         if (reachability == null) {
-            classes = new ArrayList<>();
-            for (Module m : fModule.getImportedModulesReflexiveTransitive()) {
-                ((ArrayList<FClass>) classes).addAll(m.getClasses().values());
-            }
+            classes = fModule.findImportedModulesReflexiveTransitive().stream()
+                    .flatMap(Module::getClasses)
+                    .collect(toList());
         } else {
             classes = reachability.getReachableClasses().keySet();
         }
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule.getName(), classes, fModule.getEntryPoint().orElse(null))) {
+        try (LLVMModule module = createModule(fModule.getEntryPoint().getFileName(), classes, fModule.findMain())) {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {

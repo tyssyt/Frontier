@@ -1,6 +1,7 @@
 package tys.frontier;
 
 import tys.frontier.parser.Parser;
+import tys.frontier.parser.dependencies.ImportResolver;
 
 public class State {
 
@@ -10,24 +11,24 @@ public class State {
         return instance;
     }
 
-    private Parser currentParser;
-    private Parser entryPointParser;
+    private Parser currentParser = null;
+    private ImportResolver importResolver;
 
     public Parser getCurrentParser() {
         return currentParser;
     }
 
-    public void setCurrentParser(Parser currentParser) {
-        assert this.currentParser == null || currentParser == null;
+    public Parser setCurrentParser(Parser currentParser) {
+        Parser old = this.currentParser;
         this.currentParser = currentParser;
+        return old;
     }
 
-    public Parser getEntryPointParser() {
-        return entryPointParser;
+    public ImportResolver getImportResolver() {
+        return importResolver;
     }
 
-    public void setEntryPointParser(Parser entryPointParser) {
-        assert this.entryPointParser == null || entryPointParser == null;
-        this.entryPointParser = entryPointParser;
+    public void setImportResolver(ImportResolver importResolver) {
+        this.importResolver = importResolver;
     }
 }

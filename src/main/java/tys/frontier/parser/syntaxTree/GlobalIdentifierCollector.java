@@ -10,80 +10,54 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.Delegates;
+import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.*;
-import tys.frontier.util.Pair;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.parser.syntaxErrors.SyntaxError;
+import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class GlobalIdentifierCollector extends FrontierBaseVisitor {
+public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
-    private Map<FTypeIdentifier, FType> types;
+    private ParsedFile file;
     private SyntaxTreeData treeData;
-    private Delegates delegates = new Delegates();
-    private List<SyntaxError> errors = new ArrayList<>();
+    private Delegates delegates;
+    private List<SyntaxError> errors;
 
     private FClass currentClass;
 
-    private GlobalIdentifierCollector (FrontierParser.FileContext ctx, Module module) {
-        treeData = new SyntaxTreeData(ctx);
-        types = new HashMap<>(module.getImportedClasses());
-        ctx.accept(this);
+    private GlobalIdentifierCollector(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
+        this.file = file;
+        this.treeData = file.getTreeData();
+        this.delegates = delegates;
+        this.errors = errors;
     }
 
-    public static Pair<SyntaxTreeData, Delegates> getIdentifiers(FrontierParser.FileContext ctx, Module module) throws SyntaxErrors {
-        GlobalIdentifierCollector collector = new GlobalIdentifierCollector(ctx, module);
-        if (!collector.errors.isEmpty())
-            throw SyntaxErrors.create(collector.errors);
-        return new Pair<>(collector.treeData, collector.delegates);
-    }
-
-
-    @Override
-    public Object visitFile(FrontierParser.FileContext ctx) {
-        //first go over all types once to know their names
-        for (FrontierParser.ClassDeclarationContext c : ctx.classDeclaration()) {
-            try {
-                FClass fClass = ParserContextUtils.getClass(c);
-                FType old = types.put(fClass.getIdentifier(), fClass);
-                if (old != null) {
-                    errors.add(new IdentifierCollision(fClass, old));
-                }
-                treeData.classes.put(c, fClass);
-            } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
-                errors.add(twiceDefinedLocalVariable);
-            }
+    public static Delegates collectIdentifiers(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
+        GlobalIdentifierCollector collector = new GlobalIdentifierCollector(file, delegates, errors);
+        for (FrontierParser.ClassDeclarationContext ctx : collector.treeData.root.classDeclaration()) {
+            ctx.accept(collector);
         }
-        if (!errors.isEmpty())
-            return null;
-        //in the second pass find fields and methods headers
-        return visitChildren(ctx);
+        return collector.delegates;
     }
 
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
         currentClass = treeData.classes.get(ctx);
-        for (FType p : currentClass.getParametersList()) {
-            FType old = types.put(p.getIdentifier(), p);
-            if (old != null)
-                errors.add(new IdentifierCollision(old, p));
-        }
         try {
             visitChildren(ctx);
             return null;
         } finally {
-            for (FType p : currentClass.getParametersList()) {
-                types.remove(p.getIdentifier());
-            }
             currentClass = null;
         }
     }
@@ -112,17 +86,14 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
                             throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
                         }
                     }
-                    typeResolver = id -> {
-                        FType t = types.get(id);
-                        return t == null ? typeParameters.get(id) : t;
-                    };
+                    typeResolver = id -> Optional.<FType>ofNullable(typeParameters.get(id)).orElseGet(() -> resolveType(id));
                 } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
                     errors.add(twiceDefinedLocalVariable);
                     return null;
                 }
             } else {
                 typeParameters = Collections.emptyMap();
-                typeResolver = types::get;
+                typeResolver = this::resolveType;
             }
         }
 
@@ -181,7 +152,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
             FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
-            FType type = ParserContextUtils.getType(ctx.typeType(), types::get);
+            FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveType);
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
@@ -197,5 +168,13 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor {
             errors.add(e);
         }
         return null;
+    }
+
+    private FType resolveType(FTypeIdentifier identifier) {
+        for (FType p : currentClass.getParametersList()) {
+            if (p.getIdentifier().equals(identifier))
+                return p;
+        }
+        return file.resolveType(identifier);
     }
 }

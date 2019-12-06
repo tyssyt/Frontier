@@ -30,9 +30,11 @@ public class ParserTest {
 
     private SyntaxError parseSyntaxError(String file) throws IOException {
         try {
-            new Parser(prefix + file, Style.DEFAULT_STYLE).parse();
+            Parser.parse(prefix + file, Style.DEFAULT_STYLE);
         } catch (SyntaxErrors es) {
             return Iterables.getOnlyElement(es.errors);
+        } catch (SyntaxError syntaxError) {
+            return syntaxError;
         }
         throw new RuntimeException("no error");
     }

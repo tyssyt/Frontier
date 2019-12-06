@@ -16,7 +16,6 @@ import tys.frontier.code.identifier.*;
 import tys.frontier.code.literal.FLambda;
 import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.literal.FNull;
-import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -26,6 +25,7 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
@@ -38,7 +38,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class ToInternalRepresentation extends FrontierBaseVisitor {
+public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     private static class FunctionContext {
         FFunction function;
@@ -52,33 +52,31 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private SyntaxTreeData treeData;
-    private List<Warning> warnings = new ArrayList<>();
-    private List<SyntaxError> errors = new ArrayList<>();
+    private List<Warning> warnings;
+    private List<SyntaxError> errors;
 
     private FClass currentType;
     private Map<FTypeIdentifier, FTypeVariable> currentTypeParams;
     private Deque<FunctionContext> functionContextStack = new ArrayDeque<>();
     private Map<FVariable, FTypeVariable> typeVariableMap = new HashMap<>();
 
-    private Module module;
+    private ParsedFile file;
 
 
-    private ToInternalRepresentation(SyntaxTreeData syntaxTreeData, Module module) {
-        this.treeData = syntaxTreeData;
-        this.module = module;
+    private ToInternalRepresentation(ParsedFile file, List<Warning> warnings, List<SyntaxError> errors) {
+        this.treeData = file.getTreeData();
+        this.file = file;
+        this.warnings = warnings;
+        this.errors = errors;
     }
 
-    public static List<Warning> toInternal(SyntaxTreeData syntaxTreeData, Module module) throws SyntaxErrors {
-        ToInternalRepresentation visitor = new ToInternalRepresentation(syntaxTreeData, module);
+    public static void toInternal(ParsedFile file, List<Warning> warnings, List<SyntaxError> errors) {
+        ToInternalRepresentation visitor = new ToInternalRepresentation(file, warnings, errors);
         try {
-            visitor.visitFile(syntaxTreeData.root);
-            if (!visitor.errors.isEmpty())
-                throw SyntaxErrors.create(visitor.errors);
-            return visitor.warnings;
+            visitor.visitFile(visitor.treeData.root);
         } catch (AssertionError assertionError) {
-            if (!visitor.errors.isEmpty())
-                throw SyntaxErrors.create(visitor.errors);
-            throw assertionError;
+            if (visitor.errors.isEmpty())
+                throw assertionError;
         }
     }
 
@@ -87,19 +85,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor {
     }
 
     private FType findType(FTypeIdentifier identifier) {
-        //first check declared and imported classes
-        FType res = module.getClasses().get(identifier);
-        if (res != null)
-            return res;
-        res = module.getImportedClasses().get(identifier);
-        if (res != null)
-            return res;
-        //check type parameters of current class
-        res = currentTypeParams.get(identifier);
-        if (res != null)
-            return res;
         //check type parameters of current function
-        res = currentFunction().function.getParameters().get(identifier);
+        if (!functionContextStack.isEmpty() && currentFunction().function != null) {
+            FType res = currentFunction().function.getParameters().get(identifier);
+            if (res != null)
+                return res;
+        }
+        //check type parameters of current class
+        FType res = currentTypeParams.get(identifier);
+        if (res != null)
+            return res;
+        //check module & imports
+        res = file.resolveType(identifier);
         if (res != null)
             return res;
         //check for declaration of type variables

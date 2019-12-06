@@ -26,6 +26,7 @@ public FrontierLexer (CharStream input, Map<String, Integer> keywords) {
 //keep them up to date with the keywords.java
 tokens {
     IMPORT,
+    INCLUDE,
     CLASS,
     CONSTRUCTORS,
     EXPORT,
@@ -67,12 +68,17 @@ tokens {
 
 file
     :   importStatement*
+        includeStatement*
         classDeclaration*
         EOF
     ;
 
 importStatement
-    :   IMPORT TypeIdentifier SEMI
+    :   IMPORT identifier SEMI
+    ;
+
+includeStatement
+    :   INCLUDE identifier SEMI
     ;
 
 classDeclaration

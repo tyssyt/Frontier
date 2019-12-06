@@ -1,5 +1,6 @@
 package tys.frontier.main;
 
+import tys.frontier.State;
 import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
@@ -7,12 +8,14 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
+import tys.frontier.parser.dependencies.ImportResolver;
+import tys.frontier.parser.syntaxErrors.CyclicModuleDependency;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.UnresolvableImport;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
-import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -24,29 +27,26 @@ public class Main {
     private static final LLVMBackend.OutputFileType outputType =
             LLVMBackend.OutputFileType.EXECUTABLE;
 
-    public static void main(String[] args) {
-        try {
+    public static void main(String[] args) throws UnresolvableImport, CyclicModuleDependency, SyntaxErrors, IOException {
             String input = args[0];
             String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
             main(input, output);
-        } catch (IOException | SyntaxErrors e) {
-            Utils.handleException(e);
-        }
     }
 
-    public static void main(String input, String output) throws IOException, SyntaxErrors {
+    public static void main(String input, String output) throws IOException, SyntaxErrors, CyclicModuleDependency, UnresolvableImport {
         //FrontEnd
-        Module module = new Parser(input, Style.DEFAULT_STYLE).parse();
+        State.get().setImportResolver(new ImportResolver());
+        Module module = Parser.parse(input, Style.DEFAULT_STYLE);
 
         //Lowering Passes
-        for (Module m : module.getImportedModulesReflexiveTransitive()) {
+        for (Module m : module.findImportedModulesReflexiveTransitive()) {
             FForEachLowering.lower(m);
             OperatorAssignmentLowering.lower(m);
         }
 
         //Reachability analysis
         @SuppressWarnings("OptionalGetWithoutIsPresent")
-        Reachability reachability = Reachability.analyse(Collections.singleton(module.getEntryPoint().get()));
+        Reachability reachability = Reachability.analyse(Collections.singleton(module.findMain()));
 
         //remove unreachable fields & functions from reachable classes
         for (Map.Entry<FClass, Reachability.ReachableClass> entry : reachability.getReachableClasses().entrySet())

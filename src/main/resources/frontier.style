@@ -1,6 +1,7 @@
 {
     "keywords": {
         "import":       "import",
+        "include":      "include",
         "class":        "class",
 
         "constructors": "constructors",

@@ -1,95 +1,89 @@
 package tys.frontier.code.module;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.MoreCollectors;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.type.FClass;
-import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
-import tys.frontier.util.StringBuilderToString;
+import tys.frontier.parser.ParsedFile;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
-public class Module implements StringBuilderToString {
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
-    protected String name;
-    protected String version;
-    protected String subversion_or_versionSuffix; //optional
-    //TODO some better versioning, maybe make a new subclass just for that
+public class Module {
 
-    protected List<Module> importedModules = new ArrayList<>(); //dependencies
+    private ParsedFile entryPoint;
 
-    protected FFunction entryPoint = null;
+    //cached thingies
+    private Map<FTypeIdentifier, FClass> exportedClasses;
+    private List<ParsedFile> files;
 
-    protected BiMap<FTypeIdentifier, FClass> exportedClasses = HashBiMap.create();
-    protected BiMap<FTypeIdentifier, FClass> classes = HashBiMap.create();
-
-    public Module(String name, String version, String subversion_or_versionSuffix) {
-        assert Character.isUpperCase(name.charAt(0));
-        this.name = name;
-        this.version = version;
-        this.subversion_or_versionSuffix = subversion_or_versionSuffix;
+    public ParsedFile getEntryPoint() {
+        return entryPoint;
     }
 
-    public String getName() {
-        return name;
+    public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
+        return getExportedClasses().values().stream()
+                .flatMap(_class -> _class.getFunctions().values().stream())
+                .filter(FFunction::isMain)
+                .collect(MoreCollectors.onlyElement());
     }
 
-    public String getVersion() {
-        return version;
+    public void setEntryPoint(ParsedFile entryPoint) {
+        assert this.entryPoint == null;
+        this.entryPoint = entryPoint;
     }
 
-    public String getSubversion_or_versionSuffix() {
-        return subversion_or_versionSuffix;
+    public Map<FTypeIdentifier, FClass> getExportedClasses() {
+        if (exportedClasses == null)
+            exportedClasses = initExportedClasses();
+        return exportedClasses;
     }
 
-    public List<Module> getImportedModules() {
-        return importedModules;
+    private Map<FTypeIdentifier, FClass> initExportedClasses() {
+        return getClasses()
+                .filter(_class -> _class.getVisibility() == FVisibilityModifier.EXPORT)
+                .collect(toMap(FClass::getIdentifier, Function.identity()));
     }
 
-    public Set<Module> getImportedModulesReflexiveTransitive() {
-        Set<Module> res = new HashSet<>();
-        Queue<Module> todo = new ArrayDeque<>();
-        todo.add(this);
-        while (!todo.isEmpty()) {
-            Module cur = todo.remove();
-            if (res.contains(cur))
-                continue;
+    public Stream<FClass> getClasses() {
+        return getFiles().stream().flatMap(file -> file.getClasses().values().stream());
+    }
+
+    public List<ParsedFile> getFiles() {
+        if (files == null)
+            files = initFiles();
+        return files;
+    }
+
+    private List<ParsedFile> initFiles()  {
+        List<ParsedFile> res = new ArrayList<>();
+        Queue<ParsedFile> toDo = new ArrayDeque<>();
+        toDo.add(entryPoint);
+        while (!toDo.isEmpty()) {
+            ParsedFile cur = toDo.remove();
             res.add(cur);
-            todo.addAll(cur.getImportedModules());
+            toDo.addAll(cur.getIncludes());
         }
         return res;
     }
 
-    public BiMap<FTypeIdentifier, FClass> getClasses() {
-        return classes;
-    }
-
-    public Map<FTypeIdentifier, FClass> getExportedClasses() {
-        return exportedClasses;
-    }
-
-    public void addClass(FClass fClass) {
-        classes.put(fClass.getIdentifier(), fClass);
-        if (fClass.getVisibility() == FVisibilityModifier.EXPORT)
-            exportedClasses.put(fClass.getIdentifier(), fClass);
-    }
-
-    public Optional<FFunction> getEntryPoint() {
-        return Optional.ofNullable(entryPoint);
-    }
-
-    public void setEntryPoint(FFunction entryPoint) {
-        this.entryPoint = entryPoint;
-    }
-
-    public Map<FTypeIdentifier, FType> getImportedClasses () {
-        Map<FTypeIdentifier, FType> res = new LinkedHashMap<>();
-        for (Module module : importedModules) {
-            res.putAll(module.getExportedClasses());
+    public List<Module> findImportedModulesReflexiveTransitive() {
+        List<Module> res = new ArrayList<>();
+        Queue<Module> toDo = new ArrayDeque<>();
+        toDo.add(this);
+        while (!toDo.isEmpty()) {
+            Module cur = toDo.remove();
+            res.add(cur);
+            for (ParsedFile file : cur.getFiles()) {
+                toDo.addAll(file.getImports());
+            }
         }
         return res;
     }
@@ -100,31 +94,7 @@ public class Module implements StringBuilderToString {
 
     public <M,C,Fi,Fu,S,E> M accept(ModuleVisitor<M,C,Fi,Fu,S,E> visitor) {
         visitor.enterModule(this);
-        List<C> cs = new ArrayList<>(classes.size());
-        for (FClass fClass : classes.values()) {
-            cs.add(fClass.accept(visitor));
-        }
+        List<C> cs = getClasses().map(_class -> _class.accept(visitor)).collect(toList());
         return visitor.exitModule(this, cs);
-    }
-
-    @Override
-    public StringBuilder toString(StringBuilder sb) {
-        sb.append("Module: ").append(name).append(" v").append(version);
-        if (subversion_or_versionSuffix != null) {
-            sb.append('.').append(subversion_or_versionSuffix);
-        }
-        if (entryPoint != null) {
-            sb.append('\n').append("entry: ").append(entryPoint.headerToString());
-        }
-        for (FClass fClass : classes.values()) {
-            sb.append('\n');
-            fClass.summary(sb);
-        }
-        return sb;
-    }
-
-    @Override
-    public String toString() {
-        return tS();
     }
 }
