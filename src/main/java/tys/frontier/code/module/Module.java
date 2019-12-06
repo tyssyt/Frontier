@@ -55,7 +55,7 @@ public class Module {
     public FClass getClass(FTypeIdentifier identifier) {
         for (ParsedFile file : getFiles()) {
             FClass _class = file.getClass(identifier);
-            if (_class != null)
+            if (_class != null && _class.getVisibility() != FVisibilityModifier.PRIVATE)
                 return _class;
         }
         return null;

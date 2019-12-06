@@ -101,7 +101,11 @@ public class ParsedFile {
 
     //TODO this does not work multithreaded if any of the parents is worked on!
     public FClass resolveType(FTypeIdentifier identifier) {
-        FClass res = module.getClass(identifier);
+        FClass res = classes.get(identifier); //allows private classes
+        if (res != null)
+            return res;
+
+        res = module.getClass(identifier); //does not check private classes
         if (res != null)
             return res;
 

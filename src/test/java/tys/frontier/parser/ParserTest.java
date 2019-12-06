@@ -47,6 +47,11 @@ public class ParserTest {
         assertTrue(((AccessForbidden) e).accessed instanceof FField);
     }
     @Test
+    public void parseAccessForbiddenClass() throws Exception {
+        SyntaxError e = parseSyntaxError("AccessForbiddenClass.front");
+        assertEquals(TypeNotFound.class, e.getClass());
+    }
+    @Test
     public void parseAvoidCastingEverythingToBool() throws Exception {
         SyntaxError e = parseSyntaxError("AvoidCastingEverythingToBool.front");
         assertEquals(IncompatibleTypes.class, e.getClass());

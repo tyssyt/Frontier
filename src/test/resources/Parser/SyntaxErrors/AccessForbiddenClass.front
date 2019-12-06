@@ -1,0 +1,4 @@
+include AccessForbiddenClass2.front;
+
+class A:
+    static i: int32 = B.i;
