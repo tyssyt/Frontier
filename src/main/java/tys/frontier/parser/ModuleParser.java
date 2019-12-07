@@ -21,12 +21,11 @@ public class ModuleParser {
 
         while (!toDo.isEmpty()) {
             ParsedFile cur = toDo.remove();
-            for (String include : cur.findIncludes()) {
-                Path includePath = cur.getFilePath().resolveSibling(include).normalize();
-                if (isCyclicInclude(includePath, cur))
-                    throw new CyclicInclude(includePath);
+            for (Path include : cur.findIncludes()) {
+                if (isCyclicInclude(include, cur))
+                    throw new CyclicInclude(include);
 
-                ParsedFile parsedFile = FileParser.runAntlr(includePath, style);
+                ParsedFile parsedFile = FileParser.runAntlr(include, style);
                 parsedFile.setParent(cur);
                 cur.addInclude(parsedFile);
                 toDo.add(parsedFile);

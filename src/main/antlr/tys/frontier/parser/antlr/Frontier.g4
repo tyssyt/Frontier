@@ -82,7 +82,13 @@ includeStatement
     ;
 
 path
-    :   (DOT DOT SLASH)* (identifier SLASH)* identifier DOT identifier
+    :   folder? identifier DOT identifier   #filePath
+    |   folder STAR STAR? (DOT identifier)? #folderPath
+    ;
+
+folder
+    :   (DOT DOT SLASH)+ (identifier SLASH)*
+    |   (DOT DOT SLASH)* (identifier SLASH)+
     ;
 
 classDeclaration

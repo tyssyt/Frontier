@@ -5,12 +5,17 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
+import tys.frontier.util.Utils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.io.MoreFiles.*;
+import static java.nio.file.Files.isDirectory;
 
 public class ParsedFile {
 
@@ -86,11 +91,28 @@ public class ParsedFile {
         return res;
     }
 
-    public List<String> findIncludes() {
+    public List<Path> findIncludes() throws IOException {
         List<FrontierParser.IncludeStatementContext> ctxs = treeData.root.includeStatement();
-        List<String> res = new ArrayList<>(ctxs.size());
+        List<Path> res = new ArrayList<>(ctxs.size());
         for (FrontierParser.IncludeStatementContext ctx : ctxs) {
-            res.add(ctx.path().getText());
+            FrontierParser.PathContext pathContext = ctx.path();
+            if (pathContext instanceof FrontierParser.FilePathContext) {
+                res.add(filePath.resolveSibling(pathContext.getText()).normalize());
+            } else if (pathContext instanceof FrontierParser.FolderPathContext) {
+                FrontierParser.FolderPathContext folderPathContext = (FrontierParser.FolderPathContext) pathContext;
+
+                Path folder = filePath.resolveSibling(folderPathContext.folder().getText()).normalize();
+                boolean recursive = folderPathContext.STAR().size() == 2;
+                Iterable<Path> pathIterable = recursive ? fileTraverser().breadthFirst(folder) : listFiles(folder);
+
+                FrontierParser.IdentifierContext identifierContext = folderPathContext.identifier();
+                String fileExtension = identifierContext == null ? null : identifierContext.getText();
+                for (Path path : pathIterable)
+                    if (!isDirectory(path) && (fileExtension == null || fileExtension.equals(getFileExtension(path))))
+                        res.add(path);
+            } else {
+                return Utils.cantHappen();
+            }
         }
         return res;
     }
