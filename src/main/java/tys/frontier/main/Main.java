@@ -8,7 +8,10 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
-import tys.frontier.parser.dependencies.ImportResolver;
+import tys.frontier.parser.modules.FolderRepository;
+import tys.frontier.parser.modules.ImportResolver;
+import tys.frontier.parser.modules.ModuleRepository;
+import tys.frontier.parser.modules.ResourceRepository;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.analysis.reachability.Reachability;
@@ -17,10 +20,9 @@ import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
 
@@ -28,14 +30,55 @@ public class Main {
             LLVMBackend.OutputFileType.EXECUTABLE;
 
     public static void main(String[] args) throws SyntaxError, SyntaxErrors, IOException {
-            String input = args[0];
-            String output = args.length >= 2 ? args[1] : input.substring(0, input.lastIndexOf('.'));
-            main(input, output);
+        //TODO use some library for argument parsing?
+        String input;
+        String output = null;
+        List<ModuleRepository> repositories = new ArrayList<>();
+
+        int i = 0;
+        while (i < args.length) {
+            String arg = args[i];
+            if (arg.equals("--")) {
+                i++;
+                break;
+            }
+
+            switch (arg) {
+                case "-out":
+                    i++;
+                    if (output != null)
+                        System.err.println("-out argument given more then once");
+                    output = args[i];
+                    break;
+                case "-folderRepository":
+                    i++;
+                    Path path = Paths.get(args[i]);
+                    repositories.add(new FolderRepository(path, Style.DEFAULT_STYLE)); //TODO find a way to specify style here
+                    break;
+                default:
+                    System.err.println("unrecognized argument: " + arg);
+                    break;
+            }
+            i++;
+        }
+
+        if (i < args.length)
+            input = args[i];
+        else {
+            System.err.println("no input file");
+            return;
+        }
+
+        if (output == null)
+            output = input.substring(0, input.lastIndexOf('.'));
+
+        main(input, output, repositories);
     }
 
-    public static void main(String input, String output) throws IOException, SyntaxErrors, SyntaxError {
+    public static void main(String input, String output, List<ModuleRepository> repositories) throws IOException, SyntaxErrors, SyntaxError {
+        repositories.add(ResourceRepository.INSTANCE);
         //FrontEnd
-        State.get().setImportResolver(new ImportResolver());
+        State.get().setImportResolver(new ImportResolver(repositories));
         Module module = Parser.parse(Paths.get(input), Style.DEFAULT_STYLE);
 
         //Lowering Passes

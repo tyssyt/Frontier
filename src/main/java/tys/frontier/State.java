@@ -1,7 +1,7 @@
 package tys.frontier;
 
 import tys.frontier.parser.Parser;
-import tys.frontier.parser.dependencies.ImportResolver;
+import tys.frontier.parser.modules.ImportResolver;
 
 public class State {
 

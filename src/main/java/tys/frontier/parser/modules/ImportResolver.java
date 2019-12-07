@@ -1,4 +1,4 @@
-package tys.frontier.parser.dependencies;
+package tys.frontier.parser.modules;
 
 import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
@@ -6,19 +6,21 @@ import tys.frontier.parser.syntaxErrors.CyclicModuleDependency;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxErrors.UnresolvableImport;
-import tys.frontier.style.Style;
 
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Path;
+import java.util.*;
 
 public class ImportResolver {
 
+    private List<ModuleRepository> repositories;
+
     private Map<String, Module> resolvedModules = new HashMap<>();
     private Set<String> queuedRequests = new HashSet<>();
+
+    public ImportResolver(List<ModuleRepository> repositories) {
+        this.repositories = repositories;
+    }
 
     public Module requestModule(String name) throws SyntaxError, SyntaxErrors {
         Module res = resolvedModules.get(name);
@@ -27,15 +29,20 @@ public class ImportResolver {
                 if (queuedRequests.contains(name))
                     throw new CyclicModuleDependency(name);
                 queuedRequests.add(name);
-                //TODO are the libs present in the user style, are other files?
-                //TODO remove hard coded path and file extension
-                res = Parser.parse(Paths.get("Frontier Libs/" + name + ".front"), Style.DEFAULT_STYLE);
+
+                for (ModuleRepository repository : repositories) {
+                    Path path = repository.resolve(name);
+                    if (path != null) {
+                        res = Parser.parse(path, repository.getStyle());
+                        resolvedModules.put(name, res);
+                        queuedRequests.remove(name);
+                        return res;
+                    }
+                }
+                throw new UnresolvableImport(name, null);
             } catch (IOException e) {
                 throw new UnresolvableImport(name, e);
             }
-
-            resolvedModules.put(name, res);
-            queuedRequests.remove(name);
         }
         return res;
     }

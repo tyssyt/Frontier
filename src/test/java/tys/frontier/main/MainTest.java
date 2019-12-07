@@ -19,6 +19,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +41,7 @@ public class MainTest {
     private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
 
-        Main.main(prefix + fileName + ".front", tmpFolder);
+        Main.main(prefix + fileName + ".front", tmpFolder, new ArrayList<>());
 
         //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
         File output = new File(tmpFolder + ".txt");
