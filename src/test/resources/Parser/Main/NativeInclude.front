@@ -1,0 +1,11 @@
+import IO;
+
+native include NativeInclude.lib;
+
+export class Main:
+
+native static cfuncRetuningInt() -> int32;
+
+export static main () {
+    IO.printInt(cfuncRetuningInt());
+}

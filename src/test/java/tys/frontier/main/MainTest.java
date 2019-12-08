@@ -12,6 +12,7 @@ import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.util.FileUtils;
 import tys.frontier.util.Utils;
 
 import java.io.File;
@@ -29,7 +30,7 @@ public class MainTest {
     private static final String prefix = "Parser" + Utils.filesep + "Main" + Utils.filesep;
 
     @Rule
-    public TemporaryFolder folder= new TemporaryFolder();
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @BeforeClass
     public static void setUp() {
@@ -41,7 +42,7 @@ public class MainTest {
     private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
 
-        Main.main(prefix + fileName + ".front", tmpFolder, new ArrayList<>(), false);
+        Main.main(FileUtils.pathToResource(prefix + fileName + ".front").toString(), tmpFolder, new ArrayList<>(), false);
 
         //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
         File output = new File(tmpFolder + ".txt");
@@ -146,5 +147,10 @@ public class MainTest {
     public void mainInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("Include/Include", null);
         assertEquals("Hello" + Utils.endl + "There!" + Utils.endl, res);
+    }
+    @Test
+    public void mainNativeInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("NativeInclude", null);
+        assertEquals("42", res);
     }
 }

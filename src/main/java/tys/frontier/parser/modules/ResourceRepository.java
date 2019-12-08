@@ -1,11 +1,9 @@
 package tys.frontier.parser.modules;
 
 import tys.frontier.style.Style;
+import tys.frontier.util.FileUtils;
 
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class ResourceRepository implements ModuleRepository {
 
@@ -16,14 +14,7 @@ public class ResourceRepository implements ModuleRepository {
 
     @Override
     public Path resolve(String name) { //TODO make this work when running in a Jar
-        try {
-            URL resource = this.getClass().getResource("/Frontier Libs/" + name + ".front");
-            if (resource == null)
-                return null;
-            return Paths.get(resource.toURI());
-        } catch (URISyntaxException e) {
-            return null;
-        }
+        return FileUtils.pathToResource("Frontier Libs/" + name + ".front");
     }
 
     @Override

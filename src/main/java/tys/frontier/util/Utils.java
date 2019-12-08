@@ -2,7 +2,6 @@ package tys.frontier.util;
 
 import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.opensymphony.xwork2.util.ClassLoaderUtil;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
@@ -18,11 +17,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -80,25 +74,6 @@ public final class Utils {
             }
         }
         return map;
-    }
-
-    public static InputStream loadFile(String file) throws FileNotFoundException {
-        InputStream input = ClassLoaderUtil.getResourceAsStream(file, Utils.class);
-        if (input == null)
-            input = new FileInputStream(file);
-        return input;
-    }
-
-    public static boolean deleteDir(File file) {
-        File[] contents = file.listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                if (!Files.isSymbolicLink(f.toPath())) {
-                    deleteDir(f);
-                }
-            }
-        }
-        return file.delete();
     }
 
     public static <S,T> ArrayList<T> map(Collection<S> source, Function<S, T> mapper) {

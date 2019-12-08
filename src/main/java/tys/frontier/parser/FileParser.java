@@ -8,8 +8,8 @@ import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.AntRecognitionException;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
-import tys.frontier.util.Utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -20,7 +20,7 @@ import java.util.List;
 public class FileParser {
 
     public static ParsedFile runAntlr(Path file, Style style) throws IOException, SyntaxErrors {
-        try (InputStream input = Utils.loadFile(file.toString())) {
+        try (InputStream input = new FileInputStream(file.toFile())) {
             FrontierLexer lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             FrontierParser parser = new FrontierParser(tokens);

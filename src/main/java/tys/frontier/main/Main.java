@@ -19,7 +19,7 @@ import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
-import tys.frontier.util.Utils;
+import tys.frontier.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -129,7 +129,7 @@ public class Main {
             LLVMBackend.runBackend(module, reachability, output, outputType);
         } finally {
             if (!keepTmpDir)
-                Utils.deleteDir(State.get().getTempDir());
+                FileUtils.deleteDir(State.get().getTempDir());
             State.get().setTempDir(null);
         }
     }
