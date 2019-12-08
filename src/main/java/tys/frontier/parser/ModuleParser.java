@@ -4,10 +4,12 @@ import tys.frontier.code.module.Module;
 import tys.frontier.parser.syntaxErrors.CyclicInclude;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
+import tys.frontier.util.Pair;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 
 public class ModuleParser {
@@ -21,7 +23,8 @@ public class ModuleParser {
 
         while (!toDo.isEmpty()) {
             ParsedFile cur = toDo.remove();
-            for (Path include : cur.findIncludes()) {
+            Pair<List<Path>, List<Path>> pair = cur.findIncludes();
+            for (Path include : pair.a) {
                 if (isCyclicInclude(include, cur))
                     throw new CyclicInclude(include);
 
@@ -30,6 +33,7 @@ public class ModuleParser {
                 cur.addInclude(parsedFile);
                 toDo.add(parsedFile);
             }
+            res.addNativeIncludes(pair.b);
         }
 
         res.setEntryPoint(entryFile);

@@ -78,7 +78,7 @@ importStatement //TODO this is an ugly mess, I should just change modes (also ca
     ;
 
 includeStatement
-    :   INCLUDE path SEMI
+    :   NATIVE? INCLUDE path SEMI
     ;
 
 path

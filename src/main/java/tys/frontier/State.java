@@ -3,6 +3,8 @@ package tys.frontier;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.modules.ImportResolver;
 
+import java.io.File;
+
 public class State {
 
     private static State instance = new State();
@@ -13,6 +15,7 @@ public class State {
 
     private Parser currentParser = null;
     private ImportResolver importResolver;
+    private File tempDir;
 
     public Parser getCurrentParser() {
         return currentParser;
@@ -30,5 +33,14 @@ public class State {
 
     public void setImportResolver(ImportResolver importResolver) {
         this.importResolver = importResolver;
+    }
+
+    public File getTempDir() {
+        return tempDir;
+    }
+
+    public void setTempDir(File tempDir) {
+        assert this.tempDir == null || tempDir == null;
+        this.tempDir = tempDir;
     }
 }

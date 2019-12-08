@@ -9,6 +9,7 @@ import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
 import tys.frontier.parser.ParsedFile;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -19,6 +20,7 @@ import static java.util.stream.Collectors.toMap;
 public class Module {
 
     private ParsedFile entryPoint;
+    private List<Path> nativeIncludes = new ArrayList<>();
 
     //cached thingies
     private Map<FTypeIdentifier, FClass> exportedClasses;
@@ -81,6 +83,14 @@ public class Module {
             toDo.addAll(cur.getIncludes());
         }
         return res;
+    }
+
+    public List<Path> getNativeIncludes() {
+        return nativeIncludes;
+    }
+
+    public void addNativeIncludes(List<Path> nativeIncludes) {
+        this.nativeIncludes.addAll(nativeIncludes);
     }
 
     public List<Module> findImportedModulesReflexiveTransitive() {

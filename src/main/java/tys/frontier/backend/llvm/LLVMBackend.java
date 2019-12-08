@@ -6,6 +6,9 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
+import java.util.List;
+
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 public class LLVMBackend implements Backend {
@@ -28,8 +31,9 @@ public class LLVMBackend implements Backend {
 
     public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
         Iterable<FClass> classes;
+        List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {
-            classes = fModule.findImportedModulesReflexiveTransitive().stream()
+            classes = allModules.stream()
                     .flatMap(Module::getClasses)
                     .collect(toList());
         } else {
@@ -41,13 +45,13 @@ public class LLVMBackend implements Backend {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
-                module.emitToFile(fileType, out);
+                module.emitToFile(fileType, out, emptyList());
                 return;
             }
             System.out.println("generated Module: " + module.emitToString());
             module.optimize(3);
             //System.out.println("optimized Module: " + module.emitToString());
-            module.emitToFile(fileType, out);
+            module.emitToFile(fileType, out, allModules.stream().flatMap(m -> m.getNativeIncludes().stream()).collect(toList()));
         }
     }
 

@@ -9,15 +9,24 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
 
 public class Linker { //TODO clean up seperators
 
-    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<String> libDirs, String targetTriple) {
+    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<Path> userLibs, String targetTriple) {
+        List<String> inputFiles = new ArrayList<>();
+        inputFiles.add(inputFile);
+
+        //add all Libs as inputFiles
+        for (Path userLib : userLibs) {
+            inputFiles.add(userLib.toString());
+        }
+
         if (OS.isWindows()) {
-            return buildCallWindows(inputFile, outputFile, libDirs, targetTriple);
+            return buildCallWindows(inputFiles, outputFile, targetTriple);
         } else {
             return buildCallClang(inputFile, outputFile); //TODO linux linker call
         }
@@ -28,8 +37,9 @@ public class Linker { //TODO clean up seperators
         return new ProcessBuilder(Arrays.asList(command)); //TODO maybe this can actually be called from the clang api?
     }
 
-    public static ProcessBuilder buildCallWindows(String inputFile, String outputFile, List<String> libDirs, String targetTriple) {
+    public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, String targetTriple) {
         String linker;
+        String libDir;
         if (JarUtils.isRunningInJar()) {
             //we must unpack the linker and the libraries from the jar
 
@@ -48,20 +58,18 @@ public class Linker { //TODO clean up seperators
 
             //get linker & libs dir
             linker = targetFolder.getPath() + "/lld-link.exe";
-            libDirs.add(targetFolder.getPath() + "/lib/" + getArch(targetTriple) + '/');
+            libDir = targetFolder.getPath() + "/lib/" + getArch(targetTriple) + '/';
         } else {
             linker = Linker.class.getResource("lld-link.exe").getFile();
             String pathToLib = "lib/" + getArch(targetTriple) + '/';
-            libDirs.add(Linker.class.getResource(pathToLib).getFile().substring(1)); //getResource adds a slash at the beginning
+            libDir = Linker.class.getResource(pathToLib).getFile().substring(1); //getResource adds a slash at the beginning
         }
 
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         builder.add(linker).add("-nologo").add("-defaultlib:libcmt").add("-out:" + outputFile);
-        for (String libDir : libDirs) {
-            builder.add("-libpath:" + libDir);
-        }
-        builder.add(inputFile);
+        builder.add("-libpath:" + libDir);
+        builder.addAll(inputFiles);
         return new ProcessBuilder(builder.build());
     }
 

@@ -5,6 +5,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -91,10 +92,12 @@ public class ParsedFile {
         return res;
     }
 
-    public List<Path> findIncludes() throws IOException {
+    public Pair<List<Path>, List<Path>> findIncludes() throws IOException {
         List<FrontierParser.IncludeStatementContext> ctxs = treeData.root.includeStatement();
-        List<Path> res = new ArrayList<>(ctxs.size());
+        List<Path> includes = new ArrayList<>();
+        List<Path> nativeIncludes = new ArrayList<>();
         for (FrontierParser.IncludeStatementContext ctx : ctxs) {
+            List<Path> res = ctx.NATIVE() != null ? nativeIncludes : includes;
             FrontierParser.PathContext pathContext = ctx.path();
             if (pathContext instanceof FrontierParser.FilePathContext) {
                 res.add(filePath.resolveSibling(pathContext.getText()).normalize());
@@ -114,7 +117,7 @@ public class ParsedFile {
                 return Utils.cantHappen();
             }
         }
-        return res;
+        return new Pair<>(includes, nativeIncludes);
     }
 
     public SyntaxTreeData getTreeData() {

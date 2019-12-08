@@ -1,15 +1,14 @@
 package tys.frontier.backend.llvm;
 
 import com.google.common.base.Joiner;
-import com.google.common.io.Files;
 import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
+import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
@@ -19,8 +18,8 @@ import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
 import tys.frontier.util.Utils;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,15 +40,11 @@ public class LLVMModule implements AutoCloseable {
             this.type = type;
         }
 
-        static Linkage fromVisibility(FVisibilityModifier visibility) { //TODO the goal would be to never generate something others need to link against, so nothing needs external linkage?
-            switch (visibility) {
-                case EXPORT:
-                    return Linkage.EXTERNAL;
-                case NONE: case PRIVATE:
-                    return Linkage.PRIVATE;
-                default:
-                    return Utils.cantHappen();
-            }
+        static Linkage findLinkage(boolean isNative) {
+            if (isNative)
+                return Linkage.EXTERNAL;
+            else
+                return Linkage.PRIVATE;
         }
     }
 
@@ -88,7 +83,7 @@ public class LLVMModule implements AutoCloseable {
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
         fillInPredefinedTypes();
 
-        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FTuple.VOID), (PointerPointer) null, 0, FALSE));
+        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FTuple.VOID), (PointerPointer<LLVMTypeRef>) null, 0, FALSE));
         LLVMAppendBasicBlock(sfInit, "entry");
     }
 
@@ -228,7 +223,7 @@ public class LLVMModule implements AutoCloseable {
                 LLVMTypeRef type = getLlvmType(field.getType());
                 LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
 
-                setGlobalAttribs(global, Linkage.fromVisibility(field.getVisibility()), false);
+                setGlobalAttribs(global, Linkage.findLinkage(false), false);
                 todoFieldInitilizers.add(field);
             }
 
@@ -251,7 +246,7 @@ public class LLVMModule implements AutoCloseable {
     private LLVMValueRef addFunctionHeader(FFunction function) { //TODO find other good attributes to set for function and parameters
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
         //set global attribs
-        setGlobalAttribs(res, Linkage.fromVisibility(function.getVisibility()), true);
+        setGlobalAttribs(res, Linkage.findLinkage(function.isNative()), true);
         //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
 
         //set names for all arguments, add parameter attributes
@@ -394,7 +389,7 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
+    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName, List<Path> userLibs) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
         BytePointer error = new BytePointer();
         int errorId = 0;
         switch (fileType) {
@@ -415,21 +410,18 @@ public class LLVMModule implements AutoCloseable {
                 }
                 break;
             case EXECUTABLE:
-                File tempDir = Files.createTempDir();
-                String tempName = tempDir.getPath() + fileName.substring(fileName.lastIndexOf(Utils.filesep)) + "_temp.o";
+                String tempName = State.get().getTempDir().getPath() + fileName.substring(fileName.lastIndexOf(Utils.filesep)) + "_temp.o";
                 Log.info(this, "writing temporary object file to: " + tempName);
                 try (Target target = Target.getDefault()) {
                     errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
                     if (errorId != 0)
                         break;
-                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, new ArrayList<>(), target.getTargetTriple());
+                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, userLibs, target.getTargetTriple());
                     Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
                     Process p = linkerCall.inheritIO().start();
                     p.waitFor();
                 } catch (IOException | InterruptedException e) {
                     Utils.handleException(e);
-                } finally {
-                    Utils.deleteDir(tempDir);
                 }
                 break;
         }
