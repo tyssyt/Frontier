@@ -10,6 +10,8 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.literal.FStringLiteral;
+import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FBlock;
@@ -113,7 +115,7 @@ public class FBaseFunction implements FFunction {
     @Override
     public boolean isMain() {
         return identifier.name.equals("main")
-                && params.isEmpty()
+                && (params.isEmpty() || (params.size() == 1 && params.get(0).getType() == FArray.getArrayFrom(FStringLiteral.TYPE)))
                 && returnType == FTuple.VOID
                 && modifier == FVisibilityModifier.EXPORT
                 && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT;

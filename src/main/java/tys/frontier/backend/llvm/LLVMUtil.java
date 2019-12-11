@@ -21,6 +21,12 @@ public class LLVMUtil {
     //TODO this is kind of a temporary solution, but I will have to handle LLVM naming more when I start to allow renaming etc. anyways
     private static Map<FFunction, String> uniqueFunctionNameCache = new HashMap<>();
 
+    public static <P extends Pointer> PointerPointer<P> createPointerPointer (P p) {
+        PointerPointer<P> res = new PointerPointer<>(1);
+        res.put(0, p);
+        return res;
+    }
+
     @SafeVarargs
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (P... list) {
         return createPointerPointer(Arrays.asList(list));

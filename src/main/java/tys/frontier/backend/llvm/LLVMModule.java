@@ -57,8 +57,6 @@ public class LLVMModule implements AutoCloseable {
     final LLVMTypeRef bytePointer;
     final LLVMTypeRef bytePointerPointer;
 
-    LLVMValueRef sfInit;
-
     private boolean verificationNeeded = false;
     private boolean ownsContext;
     private LLVMContextRef context;
@@ -82,9 +80,6 @@ public class LLVMModule implements AutoCloseable {
         bytePointer = LLVMPointerType(byteType, 0);
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
         fillInPredefinedTypes();
-
-        sfInit = LLVMAddFunction(module, "sf.init", LLVMFunctionType(getLlvmType(FTuple.VOID), (PointerPointer<LLVMTypeRef>) null, 0, FALSE));
-        LLVMAppendBasicBlock(sfInit, "entry");
     }
 
     private void fillInPredefinedTypes() {
@@ -283,7 +278,7 @@ public class LLVMModule implements AutoCloseable {
      * Creates LLVM Code for all parsed Functions and Classes in this module.
      * Should be called after {@link #parseClassMembers}.
      */
-    public void fillInBodies() {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
+    public void fillInBodies(FFunction entryPoint) {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
@@ -301,41 +296,17 @@ public class LLVMModule implements AutoCloseable {
             for (FField field : todoFieldInitilizers) {
                 trans.visitField(field);
             }
-            //last are bodies for fields
+            //bodies for fields
             for (FFunction function : todoFunctionBodies)
                 trans.visitFunction(function);
+
+            //main
+            if (entryPoint != null)
+                trans.generateMain(entryPoint);
         }
+
     }
 
-    public void generateMain(FFunction entryPoint) {
-        verificationNeeded = true;
-        /*
-        TODO this is a rough outline on how we would parse input params, but first we need to decide what internal type is string and how to map the i8 array to it
-        PointerPointer<LLVMTypeRef> argTypes = new PointerPointer<>(2);
-        argTypes.put(0, llvmTypes.get(FInt32.INSTANCE));
-        argTypes.put(1, llvmTypes.get(FArray.getArrayFrom(FInt8.INSTANCE, 1)));
-        */
-        PointerPointer<LLVMTypeRef> argTypes = new PointerPointer<>(0);
-
-        LLVMTypeRef returnType = LLVMInt32Type();
-        LLVMTypeRef functionType = LLVMFunctionType(returnType, argTypes, 0, FALSE);
-
-        LLVMValueRef function = LLVMAddFunction(module, "main", functionType);
-        LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
-        LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
-        LLVMPositionBuilderAtEnd(builder, entryBlock);
-
-        //call entry Point & sfInit
-        LLVMBuildCall(builder, sfInit, null, 0, "");
-        LLVMValueRef func = LLVMGetNamedFunction(module, getFunctionName(entryPoint));
-        LLVMBuildCall(builder, func, null, 0, "");
-
-        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
-
-        //end sfInit
-        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(sfInit));
-        LLVMBuildRetVoid(builder);
-    }
 
     public void verify() { //TODO this should be called at other places as well
         if (!verificationNeeded)

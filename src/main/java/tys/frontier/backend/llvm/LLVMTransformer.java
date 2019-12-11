@@ -2,6 +2,7 @@ package tys.frontier.backend.llvm;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import org.bytedeco.javacpp.LLVM;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
@@ -87,11 +88,19 @@ class LLVMTransformer implements
 
     private final LLVMTypeRef indexType;
 
+    private LLVMValueRef sfInit;
+    private LLVMValueRef cStringToFString;
+
+
     public LLVMTransformer(LLVMModule module) {
         this.module = module;
         this.builder = module.createBuilder();
         this.entryBlockAllocaBuilder = module.createBuilder();
         indexType = module.getLlvmType(FIntN._32);
+
+        sfInit = LLVMAddFunction(module.getModule(), "sf.init", LLVMFunctionType(module.getLlvmType(FTuple.VOID), (PointerPointer<LLVMTypeRef>) null, 0, FALSE));
+        LLVMAppendBasicBlock(sfInit, "entry");
+        cStringToFString = createCStringToFString(); //TODO this is not the ideal place to create this function
     }
 
     @Override
@@ -112,10 +121,145 @@ class LLVMTransformer implements
         return res;
     }
 
+
+    public void generateMain(FFunction entryPoint) {
+        PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(indexType,
+                LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
+        );
+
+
+        LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 2, FALSE);
+
+        LLVMValueRef function = LLVMAddFunction(module.getModule(), "main", functionType);
+        LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
+        LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
+        LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
+        LLVMPositionBuilderAtEnd(builder, entryBlock);
+        LLVMBuildCall(builder, sfInit, null, 0, "");
+        LLVMValueRef userMain = LLVMGetNamedFunction(module.getModule(), getFunctionName(entryPoint));
+
+        //call entry Point
+        if (entryPoint.getParams().isEmpty()) {
+            LLVMBuildCall(builder, userMain, null, 0, "");
+        } else {
+            //convert input to Frontier String
+            LLVMValueRef args = convertArgs(function, LLVMGetParam(function, 0), LLVMGetParam(function, 1));
+            LLVMBuildCall(builder, userMain, LLVMUtil.createPointerPointer(args), 1, "");
+        }
+        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
+        LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
+
+        //finish sfInit
+        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(sfInit));
+        LLVMBuildRetVoid(builder);
+    }
+
+    private LLVMValueRef convertArgs(LLVMValueRef function, LLVMValueRef argi, LLVMValueRef argv) {
+        LLVMTypeRef fStringType = module.getLlvmType(FArray.getArrayFrom(FStringLiteral.TYPE));
+
+        LLVMBasicBlockRef copyBlock = LLVMAppendBasicBlock(function, "copy");
+        LLVMBasicBlockRef copy2Block = LLVMAppendBasicBlock(function, "copy2");
+        LLVMBasicBlockRef endBlock = LLVMAppendBasicBlock(function, "end");
+
+        LLVMValueRef i = LLVMBuildAlloca(entryBlockAllocaBuilder, indexType, "alloc_i");
+
+        //TODO this is a alloca copy of arraMalloc
+        LLVMValueRef size = arrayOffsetOf(fStringType, argi);
+        LLVMValueRef alloca = LLVMBuildArrayAlloca(builder, module.byteType, size, "arrayAlloca");
+        LLVMValueRef res = LLVMBuildBitCast(builder, alloca, fStringType, "newArray");
+
+        //store size
+        LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, res, 0, "sizeAddress");
+        LLVMBuildStore(builder, argi, sizeAddress);
+
+        LLVMBuildStore(builder, indexLiteral(0), i);
+        LLVMBuildBr(builder, copyBlock);
+
+        //copy
+        LLVMPositionBuilderAtEnd(builder, copyBlock);
+        LLVMValueRef load_i = LLVMBuildLoad(builder, i, "load_i");
+        LLVMValueRef _continue = LLVMBuildICmp(builder, LLVMIntULT, load_i, argi, "cont");
+        LLVMBuildCondBr(builder, _continue, copy2Block, endBlock);
+
+        LLVMPositionBuilderAtEnd(builder, copy2Block);
+        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(load_i);
+        LLVMValueRef stringAddr = LLVMBuildInBoundsGEP(builder, argv, indices, 1, "GEP_string");
+        LLVMValueRef string = LLVMBuildLoad(builder, stringAddr, "loadstr");
+        LLVMValueRef fString = LLVMBuildCall(builder, cStringToFString, createPointerPointer(string), 1, "cString2FString");
+        LLVMValueRef resAddr = arrayGep(res, load_i);
+        LLVMBuildStore(builder, fString, resAddr);
+        LLVMBuildStore(builder, LLVMBuildAdd(builder, load_i, indexLiteral(1), "inc_i"), i);
+        LLVMBuildBr(builder, copyBlock);
+
+        //end
+        LLVMPositionBuilderAtEnd(builder, endBlock);
+        return res;
+    }
+
+    private LLVMValueRef createCStringToFString() {
+        LLVMTypeRef charType = LLVMInt8TypeInContext(module.getContext());
+        LLVMTypeRef cStringType = LLVMPointerType(charType, 0);
+        LLVMTypeRef fStringType = module.getLlvmType(FStringLiteral.TYPE);
+        LLVMTypeRef functionType = LLVMFunctionType(fStringType, cStringType, 1, FALSE);
+
+        LLVMValueRef function = LLVMAddFunction(module.getModule(), "cString2fString", functionType);
+
+        LLVMValueRef cString = LLVMGetParam(function, 0);
+
+        LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
+        LLVMBasicBlockRef countLengthBlock = LLVMAppendBasicBlock(function, "countLength");
+        LLVMBasicBlockRef allocArrayBlock = LLVMAppendBasicBlock(function, "allocArray");
+        LLVMBasicBlockRef copyStringBlock = LLVMAppendBasicBlock(function, "copyString");
+        LLVMBasicBlockRef copyString2Block = LLVMAppendBasicBlock(function, "copyString2");
+        LLVMBasicBlockRef endBlock = LLVMAppendBasicBlock(function, "end");
+
+        //alloca
+        LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
+        LLVMValueRef i = LLVMBuildAlloca(entryBlockAllocaBuilder, indexType, "alloc_i");
+        LLVMBuildStore(entryBlockAllocaBuilder, indexLiteral(-1), i);
+        LLVMBuildBr(entryBlockAllocaBuilder, countLengthBlock);
+
+        //count Length
+        LLVMPositionBuilderAtEnd(builder, countLengthBlock);
+        LLVMValueRef inc = LLVMBuildAdd(builder, LLVMBuildLoad(builder, i, "load_i"), indexLiteral(1), "inc_i");
+        LLVMBuildStore(builder, inc, i);
+        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(inc);
+        LLVMValueRef charAddr = LLVMBuildInBoundsGEP(builder, cString, indices, 1, "GEP_string");
+        LLVMValueRef _char = LLVMBuildLoad(builder, charAddr, "loadChar");
+        LLVMValueRef isNull = LLVMBuildICmp(builder, LLVMIntEQ, _char, LLVMConstInt(charType, 0, FALSE), "isNull");
+        LLVMBuildCondBr(builder, isNull, allocArrayBlock, countLengthBlock);
+
+        //allocArray
+        LLVMPositionBuilderAtEnd(builder, allocArrayBlock);
+        LLVMValueRef array = buildArrayMalloc(fStringType, inc);
+        LLVMBuildStore(builder, indexLiteral(0), i);
+        LLVMBuildBr(builder, copyStringBlock);
+
+        //copyString
+        LLVMPositionBuilderAtEnd(builder, copyStringBlock);
+        LLVMValueRef load_i = LLVMBuildLoad(builder, i, "load_i");
+        indices = LLVMUtil.createPointerPointer(load_i);
+        charAddr = LLVMBuildInBoundsGEP(builder, cString, indices, 1, "GEP_string");
+        _char = LLVMBuildLoad(builder, charAddr, "loadChar");
+        isNull = LLVMBuildICmp(builder, LLVMIntEQ, _char, LLVMConstInt(charType, 0, FALSE), "isNull");
+        LLVMBuildCondBr(builder, isNull, endBlock, copyString2Block);
+
+        LLVMPositionBuilderAtEnd(builder, copyString2Block);
+        LLVMValueRef charAddr2 = arrayGep(array, load_i);
+        LLVMBuildStore(builder, _char, charAddr2);
+        LLVMBuildStore(builder, LLVMBuildAdd(builder, load_i, indexLiteral(1), "inc_i"), i);
+        LLVMBuildBr(builder, copyStringBlock);
+
+        //end
+        LLVMPositionBuilderAtEnd(builder, endBlock);
+        LLVMBuildRet(builder, array);
+        return function;
+    }
+
     @Override
     public LLVMValueRef visitField(FField field) {
         LLVMValueRef res = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
-        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(module.sfInit));
+        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(sfInit));
         if (res.isNull()) {
             Utils.cantHappen();
         }
@@ -502,21 +646,20 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedArray (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
         if (function.isConstructor()) {
-            LLVMTypeRef arrayType = module.getLlvmType(functionCall.getType());
-
-            //compute the array size
-            LLVMValueRef sizeRef = Iterables.getOnlyElement(args);
-
-            LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
-            LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
-            LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
-
-            //store size
-            LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, arrayRef, 0, "sizeAddress");
-            LLVMBuildStore(builder, sizeRef, sizeAddress);
-            return arrayRef;
+            return buildArrayMalloc(module.getLlvmType(functionCall.getType()), Iterables.getOnlyElement(args));
         } else
             return Utils.NYI(function.headerToString() + " in the backend");
+    }
+
+    private LLVMValueRef buildArrayMalloc(LLVMTypeRef arrayType, LLVMValueRef sizeRef) {
+        LLVMValueRef size = arrayOffsetOf(arrayType, sizeRef);
+        LLVMValueRef malloc = LLVMBuildArrayMalloc(builder, module.byteType, size, "arrayMalloc");
+        LLVMValueRef arrayRef = LLVMBuildBitCast(builder, malloc, arrayType, "newArray");
+
+        //store size
+        LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, arrayRef, 0, "sizeAddress");
+        LLVMBuildStore(builder, sizeRef, sizeAddress);
+        return arrayRef;
     }
 
     private LLVMValueRef predefinedOptional (FFunctionCall functionCall, List<LLVMValueRef> args) { //TODO this is copy & paste from if and call...
@@ -702,7 +845,7 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef arrayGep(LLVMValueRef value, LLVMValueRef index) {
-        PointerPointer<LLVMValueRef> indices = new PointerPointer<>(indexLiteral(0), indexLiteral(1), index);
+        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(indexLiteral(0), indexLiteral(1), index);
         return LLVMBuildGEP(builder, value, indices, 3, "GEP_array");
     }
 
@@ -727,9 +870,7 @@ class LLVMTransformer implements
     private LLVMValueRef packTuple(List<LLVMValueRef> values) {
         assert values.size() > 1;
 
-        PointerPointer<LLVMTypeRef> types = new PointerPointer<>(values.size());
-        for (int i=0; i<values.size(); i++)
-            types.put(i, LLVMTypeOf(values.get(i)));
+        PointerPointer<LLVMTypeRef> types = LLVMUtil.createPointerPointer(values, LLVM::LLVMTypeOf);
         LLVMTypeRef structType = LLVMStructTypeInContext(module.getContext(), types, values.size(), FALSE);
 
         LLVMValueRef agg = LLVMGetUndef(structType);

@@ -89,7 +89,7 @@ public abstract class ForwardingFunction implements FFunction {
 
     @Override
     public boolean isMain() {
-        return proxy.isMain();
+        return false;
     }
 
     @Override

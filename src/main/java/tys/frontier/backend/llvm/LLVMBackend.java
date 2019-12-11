@@ -59,9 +59,7 @@ public class LLVMBackend implements Backend {
         LLVMModule res = new LLVMModule(name);
         res.parseTypes(classes);
         res.parseClassMembers(classes);
-        res.fillInBodies();
-        if (entryPoint != null)
-            res.generateMain(entryPoint);
+        res.fillInBodies(entryPoint);
         return res;
     }
 
