@@ -1,0 +1,30 @@
+export class Strings:
+
+    export static parseInt(string: char[]) -> int64 {
+        res: int64 = 0;
+
+        i: int32 = 0;
+        //check for first char '-'
+        isNegative := string[0] =*= 45;
+
+        if isNegative {
+            ++i;
+        }
+
+        while i < string.size {
+            res *= 10;
+            res += charToInt(string[i]);
+            ++i;
+        }
+
+        if isNegative {
+            res = -1 * res;
+        }
+
+        return res;
+    }
+
+    static charToInt(c: char) -> int32 {
+        //assert c >= 48 && c <= 57 //TODO
+        return c - 48;
+    }

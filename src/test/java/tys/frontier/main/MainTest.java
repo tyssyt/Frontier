@@ -1,6 +1,7 @@
 package tys.frontier.main;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
 import org.junit.BeforeClass;
@@ -39,14 +40,15 @@ public class MainTest {
             ((StdOutLogger) logger).setLevel(Logger.Level.INFO);
     }
 
-    private String doMain(String fileName, String input) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+    private String doMain(String fileName, String input, String... args) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
 
         Main.main(FileUtils.pathToResource(prefix + fileName + ".front").toString(), tmpFolder, new ArrayList<>(), false);
 
         //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
+        ImmutableList<String> processCall = ImmutableList.<String>builder().add(tmpFolder + ".exe").add(args).build();
         File output = new File(tmpFolder + ".txt");
-        Process p = new ProcessBuilder(tmpFolder + ".exe").redirectOutput(output).start();
+        Process p = new ProcessBuilder(processCall).redirectOutput(output).start();
 
         if (input != null) {
             try (OutputStreamWriter writer = new OutputStreamWriter(p.getOutputStream())) {
@@ -140,7 +142,7 @@ public class MainTest {
     }
     @Test
     public void mainPrimes() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
-        String res = doMain("Primes", "10000\n");
+        String res = doMain("Primes", null, "10000");
         assertEquals(loadOut("PrimesOut.txt"), res);
     }
     @Test
