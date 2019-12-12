@@ -33,6 +33,7 @@ tokens {
     PRIVATE,
     STATIC,
     NATIVE,
+    OPERATOR,
     DELEGATE,
     IN,
     OUT,
@@ -144,7 +145,34 @@ methodDeclaration
     ;
 
 methodHeader //Tuple-ize
-    :   visibilityModifier? NATIVE? STATIC? LCIdentifier typeParameters? formalParameters (ARROW typeList)? typeParameterSpecification*
+    :   visibilityModifier? NATIVE? STATIC?
+        (LCIdentifier | OPERATOR operator)
+        typeParameters? formalParameters (ARROW typeList)? typeParameterSpecification*
+    ;
+
+operator
+    :   EXMARK
+    |   INC
+    |   DEC
+    |   ADD
+    |   SUB
+    |   STAR
+    |   SLASH
+    |   MOD
+    |   LE
+    |   GE
+    |   LT
+    |   GT
+    |   EQUAL
+    |   NOTEQUAL
+    |   EQUAL_CONTAINER
+    |   NOTEQUAL_CONTAINER
+    |   AAND
+    |   AOR
+    |   XOR
+    |   AND
+    |   OR
+    |   LBRACK RBRACK
     ;
 
 fieldDeclaration
@@ -252,11 +280,11 @@ expression
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
-    |   NEW typeType LPAREN namedExpressions? RPAREN            #newObject
+    |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
-    |   expression (STAR|SLASH|MOD) expression                       #binaryOp
+    |   expression (STAR|SLASH|MOD) expression                     #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp
     |   expression (EQUAL|NOTEQUAL) expression                     #binaryOp

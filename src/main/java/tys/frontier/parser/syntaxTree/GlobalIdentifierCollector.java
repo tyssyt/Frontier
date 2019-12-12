@@ -1,11 +1,13 @@
 package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -116,10 +118,25 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             params.add(FParameter.create(FVariableIdentifier.THIS, currentClass, false));
         }
 
-        FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
+
         try {
             formalParameters(ctx.formalParameters(), params, typeResolver);
-            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, params.build(), typeParameters);
+            ImmutableList<FParameter> parameters = params.build();
+
+            //identifier
+            FFunctionIdentifier identifier;
+            TerminalNode identifierNode = ctx.LCIdentifier();
+            if (identifierNode != null) {
+                identifier = new FFunctionIdentifier(identifierNode.getText());
+            } else {
+                //Operator overloading
+                Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
+                if (!operator.isUserDefinable())
+                    return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
+                identifier = operator.getIdentifier();
+            }
+
+            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, parameters, typeParameters);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
         } catch (SyntaxErrors e) {
