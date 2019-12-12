@@ -241,7 +241,8 @@ public final class Utils {
             }
 
             //TODO when multithreading is used we might need to copy the list first before sorting to avoid race conditions while sorting
-            list.sort((f1, f2) -> {
+            FFunction[] array = list.toArray(new FFunction[0]);
+            Arrays.sort(array, (f1, f2) -> {
                 int c = f1.getParams().size() - f2.getParams().size();
                 if (c != 0)
                     return c;
@@ -254,8 +255,8 @@ public final class Utils {
                 }
                 return 0;
             });
-            for (int i=0; i<list.size(); i++) {
-                res.put(list.get(i), name + "#" + i);
+            for (int i=0; i<array.length; i++) {
+                res.put(array[i], name + "#" + i);
             }
         }
         return res;
