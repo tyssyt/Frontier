@@ -207,7 +207,7 @@ public final class Utils {
         return true;
     }
 
-    public static  <T> T firstDuplicate(Set<T> a, Set<T> b) {
+    public static <T> T firstDuplicate(Set<T> a, Set<T> b) {
         if (a.size() < b.size()) {
             for (T t : a) {
                 if (b.contains(t))

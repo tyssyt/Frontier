@@ -13,7 +13,7 @@ import static java.util.stream.Collectors.toList;
 
 public class LLVMBackend implements Backend {
 
-    public  enum OutputFileType { //TODO this will change, see the todo in tofile of Module
+    public enum OutputFileType { //TODO this will change, see the todo in tofile of Module
         LLVM_IR("ll"),
         LLVM_BITCODE("bc"),
         TEXTUAL_ASSEMBLY("s"), //TODO from here on content is taget dependend
