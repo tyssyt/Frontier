@@ -2,13 +2,10 @@ package tys.frontier.code.statement;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
-import tys.frontier.code.function.operator.FBinaryOperator;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
@@ -25,7 +22,6 @@ import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Collections.singletonList;
-import static tys.frontier.code.function.operator.FBinaryOperator.Arith.*;
 
 public class FVarAssignment implements FStatement {
 
@@ -119,28 +115,24 @@ public class FVarAssignment implements FStatement {
 
     public enum Operator { //TODO type restrictions of operators
         ASSIGN("=", null),
-        ADD_ASSIGN("+=", PLUS.identifier),
-        SUB_ASSIGN("-=", MINUS.identifier),
-        MUL_ASSIGN("*=", TIMES.identifier),
-        DIV_ASSIGN("/=", DIVIDED.identifier),
-        AND_ASSIGN("&=", AND.identifier),
-        OR_ASSIGN("|=", OR.identifier),
-        XOR_ASSIGN("^=", XOR.identifier),
-        MOD_ASSIGN("%=", MODULO.identifier);
+        ADD_ASSIGN("+=", BinaryOperator.PLUS),
+        SUB_ASSIGN("-=", BinaryOperator.MINUS),
+        MUL_ASSIGN("*=", BinaryOperator.TIMES),
+        DIV_ASSIGN("/=", BinaryOperator.DIVIDED),
+        AND_ASSIGN("&=", BinaryOperator.AND),
+        OR_ASSIGN("|=",  BinaryOperator.OR),
+        XOR_ASSIGN("^=", BinaryOperator.XOR),
+        MOD_ASSIGN("%=", BinaryOperator.MODULO);
 
         private static ImmutableMap<String, Operator> stringMap =
                 Arrays.stream(values()).collect(toImmutableMap(o -> o.stringRepresentation, o -> o));
 
         public final String stringRepresentation;
-        public final FFunctionIdentifier identifier;
+        public final BinaryOperator operator;
 
-        Operator(String s, FFunctionIdentifier id) {
-            stringRepresentation = s;
-            identifier = id;
-        }
-
-        public FBinaryOperator getOperator(FClass fClass) {
-            return (FBinaryOperator) Iterables.getOnlyElement(fClass.getFunctions().get(identifier));
+        Operator(String stringRepresentation, BinaryOperator operator) {
+            this.stringRepresentation = stringRepresentation;
+            this.operator = operator;
         }
 
         public static Operator fromString (String string) {

@@ -14,13 +14,10 @@ public interface Operator {
 
     static Operator get(String stringRepresentation, List<FType> argTypes) {
         Operator operator = null;
-        if (argTypes.size() == 1) {
-            operator = FUnaryOperator.Pre.getFromParserToken(stringRepresentation);
-        } else if (argTypes.size() == 2) {
-            operator = FBinaryOperator.Arith.getFromParserToken(stringRepresentation);
-            if (operator == null)
-                operator = FBinaryOperator.Bool.getFromParserToken(stringRepresentation);
-        }
+        if (argTypes.size() == 1)
+            operator = UnaryOperator.getFromParserToken(stringRepresentation);
+        else if (argTypes.size() == 2)
+            operator = BinaryOperator.getFromParserToken(stringRepresentation);
 
         if (operator == null)
             return Utils.NYI("unknown Operator: " + stringRepresentation + ", " + argTypes); //TODO proper error

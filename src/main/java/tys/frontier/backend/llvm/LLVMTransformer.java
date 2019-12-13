@@ -11,9 +11,8 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.operator.FBinaryOperator;
-import tys.frontier.code.function.operator.FBinaryOperator.Arith;
-import tys.frontier.code.function.operator.FUnaryOperator;
+import tys.frontier.code.function.operator.BinaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
@@ -32,8 +31,7 @@ import java.util.*;
 
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
-import static tys.frontier.code.function.operator.FBinaryOperator.Arith.*;
-import static tys.frontier.code.function.operator.FBinaryOperator.Bool.*;
+import static tys.frontier.code.function.operator.BinaryOperator.*;
 
 class LLVMTransformer implements
         AutoCloseable,
@@ -48,8 +46,8 @@ class LLVMTransformer implements
             .put(TIMES.identifier, LLVMMul)
             .put(DIVIDED.identifier, LLVMSDiv)
             .put(MODULO.identifier, LLVMSRem)
-            .put(Arith.AND.identifier, LLVMAnd)
-            .put(Arith.OR.identifier, LLVMOr)
+            .put(AAND.identifier, LLVMAnd)
+            .put(AOR.identifier, LLVMOr)
             .put(XOR.identifier, LLVMXor)
             .build();
     private static final ImmutableMap<FFunctionIdentifier, Integer> cmpOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
@@ -577,13 +575,13 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
         LLVMValueRef arg = Iterables.getOnlyElement(args);
-        if (id.equals(FUnaryOperator.Pre.NOT.identifier))
+        if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
-        else if (id.equals(FUnaryOperator.Pre.NEG.identifier))
+        else if (id.equals(UnaryOperator.NEG.identifier))
             return LLVMBuildNeg(builder, arg, "neg");
-        else if (id.equals(FUnaryOperator.Pre.INC.identifier))
+        else if (id.equals(UnaryOperator.INC.identifier))
             return incDec(arg, LLVMAdd);
-        else if (id.equals(FUnaryOperator.Pre.DEC.identifier))
+        else if (id.equals(UnaryOperator.DEC.identifier))
             return incDec(arg, LLVMSub);
         else
             return Utils.cantHappen();
@@ -602,9 +600,9 @@ class LLVMTransformer implements
         LLVMValueRef right = args.get(1);
         FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
 
-        if (id.equals(FBinaryOperator.Bool.AND.identifier))
+        if (id.equals(BinaryOperator.AND.identifier))
             return shortCircuitLogic(left, right, true);
-        else if (id.equals(FBinaryOperator.Bool.OR.identifier))
+        else if (id.equals(BinaryOperator.OR.identifier))
             return shortCircuitLogic(left, right, false);
 
         if (functionCall.getFunction().getMemberOf() instanceof FIntN || functionCall.getFunction().getMemberOf() == FBool.INSTANCE) {
@@ -697,17 +695,17 @@ class LLVMTransformer implements
 
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
-        if (function instanceof FUnaryOperator) {
-            return predefinedUnary(functionCall, args);
-        } else if (function instanceof FBinaryOperator) {
-            return predefinedBinary(functionCall, args);
-        } else if (function.getMemberOf() instanceof FArray) {
+        if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall, args);
         } else if (function.getMemberOf() instanceof FOptional) {
             return predefinedOptional(functionCall, args);
         } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
             assert args.isEmpty();
             return LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(functionCall.getType())), "malloc_" + functionCall.getType().getIdentifier());
+        } else if (args.size() == 1) {
+            return predefinedUnary(functionCall, args);
+        } else if (args.size() == 2) {
+            return predefinedBinary(functionCall, args);
         } else {
             return Utils.cantHappen();
         }

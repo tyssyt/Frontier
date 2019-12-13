@@ -12,7 +12,7 @@ import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
-import tys.frontier.code.function.operator.FUnaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -227,14 +227,12 @@ public class GenericBaking implements FClassVisitor {
     public FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
         FFunction function = functionCall.getFunction();
 
-        if (function instanceof FUnaryOperator) {
-            FFunctionIdentifier identifier = function.getIdentifier();
-            if (function.getMemberOf() instanceof FPredefinedClass &&
-                    (identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier))
-            ) {
-                //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
-                ((FVariableExpression) params.get(0)).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
-            }
+        FFunctionIdentifier identifier = function.getIdentifier();
+        if (function.getMemberOf() instanceof FPredefinedClass &&
+                (identifier.equals(UnaryOperator.INC.identifier) || identifier.equals(UnaryOperator.DEC.identifier))
+        ) {
+            //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
+            ((FVariableExpression) params.get(0)).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
         }
 
         function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);

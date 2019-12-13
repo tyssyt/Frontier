@@ -3,7 +3,7 @@ package tys.frontier.passes.lowering;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.operator.FBinaryOperator;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
@@ -74,7 +74,7 @@ public class FForEachLowering extends StatementReplacer {
         //condition
         FExpression condition;
         {
-            FFunction less = FBinaryOperator.Bool.LESS.getFunction(FIntN._32);
+            FFunction less = BinaryOperator.LESS.getFunction(FIntN._32);
             condition = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), new FLocalVariableExpression(size)));
         }
 

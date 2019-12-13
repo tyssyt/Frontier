@@ -1,5 +1,6 @@
 package tys.frontier.passes.lowering;
 
+import com.google.common.collect.ImmutableListMultimap;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
@@ -10,8 +11,8 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.code.statement.FVarAssignment.Operator;
 import tys.frontier.code.statement.FVarDeclaration;
-import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -112,8 +113,12 @@ public class OperatorAssignmentLowering extends StatementReplacer {
         //update rhs: v += e; => v = v+e;
         List<FExpression> newRhss = new ArrayList<>(unpackedValues.size());
         for (Pair<FVariableExpression, FExpression> pair : Utils.zip(directAccessVars, unpackedValues)) {
-            FFunction op = assignment.getOperator().getOperator(((FClass) pair.a.getType()));
-            newRhss.add(FFunctionCall.createTrusted(op, Arrays.asList(pair.a.copy(), pair.b)));
+            try {
+                FFunction op = pair.a.getType().hardResolveFunction(assignment.getOperator().operator.identifier, Arrays.asList(pair.a.getType(), pair.b.getType()), ImmutableListMultimap.of(), null).function;
+                newRhss.add(FFunctionCall.createTrusted(op, Arrays.asList(pair.a.copy(), pair.b)));
+            } catch (FunctionNotFound functionNotFound) {
+                Utils.handleException(functionNotFound);
+            }
         }
         res.add(FVarAssignment.createTrusted(directAccessVars, Operator.ASSIGN, newRhss));
         return FBlock.from(res);

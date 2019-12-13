@@ -11,7 +11,7 @@ import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
-import tys.frontier.code.function.operator.FUnaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.literal.FLambda;
 import tys.frontier.code.literal.FLiteral;
@@ -628,7 +628,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(0).getText() + '_');
 
         if(expression.getType() instanceof FPredefinedClass &&
-                (identifier.equals(FUnaryOperator.Pre.INC.identifier) || identifier.equals(FUnaryOperator.Pre.DEC.identifier))) {
+                (identifier.equals(UnaryOperator.INC.identifier) || identifier.equals(UnaryOperator.DEC.identifier))) {
             //special case for inc and dec on predefined types, they are both write and read
             if ((expression instanceof FVariableExpression)) {
                 ((FVariableExpression) expression).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);

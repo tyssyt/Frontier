@@ -5,7 +5,7 @@ import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.operator.FBinaryOperator;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -47,10 +47,8 @@ public class FBaseClass implements FClass {
 
     protected void addDefaultFunctions() {
         try {
-            addFunction(FBinaryOperator.Bool.EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
+            addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
+            addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }

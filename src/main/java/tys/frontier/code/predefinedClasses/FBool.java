@@ -1,7 +1,7 @@
 package tys.frontier.code.predefinedClasses;
 
-import tys.frontier.code.function.operator.FBinaryOperator;
-import tys.frontier.code.function.operator.FUnaryOperator;
+import tys.frontier.code.function.operator.BinaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
@@ -22,16 +22,16 @@ public class FBool extends FPredefinedClass {
 
     private void addFunctionsInstance() {
         try {
-            addFunction(FUnaryOperator.Pre.NOT.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.AND.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.OR.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.AND.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.OR.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.XOR.createPredefined(this));
+            addFunction(UnaryOperator.NOT.createPredefined(this, this));
+            addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
+            addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
+            addFunction(BinaryOperator.EQUALS.createPredefined(this, this, this));
+            addFunction(BinaryOperator.NOT_EQUALS.createPredefined(this, this, this));
+            addFunction(BinaryOperator.AND.createPredefined(this, this, this));
+            addFunction(BinaryOperator.OR.createPredefined(this, this, this));
+            addFunction(BinaryOperator.AAND.createPredefined(this, this, this));
+            addFunction(BinaryOperator.AOR.createPredefined(this, this, this));
+            addFunction(BinaryOperator.XOR.createPredefined(this, this, this));
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);
         }

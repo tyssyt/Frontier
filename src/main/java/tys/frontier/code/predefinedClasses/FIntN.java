@@ -1,8 +1,8 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.function.operator.FBinaryOperator;
-import tys.frontier.code.function.operator.FUnaryOperator;
+import tys.frontier.code.function.operator.BinaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIntIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
@@ -27,24 +27,24 @@ public class FIntN extends FPredefinedClass {
         this.n = n;
 
         try {
-            addFunction(FUnaryOperator.Pre.NEG.createPredefined(this));
-            addFunction(FUnaryOperator.Pre.INC.createPredefined(this));
-            addFunction(FUnaryOperator.Pre.DEC.createPredefined(this));
+            addFunction(UnaryOperator.NEG.createPredefined(this, this));
+            addFunction(UnaryOperator.INC.createPredefined(this, this));
+            addFunction(UnaryOperator.DEC.createPredefined(this, this));
 
-            addFunction(FBinaryOperator.Bool.EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.NOT_EQUALS_ID.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.LESS.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.LESS_EQUAL.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.GREATER.createPredefined(this));
-            addFunction(FBinaryOperator.Bool.GREATER_EQUAL.createPredefined(this));
+            addFunction(BinaryOperator.EQUALS.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.NOT_EQUALS.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.LESS.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.LESS_EQUAL.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.GREATER.createPredefined(this, this, FBool.INSTANCE));
+            addFunction(BinaryOperator.GREATER_EQUAL.createPredefined(this, this, FBool.INSTANCE));
 
-            addFunction(FBinaryOperator.Arith.PLUS.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.MINUS.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.TIMES.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.DIVIDED.createPredefined(this));
-            addFunction(FBinaryOperator.Arith.MODULO.createPredefined(this));
+            addFunction(BinaryOperator.PLUS.createPredefined(this, this, this));
+            addFunction(BinaryOperator.MINUS.createPredefined(this, this, this));
+            addFunction(BinaryOperator.TIMES.createPredefined(this, this, this));
+            addFunction(BinaryOperator.DIVIDED.createPredefined(this, this, this));
+            addFunction(BinaryOperator.MODULO.createPredefined(this, this, this));
         } catch (SignatureCollision signatureCollision) {
             Utils.handleException(signatureCollision);
         }
