@@ -3,17 +3,21 @@ package tys.frontier.parser;
 import com.google.common.collect.Iterables;
 import org.junit.Before;
 import org.junit.Test;
+import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.type.FClass;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
+import tys.frontier.parser.modules.ImportResolver;
+import tys.frontier.parser.modules.ResourceRepository;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.style.Style;
 import tys.frontier.util.FileUtils;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +31,7 @@ public class ParserTest {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
             ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
+        State.get().setImportResolver(new ImportResolver(Collections.singletonList(ResourceRepository.INSTANCE)));
     }
 
     private SyntaxError parseSyntaxError(String file) throws IOException {
