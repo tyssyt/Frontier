@@ -1,7 +1,5 @@
 package tys.frontier.code.function;
 
-import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
@@ -11,20 +9,24 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class InstantiableFunctionCopy extends ForwardingFunction {
+public class InstantiableFunctionCopy extends WithInstantiatedSignature {
 
     //TODO the places in code where this is used can be simplified where we just create a copy of the type of base function that uses instantiable vars instead
-
-    private FType newReturnType;
-    private ImmutableList<FParameter> newParams;
 
     private Map<FTypeIdentifier, FTypeVariable> newParameters;
     private List<FTypeVariable> newParametersList;
 
     private InstantiableFunctionCopy(FFunction base) {
-        super(base);
+        super(base, withNonFixedParameters(base));
         assert !(base instanceof InstantiableFunctionCopy);
 
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        Map<FTypeVariable, FTypeVariable> varMap = (Map) getTypeInstantiation().getTypeMap();
+        newParameters = Utils.asTypeMap(varMap.values());
+        newParametersList = new ArrayList<>(varMap.values());
+    }
+
+    private static TypeInstantiation withNonFixedParameters(FFunction base) {
         boolean baseFinished = base.getBody().isPresent();
         //create a non fixed copy for each var
         Map<FTypeVariable, FTypeVariable> varMap = new LinkedHashMap<>(); //linked map so newParametersList retains base order
@@ -35,32 +37,14 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
             varMap.put(var, copy);
         }
 
-        //noinspection unchecked
-        TypeInstantiation typeInstantiation = TypeInstantiation.create((Map)varMap);
-
-        newReturnType = typeInstantiation.getType(base.getType());
-        newParams = createParams(base.getParams(), typeInstantiation);
-        newParameters = Utils.asTypeMap(varMap.values());
-        newParametersList = new ArrayList<>(varMap.values());
-    }
-
-    private static ImmutableList<FParameter> createParams(ImmutableList<FParameter> original, TypeInstantiation typeInstantiation) {
-        ImmutableList.Builder<FParameter> res = ImmutableList.builder();
-        for (FParameter p : original) {
-            res.add(FParameter.create(p.getIdentifier(), typeInstantiation.getType(p.getType()), p.hasDefaultValue()));
-        }
-        return res.build();
+        //noinspection unchecked, rawtypes
+        return TypeInstantiation.create((Map)varMap);
     }
 
     public static FFunction instantiableCopyOf(FFunction base) {
         if (base.getParameters().isEmpty())
             return base;
         return new InstantiableFunctionCopy(base);
-    }
-
-    @Override
-    public ImmutableList<FParameter> getParams() {
-        return newParams;
     }
 
     @Override
@@ -74,11 +58,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
     }
 
     @Override
-    public FType getType() {
-        return newReturnType;
-    }
-
-    @Override
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
         return newParameters;
     }
@@ -86,21 +65,6 @@ public class InstantiableFunctionCopy extends ForwardingFunction {
     @Override
     public List<FTypeVariable> getParametersList() {
         return newParametersList;
-    }
-
-    @Override
-    public boolean isInstantiation() {
-        return true;
-    }
-
-    @Override
-    public TypeInstantiation getTypeInstantiationToBase() {
-        return Utils.cantHappen();
-    }
-
-    @Override
-    public FFunction getBaseR() {
-        return proxy.getBaseR();
     }
 
     @Override

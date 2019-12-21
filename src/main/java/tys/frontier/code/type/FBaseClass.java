@@ -4,7 +4,7 @@ import com.google.common.collect.*;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
@@ -31,7 +31,8 @@ public class FBaseClass implements FClass {
 
     private BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
-    private ListMultimap<FFunctionIdentifier, FFunction> functions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FFunctionIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FFunctionIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> delegates = new HashMap<>();
 
@@ -105,8 +106,8 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
-        return functions;
+    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+        return lhsSignatures ? lhsFunctions : rhsFunctions;
     }
 
     @Override

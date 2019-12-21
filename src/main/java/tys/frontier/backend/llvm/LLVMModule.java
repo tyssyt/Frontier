@@ -10,6 +10,7 @@ import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
@@ -222,7 +223,8 @@ public class LLVMModule implements AutoCloseable {
                 todoFieldInitilizers.add(field);
             }
 
-            for (FFunction function : fClass.getFunctions().values()) {
+            for (Signature signature : fClass.getFunctions(false).values()) {
+                FFunction function = signature.getFunction();
                 if (!function.isPredefined()) {
                     addFunctionHeader(function);
                     if (!function.isNative())
@@ -239,7 +241,7 @@ public class LLVMModule implements AutoCloseable {
      * @return Reference to the LLVM function
      */
     private LLVMValueRef addFunctionHeader(FFunction function) { //TODO find other good attributes to set for function and parameters
-        LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), getLLVMFunctionType(function));
+        LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), LLVMGetElementType(getLlvmType(FFunctionType.from(function.getSignature()))));
         //set global attribs
         setGlobalAttribs(res, Linkage.findLinkage(function.isNative()), true);
         //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
@@ -247,7 +249,7 @@ public class LLVMModule implements AutoCloseable {
         //set names for all arguments, add parameter attributes
         //TODO we can use dereferenceable<i> instead of nonNull, and use dereferenceable_or_null for all others, but we need the type sizes...
         LLVMAttributeRef nonNullAttr = getEnumAttribute("nonnull");
-        List<FParameter> fParams = function.getParams();
+        List<FParameter> fParams = function.getSignature().getParameters();
         for (int i=0; i<fParams.size(); i++) {
             FParameter param = fParams.get(i);
             LLVMSetValueName(LLVMGetParam(res, i), param.getIdentifier().name);
@@ -261,17 +263,6 @@ public class LLVMModule implements AutoCloseable {
                 && !(function.getType() instanceof FOptional))
             LLVMAddAttributeAtIndex(res, 0, nonNullAttr);
         return res;
-    }
-
-    /**
-     * @param function function for which we want a LLVM-Function-Type
-     * @return the LLVM-Function-Type corresponding to the FFunction
-     */
-    private LLVMTypeRef getLLVMFunctionType(FFunction function) {
-        List<FParameter> fParams = function.getParams();
-        PointerPointer<LLVMTypeRef> params = createPointerPointer(function.getParams(), p -> getLlvmType(p.getType()));
-        LLVMTypeRef returnType = getLlvmType(function.getType());
-        return LLVMFunctionType(returnType, params, fParams.size(), FALSE);
     }
 
     /**

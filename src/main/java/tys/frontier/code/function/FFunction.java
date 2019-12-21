@@ -1,6 +1,5 @@
 package tys.frontier.code.function;
 
-import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -21,7 +20,7 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
 
     @Override
     default boolean isInstance() {
-        return getParams().size() > 0 && getParams().get(0).getType() == getMemberOf() && !getParams().get(0).hasDefaultValue();
+        return getSignature().isInstance();
     }
 
     @Override
@@ -32,7 +31,8 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
 
     boolean isNative();
 
-    ImmutableList<FParameter> getParams();
+    Signature getSignature();
+    Signature getLhsSignature();
 
     Optional<FBlock> getBody();
 
@@ -42,7 +42,9 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
     FFunctionIdentifier getIdentifier();
 
     @Override
-    FType getType();
+    default FType getType() {
+        return getSignature().getType();
+    }
 
     @Override
     default MemberType getMemberType() {
@@ -73,7 +75,7 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
     }
 
     default String headerToString() {
-        return (getBody().isPresent() ? "" : "abstract ") + getVisibility() + " " +  getType().getIdentifier() + " " + getIdentifier() + " " + getParams();
+        return (getBody().isPresent() ? "" : "abstract ") + getVisibility() + " " +  getType().getIdentifier() + " " + getIdentifier() + " " + getSignature().getParameters();
     }
 
     @Override

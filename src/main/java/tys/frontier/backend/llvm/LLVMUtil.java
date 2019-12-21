@@ -59,7 +59,7 @@ public class LLVMUtil {
             return function.getIdentifier().name;
         String uniqueName = uniqueFunctionNameCache.get(function);
         if (uniqueName == null) {
-            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((FClass) function.getMemberOf()).getFunctions());
+            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((FClass) function.getMemberOf()).getFunctions(false));
             uniqueFunctionNameCache.putAll(newNames);
             uniqueName = newNames.get(function);
         }

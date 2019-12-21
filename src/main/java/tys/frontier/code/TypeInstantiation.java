@@ -174,7 +174,7 @@ public class TypeInstantiation {
         ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
             FFunction instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
-                    positionalArgs, keywordArgs, null).function;
+                    positionalArgs, keywordArgs, null, false).function;
             //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
             return getType(instantiation.getType());
         } catch (FunctionNotFound functionNotFound) {

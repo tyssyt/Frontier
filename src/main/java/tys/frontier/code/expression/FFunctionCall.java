@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
@@ -37,8 +38,8 @@ public class FFunctionCall implements FExpression {
         prepared = true;
 
         if (function.isInstantiation()) {
-            List<FParameter> params = function.getBaseR().getParams();
-            List<FParameter> targetParams = function.getParams();
+            List<FParameter> params = function.getBaseR().getSignature().getParameters();
+            List<FParameter> targetParams = function.getSignature().getParameters();
             TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null) {
@@ -50,7 +51,7 @@ public class FFunctionCall implements FExpression {
                     }
                 }
         } else {
-            List<FParameter> params = function.getParams();
+            List<FParameter> params = function.getSignature().getParameters();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null)
                     arguments.set(i, params.get(i).getDefaultValue());
@@ -60,8 +61,9 @@ public class FFunctionCall implements FExpression {
     public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         boolean needsPrepare = false;
-        for (int i=argMapping.getNumberOfParamsFilledWithPositionalArgs(); i < function.getParams().size(); i++) {
-            FParameter p = function.getParams().get(i);
+        ImmutableList<FParameter> parameters = function.getSignature().getParameters();
+        for (int i = argMapping.getNumberOfParamsFilledWithPositionalArgs(); i < parameters.size(); i++) {
+            FParameter p = parameters.get(i);
             List<FExpression> arg = keywordArgs.get(p.getIdentifier());
             if (arg.isEmpty()) {
                 needsPrepare = true;
@@ -74,7 +76,7 @@ public class FFunctionCall implements FExpression {
 
     public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
         try {
-            ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getParams()));
+            ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getSignature().getParameters()));
             return new FFunctionCall(false, function, arguments, argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();

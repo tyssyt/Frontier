@@ -2,6 +2,7 @@ package tys.frontier.code.visitor;
 
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.type.FClass;
 
 public interface ClassWalker<Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
@@ -9,8 +10,8 @@ public interface ClassWalker<Class, Field, Function, Statement, Expression> exte
     default Class visitClass(FClass fClass) {
         for (FField field : fClass.getFields())
             visitField(field);
-        for (FFunction function : fClass.getFunctions().values())
-            visitFunction(function);
+        for (Signature signature : fClass.getFunctions(false).values())
+            visitFunction(signature.getFunction());
         return null;
     }
 

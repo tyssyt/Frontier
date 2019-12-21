@@ -137,7 +137,7 @@ class LLVMTransformer implements
         LLVMValueRef userMain = LLVMGetNamedFunction(module.getModule(), getFunctionName(entryPoint));
 
         //call entry Point
-        if (entryPoint.getParams().isEmpty()) {
+        if (entryPoint.getSignature().getParameters().isEmpty()) {
             LLVMBuildCall(builder, userMain, null, 0, "");
         } else {
             //convert input to Frontier String
@@ -289,14 +289,14 @@ class LLVMTransformer implements
         LLVMPositionBuilderAtEnd(builder, entryBlock);
 
         //fill in parameters
-        List<FParameter> fParams = function.getParams();
+        List<FParameter> fParams = function.getSignature().getParameters();
         for (int i=0; i<fParams.size(); i++) {
             LLVMValueRef alloca = createEntryBlockAlloca(fParams.get(i));
             LLVMBuildStore(builder, LLVMGetParam(res, i), alloca);
         }
 
         //do the body
-        //noinspection ConstantConditions,OptionalGetWithoutIsPresent
+        //noinspection OptionalGetWithoutIsPresent
         for (FStatement statement : function.getBody().get())
             statement.accept(this);
 
@@ -717,7 +717,7 @@ class LLVMTransformer implements
         List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
-        args = prepareArgs(args, Utils.typesFromExpressionList(functionCall.getFunction().getParams()), functionCall.getArgMapping());
+        args = prepareArgs(args, Utils.typesFromExpressionList(functionCall.getFunction().getSignature().getParameters()), functionCall.getArgMapping());
 
         FFunction function = functionCall.getFunction();
         if (function.isPredefined())

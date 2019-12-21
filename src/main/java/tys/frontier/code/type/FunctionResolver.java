@@ -6,6 +6,7 @@ import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
@@ -39,7 +40,7 @@ public class FunctionResolver {
 
     private Result bestResult;
 
-    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, Iterable<FFunction> candidates) throws FunctionNotFound {
+    public static Result resolve(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, Iterable<Signature> candidates) throws FunctionNotFound {
         return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType).resolve(candidates);
     }
 
@@ -50,15 +51,15 @@ public class FunctionResolver {
         this.returnType = returnType;
     }
 
-    private Result resolve(Iterable<FFunction> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
-        for (FFunction f : candidates) {
+    private Result resolve(Iterable<Signature> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
+        for (Signature s : candidates) {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
-                Pair<ArgMapping, List<FType>> argMappingAndArgumentTypes = ArgMapping.createForCall(positionalArgs, keywordArgs, f.getParams());
+                Pair<ArgMapping, List<FType>> argMappingAndArgumentTypes = ArgMapping.createForCall(positionalArgs, keywordArgs, s.getParameters());
                 result.argMapping = argMappingAndArgumentTypes.a;
                 //prepare f
-                Triple<List<FType>, FType, TypeInstantiation> triple = FFunctionType.instantiableFrom(f); //TODO unbutcher this?
+                Triple<List<FType>, FType, TypeInstantiation> triple = FFunctionType.instantiableFrom(s); //TODO unbutcher this?
                 //cast arguments
                 result.constraints = result.argMapping.computeCasts(argMappingAndArgumentTypes.b, triple.a);
 
@@ -70,20 +71,20 @@ public class FunctionResolver {
                 //fast path for perfect fit
                 result.casts = result.argMapping.getNUmberOfCasts();
                 if (result.casts == 0 && result.constraints.isEmpty()) {
-                    result.function = f;
+                    result.function = s.getFunction();
                     return result; //perfect fit
                 }
 
                 //compute instantiations
                 TypeInstantiation instantiation = computeTypeInstantiation(triple.c, result.constraints, true);
-                result.function = f.getInstantiation(instantiation);
+                result.function = s.getFunction().getInstantiation(instantiation);
 
                 //handle other constraints
                 if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(result.constraints) != null)
                     continue;
 
                 //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
-                result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.function.getParams()));
+                result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.function.getSignature().getParameters()));
 
                 result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);

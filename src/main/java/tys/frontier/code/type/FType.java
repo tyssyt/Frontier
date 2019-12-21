@@ -20,8 +20,8 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    default FunctionResolver.Result hardResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
-        FunctionResolver.Result res = softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
+    default FunctionResolver.Result hardResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+        FunctionResolver.Result res = softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
         try {
             TypeConstraint.addAll(res.constraints);
         } catch (UnfulfillableConstraints unfulfillableConstraints) {
@@ -30,7 +30,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
         return res;
     }
 
-    FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound;
+    FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound;
 
     FField getField(FIdentifier identifier) throws FieldNotFound;
 

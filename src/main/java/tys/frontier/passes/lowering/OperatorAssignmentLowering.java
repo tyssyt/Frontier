@@ -114,7 +114,7 @@ public class OperatorAssignmentLowering extends StatementReplacer {
         List<FExpression> newRhss = new ArrayList<>(unpackedValues.size());
         for (Pair<FVariableExpression, FExpression> pair : Utils.zip(directAccessVars, unpackedValues)) {
             try {
-                FFunction op = pair.a.getType().hardResolveFunction(assignment.getOperator().operator.identifier, Arrays.asList(pair.a.getType(), pair.b.getType()), ImmutableListMultimap.of(), null).function;
+                FFunction op = pair.a.getType().hardResolveFunction(assignment.getOperator().operator.identifier, Arrays.asList(pair.a.getType(), pair.b.getType()), ImmutableListMultimap.of(), null, false).function;
                 newRhss.add(FFunctionCall.createTrusted(op, Arrays.asList(pair.a.copy(), pair.b)));
             } catch (FunctionNotFound functionNotFound) {
                 Utils.handleException(functionNotFound);

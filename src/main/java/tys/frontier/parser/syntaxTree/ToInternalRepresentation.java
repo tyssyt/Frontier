@@ -11,6 +11,7 @@ import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.literal.FLambda;
@@ -151,7 +152,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
                 field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
                 if (field.isInstance())
-                    for (FParameter param : currentType.getConstructor().getParams())
+                    for (FParameter param : currentType.getConstructor().getSignature().getParameters())
                         if (param.getIdentifier().equals(field.getIdentifier()))
                             param.setDefaultValue(expression);
             } catch (Failed f) {
@@ -244,7 +245,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FFunction f = treeData.functions.get(ctx.methodHeader());
         functionContextStack.addLast(new FunctionContext(f));
         try {
-            currentFunction().declaredVars.push(Utils.asMap(f.getParams()));
+            currentFunction().declaredVars.push(Utils.asMap(f.getSignature().getParameters()));
             ctx.methodHeader().accept(this);
             FBlock body = visitBlock(ctx.block());
             if (f.getType() != FTuple.VOID && f != body.redirectsControlFlow().orElse(null) && errors.isEmpty()) { //TODO make a flag that checks if there are any errors thrown in the current method instead of errors.isEmpty
@@ -781,7 +782,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
                                         List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
             throws FunctionNotFound, AccessForbidden {
-        FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null);
+        FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, false); //TODO lhsResolve
         checkAccessForbidden(res.function);
         return FFunctionCall.create(res.function, positionalArgs, keywordArgs, res.argMapping);
     }
@@ -844,7 +845,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         functionContextStack.addLast(new FunctionContext(res));
         try {
             //push params
-            currentFunction().declaredVars.push(Utils.asMap(res.getParams()));
+            currentFunction().declaredVars.push(Utils.asMap(res.getSignature().getParameters()));
             FBlock body;
             if (ctx.expression() != null) { //expression Lambda
                 FExpression expression = visitExpression(ctx.expression());
@@ -1033,12 +1034,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         if (!(fClass instanceof FClass))
             throw new FunctionNotFound(identifier, params, ImmutableListMultimap.of());
         if (params == null) {
-            Collection<FFunction> fun = ((FClass) fClass).getFunctions().get(identifier);
+            Collection<Signature> fun = ((FClass) fClass).getFunctions(false).get(identifier);  //TODO lhsResolve
             if (fun.size() != 1)
                 throw new FunctionNotFound(identifier, Collections.emptyList(), ImmutableListMultimap.of());
-            return fun.iterator().next();
+            return fun.iterator().next().getFunction();
         } else {
-            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null).function;
+            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).function;  //TODO lhsResolve
             checkAccessForbidden(f);
             return f;
         }

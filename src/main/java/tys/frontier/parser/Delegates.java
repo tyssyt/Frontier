@@ -12,6 +12,7 @@ import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.selector.Selector;
@@ -84,9 +85,10 @@ public class Delegates {
         assert d.field.getType() instanceof FClass;
         FClass from = (FClass) d.field.getType();
         FClass to = d.field.getMemberOf();
-        for (Map.Entry<FFunctionIdentifier, Collection<FFunction>> entry : from.getFunctions().asMap().entrySet()) {
+        for (Map.Entry<FFunctionIdentifier, Collection<Signature>> entry : from.getFunctions(false).asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {
-                for (FFunction toDelegate : entry.getValue()) {
+                for (Signature signature : entry.getValue()) {
+                    FFunction toDelegate = signature.getFunction();
                     if (toDelegate.getVisibility() != FVisibilityModifier.PRIVATE && toDelegate.isInstance()) {
                         try {
                             d.functions.add(new Pair<>(createFunction(to, toDelegate), toDelegate));
@@ -100,14 +102,16 @@ public class Delegates {
     }
 
     private static FBaseFunction createFunction(FClass to, FFunction toDelegate) throws SignatureCollision {
+        Signature signature = toDelegate.getLhsSignature() == null ? toDelegate.getSignature() : toDelegate.getLhsSignature();
+
         //replace first param to match the class delegating to replaceing the class delegating from
-        ImmutableList<FParameter> params = toDelegate.getParams();
+        ImmutableList<FParameter> params = signature.getParameters();
         ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
         builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
         builder.addAll(params.subList(1, params.size()));
         assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 
-        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, toDelegate.getType(), builder.build(), toDelegate.getParameters());
+        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, signature.getType(), builder.build(), signature.getAssignees(), toDelegate.getParameters());
         to.addFunction(res);
         return res;
     }
@@ -121,7 +125,7 @@ public class Delegates {
     private void createFunctionBody(Delegate d) {
         for (Pair<FFunction, FFunction> toDoPair : d.functions) {
             FFunction toDo = toDoPair.a;
-            ImmutableList<FParameter> params = toDo.getParams();
+            ImmutableList<FParameter> params = toDo.getSignature().getParameters();
 
             FFieldAccess fieldAccess;
             if (d.field.isInstance()) {

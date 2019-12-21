@@ -158,7 +158,7 @@ public class Reachability {
             seenFields.add(f);
         }
         for (FFunctionAddress fA : baseAnalysis.c) {
-            List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getParams(), typeInstantiation::getType);
+            List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getSignature().getParameters(), typeInstantiation::getType);
             FFunction f = Utils.findFunctionInstantiation(fA.getFunction(), paramTypes, ImmutableListMultimap.of(), typeInstantiation);
             seenFunctions.add(f);
         }

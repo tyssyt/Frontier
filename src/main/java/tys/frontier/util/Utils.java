@@ -3,10 +3,12 @@ package tys.frontier.util;
 import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
@@ -83,6 +85,13 @@ public final class Utils {
         return res;
     }
 
+    public static <S,T> ImmutableList<T> mapImmutable(Collection<S> source, Function<S, T> mapper) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (S s : source)
+            builder.add(mapper.apply(s));
+        return builder.build();
+    }
+
     public static <K,S,T> HashMap<K,T> map(Map<K,S> source, Function<S, T> mapper) {
         HashMap<K,T> res = new HashMap<>();
         for (Map.Entry<K, S> entry : source.entrySet())
@@ -140,7 +149,7 @@ public final class Utils {
             FType returnType = typeInstantiation.getType(function.getType());
 
             try {
-                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType).function;
+                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, false).function;
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
@@ -230,25 +239,27 @@ public final class Utils {
         return res;
     }
 
-    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FFunctionIdentifier, FFunction> functions) {
+    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FFunctionIdentifier, Signature> functions) {
         Map<FFunction, String> res = new HashMap<>();
-        for (List<FFunction> list : Multimaps.asMap(functions).values()) {
-            String name = list.get(0).getIdentifier().name;
+        for (List<Signature> list : Multimaps.asMap(functions).values()) {
+            String name = list.get(0).getFunction().getIdentifier().name;
 
             if (list.size() == 1) {
-                res.put(list.get(0), name);
+                res.put(list.get(0).getFunction(), name);
                 continue;
             }
 
             //TODO when multithreading is used we might need to copy the list first before sorting to avoid race conditions while sorting
-            FFunction[] array = list.toArray(new FFunction[0]);
-            Arrays.sort(array, (f1, f2) -> {
-                int c = f1.getParams().size() - f2.getParams().size();
+            Signature[] array = list.toArray(new Signature[0]);
+            Arrays.sort(array, (s1, s2) -> {
+                ImmutableList<FParameter> p1 = s1.getParameters();
+                ImmutableList<FParameter> p2 = s2.getParameters();
+                int c = p1.size() - p2.size();
                 if (c != 0)
                     return c;
-                for (int i=0; i<f1.getParams().size(); i++) {
-                    String id1 = f1.getParams().get(i).getType().getIdentifier().name;
-                    String id2 = f2.getParams().get(i).getType().getIdentifier().name;
+                for (int i=0; i<p1.size(); i++) {
+                    String id1 = p1.get(i).getType().getIdentifier().name;
+                    String id2 = p2.get(i).getType().getIdentifier().name;
                     c = id1.compareTo(id2);
                     if (c != 0)
                         return c;
@@ -256,7 +267,7 @@ public final class Utils {
                 return 0;
             });
             for (int i=0; i<array.length; i++) {
-                res.put(array[i], name + "#" + i);
+                res.put(array[i].getFunction(), name + "#" + i);
             }
         }
         return res;

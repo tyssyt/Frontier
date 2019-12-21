@@ -14,6 +14,7 @@ import tys.frontier.parser.antlr.FrontierLexer;
 import java.util.Arrays;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Collections.emptyMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum BinaryOperator implements Operator {
@@ -72,7 +73,7 @@ public enum BinaryOperator implements Operator {
     }
 
     public FFunction getFunction(FClass fClass) {
-        return Iterables.getOnlyElement(fClass.getFunctions().get(identifier));
+        return Iterables.getOnlyElement(fClass.getFunctions(false).get(identifier)).getFunction();
     }
 
     public FFunction createPredefined(FClass memberOf, FClass second, FClass ret) {
@@ -80,7 +81,7 @@ public enum BinaryOperator implements Operator {
                 FParameter.create(new FVariableIdentifier("first"), memberOf, false),
                 FParameter.create(new FVariableIdentifier("second"), second, false)
         );
-        return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params) {
+        return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params, null, emptyMap()) {
             {predefined = true;}
         };
     }

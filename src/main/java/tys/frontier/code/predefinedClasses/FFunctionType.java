@@ -2,7 +2,7 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionTypeIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -54,29 +54,28 @@ public class FFunctionType extends FPredefinedClass {
         return existing.computeIfAbsent(new Pair<>(in, out), p -> new FFunctionType(in, out));
     }
 
-    public static FFunctionType from(FFunction function) {
-        FType in = FTuple.fromExpressionList(function.getParams());
-        return existing.computeIfAbsent(new Pair<>(in, function.getType()), p -> new FFunctionType(p.a, p.b));
+    public static FFunctionType from(Signature signature) {
+        FType in = FTuple.fromExpressionList(signature.getParameters());
+        return existing.computeIfAbsent(new Pair<>(in, signature.getType()), p -> new FFunctionType(p.a, p.b));
     }
 
-    public static Triple<List<FType>, FType, TypeInstantiation> instantiableFrom(FFunction function) { //TODO this was butchered because I needed the List of parameters non-flattened
-        if (function.getParameters().isEmpty())
-            return new Triple<>(Utils.typesFromExpressionList(function.getParams()), function.getType(), TypeInstantiation.EMPTY);
+    public static Triple<List<FType>, FType, TypeInstantiation> instantiableFrom(Signature signature) { //TODO this was butchered because I needed the List of parameters non-flattened
+        if (signature.getFunction().getParameters().isEmpty())
+            return new Triple<>(Utils.typesFromExpressionList(signature.getParameters()), signature.getType(), TypeInstantiation.EMPTY);
 
         //create a type instantiation mapping params to non fixed copies
-        boolean baseFinished = function.getBody().isPresent();
+        boolean baseFinished = signature.getFunction().getBody().isPresent();
         Map<FTypeVariable, FTypeVariable> varMap = new LinkedHashMap<>(); //linked map so newParametersList retains base order
-        for (FTypeVariable var : function.getParametersList()) {
+        for (FTypeVariable var : signature.getFunction().getParametersList()) {
             if (!var.isFixed() && !baseFinished)
                 Utils.NYI("getting a function address with non fixed Parameters where the body is not finished"); //TODO for non recursive cases, this could be solved by waiting on f to finish parsing
             FTypeVariable copy = var.copy(false);
             varMap.put(var, copy);
         }
-        //noinspection unchecked
-        TypeInstantiation typeInstantiation = TypeInstantiation.create((Map)varMap);
+        @SuppressWarnings({"rawtypes", "unchecked"}) TypeInstantiation typeInstantiation = TypeInstantiation.create((Map)varMap);
 
         //no need to store, the entire point of this function is to return a fresh version of the types on each call
-        List<FType> in = Utils.typesFromExpressionList(function.getParams(), typeInstantiation::getType);
-        return new Triple<>(in, typeInstantiation.getType(function.getType()), typeInstantiation);
+        List<FType> in = Utils.typesFromExpressionList(signature.getParameters(), typeInstantiation::getType);
+        return new Triple<>(in, typeInstantiation.getType(signature.getType()), typeInstantiation);
     }
 }

@@ -212,10 +212,16 @@ public final class ParserContextUtils {
 
     public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        boolean hasDefaultValue = ctx.expression() != null;
+        Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleTypes);
+        return FParameter.create(pair.a, pair.b, hasDefaultValue);
+    }
+
+    public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+            throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         FType type = getType(ctx.typeType(), possibleTypes);
         FIdentifier identifier = getVarIdentifier(ctx.identifier());
-        boolean hasDefaultValue = ctx.expression() != null;
-        return FParameter.create(identifier, type, hasDefaultValue);
+        return new Pair<>(identifier, type);
     }
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) { //TODO why do we have res instead of just return (look at once all literals are done)

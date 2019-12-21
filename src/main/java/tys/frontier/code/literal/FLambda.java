@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class FLambda extends FBaseFunction {
     private FLambda(FFunctionIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
-        super(identifier, memberOf, FVisibilityModifier.NONE, false, returnType, params, parameters);
+        super(identifier, memberOf, FVisibilityModifier.NONE, false, returnType, params, null, parameters);
     }
 
     public static FLambda create(FFunctionIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
@@ -37,8 +37,11 @@ public class FLambda extends FBaseFunction {
             }
         }
         TypeInstantiation typeInstantiation = TypeInstantiation.create(baseMap);
-        returnType = typeInstantiation.getType(returnType);
-        for (FParameter param : params) {
+        FType newReturnType = typeInstantiation.getType(getType());
+        getSignature().setType(newReturnType);
+        if (getLhsSignature() != null)
+            getLhsSignature().setType(newReturnType);
+        for (FParameter param : getSignature().getParameters()) { //rhsSignature parameters contains all lhsSignature parameters and assignees
             param.setType(typeInstantiation.getType(param.getType())); //TODO delete public setter of Variable Type...
         }
     }

@@ -1,7 +1,5 @@
 package tys.frontier.code.function;
 
-import com.google.common.collect.ImmutableList;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
@@ -13,42 +11,22 @@ import tys.frontier.passes.GenericBaking;
 
 import java.util.*;
 
-public class FInstantiatedFunction extends ForwardingFunction {
-
-    private TypeInstantiation typeInstantiation;
+public class FInstantiatedFunction extends WithInstantiatedSignature {
 
     private FBlock newBody;
     private FFunctionIdentifier newIdentifier;
-    private FType newReturnType;
-    private ImmutableList<FParameter> newParams;
 
     private boolean baked = false;
 
     private FInstantiatedFunction(FFunction base, TypeInstantiation typeInstantiation) {
-        super(base);
+        super(base, typeInstantiation);
         assert !(base instanceof FInstantiatedFunction);
         assert typeInstantiation.fits(base);
-        this.typeInstantiation = typeInstantiation;
         newIdentifier = new FInstantiatedFunctionIdentifier(base.getIdentifier(), typeInstantiation);
-        newReturnType = typeInstantiation.getType(base.getType());
-        newParams = createParams(base.getParams(), typeInstantiation);
-    }
-
-    private static ImmutableList<FParameter> createParams(ImmutableList<FParameter> original, TypeInstantiation typeInstantiation) {
-        ImmutableList.Builder<FParameter> res = ImmutableList.builder();
-        for (FParameter p : original) {
-            res.add(FParameter.create(p.getIdentifier(), typeInstantiation.getType(p.getType()), p.hasDefaultValue()));
-        }
-        return res.build();
     }
 
     static FInstantiatedFunction fromFunctionInstantiation(FFunction base, TypeInstantiation typeInstantiation) {
         return new FInstantiatedFunction(base, typeInstantiation);
-    }
-
-    @Override
-    public ImmutableList<FParameter> getParams() {
-        return newParams;
     }
 
     @Override
@@ -62,11 +40,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     }
 
     @Override
-    public FType getType() {
-        return newReturnType;
-    }
-
-    @Override
     public Map<FTypeIdentifier, FTypeVariable> getParameters() {
         return Collections.emptyMap();
     }
@@ -74,21 +47,6 @@ public class FInstantiatedFunction extends ForwardingFunction {
     @Override
     public List<FTypeVariable> getParametersList() {
         return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isInstantiation() {
-        return true;
-    }
-
-    @Override
-    public FFunction getBaseR() {
-        return proxy.getBaseR();
-    }
-
-    @Override
-    public TypeInstantiation getTypeInstantiationToBase() {
-        return proxy.getTypeInstantiationToBase().then(typeInstantiation);
     }
 
     @Override
@@ -101,23 +59,10 @@ public class FInstantiatedFunction extends ForwardingFunction {
         //TODO a more elegant solution would be this.typeInstantiation.then(typeInstantiation).intersect(proxy.getParametersList())
         Map<FTypeVariable, FType> baseMap = new HashMap<>(proxy.getParametersList().size());
         for (FTypeVariable var : proxy.getParametersList()) {
-            FType type = typeInstantiation.getType(this.typeInstantiation.getType(var));
+            FType type = typeInstantiation.getType(getTypeInstantiation().getType(var));
             baseMap.put(proxy.getParameters().get(var.getIdentifier()), type);
         }
         return proxy.getInstantiation(TypeInstantiation.create(baseMap));
-    }
-
-    private boolean sane(TypeInstantiation other) {
-        for (Map.Entry<FTypeVariable, FType> entry : typeInstantiation.getTypeMap().entrySet()) {
-            FTypeVariable var = entry.getKey();
-            if (other.contains(var) && other.getType(var) != entry.getValue())
-                return false;
-        }
-        return true;
-    }
-
-    public TypeInstantiation getTypeInstantiation() {
-        return typeInstantiation;
     }
 
     public boolean isBaked() {

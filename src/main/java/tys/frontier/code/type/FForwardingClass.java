@@ -4,7 +4,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -67,8 +67,8 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
-        return proxy.getFunctions();
+    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+        return proxy.getFunctions(lhsSignatures);
     }
 
     @Override

@@ -13,6 +13,7 @@ import tys.frontier.parser.antlr.FrontierLexer;
 import java.util.Arrays;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Collections.emptyMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum UnaryOperator implements Operator {
@@ -48,7 +49,7 @@ public enum UnaryOperator implements Operator {
 
     public FFunction createPredefined(FClass memberOf, FClass ret) {
         ImmutableList<FParameter> params = ImmutableList.of(FParameter.create(FVariableIdentifier.THIS, memberOf, false));
-        return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params) {
+        return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params, null, emptyMap()) {
             {predefined = true;}
         };
     }

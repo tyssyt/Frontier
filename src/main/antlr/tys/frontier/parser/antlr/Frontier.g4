@@ -147,7 +147,8 @@ methodDeclaration
 methodHeader //Tuple-ize
     :   visibilityModifier? NATIVE? STATIC?
         (LCIdentifier | OPERATOR operator)
-        typeParameters? formalParameters (ARROW typeList)? typeParameterSpecification*
+        typeParameters? formalParameters
+        (ARROW typeList | BACKARROW typedIdentifiers)? typeParameterSpecification*
     ;
 
 operator
@@ -172,7 +173,7 @@ operator
     |   XOR
     |   AND
     |   OR
-    |   LBRACK RBRACK
+    |   Array
     ;
 
 fieldDeclaration
@@ -184,7 +185,15 @@ formalParameters
     ;
 
 formalParameter
-    : identifier COLON typeType (ASSIGN expression)?
+    : typedIdentifier (ASSIGN expression)?
+    ;
+
+typedIdentifiers
+    : typedIdentifier (COMMA typedIdentifier)*
+    ;
+
+typedIdentifier
+    : identifier COLON typeType
     ;
 
 nameSelector
@@ -354,6 +363,7 @@ EXMARK          : '!';
 //Lambdas-----------------------------------------------------------------
 UNDERSCORE      : '_';
 ARROW           : '->';
+BACKARROW           : '<-';
 
 //Separators--------------------------------------------------------------
 LPAREN          : '(';

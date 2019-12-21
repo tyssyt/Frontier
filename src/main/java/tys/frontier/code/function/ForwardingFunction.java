@@ -1,8 +1,6 @@
 package tys.frontier.code.function;
 
-import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -48,8 +46,13 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public ImmutableList<FParameter> getParams() {
-        return proxy.getParams();
+    public Signature getSignature() {
+        return proxy.getSignature();
+    }
+
+    @Override
+    public Signature getLhsSignature() {
+        return proxy.getLhsSignature();
     }
 
     @Override
@@ -65,11 +68,6 @@ public abstract class ForwardingFunction implements FFunction {
     @Override
     public FFunctionIdentifier getIdentifier() {
         return proxy.getIdentifier();
-    }
-
-    @Override
-    public FType getType() {
-        return proxy.getType();
     }
 
     @Override
@@ -110,6 +108,16 @@ public abstract class ForwardingFunction implements FFunction {
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
         return proxy.getInstantiation(typeInstantiation);
+    }
+
+    @Override
+    public FFunction getBaseR() {
+        return proxy;
+    }
+
+    @Override
+    public TypeInstantiation getTypeInstantiationToBase() {
+        return proxy.getTypeInstantiationToBase();
     }
 
     @Override

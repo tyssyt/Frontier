@@ -120,7 +120,7 @@ public class Main {
                     Collection<FInstantiatedFunction> instantiations = entry.getValue();
                     if (instantiations.size() > 1 || instantiations.iterator().next() != null) {
                         FFunction baseFunction = entry.getKey();
-                        fClass.getKey().getFunctions().get(baseFunction.getIdentifier()).remove(baseFunction);
+                        fClass.getKey().getFunctions(false).get(baseFunction.getIdentifier()).remove(baseFunction.getSignature());
                     }
                 }
             }

@@ -21,7 +21,7 @@ public class FFunctionAddress implements FExpression {
 
     @Override
     public FType getType() {
-        return FFunctionType.from(function);
+        return FFunctionType.from(function.getSignature());
     }
 
     @Override
@@ -37,7 +37,7 @@ public class FFunctionAddress implements FExpression {
     @Override
     public StringBuilder toString(StringBuilder sb) { //TODO print types instead of identifiers of params
         sb.append(function.getIdentifier()).append('(');
-        return Utils.joinIdentifiers(sb, function.getParams(), ",").append(")*");
+        return Utils.joinIdentifiers(sb, function.getSignature().getParameters(), ",").append(")*");
     }
 
     @Override

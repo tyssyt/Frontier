@@ -10,15 +10,13 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
-import tys.frontier.code.literal.FStringLiteral;
-import tys.frontier.code.predefinedClasses.FArray;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.NameGenerator;
+import tys.frontier.util.Pair;
 
 import java.util.*;
 
@@ -28,9 +26,10 @@ public class FBaseFunction implements FFunction {
     private FType memberOf;
     private FVisibilityModifier modifier;
     private boolean natiwe;
-    protected FType returnType;
-    protected ImmutableList<FParameter> params;
     private FBlock body;
+
+    private Signature signature;
+    private Signature lhsSignature;
 
     protected Map<FTypeIdentifier, FTypeVariable> parameters;
     protected List<FTypeVariable> parametersList;
@@ -38,17 +37,16 @@ public class FBaseFunction implements FFunction {
 
     protected boolean predefined = false;
 
-    public FBaseFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params) {
-        this(identifier, memberOf, modifier, natiwe, returnType, params, Collections.emptyMap());
-    }
-
-    public FBaseFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public FBaseFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
         this.natiwe = natiwe;
-        this.returnType = returnType;
-        this.params = params;
+
+        Pair<Signature, Signature> pair = Signature.createSignatures(this, params, assignees, returnType);
+        this.signature = pair.a;
+        this.lhsSignature = pair.b;
+
         if (parameters.isEmpty()) {
             this.parameters = Collections.emptyMap();
             this.parametersList = Collections.emptyList();
@@ -76,11 +74,6 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public ImmutableList<FParameter> getParams() {
-        return params;
-    }
-
-    @Override
     public Optional<FBlock> getBody() {
         return Optional.ofNullable(body);
     }
@@ -98,11 +91,6 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public FType getType() {
-        return returnType;
-    }
-
-    @Override
     public boolean isConstructor() {
         return false;
     }
@@ -113,12 +101,21 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
+    public Signature getSignature() {
+        return signature;
+    }
+
+    @Override
+    public Signature getLhsSignature() {
+        return lhsSignature;
+    }
+
+    @Override
     public boolean isMain() {
         return identifier.name.equals("main")
-                && (params.isEmpty() || (params.size() == 1 && params.get(0).getType() == FArray.getArrayFrom(FStringLiteral.TYPE)))
-                && returnType == FTuple.VOID
                 && modifier == FVisibilityModifier.EXPORT
-                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT;
+                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT
+                && signature.isMain();
     }
 
     private NameGenerator freshVariableNames = new NameGenerator("?", "");

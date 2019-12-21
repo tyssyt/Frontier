@@ -8,10 +8,7 @@ import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
-import tys.frontier.code.function.ClassInstantiationFunction;
-import tys.frontier.code.function.FConstructor;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.FInstantiatedFunction;
+import tys.frontier.code.function.*;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.predefinedClasses.FPredefinedClass;
@@ -61,7 +58,8 @@ public class GenericBaking implements FClassVisitor {
             f.accept(visitor);
         }
 
-        for (FFunction function : instantiatedClass.getFunctions().values()) {
+        for (Signature signature : instantiatedClass.getFunctions(false).values()) {
+            FFunction function = signature.getFunction();
             if (function.isConstructor() ||function.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = (ClassInstantiationFunction) function;
@@ -71,7 +69,7 @@ public class GenericBaking implements FClassVisitor {
         }
 
         //set default value for fields in constructor
-        for (FParameter param : instantiatedClass.getConstructor().getParams()) {
+        for (FParameter param : instantiatedClass.getConstructor().getSignature().getParameters()) {
             if (!param.hasDefaultValue())
                 continue;
             FField field = instantiatedClass.getInstanceFields().get(param.getIdentifier());
@@ -114,9 +112,9 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public void enterFunction(FFunction function) {
         assert !function.isConstructor();
-        for (int i = 0; i < function.getParams().size(); i++) {
-            FParameter p = currentFunction.getParams().get(i);
-            FParameter old = function.getParams().get(i);
+        for (int i = 0; i < function.getSignature().getParameters().size(); i++) {
+            FParameter p = currentFunction.getSignature().getParameters().get(i);
+            FParameter old = function.getSignature().getParameters().get(i);
             varMap.put(old, p);
         }
     }
@@ -164,7 +162,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitVarAssignment(FVarAssignment assignment, List<FExpression> variables, List<FExpression> values) {
-        //noinspection unchecked TODO remove rawtypes hack
+        //noinspection unchecked,rawtypes
         return FVarAssignment.createTrusted(((List) variables), assignment.getOperator(), values);
     }
 
@@ -298,7 +296,7 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FExpression visitFunctionAddress(FFunctionAddress address) {
         FFunction old = address.getFunction();
-        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParams(), typeInstantiation::getType);
+        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getSignature().getParameters(), typeInstantiation::getType);
         FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
         return new FFunctionAddress(function);
     }

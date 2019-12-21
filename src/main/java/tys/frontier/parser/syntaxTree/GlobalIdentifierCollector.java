@@ -24,6 +24,7 @@ import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -100,17 +101,37 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         }
 
         //return type
-        FrontierParser.TypeListContext c = ctx.typeList();
         FType returnType;
-        if (c != null) {
-            try {
-                returnType = ParserContextUtils.tupleFromList(c, typeResolver);
-            } catch (SyntaxError e) {
-                errors.add(e);
-                returnType = FTuple.VOID; //TODO do we want some error related type here?
+        {
+            FrontierParser.TypeListContext c = ctx.typeList();
+            if (c != null) {
+                try {
+                    returnType = ParserContextUtils.tupleFromList(c, typeResolver);
+                } catch (SyntaxError e) {
+                    errors.add(e);
+                    returnType = FTuple.VOID; //TODO do we want some error related type here?
+                }
+            } else {
+                returnType = FTuple.VOID;
             }
-        } else {
-            returnType = FTuple.VOID;
+        }
+
+        //assignees
+        ImmutableList<FParameter> assigness = null;
+        {
+            ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
+            FrontierParser.TypedIdentifiersContext ct = ctx.typedIdentifiers();
+            if (ct != null) {
+                for (FrontierParser.TypedIdentifierContext c : ct.typedIdentifier()) {
+                    try {
+                        Pair<FIdentifier, FType> pair = ParserContextUtils.getTypedIdentifier(c, typeResolver);
+                        builder.add(FParameter.create(pair.a, pair.b, false));
+                    } catch (SyntaxError e) {
+                        errors.add(e);
+                    }
+                }
+                assigness = builder.build();
+            }
         }
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
@@ -136,7 +157,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
                 identifier = operator.getIdentifier();
             }
 
-            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, parameters, typeParameters);
+            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, parameters, assigness, typeParameters);
             currentClass.addFunction(res);
             treeData.functions.put(ctx, res);
         } catch (SyntaxErrors e) {

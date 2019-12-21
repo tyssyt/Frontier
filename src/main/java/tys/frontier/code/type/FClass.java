@@ -10,6 +10,7 @@ import tys.frontier.code.HasVisibility;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -45,7 +46,7 @@ public interface FClass extends FType, HasVisibility {
 
     BiMap<FIdentifier, FField> getStaticFields();
 
-    ListMultimap<FFunctionIdentifier, FFunction> getFunctions();
+    ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures);
 
     List<? extends FType> getParametersList();
 
@@ -135,11 +136,18 @@ public interface FClass extends FType, HasVisibility {
     }
 
     default void addFunction(FFunction function) throws SignatureCollision {
-        for (FFunction other : getFunctions().get(function.getIdentifier())) {
-            if (SignatureCollision.collide(function, other))
-                throw new SignatureCollision(function, other);
+        addFunction(function.getSignature(), false);
+        if (function.getLhsSignature() != null)
+            addFunction(function.getLhsSignature(), true);
+    }
+
+    //TODO this is supposed to be private, but Java sucks
+    default void addFunction(Signature signature, boolean lhs) throws SignatureCollision {
+        for (Signature other : getFunctions(lhs).get(signature.getFunction().getIdentifier())) {
+            if (SignatureCollision.collide(signature, other))
+                throw new SignatureCollision(signature, other);
         }
-        getFunctions().put(function.getIdentifier(), function);
+        getFunctions(lhs).put(signature.getFunction().getIdentifier(), signature);
     }
 
     default void addFunctionTrusted(FFunction function) {
@@ -151,7 +159,7 @@ public interface FClass extends FType, HasVisibility {
     }
 
     default FConstructor getConstructor() {
-        return (FConstructor) Iterables.getOnlyElement(getFunctions().get(FConstructor.IDENTIFIER));
+        return (FConstructor) Iterables.getOnlyElement(getFunctions(false).get(FConstructor.IDENTIFIER)).getFunction();
     }
 
     default FConstructor generateConstructor() {
@@ -169,12 +177,14 @@ public interface FClass extends FType, HasVisibility {
     default void removeUnreachable(Reachability.ReachableClass reachable) {
         getStaticFields().values().retainAll(reachable.reachableFields);
         getInstanceFields().values().retainAll(reachable.reachableFields);
-        getFunctions().values().retainAll(reachable.reachableFunctions.keySet());
+        getFunctions(false).values().removeIf(s -> !reachable.reachableFunctions.containsKey(s.getFunction()));
+        getFunctions(true).clear(); //not needed after this point
     }
 
     @Override
-    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
-        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions().get(identifier));
+    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+        assert returnType == null || !lhsResolve;
+        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
     }
 
     default  <C,Fi,Fu,S,E> C accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {
@@ -186,9 +196,9 @@ public interface FClass extends FType, HasVisibility {
         for (FField f : this.getStaticFields().values()) {
             fields.add(f.accept(visitor));
         }
-        List<Fu> functions = new ArrayList<>(this.getFunctions().size());
-        for (FFunction f : this.getFunctions().values()) {
-            functions.add(f.accept(visitor));
+        List<Fu> functions = new ArrayList<>(this.getFunctions(false).size());
+        for (Signature s : this.getFunctions(false).values()) {
+            functions.add(s.getFunction().accept(visitor));
         }
         return visitor.exitType(this, fields, functions);
     }
@@ -196,38 +206,5 @@ public interface FClass extends FType, HasVisibility {
     @Override
     default StringBuilder toString(StringBuilder sb) {
         return sb.append(getIdentifier().name);
-    }
-
-    default String headerToString() {
-        return getVisibility() + " class " + getIdentifier();
-    }
-
-    default StringBuilder summary(StringBuilder sb) {
-        sb.append(headerToString()).append("{\n  ");
-        for (FField field : getStaticFields().values()) {
-            field.toString(sb).append(", ");
-        }
-        for (FField field : getInstanceFields().values()) {
-            field.toString(sb).append(", ");
-        }
-        sb.append("\n  ");
-        for (FFunction function : getFunctions().values()) {
-            sb.append(function.headerToString()).append(", ");
-        }
-        return sb.append("\n}");
-    }
-
-    default StringBuilder printAll(StringBuilder sb) {
-        sb.append(headerToString()).append("{\n");
-        for (FField field : getStaticFields().values()) {
-            field.toString(sb).append('\n');
-        }
-        for (FField field : getInstanceFields().values()) {
-            field.toString(sb).append('\n');
-        }
-        for (FFunction function : getFunctions().values()) {
-            function.toString(sb).append('\n');
-        }
-        return sb.append("\n}");
     }
 }

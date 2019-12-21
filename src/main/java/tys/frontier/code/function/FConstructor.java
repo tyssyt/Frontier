@@ -18,17 +18,19 @@ import tys.frontier.code.type.FClass;
 
 import java.util.*;
 
+import static java.util.Collections.emptyMap;
+
 public class FConstructor extends FBaseFunction {
 
     public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
     public static final FFunctionIdentifier MALLOC_ID = new FFunctionIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass, modifier, false, fClass, params);
+        super(IDENTIFIER, fClass, modifier, false, fClass, params, null, emptyMap());
     }
 
     public static FFunction createMalloc(FClass fClass) {
-        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of());
+        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of(), null, emptyMap());
         function.predefined = true;
         return function;
     }
@@ -82,12 +84,12 @@ public class FConstructor extends FBaseFunction {
         FClass memberOf = (FClass) getMemberOf();
         FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
 
-        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions().get(MALLOC_ID)), Collections.emptyList());
+        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)).getFunction(), Collections.emptyList());
         FVarAssignment thisDecl = FVarAssignment.createDecl(_this, functionCall);
 
-        List<FVariableExpression> fields = new ArrayList<>(getParams().size());
-        List<FExpression> params = new ArrayList<>(getParams().size());
-        for (FParameter param : getParams()) {
+        List<FVariableExpression> fields = new ArrayList<>(getSignature().getParameters().size());
+        List<FExpression> params = new ArrayList<>(getSignature().getParameters().size());
+        for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = memberOf.getInstanceFields().get(param.getIdentifier());
             fields.add(FFieldAccess.createInstanceTrusted(field, thisExpr));

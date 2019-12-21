@@ -3,6 +3,7 @@ package tys.frontier.code.module;
 import com.google.common.collect.MoreCollectors;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.ModuleVisitor;
@@ -32,7 +33,8 @@ public class Module {
 
     public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
         return getExportedClasses().values().stream()
-                .flatMap(_class -> _class.getFunctions().values().stream())
+                .flatMap(_class -> _class.getFunctions(false).values().stream())
+                .map(Signature::getFunction)
                 .filter(FFunction::isMain)
                 .collect(MoreCollectors.onlyElement());
     }

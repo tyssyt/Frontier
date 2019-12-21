@@ -28,6 +28,8 @@ import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 public class FTypeVariable implements FType {
 
     public static class ReturnTypeOf extends FTypeVariable {
@@ -122,11 +124,19 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         if (this.constraints.isResolved())
-            return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
+            return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
 
-        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs);
+        /* TODO
+            on LHS resolve, I can assume returnType VOID, but I need to add another parameter of unknown type (placeholder for assignees)
+            and use the same ReturnTypeOf Mechanism I have for that parameter
+            At least thats my current best guess...
+         */
+        if (lhsResolve)
+            return Utils.NYI("Lhs resolve on TypeVariable");
+
+        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs, lhsResolve);
         if (!tryAddConstraint(constraint))
             throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
 
@@ -145,7 +155,7 @@ public class FTypeVariable implements FType {
         if (returnType == null)
             returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params);
+        FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params, null, emptyMap());
         if (returnType instanceof ReturnTypeOf)
             ((ReturnTypeOf) returnType).function = f;
 

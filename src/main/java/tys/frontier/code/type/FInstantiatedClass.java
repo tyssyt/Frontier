@@ -6,6 +6,7 @@ import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
@@ -25,7 +26,8 @@ public class FInstantiatedClass extends FForwardingClass {
 
     private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
-    private ListMultimap<FFunctionIdentifier, FFunction> newFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FFunctionIdentifier, Signature> newLhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FFunctionIdentifier, Signature> newRhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> newDelegates;
 
@@ -58,7 +60,8 @@ public class FInstantiatedClass extends FForwardingClass {
         }
 
         //add functions
-        for (FFunction baseFunction : proxy.getFunctions().values()) {
+        for (Signature base : proxy.getFunctions(false).values()) {
+            FFunction baseFunction = base.getFunction();
             if (baseFunction.isConstructor() || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = ClassInstantiationFunction.fromClassInstantiation(this, baseFunction);
@@ -119,8 +122,8 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, FFunction> getFunctions() {
-        return newFunctions;
+    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+        return lhsSignatures ? newLhsFunctions : newRhsFunctions;
     }
 
     public boolean isBaked() {

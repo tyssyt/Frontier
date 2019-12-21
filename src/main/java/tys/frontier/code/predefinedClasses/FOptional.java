@@ -4,6 +4,7 @@ import com.google.common.collect.*;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
@@ -15,6 +16,8 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.Collections.emptyMap;
 
 public class FOptional extends FPredefinedClass {
 
@@ -54,19 +57,21 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
             positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
             positionalArgs.set(0, baseType);
         }
-        FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType);
+        FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
         res.function = shimMap.computeIfAbsent(res.function, this::createShim);
         return res;
     }
 
     private FFunction createShim(FFunction original) {
         FType returnType = original.getType() == FTuple.VOID ? FTuple.VOID : FOptional.fromFlatten(original.getType());
-        ImmutableList<FParameter> params = original.getParams();
+        Signature sig = original.getLhsSignature() == null ? original.getSignature() : original.getLhsSignature();
+
+        ImmutableList<FParameter> params = sig.getParameters();
         if (original.isInstance()) {
             ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
             builder.add(FParameter.create(params.get(0).getIdentifier(), this, false));
@@ -75,7 +80,7 @@ public class FOptional extends FPredefinedClass {
         }
 
         return new FBaseFunction(original.getIdentifier(), this, original.getVisibility(), false,
-                returnType, ImmutableList.copyOf(params)) {
+                returnType, params, sig.getAssignees(), emptyMap()) {
             {predefined = true;}
         };
     }
