@@ -68,7 +68,7 @@ public class FOptional extends FPredefinedClass {
     }
 
     private FFunction createShim(FFunction original) {
-        FType returnType = original.getType() == FTuple.VOID ? FTuple.VOID : FOptional.fromFlatten(original.getType());
+        FType returnType = FOptional.fromFlatten(original.getType());
         Signature sig = original.getLhsSignature() == null ? original.getSignature() : original.getLhsSignature();
 
         ImmutableList<FParameter> params = sig.getParameters();
@@ -86,9 +86,9 @@ public class FOptional extends FPredefinedClass {
     }
 
     public static FBaseClass from(FType baseClass) {
-        if (baseClass == FTuple.VOID)
-            return FTuple.VOID;
         if (baseClass instanceof FTuple) {
+            if (baseClass == FTuple.VOID)
+                return FTuple.VOID;
             //the optional of a Tuple is a Tuple of Optionals
             FTuple tuple = (FTuple) baseClass;
             List<FType> optionalBases = new ArrayList<>(tuple.arity());
