@@ -152,6 +152,18 @@ public class LLVMModule implements AutoCloseable {
         return LLVMPointerType(baseType, 0);
     }
 
+    /**
+     * @param function function for which we want a LLVM-Function-Type
+     * @return the LLVM-Function-Type corresponding to the FFunction
+     */
+    private LLVMTypeRef stupidHackToGetFunctionTypeWithCorrectTupleUnpackingWhyyyyyyyy(FFunction function) { //TODO you guessed it...
+        List<FParameter> fParams = function.getSignature().getParameters();
+        PointerPointer<LLVMTypeRef> params = createPointerPointer(fParams, p -> getLlvmType(p.getType()));
+        LLVMTypeRef returnType = getLlvmType(function.getType());
+        return LLVMFunctionType(returnType, params, fParams.size(), FALSE);
+    }
+
+
     private LLVMTypeRef tupleType(FTuple tuple) {
         assert tuple != FTuple.VOID;
         PointerPointer<LLVMTypeRef> types = createPointerPointer(tuple.getTypes(), this::getLlvmType);
@@ -241,7 +253,7 @@ public class LLVMModule implements AutoCloseable {
      * @return Reference to the LLVM function
      */
     private LLVMValueRef addFunctionHeader(FFunction function) { //TODO find other good attributes to set for function and parameters
-        LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), LLVMGetElementType(getLlvmType(FFunctionType.from(function.getSignature()))));
+        LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), stupidHackToGetFunctionTypeWithCorrectTupleUnpackingWhyyyyyyyy(function));
         //set global attribs
         setGlobalAttribs(res, Linkage.findLinkage(function.isNative()), true);
         //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
