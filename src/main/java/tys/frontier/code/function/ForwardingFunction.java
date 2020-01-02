@@ -112,7 +112,7 @@ public abstract class ForwardingFunction implements FFunction {
 
     @Override
     public FFunction getBaseR() {
-        return proxy;
+        return proxy.getBaseR();
     }
 
     @Override
