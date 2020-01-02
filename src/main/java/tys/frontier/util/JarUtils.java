@@ -61,10 +61,8 @@ public class JarUtils {
     }
 
     private static File getPathToRunningJarFromResource() throws URISyntaxException {
-        Class c = JarUtils.class;
-        // The easy way failed, so we try the hard way.
         String className = '/' + JarUtils.class.getName().replace('.', '/') + ".class";
-        String url = c.getResource(className).toURI().toString();
+        String url = JarUtils.class.getResource(className).toURI().toString();
         assert (url.endsWith(className));
 
         if (!url.startsWith("jar:"))

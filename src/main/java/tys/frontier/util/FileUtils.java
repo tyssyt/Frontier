@@ -4,7 +4,6 @@ import com.google.common.io.Resources;
 
 import java.io.File;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,11 +26,7 @@ public class FileUtils {
 
     public static Path pathToResource(String resource) {
         try {
-            URL url = Resources.getResource(resource);
-            //URL url = FileUtils.class.getResource(resource);
-            if (resource == null)
-                return null;
-            return Paths.get(url.toURI());
+            return Paths.get(Resources.getResource(resource).toURI());
         } catch (URISyntaxException e) {
             return null;
         }
