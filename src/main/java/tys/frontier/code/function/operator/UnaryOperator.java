@@ -2,6 +2,7 @@ package tys.frontier.code.function.operator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
@@ -45,6 +46,10 @@ public enum UnaryOperator implements Operator {
     @Override
     public boolean isUserDefinable() {
         return true;
+    }
+
+    public FFunction getFunction(FClass fClass) {
+        return Iterables.getOnlyElement(fClass.getFunctions(false).get(identifier)).getFunction();
     }
 
     public FFunction createPredefined(FClass memberOf, FClass ret) {

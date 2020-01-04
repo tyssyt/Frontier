@@ -11,9 +11,9 @@ import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.statement.FAssignment;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
-import tys.frontier.code.statement.FVarAssignment;
 import tys.frontier.code.type.FClass;
 
 import java.util.*;
@@ -84,10 +84,10 @@ public class FConstructor extends FBaseFunction {
         FClass memberOf = (FClass) getMemberOf();
         FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
 
-        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)).getFunction(), Collections.emptyList());
-        FVarAssignment thisDecl = FVarAssignment.createDecl(_this, functionCall);
+        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
+        FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);
 
-        List<FVariableExpression> fields = new ArrayList<>(getSignature().getParameters().size());
+        List<FExpression> fields = new ArrayList<>(getSignature().getParameters().size());
         List<FExpression> params = new ArrayList<>(getSignature().getParameters().size());
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
@@ -95,7 +95,7 @@ public class FConstructor extends FBaseFunction {
             fields.add(FFieldAccess.createInstanceTrusted(field, thisExpr));
             params.add(new FLocalVariableExpression(param));
         }
-        FVarAssignment fieldAssign = FVarAssignment.createTrusted(fields, FVarAssignment.Operator.ASSIGN, params);
+        FAssignment fieldAssign = FAssignment.createTrusted(fields, params);
 
         FReturn _return = FReturn.createTrusted(Arrays.asList(new FLocalVariableExpression(_this)), this);
 

@@ -160,7 +160,7 @@ public class FTypeVariable implements FType {
             ((ReturnTypeOf) returnType).function = f;
 
         FunctionResolver.Result res = new FunctionResolver.Result();
-        res.function = f;
+        res.signature = lhsResolve ? f.getLhsSignature() : f.getSignature();
         List<FType> paramTypes = Utils.typesFromExpressionList(params);
         res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
         res.constraints = ImmutableMultimap.of(this, constraint);

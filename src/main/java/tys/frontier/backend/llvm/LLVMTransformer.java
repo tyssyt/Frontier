@@ -29,6 +29,8 @@ import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 import java.math.BigInteger;
 import java.util.*;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 import static tys.frontier.code.function.operator.BinaryOperator.*;
@@ -367,7 +369,7 @@ class LLVMTransformer implements
             values.add(arg.accept(this));
         FType type = fReturn.getFunction().getType();
         values = prepareArgs(values,
-                type == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(type),
+                type == FTuple.VOID ? emptyList() : singletonList(type),
                 fReturn.getArgMapping());
 
         switch (values.size()) {
@@ -381,23 +383,30 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitVarAssignment(FVarAssignment assignment) {
-        if (assignment.getOperator() != FVarAssignment.Operator.ASSIGN) {
-            Utils.NYI("operator " + assignment.getOperator());
-        }
-
+    public LLVMValueRef visitVarAssignment(FAssignment assignment) {
         List<LLVMValueRef> values = new ArrayList<>();
         for (FExpression arg : assignment.getValues())
             values.add(arg.accept(this));
-        values = prepareArgs(values, Utils.typesFromExpressionList(assignment.getVariables()), assignment.getArgMapping());
+        values = prepareArgs(values, Utils.typesFromExpressionList(assignment.getLhsExpressions()), assignment.getArgMapping());
 
-        for (Pair<FVariableExpression, LLVMValueRef> pair : Utils.zip(assignment.getVariables(), values)) {
-            FVariableExpression variable = pair.a;
-            if (variable instanceof FVarDeclaration) {
-                createEntryBlockAlloca(((FVarDeclaration) variable).getVariable());
+        int i = 0;
+        for (FExpression lhsExpression : assignment.getLhsExpressions()) {
+            if (lhsExpression instanceof FVariableExpression) {
+                FVariableExpression variable = (FVariableExpression) lhsExpression;
+                if (variable instanceof FVarDeclaration)
+                    createEntryBlockAlloca(((FVarDeclaration) variable).getVariable());
+                LLVMBuildStore(builder, values.get(i), variable.accept(this));
+                i++;
+            } else if (lhsExpression instanceof FFunctionCall) {
+                FFunctionCall fun = (FFunctionCall) lhsExpression;
+                int consumedValues = fun.getSignature().getAssignees().size();
+                visitFunctionCall(fun, values.subList(i, i + consumedValues));
+                i += consumedValues;
+            } else {
+                return Utils.cantHappen();
             }
-            LLVMBuildStore(builder, pair.b, variable.accept(this));
         }
+        assert i == values.size();
         return null;
     }
 
@@ -713,11 +722,16 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitFunctionCall(FFunctionCall functionCall) {
+        return visitFunctionCall(functionCall, emptyList());
+    }
+
+    public LLVMValueRef visitFunctionCall(FFunctionCall functionCall, Collection<LLVMValueRef> additionalArgs) {
         //given arguments
         List<LLVMValueRef> args = new ArrayList<>();
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
         args = prepareArgs(args, Utils.typesFromExpressionList(functionCall.getFunction().getSignature().getParameters()), functionCall.getArgMapping());
+        args.addAll(additionalArgs);
 
         FFunction function = functionCall.getFunction();
         if (function.isPredefined())

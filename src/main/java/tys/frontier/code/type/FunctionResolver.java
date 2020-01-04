@@ -26,11 +26,15 @@ import java.util.Map;
 public class FunctionResolver {
 
     public static class Result {
-        public FFunction function;
+        public Signature signature;
         public ArgMapping argMapping;
         public Multimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
         public int costs;
+
+        public FFunction getFunction() {
+            return signature.getFunction();
+        }
     }
 
     private FFunctionIdentifier identifier;
@@ -71,20 +75,20 @@ public class FunctionResolver {
                 //fast path for perfect fit
                 result.casts = result.argMapping.getNUmberOfCasts();
                 if (result.casts == 0 && result.constraints.isEmpty()) {
-                    result.function = s.getFunction();
+                    result.signature = s;
                     return result; //perfect fit
                 }
 
                 //compute instantiations
                 TypeInstantiation instantiation = computeTypeInstantiation(triple.c, result.constraints, true);
-                result.function = s.getFunction().getInstantiation(instantiation);
+                result.signature = s.getInstantiation(instantiation);
 
                 //handle other constraints
                 if (TypeConstraints.removeSatisfiableCheckUnsatisfiable(result.constraints) != null)
                     continue;
 
                 //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
-                result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.function.getSignature().getParameters()));
+                result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.signature.getParameters()));
 
                 result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);

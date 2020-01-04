@@ -251,18 +251,7 @@ statement
     |   CONTINUE SEMI                                                                       #continueStatement
     |   SEMI                                                                                #emptyStatement
     |   expression SEMI                                                                     #expressionStatement
-    |   assignLhss
-        (   ASSIGN
-        |   ADD_ASSIGN
-        |   SUB_ASSIGN
-        |   MUL_ASSIGN
-        |   DIV_ASSIGN
-        |   AND_ASSIGN
-        |   OR_ASSIGN
-        |   XOR_ASSIGN
-        |   MOD_ASSIGN
-        )
-        tupleExpression SEMI                                                                #assignment
+    |   assignLhss ASSIGN tupleExpression SEMI                                              #assignment
     ;
 
 assignLhss
@@ -288,7 +277,6 @@ expression
     |   expression DOT LCIdentifier LPAREN arguments? RPAREN       #externalFunctionCall
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
-    |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
@@ -306,6 +294,7 @@ expression
     |   literal                                                    #literalExpr
     |   typeType                                                   #typeTypeExpr
     |   identifier                                                 #variableExpr
+    |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
     ;
 
 arguments

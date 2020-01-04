@@ -6,6 +6,7 @@ import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
@@ -21,13 +22,13 @@ import java.util.List;
 
 public class FFunctionCall implements FExpression {
     private boolean prepared;
-    private FFunction function;
+    private Signature signature;
     private List<FExpression> arguments;
     private ArgMapping argMapping;
 
-    private FFunctionCall(boolean prepared, FFunction function, List<FExpression> arguments, ArgMapping argMapping) {
+    private FFunctionCall(boolean prepared, Signature signature, List<FExpression> arguments, ArgMapping argMapping) {
         this.prepared = prepared;
-        this.function = function;
+        this.signature = signature;
         this.arguments = arguments;
         this.argMapping = argMapping;
     }
@@ -37,9 +38,10 @@ public class FFunctionCall implements FExpression {
             return;
         prepared = true;
 
+        FFunction function = signature.getFunction();
         if (function.isInstantiation()) {
             List<FParameter> params = function.getBaseR().getSignature().getParameters();
-            List<FParameter> targetParams = function.getSignature().getParameters();
+            List<FParameter> targetParams = signature.getParameters();
             TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null) {
@@ -51,17 +53,17 @@ public class FFunctionCall implements FExpression {
                     }
                 }
         } else {
-            List<FParameter> params = function.getSignature().getParameters();
+            List<FParameter> params = signature.getParameters();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null)
                     arguments.set(i, params.get(i).getDefaultValue());
         }
     }
 
-    public static FFunctionCall create(FFunction function, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
+    public static FFunctionCall create(Signature signature, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         boolean needsPrepare = false;
-        ImmutableList<FParameter> parameters = function.getSignature().getParameters();
+        ImmutableList<FParameter> parameters = signature.getParameters();
         for (int i = argMapping.getNumberOfParamsFilledWithPositionalArgs(); i < parameters.size(); i++) {
             FParameter p = parameters.get(i);
             List<FExpression> arg = keywordArgs.get(p.getIdentifier());
@@ -71,24 +73,24 @@ public class FFunctionCall implements FExpression {
             } else
                 args.addAll(arg); //adds null for default args
         }
-        return new FFunctionCall(!needsPrepare, function, args, argMapping);
+        return new FFunctionCall(!needsPrepare, signature, args, argMapping);
     }
 
-    public static FFunctionCall createTrusted(FFunction function, List<FExpression> arguments) {
+    public static FFunctionCall createTrusted(Signature signature, List<FExpression> arguments) {
         try {
-            ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(function.getSignature().getParameters()));
-            return new FFunctionCall(false, function, arguments, argMapping);
+            ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(signature.getParameters()));
+            return new FFunctionCall(false, signature, arguments, argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
     }
 
-    public FFunction getFunction() {
-        return function;
+    public Signature getSignature() {
+        return signature;
     }
 
-    public void setFunction(FFunction function) {
-        this.function = function;
+    public FFunction getFunction() {
+        return signature.getFunction();
     }
 
     public List<? extends FExpression> getArguments() {
@@ -98,7 +100,7 @@ public class FFunctionCall implements FExpression {
 
     @Override
     public FType getType() {
-        return function.getType();
+        return signature.getType();
     }
 
     public ArgMapping getArgMapping() {
@@ -123,8 +125,8 @@ public class FFunctionCall implements FExpression {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append(function.getMemberOf().getIdentifier());
-        sb.append('.').append(function.getIdentifier()).append('(');
+        sb.append(signature.getFunction().getMemberOf().getIdentifier());
+        sb.append('.').append(signature.getFunction().getIdentifier()).append('(');
         return Joiner.on(',').appendTo(sb, arguments).append(')');
     }
     @Override

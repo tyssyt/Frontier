@@ -32,7 +32,7 @@ public interface FStatementVisitor extends FExpressionVisitor, StatementVisitor<
     }
 
     @Override
-    default FStatement exitVarAssignment(FVarAssignment assignment, List<FExpression> variables, List<FExpression> values) {
+    default FStatement exitVarAssignment(FAssignment assignment, List<FExpression> variables, List<FExpression> values) {
         return assignment;
     }
 

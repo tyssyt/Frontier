@@ -63,6 +63,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     private ParsedFile file;
 
+    private boolean useLhsresolve = false;
+
 
     private ToInternalRepresentation(ParsedFile file, List<Warning> warnings, List<SyntaxError> errors) {
         this.treeData = file.getTreeData();
@@ -334,7 +336,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public FVarAssignment visitAssignment(FrontierParser.AssignmentContext ctx) {
+    public FAssignment visitAssignment(FrontierParser.AssignmentContext ctx) {
         List<FExpression> values = visitTupleExpression(ctx.tupleExpression());
         List<FType> types = FTuple.unpackType(FTuple.fromExpressionList(values));
 
@@ -346,10 +348,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
 
         boolean failed = false;
-        List<FVariableExpression> vars = new ArrayList<>(contexts.size());
+        List<FExpression> lhsExpressions = new ArrayList<>(contexts.size());
         for (Pair<FrontierParser.AssignLhsContext, FType> pair : Utils.zip(contexts, types)) {
             try {
-                vars.add(visitAssignLhs(pair.a, pair.b));
+                lhsExpressions.add(visitAssignLhs(pair.a, pair.b));
             } catch (Failed f) {
                 failed = true;
             }
@@ -357,27 +359,27 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         if (failed)
             throw new Failed();
 
-        FVarAssignment.Operator operator = FVarAssignment.Operator.fromString(ctx.getChild(1).getText());
         try {
-            return FVarAssignment.create(vars, operator, values);
+            return FAssignment.create(lhsExpressions, values);
         } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();
         }
     }
 
-    private FVariableExpression visitAssignLhs(FrontierParser.AssignLhsContext ctx, FType type) {
+    private FExpression visitAssignLhs(FrontierParser.AssignLhsContext ctx, FType type) {
         if (ctx.COLON() != null) {
             //declaration
             return visitAssignLhsDecl(ctx, type);
         } else {
             //assignment
+            useLhsresolve = true;
             FExpression e = visitExpression(ctx.expression());
-            if (!(e instanceof FVariableExpression)) {
+            if (useLhsresolve) {
                 errors.add(new NonAssignableExpression(e));
                 throw new Failed();
             }
-            return (FVariableExpression) e;
+            return e;
         }
     }
 
@@ -594,6 +596,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FVariableExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
+        boolean lhsResolve = useLhsresolve; //TODO use when field access uses functions
+        useLhsresolve = false;
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
         try {
             return findLocal(identifier);
@@ -640,7 +644,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
 
         try {
-            return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of());
+            return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -661,10 +665,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.getChild(1).getText());
 
         try {
-            return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
+            return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e1) {
             try {
-                return functionCall(second.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of());
+                return functionCall(second.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), false);
             } catch (FunctionNotFound | AccessForbidden e2) {
                 errors.add(e1);
                 errors.add(e2);
@@ -703,6 +707,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FArrayAccess visitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
+        boolean lhsResolve = useLhsresolve; //TODO use when this is an operator
+        useLhsresolve = false;
         FExpression array;
         try {
             array = visitExpression(ctx.expression(0));
@@ -722,6 +728,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FFieldAccess visitFieldAccess(FrontierParser.FieldAccessContext ctx) {
+        boolean lhsResolve = useLhsresolve; //TODO use when field access uses functions
+        useLhsresolve = false;
         FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
         FType namespace;
         FExpression object = visitExpression(ctx.expression());
@@ -779,16 +787,17 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return res;
     }
 
-    private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier,
-                                        List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs)
+    private FFunctionCall functionCall (FType clazz, FFunctionIdentifier identifier, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, boolean lhsResolve)
             throws FunctionNotFound, AccessForbidden {
-        FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, false); //TODO lhsResolve
-        checkAccessForbidden(res.function);
-        return FFunctionCall.create(res.function, positionalArgs, keywordArgs, res.argMapping);
+        FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, lhsResolve);
+        checkAccessForbidden(res.getFunction());
+        return FFunctionCall.create(res.signature, positionalArgs, keywordArgs, res.argMapping);
     }
 
     @Override
     public FExpression visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
+        boolean lhsResolve = useLhsresolve;
+        useLhsresolve = false;
         FFunctionIdentifier identifier = new FFunctionIdentifier(ctx.LCIdentifier().getText());
         FType namespace;
 
@@ -811,7 +820,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 else
                     arguments.a.add(0, object);
             }
-            return functionCall(namespace, identifier, arguments.a, arguments.b);
+            return functionCall(namespace, identifier, arguments.a, arguments.b, lhsResolve);
         } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes | DynamicCallWithKeywordArgs e) {
             errors.add(e);
             throw new Failed();
@@ -908,6 +917,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
+        boolean lhsResolve = useLhsresolve;
+        useLhsresolve = false;
         //first check if we have a variable of function type
         FIdentifier identifier = new FVariableIdentifier(ctx.LCIdentifier().getText());
         Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
@@ -930,11 +941,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             List<FExpression> params2 = new ArrayList<>(arguments.a.size() + 1);
             params2.add(getThisExpr());
             params2.addAll(arguments.a);
-            return functionCall(currentType, fIdentifier, params2, arguments.b);
+            return functionCall(currentType, fIdentifier, params2, arguments.b, lhsResolve);
         } catch (FunctionNotFound | UndeclaredVariable | AccessForbidden e) {
             //instance method not found, check for static method
             try {
-                return functionCall(currentType, fIdentifier, arguments.a, arguments.b);
+                return functionCall(currentType, fIdentifier, arguments.a, arguments.b, lhsResolve);
             } catch (FunctionNotFound | AccessForbidden e2) {
                 errors.add(e2);
                 throw new Failed();
@@ -954,7 +965,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
         ListMultimap<FIdentifier, FExpression> namedArguments = visitNamedExpressions(ctx.namedExpressions());
         try {
-            return functionCall(type, FConstructor.IDENTIFIER, Collections.emptyList(), namedArguments);
+            return functionCall(type, FConstructor.IDENTIFIER, Collections.emptyList(), namedArguments, false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -975,7 +986,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         FArray array = FArray.getArrayFrom(baseType);
         try {
-            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), ImmutableListMultimap.of());
+            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -1039,7 +1050,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 throw new FunctionNotFound(identifier, Collections.emptyList(), ImmutableListMultimap.of());
             return fun.iterator().next().getFunction();
         } else {
-            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).function;  //TODO lhsResolve
+            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
             checkAccessForbidden(f);
             return f;
         }

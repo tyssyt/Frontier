@@ -63,7 +63,8 @@ public class FOptional extends FPredefinedClass {
             positionalArgs.set(0, baseType);
         }
         FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
-        res.function = shimMap.computeIfAbsent(res.function, this::createShim);
+        FFunction shim = shimMap.computeIfAbsent(res.getFunction(), this::createShim);
+        res.signature = lhsResolve ? shim.getLhsSignature() : shim.getSignature();
         return res;
     }
 

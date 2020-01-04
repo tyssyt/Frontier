@@ -17,7 +17,6 @@ import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
-import tys.frontier.passes.lowering.OperatorAssignmentLowering;
 import tys.frontier.style.Style;
 import tys.frontier.util.FileUtils;
 
@@ -93,7 +92,6 @@ public class Main {
             //Lowering Passes
             for (Module m : module.findImportedModulesReflexiveTransitive()) {
                 FForEachLowering.lower(m);
-                OperatorAssignmentLowering.lower(m);
             }
 
             //Reachability analysis

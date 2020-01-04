@@ -130,8 +130,9 @@ public final class Utils {
         }
     }
 
-    public static FFunction findFunctionInstantiation(FFunction function, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
+    public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
+        FFunction function = signature.getFunction();
         FType oldNamespace = function.getMemberOf();
         FType newNamespace = typeInstantiation.getType(oldNamespace);
 
@@ -146,10 +147,10 @@ public final class Utils {
             else
                 identifier = function.getIdentifier();
 
-            FType returnType = typeInstantiation.getType(function.getType());
+            FType returnType = typeInstantiation.getType(signature.getType());
 
             try {
-                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, false).function;
+                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, signature.isLhs()).signature;
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
@@ -160,7 +161,7 @@ public final class Utils {
             if (oldNamespace instanceof FArray) {
                 //arrays only have the constructor
                 assert function.isConstructor();
-                return ((FArray) newNamespace).getConstructor();
+                return ((FArray) newNamespace).getConstructor().getSignature();
             } else if (oldNamespace instanceof FOptional) {
                 return Utils.NYI("instantiation lookup for optionals"); //TODO
             } else if (oldNamespace instanceof FFunctionType) {
@@ -181,7 +182,9 @@ public final class Utils {
         }
 
         //handle function instantiation
-        return function.getInstantiation(typeInstantiation);
+
+        FFunction instantiation = function.getInstantiation(typeInstantiation);
+        return signature.isLhs() ? instantiation.getLhsSignature() : instantiation.getSignature();
     }
 
     @CanIgnoreReturnValue

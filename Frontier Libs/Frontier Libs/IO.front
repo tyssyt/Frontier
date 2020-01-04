@@ -5,7 +5,7 @@ export class IO:
     export static print(chara: char) {
         //TODO remove this hack once I improved char
         i : int64 = chara;
-        i %= 256;
+        i = i % 256;
         Native.putchar(chara);
     }
 
@@ -16,11 +16,11 @@ export class IO:
         }
         pos:bool = l >= 0;
         if !pos {
-            l *= -1;
+            l = l * -1;
         }
         size:int32 = (int32) Native.ceil(Native.log10((float64)l+1.0));
         if (!pos) {
-            size += 1;
+            ++size;
         }
 
         digits:char[] = new char[size];
@@ -28,7 +28,7 @@ export class IO:
         while i<=size {
             remainder:int64 = l % 10;
             digits[size-i] = intToChar((int32)remainder);
-            l /= 10;
+            l = l / 10;
             ++i;
         }
 
@@ -67,13 +67,13 @@ export class IO:
         }
 
         while nextChar >= 48 && nextChar <= 57 {
-            res *= 10;
-            res += charToInt(nextChar);
+            res = res * 10;
+            res = res + charToInt(nextChar);
             nextChar = getChar();
         }
 
         if isNegative {
-            res = -1 * res;
+            res = res * -1;
         }
 
         return res;

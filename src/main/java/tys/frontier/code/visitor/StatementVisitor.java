@@ -17,7 +17,7 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default void enterIf(FIf fIf) {}
     default void enterReturn(FReturn fReturn) {}
     default void enterVarDeclaration(FVarDeclaration declaration) {}
-    default void enterVarAssignment(FVarAssignment assignment) {}
+    default void enterVarAssignment(FAssignment assignment) {}
     default void enterWhile(FWhile fWhile) {}
     default void enterForEach(FForEach forEach) {}
 
@@ -34,7 +34,7 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default Statement exitReturn(FReturn fReturn, List<Expression> values) {
         return null;
     }
-    default Statement exitVarAssignment(FVarAssignment assignment, List<Expression> variables, List<Expression> values) {
+    default Statement exitVarAssignment(FAssignment assignment, List<Expression> variables, List<Expression> values) {
         return null;
     }
     default Statement exitWhile(FWhile fWhile, Expression cond, Statement body) {

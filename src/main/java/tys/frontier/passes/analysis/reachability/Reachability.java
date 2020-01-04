@@ -150,7 +150,7 @@ public class Reachability {
         //Instantiate Base results and add to Q/reach
         for (FFunctionCall fC : baseAnalysis.a) {
             List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(), typeInstantiation::getType);
-            FFunction f = Utils.findFunctionInstantiation(fC.getFunction(), paramTypes, ImmutableListMultimap.of(), typeInstantiation);
+            FFunction f = Utils.findFunctionInstantiation(fC.getSignature(), paramTypes, ImmutableListMultimap.of(), typeInstantiation).getFunction();
             seenFunctions.add(f);
         }
         for (FFieldAccess fA : baseAnalysis.b) {
@@ -159,7 +159,7 @@ public class Reachability {
         }
         for (FFunctionAddress fA : baseAnalysis.c) {
             List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getSignature().getParameters(), typeInstantiation::getType);
-            FFunction f = Utils.findFunctionInstantiation(fA.getFunction(), paramTypes, ImmutableListMultimap.of(), typeInstantiation);
+            FFunction f = Utils.findFunctionInstantiation(fA.getFunction().getSignature(), paramTypes, ImmutableListMultimap.of(), typeInstantiation).getFunction();
             seenFunctions.add(f);
         }
     }

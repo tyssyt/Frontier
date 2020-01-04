@@ -141,7 +141,7 @@ public class Delegates {
                 arguments.add(new FLocalVariableExpression(params.get(i)));
             }
 
-            FFunctionCall functionCall = FFunctionCall.createTrusted(toDoPair.b, arguments);
+            FFunctionCall functionCall = FFunctionCall.createTrusted(toDoPair.b.getSignature(), arguments);
 
             FStatement res;
             if (toDo.getType() == FTuple.VOID)

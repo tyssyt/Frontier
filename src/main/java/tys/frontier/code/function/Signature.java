@@ -2,6 +2,7 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.FArray;
@@ -67,6 +68,10 @@ public class Signature implements Typed {
         this.returnType = returnType;
     }
 
+    public boolean isLhs() {
+        return assignees != null;
+    }
+
     public boolean isInstance() {
         return parameters.size() > 0 && parameters.get(0).getType() == function.getMemberOf();
     }
@@ -74,6 +79,11 @@ public class Signature implements Typed {
     public boolean isMain() {
         return returnType == FTuple.VOID &&
                 (parameters.isEmpty() || (parameters.size() == 1 && parameters.get(0).getType() == FArray.getArrayFrom(FStringLiteral.TYPE)));
+    }
+
+    public Signature getInstantiation(TypeInstantiation typeInstantiation) {
+        FFunction instantiation = function.getInstantiation(typeInstantiation);
+        return isLhs() ? instantiation.getLhsSignature() : instantiation.getSignature();
     }
 
     @Override

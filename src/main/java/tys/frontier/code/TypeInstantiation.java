@@ -2,6 +2,7 @@ package tys.frontier.code;
 
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
@@ -173,8 +174,8 @@ public class TypeInstantiation {
         List<FType> positionalArgs = Utils.map(returnTypeOf.getPositionalArgs(), this::getType);
         ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
-            FFunction instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
-                    positionalArgs, keywordArgs, null, false).function;
+            Signature instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
+                    positionalArgs, keywordArgs, null, false).signature;
             //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
             return getType(instantiation.getType());
         } catch (FunctionNotFound functionNotFound) {

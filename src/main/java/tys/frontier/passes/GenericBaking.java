@@ -161,9 +161,8 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FStatement exitVarAssignment(FVarAssignment assignment, List<FExpression> variables, List<FExpression> values) {
-        //noinspection unchecked,rawtypes
-        return FVarAssignment.createTrusted(((List) variables), assignment.getOperator(), values);
+    public FStatement exitVarAssignment(FAssignment assignment, List<FExpression> lhsExpressions, List<FExpression> values) {
+        return FAssignment.createTrusted(lhsExpressions, values);
     }
 
     @Override
@@ -223,18 +222,18 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
-        FFunction function = functionCall.getFunction();
+        Signature signature = functionCall.getSignature();
 
-        FFunctionIdentifier identifier = function.getIdentifier();
-        if (function.getMemberOf() instanceof FPredefinedClass &&
+        FFunctionIdentifier identifier = signature.getFunction().getIdentifier();
+        if (signature.getFunction().getMemberOf() instanceof FPredefinedClass &&
                 (identifier.equals(UnaryOperator.INC.identifier) || identifier.equals(UnaryOperator.DEC.identifier))
         ) {
             //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
             ((FVariableExpression) params.get(0)).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
         }
 
-        function = Utils.findFunctionInstantiation(function, Utils.typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
-        return FFunctionCall.createTrusted(function, params);
+        signature = Utils.findFunctionInstantiation(signature, Utils.typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
+        return FFunctionCall.createTrusted(signature, params);
     }
 
     @Override
@@ -295,9 +294,9 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FExpression visitFunctionAddress(FFunctionAddress address) {
-        FFunction old = address.getFunction();
-        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getSignature().getParameters(), typeInstantiation::getType);
-        FFunction function = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
-        return new FFunctionAddress(function);
+        Signature old = address.getFunction().getSignature();
+        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParameters(), typeInstantiation::getType);
+        Signature _new = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
+        return new FFunctionAddress(_new.getFunction());
     }
 }

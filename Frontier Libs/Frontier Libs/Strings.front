@@ -12,8 +12,8 @@ export class Strings:
         }
 
         while i < string.size {
-            res *= 10;
-            res += charToInt(string[i]);
+            res = res * 10;
+            res = res + charToInt(string[i]);
             ++i;
         }
 

@@ -3,25 +3,22 @@ package tys.frontier.passes.lowering;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
-import tys.frontier.code.statement.FBlock;
-import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.statement.FVarAssignment;
-import tys.frontier.code.statement.FVarAssignment.Operator;
-import tys.frontier.code.statement.FVarDeclaration;
+import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
+import tys.frontier.code.type.FClass;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static java.util.Collections.singletonList;
 
 public class FForEachLowering extends StatementReplacer {
 
@@ -53,7 +50,7 @@ public class FForEachLowering extends StatementReplacer {
                 container = ((FLocalVariableExpression) array).getVariable();
             } else {
                 container = function.getFreshVariable(arrayType);
-                res.add(FVarAssignment.createDecl(container, array));
+                res.add(FAssignment.createDecl(container, array));
             }
         }
 
@@ -62,39 +59,40 @@ public class FForEachLowering extends StatementReplacer {
         {
             FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
             FFieldAccess sizeAcc = FFieldAccess.createInstanceTrusted(arrayType.getInstanceFields().get(FArray.SIZE), containerAccess);
-            res.add(FVarAssignment.createDecl(size, sizeAcc));
+            res.add(FAssignment.createDecl(size, sizeAcc));
         }
 
         //declare counter
         FLocalVariable counter = forEach.getCounter().orElse(function.getFreshVariable(FIntN._32));
         {
-            res.add(FVarAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
+            res.add(FAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
         }
 
         //condition
         FExpression condition;
         {
-            FFunction less = BinaryOperator.LESS.getFunction(FIntN._32);
+            Signature less = BinaryOperator.LESS.getFunction(FIntN._32).getSignature();
             condition = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), new FLocalVariableExpression(size)));
         }
 
         //as first statement of loop accessing the array and storing the result in the iterator var
         FStatement itDecl;
         {
-            List<FVariableExpression> decls = new ArrayList<>(forEach.getIterators().size());
+            List<FExpression> decls = new ArrayList<>(forEach.getIterators().size());
             for (FLocalVariable it : forEach.getIterators()) {
                 decls.add(new FVarDeclaration(it));
             }
             FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
-            itDecl = FVarAssignment.createTrusted(decls, Operator.ASSIGN, Arrays.asList(arrayAccess));
+            itDecl = FAssignment.createTrusted(decls, Arrays.asList(arrayAccess));
         }
 
         //increment
         FStatement increment;
         {
             FLocalVariableExpression counterExp = new FLocalVariableExpression(counter);
-            FLiteralExpression one = new FLiteralExpression(new FIntNLiteral(1));
-            increment = FVarAssignment.createTrusted(singletonList(counterExp), Operator.ADD_ASSIGN, Arrays.asList(one));
+            Signature inc = UnaryOperator.INC.getFunction((FClass) counter.getType()).getSignature();
+            increment = new FExpressionStatement(FFunctionCall.createTrusted(inc, Arrays.asList(counterExp)));
+            counterExp.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
         }
 
         //Loop Body

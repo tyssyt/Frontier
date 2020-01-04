@@ -1,7 +1,6 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.FBreak;
 import tys.frontier.code.statement.loop.FContinue;
@@ -35,9 +34,9 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
         return null;
     }
 
-    default Statement visitVarAssignment(FVarAssignment assignment) {
-        for (FVariableExpression variable : assignment.getVariables())
-            variable.accept(this);
+    default Statement visitVarAssignment(FAssignment assignment) {
+        for (FExpression lhsExpression : assignment.getLhsExpressions())
+            lhsExpression.accept(this);
         for (FExpression value : assignment.getValues())
             value.accept(this);
         return null;
