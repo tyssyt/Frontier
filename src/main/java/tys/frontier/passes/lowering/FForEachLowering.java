@@ -1,9 +1,11 @@
 package tys.frontier.passes.lowering;
 
+import com.google.common.collect.ImmutableListMultimap;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
@@ -14,11 +16,15 @@ import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FunctionResolver;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static tys.frontier.util.Utils.typesFromExpressionList;
 
 public class FForEachLowering extends StatementReplacer {
 
@@ -82,8 +88,14 @@ public class FForEachLowering extends StatementReplacer {
             for (FLocalVariable it : forEach.getIterators()) {
                 decls.add(new FVarDeclaration(it));
             }
-            FArrayAccess arrayAccess = FArrayAccess.createTrusted(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
-            itDecl = FAssignment.createTrusted(decls, Arrays.asList(arrayAccess));
+            try {
+                List<FExpression> arguments = Arrays.asList(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
+                FunctionResolver.Result result = container.getType().hardResolveFunction(Access.ID, typesFromExpressionList(arguments), ImmutableListMultimap.of(), null, false);
+                FFunctionCall arrayAccess = FFunctionCall.createTrusted(result.signature, arguments);
+                itDecl = FAssignment.createTrusted(decls, Arrays.asList(arrayAccess));
+            } catch (FunctionNotFound functionNotFound) {
+                return Utils.cantHappen();
+            }
         }
 
         //increment

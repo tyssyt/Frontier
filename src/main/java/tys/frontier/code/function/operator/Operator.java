@@ -14,7 +14,9 @@ public interface Operator {
 
     static Operator get(String stringRepresentation, List<FType> argTypes) {
         Operator operator = null;
-        if (argTypes.size() == 1)
+        if (stringRepresentation.equals(Access.PARSER_TOKEN))
+            operator = Access.INSTANCE;
+        else if (argTypes.size() == 1)
             operator = UnaryOperator.getFromParserToken(stringRepresentation);
         else if (argTypes.size() == 2)
             operator = BinaryOperator.getFromParserToken(stringRepresentation);

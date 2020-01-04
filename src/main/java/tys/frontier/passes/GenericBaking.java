@@ -209,12 +209,6 @@ public class GenericBaking implements FClassVisitor {
         return new FContinue(loopMap.get(fContinue.getLoop()));
     }
 
-    //Expressions
-    @Override
-    public FExpression exitArrayAccess(FArrayAccess arrayAccess, FExpression array, FExpression index) {
-        return FArrayAccess.createTrusted(array, index);
-    }
-
     @Override
     public FExpression exitBrackets(FBracketsExpression brackets, FExpression inner) {
         return new FBracketsExpression(inner);

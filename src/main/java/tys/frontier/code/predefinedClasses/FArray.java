@@ -4,12 +4,12 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.type.FType;
-import tys.frontier.parser.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.util.Utils;
+import tys.frontier.util.Pair;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -31,17 +31,11 @@ public class FArray extends FPredefinedClass {
         this.baseType = baseType;
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
-        try {
-            addField(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false)); //TODO make final
-        } catch (IdentifierCollision identifierCollision) {
-            Utils.handleException(identifierCollision);
-        }
-        //create constructor
-        try {
-            addFunction(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
-        } catch (SignatureCollision e) {
-            Utils.handleException(e);
-        }
+        addFieldTrusted(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false)); //TODO make final
+        addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
+        Pair<FFunction, FFunction> pair = Access.createPredefined(this, FIntN._32, baseType);
+        addFunctionTrusted(pair.a);
+        addFunctionTrusted(pair.b);
     }
 
     public static FArray getArrayFrom(FType baseClass) {

@@ -9,6 +9,7 @@ import tys.frontier.code.Typed;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
@@ -159,9 +160,17 @@ public final class Utils {
         if (oldNamespace != newNamespace) {
             //TODO oh god pls make arrys, optionals and function types use generics!
             if (oldNamespace instanceof FArray) {
-                //arrays only have the constructor
-                assert function.isConstructor();
-                return ((FArray) newNamespace).getConstructor().getSignature();
+                if (function.isConstructor()) {
+                    return ((FArray) newNamespace).getConstructor().getSignature();
+                } else if (function.getIdentifier().equals(Access.ID)) {
+                    for (Signature s : ((FArray) newNamespace).getFunctions(signature.isLhs()).get(Access.ID)) { //TODO not required if assignee functions can't appear on rhs!
+                        if (s.getParameters().size() == signature.getParameters().size())
+                            return s;
+                    }
+                    return Utils.cantHappen();
+                } else {
+                    return Utils.cantHappen();
+                }
             } else if (oldNamespace instanceof FOptional) {
                 return Utils.NYI("instantiation lookup for optionals"); //TODO
             } else if (oldNamespace instanceof FFunctionType) {

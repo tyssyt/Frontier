@@ -9,11 +9,6 @@ import java.util.List;
 public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
 
     @Override
-    default FExpression exitArrayAccess(FArrayAccess arrayAccess, FExpression array, FExpression index) {
-        return arrayAccess;
-    }
-
-    @Override
     default FExpression exitBrackets(FBracketsExpression brackets, FExpression inner) {
         return brackets;
     }

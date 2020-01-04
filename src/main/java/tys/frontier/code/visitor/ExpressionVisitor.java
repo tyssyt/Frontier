@@ -9,7 +9,6 @@ import java.util.List;
 public interface ExpressionVisitor<Expression>  {
 
     //Top down
-    default void enterArrayAccess(FArrayAccess arrayAccess) {}
     default void enterBrackets(FBracketsExpression brackets) {}
     default void enterFunctionCall(FFunctionCall functionCall) {}
     default void enterDynamicFunctionCall(DynamicFunctionCall functionCall) {}
@@ -19,9 +18,6 @@ public interface ExpressionVisitor<Expression>  {
     default void enterOptElse(FOptElse optElse) {}
 
     //Bottom Up
-    default Expression exitArrayAccess(FArrayAccess arrayAccess, Expression array, Expression index) {
-        return null;
-    }
     default Expression exitBrackets(FBracketsExpression brackets, Expression inner) {
         return null;
     }

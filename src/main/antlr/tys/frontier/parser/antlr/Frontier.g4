@@ -272,7 +272,7 @@ ifStatement
 expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
-    |   expression LBRACK expression RBRACK                        #arrayAccess
+    |   expression LBRACK arguments RBRACK                         #arrayAccess
     |   expression DOT identifier                                  #fieldAccess
     |   expression DOT LCIdentifier LPAREN arguments? RPAREN       #externalFunctionCall
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
@@ -402,7 +402,7 @@ OR_ASSIGN       : '|=';
 XOR_ASSIGN      : '^=';
 MOD_ASSIGN      : '%=';
 
-Array           : LBRACK RBRACK;
+Array           : '[]';
 
 //Datatypes---------------------------------------------------------------------
 

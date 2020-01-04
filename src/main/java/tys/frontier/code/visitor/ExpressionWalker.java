@@ -6,12 +6,6 @@ import tys.frontier.code.expression.cast.FImplicitCast;
 
 public interface ExpressionWalker<Expression> {
 
-    default Expression visitArrayAccess(FArrayAccess arrayAccess) {
-        arrayAccess.getObject().accept(this);
-        arrayAccess.getIndex().accept(this);
-        return null;
-    }
-
     default Expression visitBrackets(FBracketsExpression brackets) {
         brackets.getInner().accept(this);
         return null;

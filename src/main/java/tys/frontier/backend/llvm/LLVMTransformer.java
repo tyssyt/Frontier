@@ -11,6 +11,7 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FFunctionIdentifier;
@@ -455,22 +456,6 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitArrayAccess(FArrayAccess arrayAccess) {
-        LLVMValueRef array = arrayAccess.getObject().accept(this);
-        LLVMValueRef index = arrayAccess.getIndex().accept(this);
-        LLVMValueRef address = arrayGep(array, index);
-
-        switch (arrayAccess.getAccessType()) {
-            case LOAD:
-                return LLVMBuildLoad(builder, address, "load_array");
-            case STORE:
-                return address;
-            default:
-                return Utils.cantHappen();
-        }
-    }
-
-    @Override
     public LLVMValueRef visitBrackets(FBracketsExpression brackets) {
         return brackets.getInner().accept(this);
     }
@@ -654,8 +639,22 @@ class LLVMTransformer implements
         FFunction function = functionCall.getFunction();
         if (function.isConstructor()) {
             return buildArrayMalloc(module.getLlvmType(functionCall.getType()), Iterables.getOnlyElement(args));
+        } else if (function.getIdentifier().equals(Access.ID)) {
+            return visitArrayAccess(functionCall, args);
         } else
             return Utils.NYI(function.headerToString() + " in the backend");
+    }
+
+    public LLVMValueRef visitArrayAccess(FFunctionCall functionCall, List<LLVMValueRef> args) {
+        LLVMValueRef address = arrayGep(args.get(0), args.get(1));
+        switch (args.size()) {
+            case 2:
+                return LLVMBuildLoad(builder, address, "load_array");
+            case 3:
+                return LLVMBuildStore(builder, args.get(2), address);
+            default:
+                return Utils.cantHappen();
+        }
     }
 
     private LLVMValueRef buildArrayMalloc(LLVMTypeRef arrayType, LLVMValueRef sizeRef) {

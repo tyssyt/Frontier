@@ -12,6 +12,7 @@ import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.*;
 import tys.frontier.code.literal.FLambda;
@@ -706,22 +707,23 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public FArrayAccess visitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
-        boolean lhsResolve = useLhsresolve; //TODO use when this is an operator
+    public FFunctionCall visitArrayAccess(FrontierParser.ArrayAccessContext ctx) {
+        boolean lhsResolve = useLhsresolve;
         useLhsresolve = false;
         FExpression array;
         try {
-            array = visitExpression(ctx.expression(0));
+            array = visitExpression(ctx.expression());
         } catch (Failed f) {
             //still try to parse the second, we might find other errors
-            visitExpression(ctx.expression(1));
+            visitArguments(ctx.arguments());
             throw f;
         }
-        FExpression index = visitExpression(ctx.expression(1));
+        Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
+        arguments.a.add(0, array);
         try {
-            return FArrayAccess.create(array, index);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            errors.add(incompatibleTypes);
+            return functionCall(array.getType(), Access.ID, arguments.a, arguments.b, lhsResolve);
+        } catch (FunctionNotFound | AccessForbidden error) {
+            errors.add(error);
             throw new Failed();
         }
     }
