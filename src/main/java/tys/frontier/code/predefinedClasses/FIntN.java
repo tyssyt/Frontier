@@ -28,8 +28,6 @@ public class FIntN extends FPredefinedClass {
 
         try {
             addFunction(UnaryOperator.NEG.createPredefined(this, this));
-            addFunction(UnaryOperator.INC.createPredefined(this, this));
-            addFunction(UnaryOperator.DEC.createPredefined(this, this));
 
             addFunction(BinaryOperator.EQUALS.createPredefined(this, this, FBool.INSTANCE));
             addFunction(BinaryOperator.NOT_EQUALS.createPredefined(this, this, FBool.INSTANCE));

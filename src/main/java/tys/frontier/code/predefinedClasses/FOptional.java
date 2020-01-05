@@ -5,7 +5,6 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.type.FBaseClass;
@@ -57,7 +56,7 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
             positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
             positionalArgs.set(0, baseType);

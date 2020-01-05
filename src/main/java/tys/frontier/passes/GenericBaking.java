@@ -9,9 +9,6 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.*;
-import tys.frontier.code.function.operator.UnaryOperator;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.predefinedClasses.FPredefinedClass;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -22,6 +19,8 @@ import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Utils;
 
 import java.util.*;
+
+import static tys.frontier.util.Utils.typesFromExpressionList;
 
 /**
  * mhhhhhhh... cookies
@@ -60,7 +59,7 @@ public class GenericBaking implements FClassVisitor {
 
         for (Signature signature : instantiatedClass.getFunctions(false).values()) {
             FFunction function = signature.getFunction();
-            if (function.isConstructor() ||function.getIdentifier() == FConstructor.MALLOC_ID)
+            if (function.isConstructor() || function instanceof FieldAccessor || function.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = (ClassInstantiationFunction) function;
             visitor.currentFunction = instantiatedFunction;
@@ -217,33 +216,13 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
         Signature signature = functionCall.getSignature();
-
-        FFunctionIdentifier identifier = signature.getFunction().getIdentifier();
-        if (signature.getFunction().getMemberOf() instanceof FPredefinedClass &&
-                (identifier.equals(UnaryOperator.INC.identifier) || identifier.equals(UnaryOperator.DEC.identifier))
-        ) {
-            //special case for inc and dec on predefined types, they are both write and read //TODO I don't like this here
-            ((FVariableExpression) params.get(0)).setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
-        }
-
-        signature = Utils.findFunctionInstantiation(signature, Utils.typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
+        signature = Utils.findFunctionInstantiation(signature, typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
         return FFunctionCall.createTrusted(signature, params);
     }
 
     @Override
     public FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> params) {
         return DynamicFunctionCall.createTrusted(function, params);
-    }
-
-    @Override
-    public FExpression exitFieldAccess(FFieldAccess fieldAccess, FExpression object) {
-        FField old = fieldAccess.getField();
-        FField field = Utils.findFieldInstantiation(old, typeInstantiation);
-        if (fieldAccess.isStatic())
-            return FFieldAccess.createStatic(field);
-        else {
-            return FFieldAccess.createInstanceTrusted(field, object);
-        }
     }
 
     @Override
@@ -289,7 +268,7 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FExpression visitFunctionAddress(FFunctionAddress address) {
         Signature old = address.getFunction().getSignature();
-        List<FType> argumentTypes = Utils.typesFromExpressionList(old.getParameters(), typeInstantiation::getType);
+        List<FType> argumentTypes = typesFromExpressionList(old.getParameters(), typeInstantiation::getType);
         Signature _new = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
         return new FFunctionAddress(_new.getFunction());
     }

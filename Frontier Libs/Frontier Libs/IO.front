@@ -20,7 +20,7 @@ export class IO:
         }
         size:int32 = (int32) Native.ceil(Native.log10((float64)l+1.0));
         if (!pos) {
-            ++size;
+            size = size+1;
         }
 
         digits:char[] = new char[size];
@@ -29,7 +29,7 @@ export class IO:
             remainder:int64 = l % 10;
             digits[size-i] = intToChar((int32)remainder);
             l = l / 10;
-            ++i;
+            i = i+1;
         }
 
         if (!pos) {

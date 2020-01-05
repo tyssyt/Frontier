@@ -1,13 +1,10 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.ListMultimap;
-import tys.frontier.code.FField;
-import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.typeInference.TypeConstraint;
-import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.StringBuilderToString;
@@ -20,7 +17,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
 
     boolean canImplicitlyCast();
 
-    default FunctionResolver.Result hardResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+    default FunctionResolver.Result hardResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         FunctionResolver.Result res = softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
         try {
             TypeConstraint.addAll(res.constraints);
@@ -30,9 +27,7 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
         return res;
     }
 
-    FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound;
-
-    FField getField(FIdentifier identifier) throws FieldNotFound;
+    FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound;
 
     @Override
     FTypeIdentifier getIdentifier();

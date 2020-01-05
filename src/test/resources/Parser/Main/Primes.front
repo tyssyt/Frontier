@@ -25,7 +25,7 @@ class Sieb:
         prime := false;
 
         while(!prime) {
-            ++candidate;
+            candidate = candidate+1;
             prime = true;
 
             if Main.verbose {
@@ -50,7 +50,7 @@ class Sieb:
                     prime = false;
                     break;
                 }
-                ++i;
+                i = i+1;
             }
         }
         primes.add(candidate);
@@ -74,6 +74,6 @@ export static main (args: char[][]) {
     while numberOfPrimesToCompute > 1 {
         IO.printInt(sieb.nextPrime());
         IO.printLine("");
-        --numberOfPrimesToCompute;
+        numberOfPrimesToCompute = numberOfPrimesToCompute-1;
     }
 }

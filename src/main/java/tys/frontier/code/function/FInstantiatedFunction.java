@@ -1,7 +1,7 @@
 package tys.frontier.code.function;
 
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
@@ -14,7 +14,7 @@ import java.util.*;
 public class FInstantiatedFunction extends WithInstantiatedSignature {
 
     private FBlock newBody;
-    private FFunctionIdentifier newIdentifier;
+    private AttributeIdentifier newIdentifier;
 
     private boolean baked = false;
 
@@ -35,7 +35,7 @@ public class FInstantiatedFunction extends WithInstantiatedSignature {
     }
 
     @Override
-    public FFunctionIdentifier getIdentifier() {
+    public AttributeIdentifier getIdentifier() {
         return newIdentifier;
     }
 

@@ -4,21 +4,18 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
-import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.NameGenerator;
@@ -117,14 +114,7 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FField getField(FIdentifier identifier) throws FieldNotFound {
-        if (this.constraints.isResolved())
-            return this.constraints.getResolved().getField(identifier);
-        return Utils.NYI(""); //TODO
-    }
-
-    @Override
-    public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+    public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         if (this.constraints.isResolved())
             return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
 
@@ -144,7 +134,7 @@ public class FTypeVariable implements FType {
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
-            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new FVariableIdentifier(paramNames.next());
+            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new AttributeIdentifier(paramNames.next());
             paramsBuilder.add(FParameter.create(id, arg, false));
         }
         for (Map.Entry<FIdentifier, List<FType>> entry : Multimaps.asMap(keywordArgs).entrySet()) {

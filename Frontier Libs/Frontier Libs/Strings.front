@@ -8,13 +8,13 @@ export class Strings:
         isNegative := string[0] =*= 45;
 
         if isNegative {
-            ++i;
+            i = i+1;
         }
 
         while i < string.size {
             res = res * 10;
             res = res + charToInt(string[i]);
-            ++i;
+            i = i+1;
         }
 
         if isNegative {

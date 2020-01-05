@@ -3,11 +3,7 @@ package tys.frontier.code.type;
 import com.google.common.collect.*;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.function.ClassInstantiationFunction;
-import tys.frontier.code.function.FConstructor;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -26,8 +22,8 @@ public class FInstantiatedClass extends FForwardingClass {
 
     private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
-    private ListMultimap<FFunctionIdentifier, Signature> newLhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private ListMultimap<FFunctionIdentifier, Signature> newRhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FIdentifier, Signature> newLhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FIdentifier, Signature> newRhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> newDelegates;
 
@@ -51,6 +47,8 @@ public class FInstantiatedClass extends FForwardingClass {
             FField instantiatedField = new FField(baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
                     this, baseField.getVisibility(), !baseField.isInstance(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
+            baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
+            baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());
         }
 
         //delegates
@@ -62,7 +60,7 @@ public class FInstantiatedClass extends FForwardingClass {
         //add functions
         for (Signature base : proxy.getFunctions(false).values()) {
             FFunction baseFunction = base.getFunction();
-            if (baseFunction.isConstructor() || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
+            if (baseFunction.isConstructor() || baseFunction instanceof FieldAccessor || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = ClassInstantiationFunction.fromClassInstantiation(this, baseFunction);
             baseFunctionMap.put(baseFunction, instantiatedFunction);
@@ -77,7 +75,6 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     public FFunction getInstantiatedFunction(FFunction baseFunction) {
-        assert baseFunction.getMemberOf() == proxy;
         return baseFunctionMap.get(baseFunction);
     }
 
@@ -122,7 +119,7 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
         return lhsSignatures ? newLhsFunctions : newRhsFunctions;
     }
 

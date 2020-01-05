@@ -7,7 +7,7 @@ static forEach <T, R> (l: List<T>, f: (T->R)) {
     i:int32 = 0;
     while i < l.size() {
         f(l.elements()[i]);
-        ++i;
+        i = i+1;
     }
 }
 
@@ -17,7 +17,7 @@ static filter <F> (l: List<F>, filter: (F->bool)) {
         if filter(l.elements()[i]) {
             l.remove(i);
         } else {
-            ++i;
+            i = i+1;
         }
     }
 }
@@ -35,9 +35,9 @@ static buildMat() -> List<List<int64>> {
         j:int32 = 0;
         while j<=9 {
             inner.add(i*10+j);
-            ++j;
+            j = j+1;
         }
-        ++i;
+        i = i+1;
     }
     return matrix;
 }

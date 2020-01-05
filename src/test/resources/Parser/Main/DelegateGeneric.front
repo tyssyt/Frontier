@@ -39,7 +39,7 @@ static forEach <T, R> (l: List<T>, f: (T->R)) { //das geht nicht aber sollte mit
     i:int32 = 0;
     while i < l.size() {
         f(l.elements()[i]);
-        ++i;
+        i = i+1;
     }
 }
 

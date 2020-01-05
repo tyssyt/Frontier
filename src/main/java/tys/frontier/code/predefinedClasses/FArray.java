@@ -6,8 +6,8 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Access;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FArray extends FPredefinedClass {
 
-    public static final FVariableIdentifier SIZE = new FVariableIdentifier("size");
+    public static final AttributeIdentifier SIZE = new AttributeIdentifier("size");
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 

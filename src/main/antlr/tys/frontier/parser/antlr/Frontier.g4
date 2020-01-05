@@ -153,8 +153,6 @@ methodHeader //Tuple-ize
 
 operator
     :   EXMARK
-    |   INC
-    |   DEC
     |   ADD
     |   SUB
     |   STAR
@@ -273,13 +271,12 @@ expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
     |   expression LBRACK arguments RBRACK                         #arrayAccess
-    |   expression DOT identifier                                  #fieldAccess
-    |   expression DOT LCIdentifier LPAREN arguments? RPAREN       #externalFunctionCall
+    |   expression DOT identifier (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
-    |   (EXMARK|SUB|INC|DEC) expression                            #preUnaryOp
+    |   (EXMARK|SUB) expression                                    #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
@@ -386,21 +383,10 @@ OR              : '||';
 AAND            : '&';
 AOR             : '|';
 XOR             : '^';
-INC             : '++';
-DEC             : '--';
 ADD             : '+';
 SUB             : '-';
 STAR            : '*';
 MOD             : '%';
-
-ADD_ASSIGN      : '+=';
-SUB_ASSIGN      : '-=';
-MUL_ASSIGN      : '*=';
-DIV_ASSIGN      : '/=';
-AND_ASSIGN      : '&=';
-OR_ASSIGN       : '|=';
-XOR_ASSIGN      : '^=';
-MOD_ASSIGN      : '%=';
 
 Array           : '[]';
 

@@ -3,7 +3,7 @@ package tys.frontier.code.function;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
@@ -66,7 +66,7 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public FFunctionIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return proxy.getIdentifier();
     }
 

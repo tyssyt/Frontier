@@ -7,13 +7,12 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FFieldAccess;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.selector.Selector;
 import tys.frontier.code.statement.FBlock;
@@ -32,22 +31,24 @@ import tys.frontier.util.Pair;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
+
 public class Delegates {
 
     private ListMultimap<FType, Delegate> delegateToMap = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private static class Delegate{
         FField field;
-        Selector<FFunctionIdentifier> selector;
+        Selector<FIdentifier> selector;
         List<Pair<FFunction, FFunction>> functions = new ArrayList<>();
 
-        public Delegate(FField field, Selector<FFunctionIdentifier> selector) {
+        public Delegate(FField field, Selector<FIdentifier> selector) {
             this.field = field;
             this.selector = selector;
         }
     }
 
-    public void add(FField field, Selector<FFunctionIdentifier> selector) {
+    public void add(FField field, Selector<FIdentifier> selector) {
         Delegate d = new Delegate(field, selector);
         FType to = field.getMemberOf();
         delegateToMap.put(to, d);
@@ -85,7 +86,7 @@ public class Delegates {
         assert d.field.getType() instanceof FClass;
         FClass from = (FClass) d.field.getType();
         FClass to = d.field.getMemberOf();
-        for (Map.Entry<FFunctionIdentifier, Collection<Signature>> entry : from.getFunctions(false).asMap().entrySet()) {
+        for (Map.Entry<FIdentifier, Collection<Signature>> entry : from.getFunctions(false).asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {
                 for (Signature signature : entry.getValue()) {
                     FFunction toDelegate = signature.getFunction();
@@ -127,16 +128,16 @@ public class Delegates {
             FFunction toDo = toDoPair.a;
             ImmutableList<FParameter> params = toDo.getSignature().getParameters();
 
-            FFieldAccess fieldAccess;
+            FFunctionCall fieldGet;
             if (d.field.isInstance()) {
                 FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
-                fieldAccess = FFieldAccess.createInstanceTrusted(d.field, thisExpr);
+                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), Arrays.asList(thisExpr));
             } else {
-                fieldAccess = FFieldAccess.createStatic(d.field);
+                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), emptyList());
             }
 
             List<FExpression> arguments = new ArrayList<>(params.size());
-            arguments.add(fieldAccess);
+            arguments.add(fieldGet);
             for (int i = 1; i < params.size(); i++) {
                 arguments.add(new FLocalVariableExpression(params.get(i)));
             }

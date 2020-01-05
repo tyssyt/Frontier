@@ -5,10 +5,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
@@ -196,13 +195,13 @@ public final class ParserContextUtils {
             return base;
     }
 
-    public static Selector<FFunctionIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
+    public static Selector<FIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
         if (ctx.STAR() != null && ctx.BACKSLASH() == null)
             return Selector.all();
         List<TerminalNode> nodes = ctx.LCIdentifier();
-        List<FFunctionIdentifier> res = new ArrayList<>(nodes.size());
+        List<FIdentifier> res = new ArrayList<>(nodes.size());
         for (TerminalNode node : nodes) {
-            res.add(new FFunctionIdentifier(node.getText()));
+            res.add(new AttributeIdentifier(node.getText()));
         }
         if (ctx.BACKSLASH() == null)
             return Selector.in(res);
@@ -275,7 +274,7 @@ public final class ParserContextUtils {
         if (Character.isUpperCase(start))
             return new FTypeIdentifier(text);
         else if (Character.isLowerCase(start))
-            return new FVariableIdentifier(text);
+            return new AttributeIdentifier(text);
         else
             return Utils.cantHappen();
     }

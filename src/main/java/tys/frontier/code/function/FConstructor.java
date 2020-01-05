@@ -6,9 +6,11 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.expression.*;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.expression.FLiteralExpression;
+import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.FAssignment;
@@ -22,8 +24,8 @@ import static java.util.Collections.emptyMap;
 
 public class FConstructor extends FBaseFunction {
 
-    public static final FFunctionIdentifier IDENTIFIER = new FFunctionIdentifier("!new");
-    public static final FFunctionIdentifier MALLOC_ID = new FFunctionIdentifier("!malloc");
+    public static final AttributeIdentifier IDENTIFIER = new AttributeIdentifier("!new");
+    public static final AttributeIdentifier MALLOC_ID = new AttributeIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
         super(IDENTIFIER, fClass, modifier, false, fClass, params, null, emptyMap());
@@ -82,7 +84,7 @@ public class FConstructor extends FBaseFunction {
 
     private void generateBody() {
         FClass memberOf = (FClass) getMemberOf();
-        FLocalVariable _this = new FLocalVariable(FVariableIdentifier.THIS, memberOf);
+        FLocalVariable _this = new FLocalVariable(AttributeIdentifier.THIS, memberOf);
 
         FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
         FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);
@@ -92,7 +94,7 @@ public class FConstructor extends FBaseFunction {
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = memberOf.getInstanceFields().get(param.getIdentifier());
-            fields.add(FFieldAccess.createInstanceTrusted(field, thisExpr));
+            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), Arrays.asList(thisExpr)));
             params.add(new FLocalVariableExpression(param));
         }
         FAssignment fieldAssign = FAssignment.createTrusted(fields, params);

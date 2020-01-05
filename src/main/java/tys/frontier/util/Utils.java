@@ -8,16 +8,20 @@ import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.function.ClassInstantiationFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
-import tys.frontier.code.identifier.*;
+import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
+import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.parser.syntaxErrors.FieldNotFound;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.*;
@@ -122,15 +126,6 @@ public final class Utils {
         return res;
     }
 
-    public static FField findFieldInstantiation(FField field, TypeInstantiation typeInstantiation) {
-        FType namespace = typeInstantiation.getType(field.getMemberOf());
-        try {
-            return namespace.getField(field.getIdentifier());
-        } catch (FieldNotFound fieldNotFound) {
-            return cantHappen();
-        }
-    }
-
     public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
         FFunction function = signature.getFunction();
@@ -142,7 +137,7 @@ public final class Utils {
 
         if (oldNamespace instanceof FTypeVariable) {
             //there is no mapping we can follow, we need to fall back to use resolve
-            FFunctionIdentifier identifier = function.getIdentifier();
+            FIdentifier identifier = function.getIdentifier();
             if (identifier instanceof FInstantiatedFunctionIdentifier)
                 identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
             else
@@ -168,6 +163,11 @@ public final class Utils {
                             return s;
                     }
                     return Utils.cantHappen();
+                } else if (function instanceof FieldAccessor) {
+                    FieldAccessor accessor = (FieldAccessor) function;
+                    assert accessor.getField().isInstance() && accessor.getField().getIdentifier().equals(FArray.SIZE);
+                    FieldAccessor inst = getAccessor((FArray) newNamespace, FArray.SIZE, true, accessor.isGetter());
+                    return signature.isLhs() ? inst.getLhsSignature() : inst.getSignature();
                 } else {
                     return Utils.cantHappen();
                 }
@@ -180,8 +180,13 @@ public final class Utils {
             if (oldNamespace instanceof FInstantiatedClass) {
                 //if the old namespace is also an instantiation, go back to the base
                 FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldNamespace;
-                function = ((ClassInstantiationFunction) function).getProxy();
                 oldNamespace = instantiatedClass.getProxy();
+                if (function instanceof ClassInstantiationFunction)
+                    function = ((ClassInstantiationFunction) function).getProxy();
+                else if (function instanceof FieldAccessor)
+                    function = getAccessor((FClass) oldNamespace, (FieldAccessor) function);
+                else
+                    return Utils.cantHappen();
             }
             //now go to the new instantiation
             assert newNamespace instanceof FInstantiatedClass;
@@ -194,6 +199,16 @@ public final class Utils {
 
         FFunction instantiation = function.getInstantiation(typeInstantiation);
         return signature.isLhs() ? instantiation.getLhsSignature() : instantiation.getSignature();
+    }
+
+    public static FieldAccessor getAccessor(FClass in, FieldAccessor like) {
+        return getAccessor(in, like.getIdentifier(), like.isInstance(), like.isGetter());
+    }
+
+    public static FieldAccessor getAccessor(FClass in, FIdentifier identifier, boolean isInstance, boolean isGetter) {
+        BiMap<FIdentifier, FField> fields = isInstance ? in.getInstanceFields() : in.getStaticFields();
+        FField field = fields.get(identifier);
+        return isGetter ? field.getGetter() : field.getSetter();
     }
 
     @CanIgnoreReturnValue
@@ -251,7 +266,7 @@ public final class Utils {
         return res;
     }
 
-    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FFunctionIdentifier, Signature> functions) {
+    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FIdentifier, Signature> functions) {
         Map<FFunction, String> res = new HashMap<>();
         for (List<Signature> list : Multimaps.asMap(functions).values()) {
             String name = list.get(0).getFunction().getIdentifier().name;

@@ -6,8 +6,7 @@ import com.google.common.collect.Iterables;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.FFunctionIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierLexer;
 
@@ -19,36 +18,36 @@ import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum BinaryOperator implements Operator {
     //Arithmetic operators
-    PLUS   (getParserToken(FrontierLexer.ADD),   new FFunctionIdentifier("+")),
-    MINUS  (getParserToken(FrontierLexer.SUB),   new FFunctionIdentifier("-")),
-    TIMES  (getParserToken(FrontierLexer.STAR),  new FFunctionIdentifier("*")),
-    DIVIDED(getParserToken(FrontierLexer.SLASH), new FFunctionIdentifier("/")),
-    MODULO (getParserToken(FrontierLexer.MOD),   new FFunctionIdentifier("%")),
-    AAND    (getParserToken(FrontierLexer.AAND),  new FFunctionIdentifier("&")),
-    AOR     (getParserToken(FrontierLexer.AOR),   new FFunctionIdentifier("|")),
-    XOR    (getParserToken(FrontierLexer.XOR),   new FFunctionIdentifier("^")),
+    PLUS   (getParserToken(FrontierLexer.ADD),   new AttributeIdentifier("+")),
+    MINUS  (getParserToken(FrontierLexer.SUB),   new AttributeIdentifier("-")),
+    TIMES  (getParserToken(FrontierLexer.STAR),  new AttributeIdentifier("*")),
+    DIVIDED(getParserToken(FrontierLexer.SLASH), new AttributeIdentifier("/")),
+    MODULO (getParserToken(FrontierLexer.MOD),   new AttributeIdentifier("%")),
+    AAND    (getParserToken(FrontierLexer.AAND),  new AttributeIdentifier("&")),
+    AOR     (getParserToken(FrontierLexer.AOR),   new AttributeIdentifier("|")),
+    XOR    (getParserToken(FrontierLexer.XOR),   new AttributeIdentifier("^")),
 
     //Boolean Operators
-    AND                 (getParserToken(FrontierLexer.AND),                new FFunctionIdentifier("&&")),
-    OR                  (getParserToken(FrontierLexer.OR),                 new FFunctionIdentifier("||")),
-    EQUALS              (getParserToken(FrontierLexer.EQUAL),              new FFunctionIdentifier("==")),
-    EQUALS_ID           (getParserToken(FrontierLexer.EQUAL_ID),           new FFunctionIdentifier("=*=")),
-    EQUALS_CONTAINER    (getParserToken(FrontierLexer.EQUAL_CONTAINER),    new FFunctionIdentifier("=[]=")),
-    NOT_EQUALS          (getParserToken(FrontierLexer.NOTEQUAL),           new FFunctionIdentifier("=!=")),
-    NOT_EQUALS_ID       (getParserToken(FrontierLexer.NOTEQUAL_ID),        new FFunctionIdentifier("=!*=")),
-    NOT_EQUALS_CONTAINER(getParserToken(FrontierLexer.NOTEQUAL_CONTAINER), new FFunctionIdentifier("=![]=")),
-    LESS                (getParserToken(FrontierLexer.LT),                 new FFunctionIdentifier("<")),
-    GREATER             (getParserToken(FrontierLexer.GT),                 new FFunctionIdentifier(">")),
-    LESS_EQUAL          (getParserToken(FrontierLexer.LE),                 new FFunctionIdentifier("<=")),
-    GREATER_EQUAL       (getParserToken(FrontierLexer.GE),                 new FFunctionIdentifier(">="));
+    AND                 (getParserToken(FrontierLexer.AND),                new AttributeIdentifier("&&")),
+    OR                  (getParserToken(FrontierLexer.OR),                 new AttributeIdentifier("||")),
+    EQUALS              (getParserToken(FrontierLexer.EQUAL),              new AttributeIdentifier("==")),
+    EQUALS_ID           (getParserToken(FrontierLexer.EQUAL_ID),           new AttributeIdentifier("=*=")),
+    EQUALS_CONTAINER    (getParserToken(FrontierLexer.EQUAL_CONTAINER),    new AttributeIdentifier("=[]=")),
+    NOT_EQUALS          (getParserToken(FrontierLexer.NOTEQUAL),           new AttributeIdentifier("=!=")),
+    NOT_EQUALS_ID       (getParserToken(FrontierLexer.NOTEQUAL_ID),        new AttributeIdentifier("=!*=")),
+    NOT_EQUALS_CONTAINER(getParserToken(FrontierLexer.NOTEQUAL_CONTAINER), new AttributeIdentifier("=![]=")),
+    LESS                (getParserToken(FrontierLexer.LT),                 new AttributeIdentifier("<")),
+    GREATER             (getParserToken(FrontierLexer.GT),                 new AttributeIdentifier(">")),
+    LESS_EQUAL          (getParserToken(FrontierLexer.LE),                 new AttributeIdentifier("<=")),
+    GREATER_EQUAL       (getParserToken(FrontierLexer.GE),                 new AttributeIdentifier(">="));
 
     private static final ImmutableMap<String, BinaryOperator> parserTokenMap =
             Arrays.stream(values()).collect(toImmutableMap(o -> o.parserToken, o -> o));
 
     public final String parserToken;
-    public final FFunctionIdentifier identifier;
+    public final AttributeIdentifier identifier;
 
-    BinaryOperator(String parserToken, FFunctionIdentifier identifier) {
+    BinaryOperator(String parserToken, AttributeIdentifier identifier) {
         this.parserToken = parserToken;
         this.identifier = identifier;
     }
@@ -58,7 +57,7 @@ public enum BinaryOperator implements Operator {
     }
 
     @Override
-    public FFunctionIdentifier getIdentifier() {
+    public AttributeIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -78,8 +77,8 @@ public enum BinaryOperator implements Operator {
 
     public FFunction createPredefined(FClass memberOf, FClass second, FClass ret) {
         ImmutableList<FParameter> params = ImmutableList.of(
-                FParameter.create(new FVariableIdentifier("first"), memberOf, false),
-                FParameter.create(new FVariableIdentifier("second"), second, false)
+                FParameter.create(new AttributeIdentifier("first"), memberOf, false),
+                FParameter.create(new AttributeIdentifier("second"), second, false)
         );
         return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params, null, emptyMap()) {
             {predefined = true;}

@@ -6,7 +6,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.typeInference.Variance;
@@ -31,8 +31,8 @@ public class FBaseClass implements FClass {
 
     private BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
-    private ListMultimap<FFunctionIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private ListMultimap<FFunctionIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> delegates = new HashMap<>();
 
@@ -106,7 +106,7 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
         return lhsSignatures ? lhsFunctions : rhsFunctions;
     }
 
@@ -150,8 +150,8 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public FFunctionIdentifier getFreshLambdaName() {
-        return new FFunctionIdentifier(lambdaNames.next());
+    public AttributeIdentifier getFreshLambdaName() {
+        return new AttributeIdentifier(lambdaNames.next());
     }
 
     @Override

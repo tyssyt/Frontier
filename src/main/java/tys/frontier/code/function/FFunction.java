@@ -1,7 +1,7 @@
 package tys.frontier.code.function;
 
 import tys.frontier.code.*;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
@@ -39,7 +39,7 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
     void setBody(FBlock body);
 
     @Override
-    FFunctionIdentifier getIdentifier();
+    FIdentifier getIdentifier();
 
     @Override
     default FType getType() {

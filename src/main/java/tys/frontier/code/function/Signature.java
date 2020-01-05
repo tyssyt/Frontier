@@ -89,7 +89,8 @@ public class Signature implements Typed {
     @Override
     public String toString() {
         return "Signature{" +
-                "parameters=" + parameters +
+                "Function=" + function.getIdentifier() +
+                ", parameters=" + parameters +
                 ", assignees=" + assignees +
                 ", returnType=" + returnType +
                 '}';

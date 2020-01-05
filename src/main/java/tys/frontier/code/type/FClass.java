@@ -11,7 +11,7 @@ import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.typeInference.TypeConstraint;
@@ -46,7 +46,7 @@ public interface FClass extends FType, HasVisibility {
 
     BiMap<FIdentifier, FField> getStaticFields();
 
-    ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures);
+    ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures);
 
     List<? extends FType> getParametersList();
 
@@ -58,7 +58,7 @@ public interface FClass extends FType, HasVisibility {
 
     Map<FType, FField> getDirectDelegates();
 
-    FFunctionIdentifier getFreshLambdaName();
+    AttributeIdentifier getFreshLambdaName();
 
     @Override
     String toString();
@@ -98,22 +98,11 @@ public interface FClass extends FType, HasVisibility {
         return null;
     }
 
-    @Override
-    default FField getField(FIdentifier identifier) throws FieldNotFound {
-        FField f = getInstanceFields().get(identifier);
-        if (f != null)
-            return f;
-        f = getStaticFields().get(identifier);
-        if (f != null)
-            return f;
-        throw new FieldNotFound(identifier);
-    }
-
     default Iterable<FField> getFields() {
         return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
     }
 
-    default void addField(FField field) throws IdentifierCollision {
+    default void addField(FField field) throws IdentifierCollision, SignatureCollision {
         if (field.isInstance()) {
             FField old = getInstanceFields().put(field.getIdentifier(), field);
             if (old != null) {
@@ -125,12 +114,14 @@ public interface FClass extends FType, HasVisibility {
                 throw new IdentifierCollision(field, old);
             }
         }
+        addFunction(field.getGetter());
+        addFunction(field.getSetter());
     }
 
     default void addFieldTrusted(FField field) {
         try {
             addField(field);
-        } catch (IdentifierCollision identifierCollision) {
+        } catch (IdentifierCollision | SignatureCollision collision) {
             Utils.cantHappen();
         }
     }
@@ -175,14 +166,14 @@ public interface FClass extends FType, HasVisibility {
     }
 
     default void removeUnreachable(Reachability.ReachableClass reachable) {
-        getStaticFields().values().retainAll(reachable.reachableFields);
-        getInstanceFields().values().retainAll(reachable.reachableFields);
-        getFunctions(false).values().removeIf(s -> !reachable.reachableFunctions.containsKey(s.getFunction()));
+        getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
+        getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
+        getFunctions(false).values().removeIf(s -> !reachable.isReachable(s.getFunction()));
         getFunctions(true).clear(); //not needed after this point
     }
 
     @Override
-    default FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+    default FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         assert returnType == null || !lhsResolve;
         return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
     }

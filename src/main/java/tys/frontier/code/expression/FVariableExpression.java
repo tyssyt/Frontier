@@ -6,8 +6,7 @@ public interface FVariableExpression extends FExpression {
 
     enum AccessType {
         LOAD,
-        STORE,
-        LOAD_AND_STORE
+        STORE
     }
 
     FVariable getVariable();

@@ -20,7 +20,7 @@ static forEach <T,R> (l: List<T>, f: (T->R)) {
     i:int32 = 0;
     while i<l.size() {
         f(l.elements()[i]);
-        ++i;
+        i = i+1;
     }
 }
 
@@ -29,7 +29,7 @@ export static main() {
     i:int32 = 0;
     while i<=12 {
         list.add(i);
-        ++i;
+        i = i+1;
     }
     IO.print("1:");
     Test.forEach(list, IO.printInt*);

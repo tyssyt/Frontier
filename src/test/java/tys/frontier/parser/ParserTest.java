@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import tys.frontier.State;
 import tys.frontier.code.FField;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.type.FClass;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
@@ -49,7 +50,7 @@ public class ParserTest {
     public void parseAccessForbidden() throws Exception {
         SyntaxError e = parseSyntaxError("AccessForbidden.front");
         assertEquals(AccessForbidden.class, e.getClass());
-        assertTrue(((AccessForbidden) e).accessed instanceof FField);
+        assertTrue(((AccessForbidden) e).accessed instanceof FFunction);
     }
     @Test
     public void parseAccessForbiddenClass() throws Exception {
@@ -115,7 +116,7 @@ public class ParserTest {
     @Test
     public void parseFieldNotFound() throws Exception {
         SyntaxError e = parseSyntaxError("FieldNotFound.front");
-        assertEquals(FieldNotFound.class, e.getClass());
+        assertEquals(FunctionNotFound.class, e.getClass());
     }
     @Test
     public void parseFunctionNotFound() throws Exception {

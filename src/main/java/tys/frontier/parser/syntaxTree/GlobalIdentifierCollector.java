@@ -8,10 +8,9 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Operator;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
@@ -136,7 +135,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         if (ctx.STATIC() == null) {
-            params.add(FParameter.create(FVariableIdentifier.THIS, currentClass, false));
+            params.add(FParameter.create(AttributeIdentifier.THIS, currentClass, false));
         }
 
 
@@ -145,10 +144,10 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             ImmutableList<FParameter> parameters = params.build();
 
             //identifier
-            FFunctionIdentifier identifier;
+            AttributeIdentifier identifier;
             TerminalNode identifierNode = ctx.LCIdentifier();
             if (identifierNode != null) {
-                identifier = new FFunctionIdentifier(identifierNode.getText());
+                identifier = new AttributeIdentifier(identifierNode.getText());
             } else {
                 //Operator overloading
                 Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));

@@ -5,7 +5,7 @@ import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.typeInference.Variance;
@@ -67,7 +67,7 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FFunctionIdentifier, Signature> getFunctions(boolean lhsSignatures) {
+    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
         return proxy.getFunctions(lhsSignatures);
     }
 
@@ -97,7 +97,7 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public FFunctionIdentifier getFreshLambdaName() {
+    public AttributeIdentifier getFreshLambdaName() {
         return proxy.getFreshLambdaName();
     }
 }

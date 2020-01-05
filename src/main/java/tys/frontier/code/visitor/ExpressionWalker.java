@@ -25,12 +25,6 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
-    default Expression visitFieldAccess(FFieldAccess fieldAccess) {
-        if (fieldAccess.getObject() != null)
-                fieldAccess.getObject().accept(this);
-        return null;
-    }
-
     default Expression visitImplicitCast(FImplicitCast implicitCast) {
         return implicitCast.getCastedExpression().accept(this);
     }

@@ -32,7 +32,7 @@ getArray(n: int32) -> T[] {
 	i:int32= 0;
 	while i<n {
 		res[i] = t;
-		++i;
+		i = i+1;
 	}
     return res;
 }

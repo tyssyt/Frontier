@@ -6,10 +6,9 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.identifier.FVariableIdentifier;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FClass;
@@ -22,7 +21,7 @@ import java.util.*;
 
 public class FBaseFunction implements FFunction {
 
-    private FFunctionIdentifier identifier;
+    private FIdentifier identifier;
     private FType memberOf;
     private FVisibilityModifier modifier;
     private boolean natiwe;
@@ -37,7 +36,7 @@ public class FBaseFunction implements FFunction {
 
     protected boolean predefined = false;
 
-    public FBaseFunction(FFunctionIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public FBaseFunction(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -86,7 +85,7 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public FFunctionIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -122,7 +121,7 @@ public class FBaseFunction implements FFunction {
     @Override
     public FLocalVariable getFreshVariable(FType type) {
         String name = freshVariableNames.next();
-        FIdentifier identifier = type == FTypeType.INSTANCE ? new FTypeIdentifier(name) : new FVariableIdentifier(name);
+        FIdentifier identifier = type == FTypeType.INSTANCE ? new FTypeIdentifier(name) : new AttributeIdentifier(name);
         //TODO maybe be tryhards and try to find good names? like using the type as prefix?
         return new FLocalVariable(identifier, type);
     }

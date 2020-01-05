@@ -24,11 +24,6 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
-    default FExpression exitFieldAccess(FFieldAccess fieldAccess, FExpression object) {
-        return fieldAccess;
-    }
-
-    @Override
     default FExpression exitImplicitCast(FImplicitCast implicitCast, FExpression castedExpression) {
         return implicitCast;
     }

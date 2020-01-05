@@ -11,10 +11,11 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
-import tys.frontier.code.identifier.FFunctionIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
@@ -43,7 +44,7 @@ class LLVMTransformer implements
     private static final int TRUE = 1;
     private static final int FALSE = 0;
 
-    private static final ImmutableMap<FFunctionIdentifier, Integer> arithOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+    private static final ImmutableMap<FIdentifier, Integer> arithOpMap = ImmutableMap.<FIdentifier, Integer>builder()
             .put(PLUS.identifier, LLVMAdd)
             .put(MINUS.identifier, LLVMSub)
             .put(TIMES.identifier, LLVMMul)
@@ -53,7 +54,7 @@ class LLVMTransformer implements
             .put(AOR.identifier, LLVMOr)
             .put(XOR.identifier, LLVMXor)
             .build();
-    private static final ImmutableMap<FFunctionIdentifier, Integer> cmpOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+    private static final ImmutableMap<FIdentifier, Integer> cmpOpMap = ImmutableMap.<FIdentifier, Integer>builder()
             .put(EQUALS.identifier, LLVMIntEQ)
             .put(EQUALS_ID.identifier, LLVMIntEQ)
             .put(NOT_EQUALS.identifier, LLVMIntNE)
@@ -63,14 +64,14 @@ class LLVMTransformer implements
             .put(LESS_EQUAL.identifier, LLVMIntSLE)
             .put(GREATER_EQUAL.identifier, LLVMIntSGE)
             .build();
-    private static final ImmutableMap<FFunctionIdentifier, Integer> arithFOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+    private static final ImmutableMap<FIdentifier, Integer> arithFOpMap = ImmutableMap.<FIdentifier, Integer>builder()
             .put(PLUS.identifier, LLVMFAdd)
             .put(MINUS.identifier, LLVMFSub)
             .put(TIMES.identifier, LLVMFMul)
             .put(DIVIDED.identifier, LLVMFDiv)
             .put(MODULO.identifier, LLVMFRem)
             .build();
-    private static final ImmutableMap<FFunctionIdentifier, Integer> cmpFOpMap = ImmutableMap.<FFunctionIdentifier, Integer>builder()
+    private static final ImmutableMap<FIdentifier, Integer> cmpFOpMap = ImmutableMap.<FIdentifier, Integer>builder()
             .put(EQUALS.identifier, LLVMRealOEQ)
             .put(EQUALS_ID.identifier, LLVMRealOEQ)
             .put(NOT_EQUALS.identifier, LLVMRealONE)
@@ -567,32 +568,21 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
-        FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
+        FIdentifier id = functionCall.getFunction().getIdentifier();
         LLVMValueRef arg = Iterables.getOnlyElement(args);
         if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(UnaryOperator.NEG.identifier))
             return LLVMBuildNeg(builder, arg, "neg");
-        else if (id.equals(UnaryOperator.INC.identifier))
-            return incDec(arg, LLVMAdd);
-        else if (id.equals(UnaryOperator.DEC.identifier))
-            return incDec(arg, LLVMSub);
         else
             return Utils.cantHappen();
-    }
-
-    private LLVMValueRef incDec(LLVMValueRef addr, int op) {
-        LLVMValueRef load = LLVMBuildLoad(builder, addr, "load_incdec");
-        LLVMValueRef modified = LLVMBuildBinOp(builder, op, load, LLVMConstInt(LLVMTypeOf(load), 1, TRUE), "incdec");
-        LLVMBuildStore(builder, modified, addr);
-        return modified;
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall, List<LLVMValueRef> args) {
         assert args.size() == 2;
         LLVMValueRef left = args.get(0);
         LLVMValueRef right = args.get(1);
-        FFunctionIdentifier id = functionCall.getFunction().getIdentifier();
+        FIdentifier id = functionCall.getFunction().getIdentifier();
 
         if (id.equals(BinaryOperator.AND.identifier))
             return shortCircuitLogic(left, right, true);
@@ -703,7 +693,9 @@ class LLVMTransformer implements
 
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
-        if (function.getMemberOf() instanceof FArray) {
+        if (function instanceof FieldAccessor) {
+            return visitFieldAccess((FieldAccessor) function, args);
+        } else if (function.getMemberOf() instanceof FArray) {
             return predefinedArray(functionCall, args);
         } else if (function.getMemberOf() instanceof FOptional) {
             return predefinedOptional(functionCall, args);
@@ -717,6 +709,20 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef visitFieldAccess(FieldAccessor fieldAccessor, List<LLVMValueRef> args) {
+        FField field = fieldAccessor.getField();
+        LLVMValueRef address;
+        if (field.isInstance())
+            address = LLVMBuildStructGEP(builder, args.get(0), module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
+        else
+            address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
+
+        if (fieldAccessor.isGetter())
+            return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
+        else
+            return LLVMBuildStore(builder, field.isInstance() ? args.get(1) : args.get(0), address);
     }
 
     @Override
@@ -775,26 +781,6 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitFieldAccess(FFieldAccess fieldAccess) {
-        FField field = fieldAccess.getField();
-        LLVMValueRef address;
-        if (field.isInstance()) {
-            LLVMValueRef object = fieldAccess.getObject().accept(this);
-            address = LLVMBuildStructGEP(builder, object, module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
-        } else {
-            address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
-        }
-        switch (fieldAccess.getAccessType()) {
-            case LOAD:
-                return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
-            case STORE: case LOAD_AND_STORE:
-                return address;
-            default:
-                return Utils.cantHappen();
-        }
-    }
-
-    @Override
     public LLVMValueRef visitLiteral(FLiteralExpression expression) {
         FLiteral literal = expression.getLiteral();
         LLVMTypeRef type = module.getLlvmType(literal.getType());
@@ -826,7 +812,7 @@ class LLVMTransformer implements
         switch (expression.getAccessType()) {
             case LOAD:
                 return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
-            case STORE: case LOAD_AND_STORE:
+            case STORE:
                 return address;
             default:
                 return Utils.cantHappen();

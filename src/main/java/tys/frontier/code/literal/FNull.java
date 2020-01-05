@@ -1,8 +1,6 @@
 package tys.frontier.code.literal;
 
 import com.google.common.collect.ListMultimap;
-import tys.frontier.code.FField;
-import tys.frontier.code.identifier.FFunctionIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -18,11 +16,6 @@ public class FNull implements FLiteral {
     public static FType NULL_TYPE = new FType() {
 
         @Override
-        public FField getField(FIdentifier identifier)  {
-            return Utils.cantHappen();
-        }
-
-        @Override
         public long concreteness() {
             return Long.MAX_VALUE;
         }
@@ -33,7 +26,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FunctionResolver.Result softResolveFunction(FFunctionIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) {
+        public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) {
             return Utils.cantHappen();
         }
 

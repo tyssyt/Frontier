@@ -1,18 +1,10 @@
 export class List<T>:
-    elements: T[] ;
-    size: int32 = 0;
+    export elements: T[] ; //TODO no ouotside access once we have user definable iterators
+    export size: int32 = 0; //TODO export getter, private setter
 
     export static create(startSize: int32 = 5) -> List<T> {
         res:List<T> = new List<T>(elements = new T[startSize]);
         return res;
-    }
-
-    export elements() -> T[] {
-        return elements; //TODO if we have proper handling of fields in the instantiated shims this is no longer necessary
-    }
-
-    export size() -> int32 {
-        return size; //TODO if we have proper handling of fields in the instantiated shims this is no longer necessary
     }
 
     export add(e: T) {
@@ -20,7 +12,7 @@ export class List<T>:
             expand();
         }
         elements[size] = e;
-        ++size;
+        size = size+1;
     }
 
     export add(e: T, pos: int32) {
@@ -29,7 +21,7 @@ export class List<T>:
         }
         rShift(pos);
         elements[pos] = e;
-        ++size;
+        size = size+1;
     }
 
     export put(e: T, pos: int32) {
@@ -52,7 +44,7 @@ export class List<T>:
     export remove(pos: int32) -> T {
         res:T = elements[pos];
         lShift(pos);
-        --size;
+        size = size-1;
         return res;
     }
 
@@ -71,7 +63,7 @@ export class List<T>:
         i := size;
         while i>start {
             elements[i] = elements[i-1];
-            --i;
+        size = size-1;
         }
     }
 
@@ -79,7 +71,7 @@ export class List<T>:
         i := end;
         while i<size-1 {
             elements[i] = elements[i+1];
-            ++i;
+            i = i+1;
         }
     }
 
@@ -87,6 +79,6 @@ export class List<T>:
         i:int32 = 0;
         while i<from.size {
             to[i] = from[i];
-            ++i;
+            i = i+1;
         }
     }

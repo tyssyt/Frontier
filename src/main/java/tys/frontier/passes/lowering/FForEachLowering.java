@@ -2,17 +2,23 @@ package tys.frontier.passes.lowering;
 
 import com.google.common.collect.ImmutableListMultimap;
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.expression.*;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.expression.FLiteralExpression;
+import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
-import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
-import tys.frontier.code.statement.*;
+import tys.frontier.code.statement.FAssignment;
+import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.statement.FStatement;
+import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.code.type.FClass;
@@ -24,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
 import static tys.frontier.util.Utils.typesFromExpressionList;
 
 public class FForEachLowering extends StatementReplacer {
@@ -64,8 +71,9 @@ public class FForEachLowering extends StatementReplacer {
         FLocalVariable size = function.getFreshVariable(FIntN._32);
         {
             FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
-            FFieldAccess sizeAcc = FFieldAccess.createInstanceTrusted(arrayType.getInstanceFields().get(FArray.SIZE), containerAccess);
-            res.add(FAssignment.createDecl(size, sizeAcc));
+            FieldAccessor sizeGetter = arrayType.getInstanceFields().get(FArray.SIZE).getGetter();
+            FFunctionCall sizeGetterFc = FFunctionCall.createTrusted(sizeGetter.getSignature(), Arrays.asList(containerAccess));
+            res.add(FAssignment.createDecl(size, sizeGetterFc));
         }
 
         //declare counter
@@ -101,10 +109,13 @@ public class FForEachLowering extends StatementReplacer {
         //increment
         FStatement increment;
         {
-            FLocalVariableExpression counterExp = new FLocalVariableExpression(counter);
-            Signature inc = UnaryOperator.INC.getFunction((FClass) counter.getType()).getSignature();
-            increment = new FExpressionStatement(FFunctionCall.createTrusted(inc, Arrays.asList(counterExp)));
-            counterExp.setAccessType(FVariableExpression.AccessType.LOAD_AND_STORE);
+            FLocalVariableExpression rhsCounterExp = new FLocalVariableExpression(counter);
+            FLiteralExpression one = new FLiteralExpression(new FIntNLiteral(1));
+            FFunction plus = BinaryOperator.PLUS.getFunction((FClass) counter.getType());
+            FFunctionCall plusCall = FFunctionCall.createTrusted(plus.getSignature(), Arrays.asList(rhsCounterExp, one));
+
+            FLocalVariableExpression lhsCounterExp = new FLocalVariableExpression(counter);
+            increment = FAssignment.createTrusted(singletonList(lhsCounterExp), Arrays.asList(plusCall));
         }
 
         //Loop Body
