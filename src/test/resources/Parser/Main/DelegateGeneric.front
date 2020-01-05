@@ -91,11 +91,11 @@ export static main () {
     moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(intList,49));
     moregen.getT().add(51);
     forEach(intList, IO.printInt*);
-    IO.printInt(moregen.getT().get(3));
+    IO.printInt(moregen.getT()[3]);
 
     IO.print("|");
 
-    IO.printInt(moregen.doSthUseful(\i j -> i.get(0) + j));
+    IO.printInt(moregen.doSthUseful(\i j -> i[0] + j));
 
     IO.print("|");
 

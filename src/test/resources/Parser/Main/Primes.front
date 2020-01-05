@@ -20,7 +20,7 @@ class Sieb:
             IO.printLine("");
         }
 
-        candidate: int32 = primes.get(primes.size()-1);
+        candidate: int32 = primes[primes.size()-1];
 
         prime := false;
 
@@ -37,7 +37,7 @@ class Sieb:
             //TODO I really need List forEach
             i: int32 = 0;
             while i < primes.size() {
-                divisor := primes.get(i);
+                divisor := primes[i];
 
                 if Main.verbose {
                     IO.print("sieving with: ");

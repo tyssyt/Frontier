@@ -48,8 +48,8 @@ export static main () {
 
     l.add("string", e);
     l.add("g2esports.com/shop", 42);
-    qwe:char[], rtz:int64 = l.get(0);
-    qwe2:char[], rtz2:int64 = l.get(1);
+    qwe:char[], rtz:int64 = l[0];
+    qwe2:char[], rtz2:int64 = l[1];
     IO.printInt(rtz);
     IO.printLine(qwe);
     IO.printInt(rtz2);

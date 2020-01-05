@@ -24,11 +24,11 @@ export class List<T>:
         size = size+1;
     }
 
-    export put(e: T, pos: int32) {
+    export operator [] (pos: int32) <- e: T {
         elements[pos] = e;
     }
 
-    export get(i: int32) -> T {
+    export operator [] (i: int32) -> T {
         return elements[i];
     }
 
