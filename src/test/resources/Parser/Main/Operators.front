@@ -1,0 +1,66 @@
+import IO;
+
+class String:
+
+constructors;
+
+// for: \s i -> s.string[i], \s -> s.string.size; //TODO make a way that when Resolving a Type Parameter that all ReturnTypesOf of that, or constraints somehow related to that have a change to resolve as well that does not rely on the to delete logic I put in ReturnType of, so all info needs to be passed via constraints and I prolly need a new constrinat to model that connection
+for: operator[]*(String, int32), size*;
+
+string: char[];
+
+operator + (other: String) -> String {
+    return this+other.string;
+}
+
+operator + (other: char[]) -> String {
+    res := new String(string = new char[string.size + other.size]);
+    for s, i : string { //TODO change when I have somthing like a zip
+        res.string[i] = s;
+    }
+    for s, i : other {
+        res.string[string.size + i] = s;
+    }
+    return res;
+}
+
+setChars(i: int32, j: int32) <- c1: char, c2: char {
+    string[i] = c1;
+    string[j] = c2;
+}
+
+operator [] (i: int32) <- c: char {
+    string[i] = c;
+}
+
+operator [] (i: int32) -> char {
+    return string[i];
+}
+
+size() -> int32 {
+    return string.size;
+}
+
+
+export class Main:
+
+export static main (args: char[][]) {
+    s1 := new String(string = "Hello");
+    s2 := new String(string = "World!");
+    IO.printLine((s1 + s2).string);
+    s3 := s1 + " Sailor";
+    IO.printLine(s3.string);
+
+    s3.setChars(3, 2) = "W", "w";
+    IO.printLine(s3.string);
+    s3.setChars(0, 1, "o", "O");
+    IO.printLine(s3.string);
+
+    s3[11] = "?";
+    s3[5] = s2[5];
+    IO.printLine(s3.string);
+
+    for c : s2+s1 {
+        IO.print(c);
+    }
+}

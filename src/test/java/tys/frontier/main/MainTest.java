@@ -155,4 +155,9 @@ public class MainTest {
         String res = doMain("NativeInclude", null);
         assertEquals("42", res);
     }
+    @Test
+    public void mainOperators() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("Operators", null);
+        assertEquals(loadOut("OperatorsOut.txt"), res);
+    }
 }
