@@ -274,6 +274,7 @@ expression
     |   expression DOT identifier (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
     |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
+    |   typeType DOT OPERATOR operator STAR (LPAREN typeList RPAREN)? #functionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB) expression                                    #preUnaryOp
@@ -292,6 +293,7 @@ expression
     |   typeType                                                   #typeTypeExpr
     |   identifier                                                 #variableExpr
     |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
+    |   OPERATOR operator STAR (LPAREN typeList RPAREN)?           #internalFunctionAddress
     ;
 
 arguments

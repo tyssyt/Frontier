@@ -13,6 +13,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
+import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
@@ -971,7 +972,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
         try {
             List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findType)) : null;
-            FFunction function = getFunction(currentType, new AttributeIdentifier(ctx.LCIdentifier().getText()), params);
+            AttributeIdentifier identifier;
+            if (ctx.LCIdentifier() != null)
+                identifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+            else
+                identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
+            FFunction function = getFunction(currentType, identifier, params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);
         } catch (SyntaxError syntaxError) {
@@ -985,7 +991,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         try {
             FType fClass = ParserContextUtils.getType(ctx.typeType(), this::findType);
             List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findType)) : null;
-            FFunction function = getFunction(fClass, new AttributeIdentifier(ctx.LCIdentifier().getText()), params);
+            AttributeIdentifier identifier;
+            if (ctx.LCIdentifier() != null)
+                identifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+            else
+                identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
+            FFunction function = getFunction(fClass, identifier, params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);
         } catch (SyntaxError syntaxError) {
@@ -1004,9 +1015,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 throw new FunctionNotFound(identifier, Collections.emptyList(), ImmutableListMultimap.of());
             return fun.iterator().next().getFunction();
         } else {
-            FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
-            checkAccessForbidden(f);
-            return f;
+            try {
+                FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
+                checkAccessForbidden(f);
+                return f;
+            } catch (FunctionNotFound fnf) {
+                params.add(0, fClass); //static failed, try instance
+                FFunction f = fClass.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
+                checkAccessForbidden(f);
+                return f;
+            }
         }
     }
 
