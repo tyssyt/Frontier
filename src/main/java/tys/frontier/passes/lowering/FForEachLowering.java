@@ -1,19 +1,15 @@
 package tys.frontier.passes.lowering;
 
-import com.google.common.collect.ImmutableListMultimap;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.statement.FAssignment;
 import tys.frontier.code.statement.FBlock;
@@ -21,9 +17,9 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.FVarDeclaration;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
+import tys.frontier.code.statement.loop.forImpl.ForByIdx;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.type.FClass;
-import tys.frontier.code.type.FunctionResolver;
-import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -31,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static tys.frontier.util.Utils.typesFromExpressionList;
 
 public class FForEachLowering extends StatementReplacer {
 
@@ -49,21 +44,26 @@ public class FForEachLowering extends StatementReplacer {
     }
 
     public FStatement replace (FForEach forEach, FFunction function) {
-        if (!(forEach.getContainer().getType() instanceof FArray)) {
-            Utils.NYI("non array for each");
-        }
-        FArray arrayType = ((FArray) forEach.getContainer().getType());
+        ForImpl forImpl = forEach.getContainer().getType().getForImpl();
+        if (forImpl instanceof ForByIdx)
+            return buildForByIdx((ForByIdx) forImpl, forEach, function);
+        else
+            return Utils.NYI("ForImpl: " + forImpl);
+
+    }
+
+    private FStatement buildForByIdx(ForByIdx forImpl, FForEach forEach, FFunction function) {
         List<FStatement> res = new ArrayList<>(4);
 
-        //first store the array expression in a local variable, if necessary
+        //first store the container expression in a local variable, if necessary
         FLocalVariable container;
         {
-            FExpression array = forEach.getContainer();
-            if (array instanceof FLocalVariableExpression) {
-                container = ((FLocalVariableExpression) array).getVariable();
+            FExpression containerExpression = forEach.getContainer();
+            if (containerExpression instanceof FLocalVariableExpression) {
+                container = ((FLocalVariableExpression) containerExpression).getVariable();
             } else {
-                container = function.getFreshVariable(arrayType);
-                res.add(FAssignment.createDecl(container, array));
+                container = function.getFreshVariable(forEach.getContainer().getType());
+                res.add(FAssignment.createDecl(container, containerExpression));
             }
         }
 
@@ -71,16 +71,13 @@ public class FForEachLowering extends StatementReplacer {
         FLocalVariable size = function.getFreshVariable(FIntN._32);
         {
             FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
-            FieldAccessor sizeGetter = arrayType.getInstanceFields().get(FArray.SIZE).getGetter();
-            FFunctionCall sizeGetterFc = FFunctionCall.createTrusted(sizeGetter.getSignature(), Arrays.asList(containerAccess));
+            FFunctionCall sizeGetterFc = FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), Arrays.asList(containerAccess));
             res.add(FAssignment.createDecl(size, sizeGetterFc));
         }
 
         //declare counter
         FLocalVariable counter = forEach.getCounter().orElse(function.getFreshVariable(FIntN._32));
-        {
-            res.add(FAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
-        }
+        res.add(FAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
 
         //condition
         FExpression condition;
@@ -96,14 +93,9 @@ public class FForEachLowering extends StatementReplacer {
             for (FLocalVariable it : forEach.getIterators()) {
                 decls.add(new FVarDeclaration(it));
             }
-            try {
-                List<FExpression> arguments = Arrays.asList(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
-                FunctionResolver.Result result = container.getType().hardResolveFunction(Access.ID, typesFromExpressionList(arguments), ImmutableListMultimap.of(), null, false);
-                FFunctionCall arrayAccess = FFunctionCall.createTrusted(result.signature, arguments);
-                itDecl = FAssignment.createTrusted(decls, Arrays.asList(arrayAccess));
-            } catch (FunctionNotFound functionNotFound) {
-                return Utils.cantHappen();
-            }
+            List<FExpression> arguments = Arrays.asList(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
+            FFunctionCall arrayAccess = FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), arguments);
+            itDecl = FAssignment.createTrusted(decls, Arrays.asList(arrayAccess));
         }
 
         //increment

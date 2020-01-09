@@ -12,6 +12,7 @@ import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
+import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -67,6 +68,12 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     @Override
     public Object visitConstructorsDeclarative(FrontierParser.ConstructorsDeclarativeContext ctx) {
         currentClass.setConstructorVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
+        return null;
+    }
+
+    @Override
+    public Object visitForDeclarative(FrontierParser.ForDeclarativeContext ctx) {
+        currentClass.setForImpl(ForPlaceholder.INSTANCE);
         return null;
     }
 

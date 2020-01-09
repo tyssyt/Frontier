@@ -1,0 +1,8 @@
+class Test:
+    for: getElement, size*;
+
+    static getElement: (Test, int32 -> float32);
+
+    size() -> int32 {
+        return 0;
+    }

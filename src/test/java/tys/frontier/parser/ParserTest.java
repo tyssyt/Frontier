@@ -144,6 +144,11 @@ public class ParserTest {
         assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
+    public void parseInvalidForDeclaration() throws Exception {
+        SyntaxError e = parseSyntaxError("InvalidForDeclaration.front");
+        assertEquals(InvalidForDeclaration.class, e.getClass());
+    }
+    @Test
     public void parseMissingReturn() throws Exception {
         SyntaxError e = parseSyntaxError("MissingReturn.front");
         assertEquals(MissingReturn.class, e.getClass());
@@ -198,6 +203,11 @@ public class ParserTest {
     public void parseTwiceDefinedLocalVariableFor() throws Exception {
         SyntaxError e = parseSyntaxError("TwiceDefinedLocalVariableFor.front");
         assertEquals(TwiceDefinedLocalVariable.class, e.getClass());
+    }
+    @Test
+    public void parseTypeDoesNotImplementFor() throws Exception {
+        SyntaxError e = parseSyntaxError("TypeDoesNotImplementFor.front");
+        assertEquals(TypeDoesNotImplementFor.class, e.getClass());
     }
     @Test
     public void parseTypeNotFound() throws Exception {

@@ -30,8 +30,8 @@ public class FLambda extends FBaseFunction {
         Iterator<FTypeVariable> it = getParametersList().iterator();
         while (it.hasNext()) {
             FTypeVariable var = it.next();
-            if (var.getConstraints().isResolved()) {
-                baseMap.put(var, var.getConstraints().getResolved());
+            if (var.isResolved()) {
+                baseMap.put(var, var.getResolved());
                 it.remove();
                 parameters.remove(var.getIdentifier());
             }
@@ -52,8 +52,8 @@ public class FLambda extends FBaseFunction {
         if (typeInstantiation.isEmpty()) { //TODO this is one hell pf an unstable hack, good luck future me
             Map<FTypeVariable, FType> baseMap = new HashMap<>(getParameters().size());
             for (FTypeVariable var : getParametersList()) {
-                assert var.getConstraints().isResolved();
-                baseMap.put(var, var.getConstraints().getResolved());
+                assert var.isResolved();
+                baseMap.put(var, var.getResolved());
             }
             return super.getInstantiation(TypeInstantiation.create(baseMap));
         } else

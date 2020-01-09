@@ -79,7 +79,9 @@ public class TypeConstraints {
         this.equivalenceGroup.addAll(other.equivalenceGroup);
 
         //force error in case there are somehow reference to other left (and have some fun with Java & asserts ;)
+        //noinspection ConstantConditions
         assert (other.equivalenceGroup = null) == null;
+        //noinspection ConstantConditions
         assert (other.constraints = null) == null;
         return this;
     }
@@ -104,8 +106,8 @@ public class TypeConstraints {
             //if the target is a resolved var, change the constraint to the resolved
             if (implicitCastable.getTarget() instanceof FTypeVariable) {
                 FTypeVariable target = (FTypeVariable) implicitCastable.getTarget();
-                if (target.getConstraints().isResolved()) {
-                    implicitCastable = new ImplicitCastable(implicitCastable, target.getConstraints().resolvedAs, implicitCastable.getVariance());
+                if (target.isResolved()) {
+                    implicitCastable = new ImplicitCastable(implicitCastable, target.getResolved(), implicitCastable.getVariance());
                 }
             }
 
@@ -417,11 +419,11 @@ public class TypeConstraints {
             return false;
 
         FType aTarget = a.getTarget();
-        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).getConstraints().isResolved())
-            aTarget = ((FTypeVariable) aTarget).getConstraints().resolvedAs;
+        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).isResolved())
+            aTarget = ((FTypeVariable) aTarget).getResolved();
         FType bTarget = b.getTarget();
-        if (bTarget instanceof FTypeVariable && ((FTypeVariable) bTarget).getConstraints().isResolved())
-            bTarget = ((FTypeVariable) bTarget).getConstraints().resolvedAs;
+        if (bTarget instanceof FTypeVariable && ((FTypeVariable) bTarget).isResolved())
+            bTarget = ((FTypeVariable) bTarget).getResolved();
         try {
             if (aTarget == bTarget)
                 return true;
@@ -437,8 +439,8 @@ public class TypeConstraints {
             return false;
 
         FType aTarget = a.getTarget();
-        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).getConstraints().isResolved())
-            aTarget = ((FTypeVariable) aTarget).getConstraints().resolvedAs;
+        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).isResolved())
+            aTarget = ((FTypeVariable) aTarget).getResolved();
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
             aTarget.softResolveFunction(b.getIdentifier(), b.getPositionalArgs(), b.getKeywordArgs(), null, b.isLhsResolve());

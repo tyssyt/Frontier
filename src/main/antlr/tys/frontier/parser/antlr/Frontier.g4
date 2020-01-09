@@ -120,11 +120,15 @@ lowerBound
     ;
 
 classDeclaratives
-    :   constructorsDeclarative?
+    :   constructorsDeclarative? forDeclarative?
     ;
 
 constructorsDeclarative
     :   visibilityModifier? CONSTRUCTORS SEMI
+    ;
+
+forDeclarative
+    :   FOR COLON expression COMMA expression SEMI
     ;
 
 modifier

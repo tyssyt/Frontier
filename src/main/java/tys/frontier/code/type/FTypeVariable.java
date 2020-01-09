@@ -13,6 +13,8 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
+import tys.frontier.code.statement.loop.forImpl.FTypeVariableForImpl;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
@@ -34,11 +36,17 @@ public class FTypeVariable implements FType {
         private FFunction function;
         private List<FType> positionalArgs;
         private ListMultimap<FIdentifier, FType> keywordArgs;
+        private boolean lhsResolve;
 
-        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs) {
+        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, boolean lhsResolve) {
             super(identifier, fixed, TypeConstraints.create());
             this.positionalArgs = positionalArgs;
             this.keywordArgs = keywordArgs;
+            this.lhsResolve = lhsResolve;
+        }
+
+        public FTypeVariable getBase() {
+            return (FTypeVariable) function.getMemberOf();
         }
 
         public FFunction getFunction() {
@@ -52,11 +60,16 @@ public class FTypeVariable implements FType {
         public ListMultimap<FIdentifier, FType> getKeywordArgs() {
             return keywordArgs;
         }
+
+        public boolean isLhsResolve() {
+            return lhsResolve;
+        }
     }
 
     private FTypeIdentifier identifier;
     private TypeConstraints constraints;
     private NameGenerator returnTypeNames;
+    private FTypeVariableForImpl forImpl = new FTypeVariableForImpl(this);
 
     public static FTypeVariable create(FTypeIdentifier identifier, boolean fixed) {
         return new FTypeVariable(identifier, fixed, TypeConstraints.create());
@@ -83,8 +96,8 @@ public class FTypeVariable implements FType {
 
     @Override
     public boolean canImplicitlyCast() {
-        if (constraints.isResolved())
-            return constraints.getResolved().canImplicitlyCast();
+        if (isResolved())
+            return getResolved().canImplicitlyCast();
         return true; //TODO when fixed we could check the constraints and find cases where we can return false
     }
 
@@ -92,12 +105,24 @@ public class FTypeVariable implements FType {
         return constraints.isFixed();
     }
 
-    public void setConstraints(TypeConstraints constraints) {
+   public void setConstraints(TypeConstraints constraints) {
         this.constraints = constraints;
     }
 
-    public TypeConstraints getConstraints() {
+   public TypeConstraints getConstraints() {
         return constraints;
+    }
+    
+    public boolean isResolved() {
+        return constraints.isResolved();
+    }
+    
+    public FType getResolved() {
+        return constraints.getResolved();
+    }
+
+    public FClass hardResolve() throws UnfulfillableConstraints {
+        return constraints.hardResolve();
     }
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
@@ -105,7 +130,7 @@ public class FTypeVariable implements FType {
             return constraints.satisfies(constraint);
         else {
             try {
-                TypeConstraints.add(constraints, constraint);
+                constraints = TypeConstraints.add(constraints, constraint);
             } catch (UnfulfillableConstraints unfulfillableConstraints) {
                 return false;
             }
@@ -114,9 +139,16 @@ public class FTypeVariable implements FType {
     }
 
     @Override
+    public ForImpl getForImpl() {
+        if (isResolved())
+            return getResolved().getForImpl();
+        return forImpl;
+    }
+
+    @Override
     public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
-        if (this.constraints.isResolved())
-            return this.constraints.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
+        if (this.isResolved())
+            return this.getResolved().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
 
         /* TODO
             on LHS resolve, I can assume returnType VOID, but I need to add another parameter of unknown type (placeholder for assignees)
@@ -143,7 +175,7 @@ public class FTypeVariable implements FType {
         ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
-            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs);
+            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs, lhsResolve);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params, null, emptyMap());
         if (returnType instanceof ReturnTypeOf)

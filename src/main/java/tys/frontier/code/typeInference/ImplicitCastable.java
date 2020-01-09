@@ -11,8 +11,8 @@ public class ImplicitCastable extends TypeConstraint {
 
     public ImplicitCastable(Object origin, FType target, Variance variance) {
         super(origin);
-        if (target instanceof FTypeVariable && ((FTypeVariable) target).getConstraints().isResolved())
-            this.target = ((FTypeVariable) target).getConstraints().getResolved();
+        if (target instanceof FTypeVariable && ((FTypeVariable) target).isResolved())
+            this.target = ((FTypeVariable) target).getResolved();
         else
             this.target = target;
         if (variance == Variance.Contravariant && !target.canImplicitlyCast())

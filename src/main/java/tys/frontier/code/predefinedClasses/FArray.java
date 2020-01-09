@@ -8,6 +8,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
+import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
 
@@ -31,11 +32,13 @@ public class FArray extends FPredefinedClass {
         this.baseType = baseType;
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
-        addFieldTrusted(new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false)); //TODO make final
+        FField size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
+        addFieldTrusted(size); //TODO make final
         addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
-        Pair<FFunction, FFunction> pair = Access.createPredefined(this, FIntN._32, baseType);
-        addFunctionTrusted(pair.a);
-        addFunctionTrusted(pair.b);
+        Pair<FFunction, FFunction> access = Access.createPredefined(this, FIntN._32, baseType);
+        addFunctionTrusted(access.a);
+        addFunctionTrusted(access.b);
+        setForImpl(new ForByIdx(access.a, size.getGetter()));
     }
 
     public static FArray getArrayFrom(FType baseClass) {

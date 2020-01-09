@@ -9,6 +9,7 @@ import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
@@ -35,6 +36,7 @@ public class FBaseClass implements FClass {
     private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> delegates = new HashMap<>();
+    private ForImpl forImpl;
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
 
@@ -68,6 +70,16 @@ public class FBaseClass implements FClass {
                 this.parameterVariance.put(var, parameterVariance.get(i));
             }
         }
+    }
+
+    @Override
+    public void setForImpl(ForImpl forImpl) {
+        this.forImpl = forImpl;
+    }
+
+    @Override
+    public ForImpl getForImpl() {
+        return forImpl;
     }
 
     @Override

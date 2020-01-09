@@ -7,7 +7,11 @@ import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.statement.loop.forImpl.ForByIdx;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
+import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.passes.GenericBaking;
+import tys.frontier.util.Utils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +30,8 @@ public class FInstantiatedClass extends FForwardingClass {
     private ListMultimap<FIdentifier, Signature> newRhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private Map<FType, FField> newDelegates;
+
+    private ForImpl newForImpl;
 
     FInstantiatedClass(FClass baseClass, ImmutableList<FType> instantiatedParameters) {
         super(baseClass);
@@ -72,6 +78,10 @@ public class FInstantiatedClass extends FForwardingClass {
         FConstructor constructor = generateConstructor();
         baseFunctionMap.put(proxy.getConstructor(), constructor);
         //TODO do we need to put malloc in the map?
+
+        //forImpl
+        if (proxy.getForImpl() != null)
+            newForImpl = ForPlaceholder.INSTANCE;
     }
 
     public FFunction getInstantiatedFunction(FFunction baseFunction) {
@@ -85,6 +95,21 @@ public class FInstantiatedClass extends FForwardingClass {
         for (int i = 0; i < instantiatedParameters.size(); i++)
             typeInstantiation.put(baseParameters.get(i), instantiatedParameters.get(i));
         return TypeInstantiation.create(typeInstantiation);
+    }
+
+    @Override
+    public void setForImpl(ForImpl forImpl) {
+        Utils.cantHappen();
+    }
+
+    @Override
+    public ForImpl getForImpl() {
+        if (newForImpl == ForPlaceholder.INSTANCE) { //lazy instantiation
+            assert proxy.getForImpl() instanceof ForByIdx;
+            ForByIdx forImpl = (ForByIdx) proxy.getForImpl();
+            newForImpl = new ForByIdx(baseFunctionMap.get(forImpl.getGetElement()), baseFunctionMap.get(forImpl.getGetSize()));
+        }
+        return newForImpl;
     }
 
     @Override

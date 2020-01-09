@@ -4,6 +4,7 @@ import com.google.common.collect.ListMultimap;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.util.Utils;
@@ -33,6 +34,11 @@ public class FNull implements FLiteral {
         @Override
         public FTypeIdentifier getIdentifier() {
             return IDENTIFIER;
+        }
+
+        @Override
+        public ForImpl getForImpl() {
+            return null;
         }
 
         @Override

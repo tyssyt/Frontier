@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
+import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
@@ -24,6 +25,9 @@ import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.statement.loop.forImpl.ForByIdx;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
+import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -134,6 +138,54 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             }
         }
         return visitChildren(ctx);
+    }
+
+    @Override
+    public Object visitForDeclarative(FrontierParser.ForDeclarativeContext ctx) {
+        assert currentType.getForImpl() == ForPlaceholder.INSTANCE;
+        functionContextStack.addLast(new FunctionContext(null));
+        try {
+            currentFunction().declaredVars.push(); //TODO is this needed?
+
+            FExpression exp1 = visitExpression(ctx.expression(0));
+            exp1 = exp1.typeCheck(FFunctionType.from(
+                    FTuple.from(Arrays.asList(currentType, FIntN._32)),
+                    FTypeVariable.create(new FTypeIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
+            //TODO oh god this is one ugly hack (same as in field)
+            FStatement statement = new FExpressionStatement(exp1);
+            statement = instantiateFunctionAddresses(statement);
+            assert statement instanceof FExpressionStatement;
+            exp1 = ((FExpressionStatement) statement).getExpression();
+            if (exp1 instanceof FImplicitCast)
+                exp1 = ((FImplicitCast) exp1).getCastedExpression();
+            if (!(exp1 instanceof FFunctionAddress))
+                throw new InvalidForDeclaration("for declaration needs Lambda or Function Address", exp1);
+            FFunction getElement = ((FFunctionAddress) exp1).getFunction();
+
+            FExpression exp2 = visitExpression(ctx.expression(1));
+            exp2 = exp2.typeCheck(FFunctionType.from(currentType, FIntN._32));
+            //TODO oh god this is one ugly hack (same as in field)
+            statement = new FExpressionStatement(exp2);
+            statement = instantiateFunctionAddresses(statement);
+            assert statement instanceof FExpressionStatement;
+            exp2 = ((FExpressionStatement) statement).getExpression();
+            if (exp2 instanceof FImplicitCast)
+                exp2 = ((FImplicitCast) exp2).getCastedExpression();
+            if (!(exp2 instanceof FFunctionAddress))
+                throw new InvalidForDeclaration("for declaration needs Lambda or Function Address", exp1);
+            FFunction getSize = ((FFunctionAddress) exp2).getFunction();
+
+            ForByIdx forImpl = new ForByIdx(getElement, getSize);
+            currentType.setForImpl(forImpl);
+            return forImpl;
+        } catch (Failed f) {
+            return null;
+        } catch (IncompatibleTypes | UnfulfillableConstraints | InvalidForDeclaration e) {
+            errors.add(e);
+            return null;
+        } finally {
+            functionContextStack.removeLast();
+        }
     }
 
     //fields
@@ -292,7 +344,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return untyped;
 
         for (FTypeVariable toInstantiate : currentFunction().genericFunctionAddressToInstantiate) {
-            toInstantiate.getConstraints().hardResolve();
+            toInstantiate.hardResolve();
         }
         FStatement res = GenericBaking.bake(untyped);
         currentFunction().genericFunctionAddressToInstantiate.clear();
@@ -497,12 +549,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 ids.add(id);
             }
 
-            List<FType> types;
-            if (container.getType() instanceof FArray) {
-                types = FTuple.unpackType(((FArray) container.getType()).getBaseType());
-            } else {
-                return Utils.NYI("non array for each");
+            ForImpl forImpl = container.getType().getForImpl();
+            if (forImpl == null) {
+                throw new TypeDoesNotImplementFor(container);
             }
+            List<FType> types = FTuple.unpackType(forImpl.getElementType());
 
             if (ids.size() < types.size() || ids.size() > types.size()+1) {
                 errors.add(new WrongNumberOfIdentifiersInFor(ids, types));

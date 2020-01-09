@@ -73,8 +73,8 @@ public class InstantiableFunctionCopy extends WithInstantiatedSignature {
         assert typeInstantiation.isEmpty();
         Map<FTypeVariable, FType> baseMap = new HashMap<>(newParameters.size());
         for (FTypeVariable var : newParametersList) {
-            assert var.getConstraints().isResolved();
-            baseMap.put(proxy.getParameters().get(var.getIdentifier()), var.getConstraints().getResolved());
+            assert var.isResolved();
+            baseMap.put(proxy.getParameters().get(var.getIdentifier()), var.getResolved());
         }
         return proxy.getInstantiation(TypeInstantiation.create(baseMap));
     }

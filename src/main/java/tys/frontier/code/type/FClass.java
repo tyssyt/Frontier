@@ -14,6 +14,7 @@ import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
@@ -59,6 +60,8 @@ public interface FClass extends FType, HasVisibility {
     Map<FType, FField> getDirectDelegates();
 
     AttributeIdentifier getFreshLambdaName();
+
+    void setForImpl(ForImpl forImpl);
 
     @Override
     String toString();

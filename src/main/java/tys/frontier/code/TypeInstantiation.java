@@ -14,7 +14,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
-import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
@@ -146,13 +145,13 @@ public class TypeInstantiation {
                 return Utils.cantHappen();
             }
         } else if (original instanceof FTypeVariable) {
-            TypeConstraints constraints = ((FTypeVariable) original).getConstraints();
-            if (constraints.isResolved())
-                return getType(constraints.getResolved());
+            FTypeVariable typeVariable = (FTypeVariable) original;
+            if (typeVariable.isResolved())
+                return getType(typeVariable.getResolved());
 
             if (original instanceof FTypeVariable.ReturnTypeOf) {
                 FTypeVariable.ReturnTypeOf returnTypeOf = (FTypeVariable.ReturnTypeOf) original;
-                FType oldMemberOf = returnTypeOf.getFunction().getMemberOf();
+                FType oldMemberOf = returnTypeOf.getBase();
                 FType newMemberOf = getType(oldMemberOf);
 
                 if (newMemberOf != oldMemberOf) {
@@ -175,7 +174,7 @@ public class TypeInstantiation {
         ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
             Signature instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
-                    positionalArgs, keywordArgs, null, false).signature;
+                    positionalArgs, keywordArgs, null, returnTypeOf.isLhsResolve()).signature;
             //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
             return getType(instantiation.getType());
         } catch (FunctionNotFound functionNotFound) {
