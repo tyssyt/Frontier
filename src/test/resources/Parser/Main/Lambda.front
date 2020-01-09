@@ -63,7 +63,7 @@ export static main () {
     IO.printLine("\nfilter even 1:");
     printMat(matrix);
 
-    forEach(matrix, \inner -> filter(inner, even*));
+    forEach(matrix, \inner -> filter(inner, even**));
     IO.printLine("\nfilter even 2:");
     printMat(matrix);
 

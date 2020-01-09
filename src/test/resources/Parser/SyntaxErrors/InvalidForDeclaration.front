@@ -1,5 +1,5 @@
 class Test:
-    for: getElement, size*;
+    for: getElement, size**;
 
     static getElement: (Test, int32 -> float32);
 

@@ -2,5 +2,5 @@ class A:
     static generic <T,R> (t: T, r: R) {}
 
     test () {
-        x := generic*;
+        x := generic**;
     }

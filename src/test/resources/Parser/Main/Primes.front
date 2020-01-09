@@ -34,23 +34,17 @@ class Sieb:
                 IO.printLine("");
             }
 
-            //TODO I really need List forEach
-            i: int32 = 0;
-            while i < primes.size() {
-                divisor := primes[i];
-
+            for divisor : primes {
                 if Main.verbose {
                     IO.print("sieving with: ");
                     IO.printInt(divisor);
                     IO.printLine("");
                 }
 
-
                 if candidate % divisor =*= 0 {
                     prime = false;
                     break;
                 }
-                i = i+1;
             }
         }
         primes.add(candidate);

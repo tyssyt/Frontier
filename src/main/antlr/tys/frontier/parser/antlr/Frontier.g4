@@ -271,14 +271,18 @@ ifStatement
 
 // EXPRESSIONS -----------------------------------------------------------------------------
 
+//TODO the STAR STAR in adress is a temporary fix to avoid clash with multiplication
+
 expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
     |   expression LBRACK arguments RBRACK                         #arrayAccess
     |   expression DOT identifier (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
-    |   typeType DOT LCIdentifier STAR (LPAREN typeList RPAREN)?   #functionAddress
-    |   typeType DOT OPERATOR operator STAR (LPAREN typeList RPAREN)? #functionAddress
+    |   typeType DOT LCIdentifier STAR STAR (LPAREN typeList RPAREN)?   #functionAddress
+    |   typeType DOT OPERATOR operator STAR STAR (LPAREN typeList RPAREN)? #functionAddress
+    |   LCIdentifier STAR STAR (LPAREN typeList RPAREN)?           #internalFunctionAddress
+    |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
     |   (EXMARK|SUB) expression                                    #preUnaryOp
@@ -296,8 +300,6 @@ expression
     |   literal                                                    #literalExpr
     |   typeType                                                   #typeTypeExpr
     |   identifier                                                 #variableExpr
-    |   LCIdentifier STAR (LPAREN typeList RPAREN)?                #internalFunctionAddress
-    |   OPERATOR operator STAR (LPAREN typeList RPAREN)?           #internalFunctionAddress
     ;
 
 arguments

@@ -75,7 +75,7 @@ export static main () {
     intList.add(10);
     intList.add(9);
     intList.add(8);
-    forEach(intList, IO.printInt*);
+    forEach(intList, IO.printInt**);
 
     IO.print("|");
 
@@ -90,7 +90,7 @@ export static main () {
     //in a generic class, forward from a generic class, but in the instantiation we use a type parameter of the current class
     moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(intList,49));
     moregen.getT().add(51);
-    forEach(intList, IO.printInt*);
+    forEach(intList, IO.printInt**);
     IO.printInt(moregen.getT()[3]);
 
     IO.print("|");

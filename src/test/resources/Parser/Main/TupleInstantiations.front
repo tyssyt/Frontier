@@ -132,7 +132,7 @@ export static main () {
 
     { //Address
         IO.printLine("--Address--");
-        f := Generic<(char[], char[])>.getArray*;
+        f := Generic<(char[], char[])>.getArray**;
         a := f(new Generic<(char[], char[])>(t="Beep", "Boop"), 3);
         s1:, s2: = a[2];
         IO.print(s1);

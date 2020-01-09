@@ -2,6 +2,6 @@ class A:
     static f(i: int32) {}
 
     static test() {
-        fun := f*;
+        fun := f**;
         fun(i=2);
     }

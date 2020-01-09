@@ -5,7 +5,7 @@ class String:
 constructors;
 
 // for: \s i -> s.string[i], \s -> s.string.size; //TODO make a way that when Resolving a Type Parameter that all ReturnTypesOf of that, or constraints somehow related to that have a change to resolve as well that does not rely on the to delete logic I put in ReturnType of, so all info needs to be passed via constraints and I prolly need a new constrinat to model that connection
-for: operator[]*(String, int32), size*;
+for: operator[]**(String, int32), size**;
 
 string: char[];
 

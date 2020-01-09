@@ -228,7 +228,7 @@ public class TypeConstraints {
     }
 
     public boolean satisfies(TypeConstraint constraint) {
-        if (isResolved()) {
+        if (isResolved() || isFixed()) {
             if (constraint instanceof ImplicitCastable && ((ImplicitCastable) constraint).getTarget() instanceof FTypeVariable) {
                 //for implicit castable to a type var, we can just add the reverse constraint to that var
                 ImplicitCastable implicitCastable = (ImplicitCastable) constraint;

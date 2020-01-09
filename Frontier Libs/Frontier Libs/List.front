@@ -1,4 +1,6 @@
 export class List<T>:
+    for: operator[]**(List<T>, int32), size**(List<T>);
+
     export elements: T[] ; //TODO no ouotside access once we have user definable iterators
     export size: int32 = 0; //TODO export getter, private setter
 
