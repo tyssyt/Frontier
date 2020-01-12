@@ -49,6 +49,7 @@ tokens {
     FLOAT32,
     FLOAT64,
     TYPE,
+    PRIMITIVES,
     IF,
     THEN,
     ELSE,
@@ -93,7 +94,7 @@ folder
     ;
 
 classDeclaration
-    :   visibilityModifier? CLASS TypeIdentifier typeParameters? COLON
+    :   visibilityModifier? NATIVE? CLASS TypeIdentifier typeParameters? COLON
         typeParameterSpecification*
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
@@ -208,6 +209,7 @@ nameSelector
 
 typeType
     :   typeType Array
+    |   typeType CArray
     |   typeType QUESTION
     |   LPAREN typeList ARROW typeList RPAREN
     |   predefinedType (LT typeOrTuple (COMMA typeOrTuple)* GT)?
@@ -397,6 +399,7 @@ STAR            : '*';
 MOD             : '%';
 
 Array           : '[]';
+CArray           : '[c]';
 
 //Datatypes---------------------------------------------------------------------
 

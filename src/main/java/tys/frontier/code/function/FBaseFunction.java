@@ -57,6 +57,12 @@ public class FBaseFunction implements FFunction {
         }
     }
 
+    public static FBaseFunction createPredefined(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
+        FBaseFunction res = new FBaseFunction(identifier, memberOf, modifier, false, returnType, params, assignees, parameters);
+        res.predefined = true;
+        return res;
+    }
+
     @Override
     public FType getMemberOf() {
         return memberOf;

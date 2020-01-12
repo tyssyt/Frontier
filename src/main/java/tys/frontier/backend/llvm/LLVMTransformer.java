@@ -630,12 +630,14 @@ class LLVMTransformer implements
         if (function.isConstructor()) {
             return buildArrayMalloc(module.getLlvmType(functionCall.getType()), Iterables.getOnlyElement(args));
         } else if (function.getIdentifier().equals(Access.ID)) {
-            return visitArrayAccess(functionCall, args);
+            return visitArrayAccess(args);
+        } else if (function.getIdentifier().equals(FArray.C_ARRAY)) {
+            return arrayGep(args.get(0),indexLiteral(0));
         } else
             return Utils.NYI(function.headerToString() + " in the backend");
     }
 
-    public LLVMValueRef visitArrayAccess(FFunctionCall functionCall, List<LLVMValueRef> args) {
+    public LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
         LLVMValueRef address = arrayGep(args.get(0), args.get(1));
         switch (args.size()) {
             case 2:

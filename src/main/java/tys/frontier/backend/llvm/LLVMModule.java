@@ -120,6 +120,8 @@ public class LLVMModule implements AutoCloseable {
             res = LLVMIntTypeInContext(context, ((FIntN) fClass).getN());
         } else if (fClass instanceof FArray) {
             res = arrayType(((FArray) fClass), 0);
+        } else if (fClass instanceof CArray) {
+            res = cArrayType(((CArray) fClass));
         } else if (fClass instanceof FOptional) {
             res = getLlvmType(((FOptional) fClass).getBaseType());
         } else if (fClass instanceof FFunctionType) {
@@ -138,6 +140,10 @@ public class LLVMModule implements AutoCloseable {
                 LLVMArrayType(getLlvmType(type.getBaseType()), length));
         LLVMTypeRef baseType = LLVMStructTypeInContext(context, types, 2, FALSE);
         return LLVMPointerType(baseType, 0);
+    }
+
+    private LLVMTypeRef cArrayType(CArray type) {
+        return LLVMPointerType(getLlvmType(type.getBaseType()), 0);
     }
 
     private LLVMTypeRef functionType(FFunctionType functionType) {

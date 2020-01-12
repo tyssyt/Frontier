@@ -24,6 +24,22 @@ export class Strings:
         return res;
     }
 
+    export static toCString(fString: char[]) -> char[c] {
+        return withZeroTerminator(fString).c_array();
+    }
+
+    export static withZeroTerminator(fString: char[]) -> char[] { //TODO should assert that fString does not contain 0
+        if fString[fString.size - 1] =*= 0 {
+            return fString;
+        }
+        cString := new char[fString.size + 1];
+        for c, i : fString {
+            cString[i] = c; //TODO replace by arrayCopy
+        }
+        cString[fString.size] = 0;
+        return cString;
+    }
+
     static charToInt(c: char) -> int32 {
         //assert c >= 48 && c <= 57 //TODO
         return c - 48;

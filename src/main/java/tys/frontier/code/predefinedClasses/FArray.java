@@ -1,8 +1,11 @@
 package tys.frontier.code.predefinedClasses;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Access;
@@ -12,11 +15,13 @@ import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
 
+import java.util.Collections;
 import java.util.concurrent.ConcurrentMap;
 
 public class FArray extends FPredefinedClass {
 
     public static final AttributeIdentifier SIZE = new AttributeIdentifier("size");
+    public static final AttributeIdentifier C_ARRAY = new AttributeIdentifier("c_array");
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
@@ -34,10 +39,12 @@ public class FArray extends FPredefinedClass {
         //TODO add container equals, and prolly do something to equality once that is done
         FField size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final
-        addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
         Pair<FFunction, FFunction> access = Access.createPredefined(this, FIntN._32, baseType);
         addFunctionTrusted(access.a);
         addFunctionTrusted(access.b);
+        addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, this, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(AttributeIdentifier.THIS, this, false)), null, Collections.emptyMap()));
+
+        addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
         setForImpl(new ForByIdx(access.a, size.getGetter()));
     }
 

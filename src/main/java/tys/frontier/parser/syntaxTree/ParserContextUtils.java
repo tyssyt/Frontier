@@ -157,6 +157,9 @@ public final class ParserContextUtils {
         if (ctx.Array() != null) {
             base = getType(ctx.typeType(), possibleTypes);
             return FArray.getArrayFrom(base);
+        } if (ctx.CArray() != null) {
+            base = getType(ctx.typeType(), possibleTypes);
+            return tys.frontier.code.predefinedClasses.CArray.getArrayFrom(base);
         } else if (ctx.QUESTION() != null) {
             base = getType(ctx.typeType(), possibleTypes);
             return FOptional.from(base);
