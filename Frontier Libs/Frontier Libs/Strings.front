@@ -1,3 +1,5 @@
+import Native;
+
 export class Strings:
 
     export static parseInt(string: char[]) -> int64 {
@@ -24,6 +26,36 @@ export class Strings:
         return res;
     }
 
+    export static intToString(l: int64) -> char[] {
+        if l =*= 0 {
+            res := new char[1]; //TODO make return "0" work.
+            res[0] = "0";
+            return res;
+        }
+        pos:bool = l >= 0;
+        if !pos {
+            l = l * -1;
+        }
+        size:int32 = (int32) Native.ceil(Native.log10((float64)l+1.0));
+        if (!pos) {
+            size = size+1;
+        }
+
+        digits:char[] = new char[size];
+        i:int32 = 1;
+        while i<=size {
+            remainder:int64 = l % 10;
+            digits[size-i] = intToChar((int32)remainder);
+            l = l / 10;
+            i = i+1;
+        }
+
+        if (!pos) {
+            digits[0] = "-";
+        }
+        return digits;
+    }
+
     export static toCString(fString: char[]) -> char[c] {
         return withZeroTerminator(fString).c_array();
     }
@@ -43,4 +75,8 @@ export class Strings:
     static charToInt(c: char) -> int32 {
         //assert c >= 48 && c <= 57 //TODO
         return c - 48;
+    }
+
+    static intToChar(i: int32) -> char { //input must be between 0 and 9 inclusive
+        return (char) i + 48;
     }
