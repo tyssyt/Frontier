@@ -1,0 +1,8 @@
+export class Windows:
+
+    export static hInstance: Ptr;
+    export static nCmdShow: int32;
+
+export class Ptr:
+    export constructors;
+    export ptr: int32;

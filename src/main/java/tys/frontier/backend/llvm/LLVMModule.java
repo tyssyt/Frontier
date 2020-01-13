@@ -11,6 +11,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.predefinedClasses.*;
@@ -21,10 +22,7 @@ import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.bytedeco.javacpp.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
@@ -287,7 +285,7 @@ public class LLVMModule implements AutoCloseable {
      * Creates LLVM Code for all parsed Functions and Classes in this module.
      * Should be called after {@link #parseClassMembers}.
      */
-    public void fillInBodies(FFunction entryPoint) {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
+    public void fillInBodies(Collection<FClass> classes, FFunction entryPoint) {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
@@ -311,9 +309,24 @@ public class LLVMModule implements AutoCloseable {
 
             //main
             if (entryPoint != null)
-                trans.generateMain(entryPoint);
+                generateMain(trans, classes, entryPoint);
         }
 
+    }
+
+    private void generateMain(LLVMTransformer trans, Collection<FClass> classes, FFunction entryPoint) {
+        //TODO if isWindows
+        for (FClass _class : classes) {
+            if (_class.getIdentifier().name.equals("Windows")) { //TODO find a less stupid solution
+                FField hInstance = _class.getStaticFields().get(new FIdentifier("hInstance"));
+                FField nCmdShow = _class.getStaticFields().get(new FIdentifier("nCmdShow"));
+                if (hInstance != null || nCmdShow != null) {
+                    trans.generateWinMain(entryPoint, hInstance, nCmdShow);
+                    return;
+                }
+            }
+        }
+        trans.generateMain(entryPoint);
     }
 
 

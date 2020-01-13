@@ -123,13 +123,55 @@ class LLVMTransformer implements
         return res;
     }
 
+    public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
+        System.out.println("generateWinMain");
+        LLVMTypeRef ptr = LLVMPointerType(LLVMStructType(indexType, 1, FALSE), 0);
+        PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(
+                ptr,
+                ptr,
+                LLVMPointerType(module.getLlvmType(FIntN._8), 0),
+                indexType
+        );
+        LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 4, FALSE);
+
+        LLVMValueRef function = LLVMAddFunction(module.getModule(), "WinMain", functionType);
+        LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
+        LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
+        LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
+        LLVMPositionBuilderAtEnd(builder, entryBlock);
+        LLVMBuildCall(builder, sfInit, null, 0, "");
+
+        //init hInstance & nCmdShow
+        if (hInstance != null) {
+            LLVMValueRef address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(hInstance));
+            LLVMBuildStore(builder, LLVMBuildBitCast(builder, LLVMGetParam(function, 0), LLVMGetElementType(LLVMTypeOf(address)), "c"), address);
+        }
+        if (nCmdShow != null) {
+            LLVMValueRef address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(nCmdShow));
+            LLVMBuildStore(builder, LLVMBuildBitCast(builder, LLVMGetParam(function, 3), LLVMGetElementType(LLVMTypeOf(address)), "c"), address);
+        }
+
+        //call entry Point
+        LLVMValueRef userMain = LLVMGetNamedFunction(module.getModule(), getFunctionName(entryPoint));
+        if (entryPoint.getSignature().getParameters().isEmpty()) {
+            LLVMBuildCall(builder, userMain, null, 0, "");
+        } else {
+            //convert input to Frontier String
+            LLVMValueRef args = convertArg(function, LLVMGetParam(function, 2));
+            LLVMBuildCall(builder, userMain, LLVMUtil.createPointerPointer(args), 1, "");
+        }
+        LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
+        LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
+
+        //finish sfInit
+        LLVMPositionBuilderAtEnd(builder, LLVMGetEntryBasicBlock(sfInit));
+        LLVMBuildRetVoid(builder);
+    }
 
     public void generateMain(FFunction entryPoint) {
         PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(indexType,
                 LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
         );
-
-
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 2, FALSE);
 
         LLVMValueRef function = LLVMAddFunction(module.getModule(), "main", functionType);
@@ -138,9 +180,9 @@ class LLVMTransformer implements
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
         LLVMPositionBuilderAtEnd(builder, entryBlock);
         LLVMBuildCall(builder, sfInit, null, 0, "");
-        LLVMValueRef userMain = LLVMGetNamedFunction(module.getModule(), getFunctionName(entryPoint));
 
         //call entry Point
+        LLVMValueRef userMain = LLVMGetNamedFunction(module.getModule(), getFunctionName(entryPoint));
         if (entryPoint.getSignature().getParameters().isEmpty()) {
             LLVMBuildCall(builder, userMain, null, 0, "");
         } else {
@@ -156,6 +198,27 @@ class LLVMTransformer implements
         LLVMBuildRetVoid(builder);
     }
 
+    private LLVMValueRef convertArg(LLVMValueRef function, LLVMValueRef lpCmdLine) { //TODO split lpCmdLine into words
+        LLVMTypeRef fStringType = module.getLlvmType(FArray.getArrayFrom(FStringLiteral.TYPE));
+
+        //TODO this is a alloca copy of arrayMalloc
+        LLVMValueRef size = arrayOffsetOf(fStringType, indexLiteral(1));
+        LLVMValueRef alloca = LLVMBuildArrayAlloca(builder, module.byteType, size, "arrayAlloca");
+        LLVMValueRef res = LLVMBuildBitCast(builder, alloca, fStringType, "newArray");
+
+        //store size
+        LLVMValueRef sizeAddress = LLVMBuildStructGEP(builder, res, 0, "sizeAddress");
+        LLVMBuildStore(builder, indexLiteral(1), sizeAddress);
+
+        //transform arg
+        LLVMValueRef arg = LLVMBuildCall(builder, cStringToFString, createPointerPointer(lpCmdLine), 1, "cString2FString");
+
+        //store arg
+        LLVMValueRef argAddress = arrayGep(res, indexLiteral(0));
+        LLVMBuildStore(builder, arg, argAddress);
+        return res;
+    }
+
     private LLVMValueRef convertArgs(LLVMValueRef function, LLVMValueRef argi, LLVMValueRef argv) {
         LLVMTypeRef fStringType = module.getLlvmType(FArray.getArrayFrom(FStringLiteral.TYPE));
 
@@ -165,7 +228,7 @@ class LLVMTransformer implements
 
         LLVMValueRef i = LLVMBuildAlloca(entryBlockAllocaBuilder, indexType, "alloc_i");
 
-        //TODO this is a alloca copy of arraMalloc
+        //TODO this is a alloca copy of arrayMalloc
         LLVMValueRef size = arrayOffsetOf(fStringType, argi);
         LLVMValueRef alloca = LLVMBuildArrayAlloca(builder, module.byteType, size, "arrayAlloca");
         LLVMValueRef res = LLVMBuildBitCast(builder, alloca, fStringType, "newArray");

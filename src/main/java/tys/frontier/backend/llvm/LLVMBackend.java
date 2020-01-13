@@ -6,6 +6,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -30,7 +31,7 @@ public class LLVMBackend implements Backend {
     //TODO see if LTO is anything worth investing time into
 
     public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
-        Iterable<FClass> classes;
+        Collection<FClass> classes;
         List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {
             classes = allModules.stream()
@@ -55,11 +56,11 @@ public class LLVMBackend implements Backend {
         }
     }
 
-    public static LLVMModule createModule(String name, Iterable<FClass> classes, FFunction entryPoint) {
+    public static LLVMModule createModule(String name, Collection<FClass> classes, FFunction entryPoint) {
         LLVMModule res = new LLVMModule(name);
         res.parseTypes(classes);
         res.parseClassMembers(classes);
-        res.fillInBodies(entryPoint);
+        res.fillInBodies(classes, entryPoint);
         return res;
     }
 
