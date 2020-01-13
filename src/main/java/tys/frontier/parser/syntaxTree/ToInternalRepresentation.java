@@ -294,6 +294,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
+    public Object visitNativeMethodDeclaration(FrontierParser.NativeMethodDeclarationContext ctx) {
+        FFunction f = treeData.functions.get(ctx.methodHeader());
+        functionContextStack.addLast(new FunctionContext(f));
+        try {
+            currentFunction().declaredVars.push(Utils.asMap(f.getSignature().getParameters()));
+            ctx.methodHeader().accept(this);
+            return f;
+        } finally {
+            functionContextStack.removeLast();
+        }
+    }
+
+    @Override
     public FFunction visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
         FFunction f = treeData.functions.get(ctx.methodHeader());
         functionContextStack.addLast(new FunctionContext(f));
