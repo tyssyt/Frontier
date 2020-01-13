@@ -1,6 +1,6 @@
 package tys.frontier.code.function.operator;
 
-import tys.frontier.code.identifier.AttributeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.util.Utils;
@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface Operator {
 
-    AttributeIdentifier getIdentifier();
+    FIdentifier getIdentifier();
     boolean isUserDefinable();
 
     static Operator get(String stringRepresentation, List<FType> argTypes) {

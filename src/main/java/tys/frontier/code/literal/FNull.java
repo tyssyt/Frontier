@@ -2,7 +2,6 @@ package tys.frontier.code.literal;
 
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.type.FType;
@@ -13,7 +12,7 @@ import java.util.List;
 
 public class FNull implements FLiteral {
 
-    private static final FTypeIdentifier IDENTIFIER = new FTypeIdentifier("!NullType");
+    private static final FIdentifier IDENTIFIER = new FIdentifier("!NullType");
     public static FType NULL_TYPE = new FType() {
 
         @Override
@@ -32,7 +31,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FTypeIdentifier getIdentifier() {
+        public FIdentifier getIdentifier() {
             return IDENTIFIER;
         }
 

@@ -2,7 +2,6 @@ package tys.frontier.code;
 
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.function.FieldAccessor;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
@@ -32,7 +31,7 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         this.visibility = visibility;
         this.statik = statik;
         this.hasAssignment = hasAssignment;
-        this._this = new FLocalVariable(AttributeIdentifier.THIS, memberOf); //TODO only create when instance?
+        this._this = new FLocalVariable(FIdentifier.THIS, memberOf); //TODO only create when instance?
 
         Pair<FieldAccessor, FieldAccessor> accessors = FieldAccessor.createAccessors(this);
         this.getter = accessors.a;

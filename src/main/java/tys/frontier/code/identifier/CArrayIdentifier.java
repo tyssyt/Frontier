@@ -1,10 +1,10 @@
 package tys.frontier.code.identifier;
 
-public class CArrayIdentifier extends FTypeIdentifier {
+public class CArrayIdentifier extends FIdentifier {
 
-    public final FTypeIdentifier base;
+    public final FIdentifier base;
 
-    public CArrayIdentifier(FTypeIdentifier base) {
+    public CArrayIdentifier(FIdentifier base) {
         super(base.name + "[c]");
         this.base = base;
     }

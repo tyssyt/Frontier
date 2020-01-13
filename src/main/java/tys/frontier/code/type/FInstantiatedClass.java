@@ -6,7 +6,6 @@ import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
@@ -42,7 +41,7 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public FTypeIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return newIdentifier;
     }
 

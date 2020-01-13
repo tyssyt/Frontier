@@ -55,7 +55,7 @@ public class ParserTest {
     @Test
     public void parseAccessForbiddenClass() throws Exception {
         SyntaxError e = parseSyntaxError("AccessForbiddenClass.front");
-        assertEquals(TypeNotFound.class, e.getClass());
+        assertEquals(UndeclaredVariable.class, e.getClass()); //this was TypeNotFound before the identifier change, due to how findLocal findType works we now classify B as not found local variable and not found type
     }
     @Test
     public void parseAvoidCastingEverythingToBool() throws Exception {

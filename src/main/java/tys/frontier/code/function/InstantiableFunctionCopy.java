@@ -1,7 +1,7 @@
 package tys.frontier.code.function;
 
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -13,7 +13,7 @@ public class InstantiableFunctionCopy extends WithInstantiatedSignature {
 
     //TODO the places in code where this is used can be simplified where we just create a copy of the type of base function that uses instantiable vars instead
 
-    private Map<FTypeIdentifier, FTypeVariable> newParameters;
+    private Map<FIdentifier, FTypeVariable> newParameters;
     private List<FTypeVariable> newParametersList;
 
     private InstantiableFunctionCopy(FFunction base) {
@@ -58,7 +58,7 @@ public class InstantiableFunctionCopy extends WithInstantiatedSignature {
     }
 
     @Override
-    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+    public Map<FIdentifier, FTypeVariable> getParameters() {
         return newParameters;
     }
 

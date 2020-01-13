@@ -81,8 +81,8 @@ export static main () {
 
     //forwarding non generic in generic
     gen := createGenericWithDelegateFromOutside();
-    //IO.printInt(gen.doSthUseful(\i j -> i+j)); //TODO i32<returnvalue<i64, so maybe this is correct to fail here, should analyse
-    IO.printInt(gen.doSthUseful(\int32 i int32 j -> i+j)); //so giving types is enough, nice
+    //IO.printInt(gen.doSthUseful(\i, j -> i+j)); //TODO i32<returnvalue<i64, so maybe this is correct to fail here, should analyse
+    IO.printInt(gen.doSthUseful(\i: int32,  j: int32 -> i+j)); //so giving types is enough, nice
     IO.printInt(gen);
 
     IO.print("|");
@@ -95,7 +95,7 @@ export static main () {
 
     IO.print("|");
 
-    IO.printInt(moregen.doSthUseful(\i j -> i[0] + j));
+    IO.printInt(moregen.doSthUseful(\i, j -> i[0] + j));
 
     IO.print("|");
 

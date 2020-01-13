@@ -2,7 +2,7 @@ package tys.frontier.code.predefinedClasses;
 
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
@@ -11,7 +11,7 @@ public class FFloat64 extends FPredefinedClass {
     public static final FFloat64 INSTANCE = new FFloat64();
 
     private FFloat64 () {
-        super(FTypeIdentifier.FLOAT64);
+        super(FIdentifier.FLOAT64);
 
         try {
             addFunction(UnaryOperator.NEG.createPredefined(this, this));

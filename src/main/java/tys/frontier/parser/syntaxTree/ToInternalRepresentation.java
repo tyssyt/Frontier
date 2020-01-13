@@ -15,9 +15,7 @@ import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.Operator;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.UnnamedIdentifier;
 import tys.frontier.code.literal.FLambda;
 import tys.frontier.code.literal.FLiteral;
@@ -68,7 +66,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     private List<SyntaxError> errors;
 
     private FClass currentType;
-    private Map<FTypeIdentifier, FTypeVariable> currentTypeParams;
+    private Map<FIdentifier, FTypeVariable> currentTypeParams;
     private Deque<FunctionContext> functionContextStack = new ArrayDeque<>();
     private Map<FVariable, FTypeVariable> typeVariableMap = new HashMap<>();
 
@@ -98,7 +96,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return functionContextStack.getLast();
     }
 
-    private FType findType(FTypeIdentifier identifier) {
+    private FType findType(FIdentifier identifier, boolean searchLocal) throws TypeNotFound {
         //check type parameters of current function
         if (!functionContextStack.isEmpty() && currentFunction().function != null) {
             FType res = currentFunction().function.getParameters().get(identifier);
@@ -113,15 +111,27 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         res = file.resolveType(identifier);
         if (res != null)
             return res;
-        //check for declaration of type variables
+        if (searchLocal) {
+            //check for declaration of type variables
+            try {
+                FExpression local = findLocal(identifier, false);
+                if (local instanceof FVariableExpression)
+                    return typeVariableMap.get(((FVariableExpression) local).getVariable());
+                else
+                    return Utils.NYI("resolving to a Type that is stored in a field of Type Type");
+            } catch (UndeclaredVariable undeclaredVariable) {
+                throw new TypeNotFound(identifier);
+            }
+        }
+        throw new TypeNotFound(identifier);
+    }
+
+    private FType findTypeNoThrow(FIdentifier identifier) {
         try {
-            FExpression local = findLocal(identifier, false);
-            if (local instanceof FVariableExpression)
-                return typeVariableMap.get(((FVariableExpression) local).getVariable());
-            else
-                return Utils.NYI("resolving to a Type that is stored in a field of Type Type");
-        } catch (UndeclaredVariable ignored) {}
-        return null;
+            return findType(identifier, true);
+        } catch (TypeNotFound ignored) {
+            return null;
+        }
     }
 
     @Override
@@ -132,7 +142,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         //handle typeParameterSpecification
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
-                ParserContextUtils.handleTypeParameterSpecification(c, currentTypeParams, this::findType);
+                ParserContextUtils.handleTypeParameterSpecification(c, currentTypeParams, this::findTypeNoThrow);
             } catch (SyntaxError syntaxError) {
                 errors.add(syntaxError);
             }
@@ -150,7 +160,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             FExpression exp1 = visitExpression(ctx.expression(0));
             exp1 = exp1.typeCheck(FFunctionType.from(
                     FTuple.from(Arrays.asList(currentType, FIntN._32)),
-                    FTypeVariable.create(new FTypeIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
+                    FTypeVariable.create(new FIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
             //TODO oh god this is one ugly hack (same as in field)
             FStatement statement = new FExpressionStatement(exp1);
             statement = instantiateFunctionAddresses(statement);
@@ -246,12 +256,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return functionCall(currentType, identifier, singletonList(getThisExpr()), ImmutableListMultimap.of(), lhsResolve);
         } catch (AccessForbidden accessForbidden) {
             return Utils.cantHappen();
-        } catch (UndeclaredVariable | FunctionNotFound ignored) { }
+        } catch (UndeclaredVariable | FunctionNotFound ignored) {}
         try {
             return functionCall(currentType, identifier, emptyList(), ImmutableListMultimap.of(), lhsResolve);
         } catch (AccessForbidden accessForbidden) {
             return Utils.cantHappen();
         } catch (FunctionNotFound ignored) {}
+        try {
+            return new FClassExpression(findType(identifier, false));
+        } catch (TypeNotFound ignored) {}
         throw new UndeclaredVariable(identifier);
     }
 
@@ -303,7 +316,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
-                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function.getParameters(), this::findType);
+                ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function.getParameters(), this::findTypeNoThrow);
             } catch (SyntaxError syntaxError) {
                 errors.add(syntaxError);
             }
@@ -422,7 +435,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     private FVarDeclaration visitAssignLhsDecl(FrontierParser.AssignLhsContext ctx, FType type) {
-        FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
 
         boolean failed = false;
 
@@ -434,7 +447,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FrontierParser.TypeTypeContext tc = ctx.typeType();
         if (tc != null) { //explicit type
             try {
-                type = ParserContextUtils.getType(tc, this::findType);
+                type = ParserContextUtils.getType(tc, this::findTypeNoThrow);
             } catch (SyntaxError e) {
                 errors.add(e);
                 failed = true;
@@ -451,7 +464,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         FLocalVariable var = new FLocalVariable(identifier, type);
         if (var.getType() == FTypeType.INSTANCE) {
-            FTypeVariable typeVar = FTypeVariable.create((FTypeIdentifier) identifier, true);
+            FTypeVariable typeVar = FTypeVariable.create(identifier, true);
             typeVariableMap.put(var, typeVar);
         }
         currentFunction().declaredVars.put(identifier, var);
@@ -538,10 +551,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FLoopIdentifier identifier = startLoop();
         try {
             FExpression container = visitExpression(ctx.expression());
-            List<AttributeIdentifier> ids = new ArrayList<>();
+            List<FIdentifier> ids = new ArrayList<>();
             boolean failed = false;
-            for (TerminalNode node : ctx.LCIdentifier()) {
-                AttributeIdentifier id = new AttributeIdentifier(node.getText());
+            for (TerminalNode node : ctx.IDENTIFIER()) {
+                FIdentifier id = new FIdentifier(node.getText());
                 if (currentFunction().declaredVars.contains(id)) {
                     errors.add(new TwiceDefinedLocalVariable(id));
                     failed = true;
@@ -564,7 +577,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 throw new Failed();
 
             List<FLocalVariable> vars = new ArrayList<>(ids.size());
-            for (Pair<AttributeIdentifier, FType> pair : Utils.zip(ids, types)) {
+            for (Pair<FIdentifier, FType> pair : Utils.zip(ids, types)) {
                 FLocalVariable var = new FLocalVariable(pair.a, pair.b);
                 vars.add(var);
                 currentFunction().declaredVars.put(var.getIdentifier(), var);
@@ -618,7 +631,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     private FLocalVariableExpression getThisExpr() throws UndeclaredVariable {
-        return new FLocalVariableExpression(findLocalVar(AttributeIdentifier.THIS));
+        return new FLocalVariableExpression(findLocalVar(FIdentifier.THIS));
     }
 
     @Override
@@ -635,7 +648,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public FExpression visitVariableExpr(FrontierParser.VariableExprContext ctx) {
         boolean lhsResolve = useLhsresolve;
         useLhsresolve = false;
-        FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         try {
             return findLocal(identifier, lhsResolve);
         } catch (UndeclaredVariable undeclaredVariable) {
@@ -670,7 +683,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return Utils.NYI("unary op lhs resolve");
 
         FExpression expression = visitExpression(ctx.expression());
-        AttributeIdentifier identifier = new AttributeIdentifier(ctx.getChild(0).getText() + '_');
+        FIdentifier identifier = new FIdentifier(ctx.getChild(0).getText() + '_');
 
         try {
             return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of(), false);
@@ -691,7 +704,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             throw f;
         }
         FExpression second = visitExpression(ctx.expression(1));
-        AttributeIdentifier identifier = new AttributeIdentifier(ctx.getChild(1).getText());
+        FIdentifier identifier = new FIdentifier(ctx.getChild(1).getText());
 
         try {
             return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), false);
@@ -720,7 +733,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             type = ((FOptional) castedExpression.getType()).getBaseType();
         } else {
             try {
-                type = ParserContextUtils.getType(ctx.typeType(), this::findType);
+                type = ParserContextUtils.getType(ctx.typeType(), this::findTypeNoThrow);
             } catch (SyntaxError e) {
                 errors.add(e);
                 throw new Failed();
@@ -788,7 +801,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return ImmutableListMultimap.of();
         ListMultimap<FIdentifier, FExpression> res = MultimapBuilder.linkedHashKeys().arrayListValues().build();
         for (FrontierParser.NamedExpressionContext c : ctx.namedExpression()) {
-            res.putAll(ParserContextUtils.getVarIdentifier(c.identifier()), visitTupleExpression(c.tupleExpression()));
+            res.putAll(new FIdentifier(c.IDENTIFIER().getText()), visitTupleExpression(c.tupleExpression()));
         }
         return res;
     }
@@ -804,7 +817,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public FExpression visitExternalFunctionCall(FrontierParser.ExternalFunctionCallContext ctx) {
         boolean lhsResolve = useLhsresolve;
         useLhsresolve = false;
-        FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         FType namespace;
 
         try {
@@ -842,8 +855,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FLambda visitLambda(FrontierParser.LambdaContext ctx) {
-        AttributeIdentifier id = currentType.getFreshLambdaName();
-        Map<FTypeIdentifier, FTypeVariable> parameters = new HashMap<>();
+        FIdentifier id = currentType.getFreshLambdaName();
+        Map<FIdentifier, FTypeVariable> parameters = new HashMap<>();
         ImmutableList<FParameter> params;
         try {
             params = visitLambdaHeader(ctx.lambdaHeader(), parameters);
@@ -851,7 +864,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             errors.add(syntaxError);
             throw new Failed();
         }
-        FTypeVariable returnType = FTypeVariable.create(new FTypeIdentifier("ReturnOf" + id.name), false);
+        FTypeVariable returnType = FTypeVariable.create(new FIdentifier("ReturnOf" + id.name), false);
         parameters.put(returnType.getIdentifier(), returnType);
         FLambda res = FLambda.create(id, currentType, returnType, params, parameters);
         currentType.addFunctionTrusted(res);
@@ -895,7 +908,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
     }
 
-    public ImmutableList<FParameter> visitLambdaHeader(FrontierParser.LambdaHeaderContext ctx, Map<FTypeIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+    public ImmutableList<FParameter> visitLambdaHeader(FrontierParser.LambdaHeaderContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         for (FrontierParser.LambdaParamContext c : ctx.lambdaParam()) {
             params.add(visitLambdaParam(c, parameters));
@@ -903,16 +916,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return params.build();
     }
 
-    public FParameter visitLambdaParam(FrontierParser.LambdaParamContext ctx, Map<FTypeIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
-        FrontierParser.IdentifierContext idContext = ctx.identifier();
+    public FParameter visitLambdaParam(FrontierParser.LambdaParamContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        TerminalNode idContext = ctx.IDENTIFIER();
         if (idContext != null) {
-            FIdentifier identifier = ParserContextUtils.getVarIdentifier(idContext);
+            FIdentifier identifier = new FIdentifier(idContext.getText());
             FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
             FType type;
             if (typeTypeContext != null) {
-                type = ParserContextUtils.getType(typeTypeContext, this::findType);
+                type = ParserContextUtils.getType(typeTypeContext, this::findTypeNoThrow);
             } else {
-                type = FTypeVariable.create(new FTypeIdentifier("TypeOf" + identifier.name), false);
+                type = FTypeVariable.create(new FIdentifier("TypeOf" + identifier.name), false);
                 parameters.put(type.getIdentifier(), (FTypeVariable) type);
             }
             return FParameter.create(identifier, type, false);
@@ -926,7 +939,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         boolean lhsResolve = useLhsresolve;
         useLhsresolve = false;
         //first check if we have a variable of function type
-        FIdentifier identifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
         try {
             FExpression var = findLocal(identifier, lhsResolve);
@@ -942,7 +955,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
 
         //now check for instance/static functions
-        AttributeIdentifier fIdentifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+        FIdentifier fIdentifier = new FIdentifier(ctx.IDENTIFIER().getText());
         try {
             List<FExpression> params2 = new ArrayList<>(arguments.a.size() + 1);
             params2.add(getThisExpr());
@@ -963,7 +976,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
         FType type;
         try {
-            type = ParserContextUtils.getType(ctx.typeType(), this::findType);
+            type = ParserContextUtils.getType(ctx.typeType(), this::findTypeNoThrow);
         } catch (SyntaxError e) {
             errors.add(e);
             visitNamedExpressions(ctx.namedExpressions()); //parse param list to find more errors
@@ -984,7 +997,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         FType baseType;
         try {
-            baseType = ParserContextUtils.getType(ctx.typeType(), this::findType);
+            baseType = ParserContextUtils.getType(ctx.typeType(), this::findTypeNoThrow);
         } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();
@@ -1002,7 +1015,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     @Override
     public FClassExpression visitTypeTypeExpr(FrontierParser.TypeTypeExprContext ctx) {
         try {
-            FType fType = ParserContextUtils.getType(ctx.typeType(), this::findType);
+            FType fType = ParserContextUtils.getType(ctx.typeType(), this::findTypeNoThrow);
             return new FClassExpression(fType);
         } catch (SyntaxError e) {
             errors.add(e);
@@ -1022,10 +1035,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     @Override
     public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
         try {
-            List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findType)) : null;
-            AttributeIdentifier identifier;
-            if (ctx.LCIdentifier() != null)
-                identifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+            List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findTypeNoThrow)) : null;
+            FIdentifier identifier;
+            if (ctx.IDENTIFIER() != null)
+                identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             else
                 identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
             FFunction function = getFunction(currentType, identifier, params);
@@ -1040,11 +1053,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     @Override
     public FFunctionAddress visitFunctionAddress(FrontierParser.FunctionAddressContext ctx) {
         try {
-            FType fClass = ParserContextUtils.getType(ctx.typeType(), this::findType);
-            List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findType)) : null;
-            AttributeIdentifier identifier;
-            if (ctx.LCIdentifier() != null)
-                identifier = new AttributeIdentifier(ctx.LCIdentifier().getText());
+            FType fClass = ParserContextUtils.getType(ctx.typeType(), this::findTypeNoThrow);
+            List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findTypeNoThrow)) : null;
+            FIdentifier identifier;
+            if (ctx.IDENTIFIER() != null)
+                identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             else
                 identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
             FFunction function = getFunction(fClass, identifier, params);
@@ -1057,7 +1070,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     //TODO check why this is different/more complex then functionCall (should functionCall call this?, comment why not)
-    private FFunction getFunction(FType fClass, AttributeIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
+    private FFunction getFunction(FType fClass, FIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(fClass instanceof FClass))
             throw new FunctionNotFound(identifier, params, ImmutableListMultimap.of());
         if (params == null) {

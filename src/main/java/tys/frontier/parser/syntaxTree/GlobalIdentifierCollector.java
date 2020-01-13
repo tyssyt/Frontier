@@ -8,9 +8,7 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Operator;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.type.FClass;
@@ -83,8 +81,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         boolean natiwe = ctx.NATIVE() != null;
 
         //type Parameters
-        Map<FTypeIdentifier, FTypeVariable> typeParameters;
-        Function<FTypeIdentifier, FType> typeResolver;
+        Map<FIdentifier, FTypeVariable> typeParameters;
+        Function<FIdentifier, FType> typeResolver;
         {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
@@ -142,7 +140,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         if (ctx.STATIC() == null) {
-            params.add(FParameter.create(AttributeIdentifier.THIS, currentClass, false));
+            params.add(FParameter.create(FIdentifier.THIS, currentClass, false));
         }
 
 
@@ -151,10 +149,10 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             ImmutableList<FParameter> parameters = params.build();
 
             //identifier
-            AttributeIdentifier identifier;
-            TerminalNode identifierNode = ctx.LCIdentifier();
+            FIdentifier identifier;
+            TerminalNode identifierNode = ctx.IDENTIFIER();
             if (identifierNode != null) {
-                identifier = new AttributeIdentifier(identifierNode.getText());
+                identifier = new FIdentifier(identifierNode.getText());
             } else {
                 //Operator overloading
                 Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
@@ -174,7 +172,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         return null;
     }
 
-    public void formalParameters(FrontierParser.FormalParametersContext ctx, ImmutableList.Builder<FParameter> params, Function<FTypeIdentifier, FType> possibleTypes) throws SyntaxErrors {
+    public void formalParameters(FrontierParser.FormalParametersContext ctx, ImmutableList.Builder<FParameter> params, Function<FIdentifier, FType> possibleTypes) throws SyntaxErrors {
         List<FrontierParser.FormalParameterContext> cs = ctx.formalParameter();
         List<SyntaxError> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
@@ -195,7 +193,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
-            FIdentifier identifier = ParserContextUtils.getVarIdentifier(ctx.identifier());
+            FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveType);
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
             currentClass.addField(res);
@@ -214,7 +212,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         return null;
     }
 
-    private FType resolveType(FTypeIdentifier identifier) {
+    private FType resolveType(FIdentifier identifier) {
         for (FType p : currentClass.getParametersList()) {
             if (p.getIdentifier().equals(identifier))
                 return p;

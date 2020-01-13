@@ -2,7 +2,6 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
@@ -33,5 +32,5 @@ public interface FType extends IdentifierNameable, StringBuilderToString {
     ForImpl getForImpl();
 
     @Override
-    FTypeIdentifier getIdentifier();
+    FIdentifier getIdentifier();
 }

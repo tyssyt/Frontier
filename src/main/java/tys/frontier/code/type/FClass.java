@@ -11,9 +11,7 @@ import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
@@ -34,7 +32,7 @@ public interface FClass extends FType, HasVisibility {
     long concreteness();
 
     @Override
-    FTypeIdentifier getIdentifier();
+    FIdentifier getIdentifier();
 
     @Override
     FVisibilityModifier getVisibility();
@@ -59,7 +57,7 @@ public interface FClass extends FType, HasVisibility {
 
     Map<FType, FField> getDirectDelegates();
 
-    AttributeIdentifier getFreshLambdaName();
+    FIdentifier getFreshLambdaName();
 
     void setForImpl(ForImpl forImpl);
 

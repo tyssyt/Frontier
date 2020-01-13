@@ -1,10 +1,10 @@
 package tys.frontier.code.identifier;
 
-public class FArrayIdentifier extends FTypeIdentifier {
+public class FArrayIdentifier extends FIdentifier {
 
-    public final FTypeIdentifier baseClass;
+    public final FIdentifier baseClass;
 
-    public FArrayIdentifier(FTypeIdentifier baseClass) {
+    public FArrayIdentifier(FIdentifier baseClass) {
         super(baseClass.name + "[]");
         this.baseClass = baseClass;
     }

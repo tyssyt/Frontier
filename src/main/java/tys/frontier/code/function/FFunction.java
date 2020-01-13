@@ -2,7 +2,6 @@ package tys.frontier.code.function;
 
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
@@ -59,7 +58,7 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
 
     FLocalVariable getFreshVariable(FType type);
 
-    Map<FTypeIdentifier, FTypeVariable> getParameters();
+    Map<FIdentifier, FTypeVariable> getParameters();
 
     List<FTypeVariable> getParametersList(); //TODO see if we can eliminate either this or the map
 

@@ -2,10 +2,18 @@ package tys.frontier.code.identifier;
 
 import tys.frontier.util.Utils;
 
-public abstract class FIdentifier {
+public class FIdentifier {
+
+    public static final FIdentifier THIS = new FIdentifier("!this");
+
+    public static final FIdentifier BOOL = new FIdentifier("!Bool");
+    public static final FIdentifier FLOAT32 = new FIdentifier("!Float32");
+    public static final FIdentifier FLOAT64 = new FIdentifier("!Float64");
+    public static final FIdentifier VOID = new FIdentifier("!Void");
+
     public final String name;
 
-    protected FIdentifier(String name) {
+    public FIdentifier(String name) {
         this.name = Utils.removeLeadingUnderscores(name);
     }
 

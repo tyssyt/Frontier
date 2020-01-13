@@ -4,7 +4,7 @@ import com.google.common.collect.MoreCollectors;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
@@ -24,7 +24,7 @@ public class Module {
     private List<Path> nativeIncludes = new ArrayList<>();
 
     //cached thingies
-    private Map<FTypeIdentifier, FClass> exportedClasses;
+    private Map<FIdentifier, FClass> exportedClasses;
     private List<ParsedFile> files;
 
     public ParsedFile getEntryPoint() {
@@ -44,19 +44,19 @@ public class Module {
         this.entryPoint = entryPoint;
     }
 
-    public Map<FTypeIdentifier, FClass> getExportedClasses() {
+    public Map<FIdentifier, FClass> getExportedClasses() {
         if (exportedClasses == null)
             exportedClasses = initExportedClasses();
         return exportedClasses;
     }
 
-    private Map<FTypeIdentifier, FClass> initExportedClasses() {
+    private Map<FIdentifier, FClass> initExportedClasses() {
         return getClasses()
                 .filter(_class -> _class.getVisibility() == FVisibilityModifier.EXPORT)
                 .collect(toMap(FClass::getIdentifier, Function.identity()));
     }
 
-    public FClass getClass(FTypeIdentifier identifier) {
+    public FClass getClass(FIdentifier identifier) {
         for (ParsedFile file : getFiles()) {
             FClass _class = file.getClass(identifier);
             if (_class != null && _class.getVisibility() != FVisibilityModifier.PRIVATE)

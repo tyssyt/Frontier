@@ -2,9 +2,7 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
@@ -37,10 +35,10 @@ public class FieldAccessor implements FFunction {
     public static Pair<FieldAccessor, FieldAccessor> createAccessors(FField field) {
         ImmutableList<FParameter> parameters;
         if (field.isInstance())
-            parameters = ImmutableList.of(FParameter.create(AttributeIdentifier.THIS, field.getMemberOf(), false));
+            parameters = ImmutableList.of(FParameter.create(FIdentifier.THIS, field.getMemberOf(), false));
         else
             parameters = ImmutableList.of();
-        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new AttributeIdentifier("value"), field.getType(), false));
+        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), field.getType(), false));
 
         return new Pair<>(
                 new FieldAccessor(field, parameters, null, field.getType()), //getter
@@ -127,7 +125,7 @@ public class FieldAccessor implements FFunction {
     }
 
     @Override
-    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+    public Map<FIdentifier, FTypeVariable> getParameters() {
         return emptyMap();
     }
 

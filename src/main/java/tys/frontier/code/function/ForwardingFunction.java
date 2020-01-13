@@ -4,7 +4,6 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -96,7 +95,7 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+    public Map<FIdentifier, FTypeVariable> getParameters() {
         return proxy.getParameters();
     }
 

@@ -3,7 +3,7 @@ package tys.frontier.code.identifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.type.FType;
 
-public class FInstantiatedFunctionIdentifier extends AttributeIdentifier {
+public class FInstantiatedFunctionIdentifier extends FIdentifier {
 
     public final FIdentifier baseIdentifier;
     public final TypeInstantiation typeInstantiation;

@@ -1,12 +1,12 @@
 package tys.frontier.parser.syntaxErrors;
 
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 public class TypeNotFound extends SyntaxError {
 
-    public final FTypeIdentifier identifier;
+    public final FIdentifier identifier;
 
-    public TypeNotFound(FTypeIdentifier identifier) {
+    public TypeNotFound(FIdentifier identifier) {
         super(identifier.toString());
         this.identifier = identifier;
     }

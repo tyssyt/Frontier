@@ -6,8 +6,7 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.AttributeIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 
@@ -16,11 +15,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class FLambda extends FBaseFunction {
-    private FLambda(AttributeIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    private FLambda(FIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FIdentifier, FTypeVariable> parameters) {
         super(identifier, memberOf, FVisibilityModifier.NONE, false, returnType, params, null, parameters);
     }
 
-    public static FLambda create(AttributeIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public static FLambda create(FIdentifier identifier, FType memberOf, FType returnType, ImmutableList<FParameter> params, Map<FIdentifier, FTypeVariable> parameters) {
         return new FLambda(identifier, memberOf, returnType, params, parameters);
     }
 

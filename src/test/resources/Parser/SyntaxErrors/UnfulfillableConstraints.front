@@ -36,5 +36,5 @@ export class Outside:
 
 export static main () {
     moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(IntList.create(),49));
-    i:int32 = moregen.doSthUseful(\i j -> j.get(0) + i); //borked cause i and j is switched
+    i:int32 = moregen.doSthUseful(\i, j -> j.get(0) + i); //borked cause i and j is switched
 }

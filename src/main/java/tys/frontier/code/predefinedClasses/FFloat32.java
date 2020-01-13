@@ -1,6 +1,6 @@
 package tys.frontier.code.predefinedClasses;
 
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 
 public class FFloat32 extends FPredefinedClass {
 
@@ -12,6 +12,6 @@ public class FFloat32 extends FPredefinedClass {
     }
 
     private FFloat32 () {
-        super(FTypeIdentifier.FLOAT32);
+        super(FIdentifier.FLOAT32);
     }
 }

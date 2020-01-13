@@ -9,8 +9,8 @@ import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Access;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FArrayIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FArray extends FPredefinedClass {
 
-    public static final AttributeIdentifier SIZE = new AttributeIdentifier("size");
-    public static final AttributeIdentifier C_ARRAY = new AttributeIdentifier("c_array");
+    public static final FIdentifier SIZE = new FIdentifier("size");
+    public static final FIdentifier C_ARRAY = new FIdentifier("c_array");
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
@@ -42,7 +42,7 @@ public class FArray extends FPredefinedClass {
         Pair<FFunction, FFunction> access = Access.createPredefined(this, FIntN._32, baseType);
         addFunctionTrusted(access.a);
         addFunctionTrusted(access.b);
-        addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, this, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(AttributeIdentifier.THIS, this, false)), null, Collections.emptyMap()));
+        addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, this, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(FIdentifier.THIS, this, false)), null, Collections.emptyMap()));
 
         addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
         setForImpl(new ForByIdx(access.a, size.getGetter()));

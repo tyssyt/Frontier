@@ -6,10 +6,7 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
-import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
@@ -30,13 +27,13 @@ public class FBaseFunction implements FFunction {
     private Signature signature;
     private Signature lhsSignature;
 
-    protected Map<FTypeIdentifier, FTypeVariable> parameters;
+    protected Map<FIdentifier, FTypeVariable> parameters;
     protected List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
     protected boolean predefined = false;
 
-    public FBaseFunction(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public FBaseFunction(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -57,7 +54,7 @@ public class FBaseFunction implements FFunction {
         }
     }
 
-    public static FBaseFunction createPredefined(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FTypeIdentifier, FTypeVariable> parameters) {
+    public static FBaseFunction createPredefined(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         FBaseFunction res = new FBaseFunction(identifier, memberOf, modifier, false, returnType, params, assignees, parameters);
         res.predefined = true;
         return res;
@@ -127,14 +124,14 @@ public class FBaseFunction implements FFunction {
     @Override
     public FLocalVariable getFreshVariable(FType type) {
         String name = freshVariableNames.next();
-        FIdentifier identifier = type == FTypeType.INSTANCE ? new FTypeIdentifier(name) : new AttributeIdentifier(name);
+        FIdentifier identifier = new FIdentifier(name) ;
         //TODO maybe be tryhards and try to find good names? like using the type as prefix?
         return new FLocalVariable(identifier, type);
     }
 
 
     @Override
-    public Map<FTypeIdentifier, FTypeVariable> getParameters() {
+    public Map<FIdentifier, FTypeVariable> getParameters() {
         return parameters;
     }
 

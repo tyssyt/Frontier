@@ -6,9 +6,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
@@ -23,7 +21,7 @@ import java.util.Map;
 
 public class FBaseClass implements FClass {
 
-    private FTypeIdentifier identifier;
+    private FIdentifier identifier;
     private FVisibilityModifier visibility;
     private FVisibilityModifier constructorVisibility;
     private ImmutableList<FTypeVariable> parametersList;
@@ -40,7 +38,7 @@ public class FBaseClass implements FClass {
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
 
-    public FBaseClass(FTypeIdentifier identifier, FVisibilityModifier visibility) {
+    public FBaseClass(FIdentifier identifier, FVisibilityModifier visibility) {
         this.identifier = identifier;
         this.visibility = visibility;
         this.parametersList = ImmutableList.of();
@@ -88,7 +86,7 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public FTypeIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -162,8 +160,8 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public AttributeIdentifier getFreshLambdaName() {
-        return new AttributeIdentifier(lambdaNames.next());
+    public FIdentifier getFreshLambdaName() {
+        return new FIdentifier(lambdaNames.next());
     }
 
     @Override

@@ -8,9 +8,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.loop.forImpl.FTypeVariableForImpl;
@@ -38,7 +36,7 @@ public class FTypeVariable implements FType {
         private ListMultimap<FIdentifier, FType> keywordArgs;
         private boolean lhsResolve;
 
-        public ReturnTypeOf(FTypeIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, boolean lhsResolve) {
+        public ReturnTypeOf(FIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, boolean lhsResolve) {
             super(identifier, fixed, TypeConstraints.create());
             this.positionalArgs = positionalArgs;
             this.keywordArgs = keywordArgs;
@@ -66,16 +64,16 @@ public class FTypeVariable implements FType {
         }
     }
 
-    private FTypeIdentifier identifier;
+    private FIdentifier identifier;
     private TypeConstraints constraints;
     private NameGenerator returnTypeNames;
     private FTypeVariableForImpl forImpl = new FTypeVariableForImpl(this);
 
-    public static FTypeVariable create(FTypeIdentifier identifier, boolean fixed) {
+    public static FTypeVariable create(FIdentifier identifier, boolean fixed) {
         return new FTypeVariable(identifier, fixed, TypeConstraints.create());
     }
 
-    protected FTypeVariable(FTypeIdentifier identifier, boolean fixed, TypeConstraints constraints) {
+    protected FTypeVariable(FIdentifier identifier, boolean fixed, TypeConstraints constraints) {
         this.identifier = identifier;
         this.constraints = constraints;
         if (fixed)
@@ -85,7 +83,7 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public FTypeIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -166,7 +164,7 @@ public class FTypeVariable implements FType {
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
-            FIdentifier id = arg == FTypeType.INSTANCE ? new FTypeIdentifier(paramNames.next()) : new AttributeIdentifier(paramNames.next());
+            FIdentifier id = arg == FTypeType.INSTANCE ? new FIdentifier(paramNames.next()) : new FIdentifier(paramNames.next());
             paramsBuilder.add(FParameter.create(id, arg, false));
         }
         for (Map.Entry<FIdentifier, List<FType>> entry : Multimaps.asMap(keywordArgs).entrySet()) {
@@ -175,7 +173,7 @@ public class FTypeVariable implements FType {
         ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
         if (returnType == null)
-            returnType = new ReturnTypeOf(new FTypeIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs, lhsResolve);
+            returnType = new ReturnTypeOf(new FIdentifier(returnTypeNames.next()), isFixed(), positionalArgs, keywordArgs, lhsResolve);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
         FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params, null, emptyMap());
         if (returnType instanceof ReturnTypeOf)

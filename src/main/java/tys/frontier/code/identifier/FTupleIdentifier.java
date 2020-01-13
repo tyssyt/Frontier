@@ -5,7 +5,7 @@ import tys.frontier.util.Utils;
 
 import java.util.List;
 
-public class FTupleIdentifier extends FTypeIdentifier {
+public class FTupleIdentifier extends FIdentifier {
 
     public FTupleIdentifier(List<FType> types) {
         super(getName(types));

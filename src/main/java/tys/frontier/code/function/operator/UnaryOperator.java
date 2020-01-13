@@ -6,7 +6,7 @@ import com.google.common.collect.Iterables;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.identifier.AttributeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierLexer;
 
@@ -17,16 +17,16 @@ import static java.util.Collections.emptyMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum UnaryOperator implements Operator {
-    NOT(getParserToken(FrontierLexer.EXMARK), new AttributeIdentifier("!_")),
-    NEG(getParserToken(FrontierLexer.SUB),    new AttributeIdentifier("-_"));
+    NOT(getParserToken(FrontierLexer.EXMARK), new FIdentifier("!_")),
+    NEG(getParserToken(FrontierLexer.SUB),    new FIdentifier("-_"));
 
     private static final ImmutableMap<String, UnaryOperator> parserTokenMap =
             Arrays.stream(values()).collect(toImmutableMap(o -> o.parserToken, o -> o));
 
     public final String parserToken;
-    public final AttributeIdentifier identifier;
+    public final FIdentifier identifier;
 
-    UnaryOperator(String parserToken, AttributeIdentifier identifier) {
+    UnaryOperator(String parserToken, FIdentifier identifier) {
         this.parserToken = parserToken;
         this.identifier = identifier;
     }
@@ -36,7 +36,7 @@ public enum UnaryOperator implements Operator {
     }
 
     @Override
-    public AttributeIdentifier getIdentifier() {
+    public FIdentifier getIdentifier() {
         return identifier;
     }
 
@@ -50,7 +50,7 @@ public enum UnaryOperator implements Operator {
     }
 
     public FFunction createPredefined(FClass memberOf, FClass ret) {
-        ImmutableList<FParameter> params = ImmutableList.of(FParameter.create(AttributeIdentifier.THIS, memberOf, false));
+        ImmutableList<FParameter> params = ImmutableList.of(FParameter.create(FIdentifier.THIS, memberOf, false));
         return new FBaseFunction(identifier, memberOf, memberOf.getVisibility(), false, ret, params, null, emptyMap()) {
             {predefined = true;}
         };

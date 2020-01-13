@@ -1,10 +1,10 @@
 package tys.frontier.code.identifier;
 
-public class FOptionalIdentifier extends FTypeIdentifier {
+public class FOptionalIdentifier extends FIdentifier {
 
-    public final FTypeIdentifier baseClass;
+    public final FIdentifier baseClass;
 
-    public FOptionalIdentifier(FTypeIdentifier baseClass) {
+    public FOptionalIdentifier(FIdentifier baseClass) {
         super(baseClass.name + "?");
         this.baseClass = baseClass;
     }

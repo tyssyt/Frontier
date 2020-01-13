@@ -1,6 +1,7 @@
 package tys.frontier.parser;
 
-import tys.frontier.code.identifier.FTypeIdentifier;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -28,7 +29,7 @@ public class ParsedFile {
     private ParsedFile parent;
     private List<ParsedFile> includes = new ArrayList<>();
     private List<Module> imports = new ArrayList<>();
-    private Map<FTypeIdentifier, FClass> classes = new LinkedHashMap<>();
+    private Map<FIdentifier, FClass> classes = new LinkedHashMap<>();
 
     public ParsedFile(FrontierParser.FileContext fileContext, Path filePath) {
         this.treeData = new SyntaxTreeData(fileContext);
@@ -62,7 +63,7 @@ public class ParsedFile {
         imports.add(_import);
     }
 
-    public FClass getClass(FTypeIdentifier identifier) {
+    public FClass getClass(FIdentifier identifier) {
         return classes.get(identifier);
     }
 
@@ -71,7 +72,7 @@ public class ParsedFile {
         return classes.put(_class.getIdentifier(), _class);
     }
 
-    public Map<FTypeIdentifier, FClass> getClasses() {
+    public Map<FIdentifier, FClass> getClasses() {
         return classes;
     }
 
@@ -87,7 +88,7 @@ public class ParsedFile {
         List<FrontierParser.ImportStatementContext> ctxs = treeData.root.importStatement();
         List<String> res = new ArrayList<>(ctxs.size());
         for (FrontierParser.ImportStatementContext ctx : ctxs) {
-            res.add(ctx.identifier().getChild(0).getText());
+            res.add(ctx.IDENTIFIER().getText());
         }
         return res;
     }
@@ -108,7 +109,7 @@ public class ParsedFile {
                 boolean recursive = folderPathContext.STAR().size() == 2;
                 Iterable<Path> pathIterable = recursive ? fileTraverser().breadthFirst(folder) : listFiles(folder);
 
-                FrontierParser.IdentifierContext identifierContext = folderPathContext.identifier();
+                TerminalNode identifierContext = folderPathContext.IDENTIFIER();
                 String fileExtension = identifierContext == null ? null : identifierContext.getText();
                 for (Path path : pathIterable)
                     if (!isDirectory(path) && (fileExtension == null || fileExtension.equals(getFileExtension(path))))
@@ -125,7 +126,7 @@ public class ParsedFile {
     }
 
     //TODO this does not work multithreaded if any of the parents is worked on!
-    public FClass resolveType(FTypeIdentifier identifier) {
+    public FClass resolveType(FIdentifier identifier) {
         FClass res = classes.get(identifier); //allows private classes
         if (res != null)
             return res;

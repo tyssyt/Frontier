@@ -2,7 +2,7 @@ package tys.frontier.code.predefinedClasses;
 
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
-import tys.frontier.code.identifier.FTypeIdentifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
@@ -17,7 +17,7 @@ public class FBool extends FPredefinedClass {
 
 
     private FBool() {
-        super(FTypeIdentifier.BOOL);
+        super(FIdentifier.BOOL);
     }
 
     private void addFunctionsInstance() {

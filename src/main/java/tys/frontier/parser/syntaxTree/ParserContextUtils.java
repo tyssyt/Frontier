@@ -5,9 +5,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.identifier.AttributeIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FTypeIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
@@ -34,7 +32,7 @@ public final class ParserContextUtils {
 
     public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
         FClass res =  new FBaseClass(identifier, visibilityModifier);
         if (c != null) {
@@ -48,9 +46,9 @@ public final class ParserContextUtils {
         List<TypeParamerContext> nodes = ctx.typeParamer();
         List<FTypeVariable> vars = new ArrayList<>(nodes.size());
         List<Variance> variances = new ArrayList<>(nodes.size());
-        Set<FTypeIdentifier> seem = new HashSet<>();
+        Set<FIdentifier> seem = new HashSet<>();
         for (TypeParamerContext c : nodes) {
-            FTypeIdentifier id = new FTypeIdentifier(c.TypeIdentifier().getText());
+            FIdentifier id = new FIdentifier(c.IDENTIFIER().getText());
             if (!seem.add(id))
                 throw new TwiceDefinedLocalVariable(id);
 
@@ -84,8 +82,8 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FTypeIdentifier, FTypeVariable> params, Function<FTypeIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
-        FTypeIdentifier identifier = new FTypeIdentifier(ctx.TypeIdentifier().getText());
+    public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FIdentifier, FTypeVariable> params, Function<FIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         FTypeVariable typeVariable = params.get(identifier);
         if (typeVariable == null)
             throw new UndeclaredVariable(identifier);
@@ -127,8 +125,8 @@ public final class ParserContextUtils {
         }
     }
 
-    public static FType getNonPredefined(String id, Function<FTypeIdentifier, FType> possibleTypes) throws TypeNotFound {
-        FTypeIdentifier identifier = new FTypeIdentifier(id);
+    public static FType getNonPredefined(String id, Function<FIdentifier, FType> possibleTypes) throws TypeNotFound {
+        FIdentifier identifier = new FIdentifier(id);
         FType type = possibleTypes.apply(identifier);
         if (type==null) {
             throw new TypeNotFound(identifier);
@@ -136,12 +134,12 @@ public final class ParserContextUtils {
         return type;
     }
 
-    public static FType tupleFromList(TypeListContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+    public static FType tupleFromList(TypeListContext ctx, Function<FIdentifier, FType> possibleTypes)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         return FTuple.from(typeListFromList(ctx, possibleTypes));
     }
 
-    public static List<FType> typeListFromList(TypeListContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+    public static List<FType> typeListFromList(TypeListContext ctx, Function<FIdentifier, FType> possibleTypes)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         List<TypeTypeContext> cs = ctx.typeType();
         List<FType> res = new ArrayList<>(cs.size());
@@ -151,7 +149,7 @@ public final class ParserContextUtils {
         return res;
     }
 
-    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType base;
         if (ctx.Array() != null) {
@@ -170,8 +168,8 @@ public final class ParserContextUtils {
             return FFunctionType.from(in, out);
         } else if (ctx.predefinedType() != null) {
             base = getPredefined(ctx.predefinedType());
-        } else if (ctx.TypeIdentifier() != null) {
-            base = getNonPredefined(ctx.TypeIdentifier().getText(), possibleTypes);
+        } else if (ctx.IDENTIFIER() != null) {
+            base = getNonPredefined(ctx.IDENTIFIER().getText(), possibleTypes);
         } else if (ctx.typeType() != null) {
             return getType(ctx.typeType(), possibleTypes);
         } else {
@@ -201,10 +199,10 @@ public final class ParserContextUtils {
     public static Selector<FIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {
         if (ctx.STAR() != null && ctx.BACKSLASH() == null)
             return Selector.all();
-        List<TerminalNode> nodes = ctx.LCIdentifier();
+        List<TerminalNode> nodes = ctx.IDENTIFIER();
         List<FIdentifier> res = new ArrayList<>(nodes.size());
         for (TerminalNode node : nodes) {
-            res.add(new AttributeIdentifier(node.getText()));
+            res.add(new FIdentifier(node.getText()));
         }
         if (ctx.BACKSLASH() == null)
             return Selector.in(res);
@@ -212,17 +210,17 @@ public final class ParserContextUtils {
             return Selector.notIn(res);
     }
 
-    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FIdentifier, FType> possibleTypes)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         boolean hasDefaultValue = ctx.expression() != null;
         Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleTypes);
         return FParameter.create(pair.a, pair.b, hasDefaultValue);
     }
 
-    public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FTypeIdentifier, FType> possibleTypes)
+    public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FIdentifier, FType> possibleTypes)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         FType type = getType(ctx.typeType(), possibleTypes);
-        FIdentifier identifier = getVarIdentifier(ctx.identifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         return new Pair<>(identifier, type);
     }
 
@@ -269,16 +267,5 @@ public final class ParserContextUtils {
             }
         }
         return res;
-    }
-
-    public static FIdentifier getVarIdentifier(FrontierParser.IdentifierContext ctx) {
-        String text = ctx.getText();
-        char start = text.charAt(0);
-        if (Character.isUpperCase(start))
-            return new FTypeIdentifier(text);
-        else if (Character.isLowerCase(start))
-            return new AttributeIdentifier(text);
-        else
-            return Utils.cantHappen();
     }
 }

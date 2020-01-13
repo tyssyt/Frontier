@@ -76,7 +76,7 @@ file
     ;
 
 importStatement //TODO this is an ugly mess, I should just change modes (also can't handle paths that contain spaces etc)
-    :   IMPORT identifier SEMI
+    :   IMPORT IDENTIFIER SEMI
     ;
 
 includeStatement
@@ -84,17 +84,17 @@ includeStatement
     ;
 
 path
-    :   folder? identifier DOT identifier   #filePath
-    |   folder STAR STAR? (DOT identifier)? #folderPath
+    :   folder? IDENTIFIER DOT IDENTIFIER   #filePath
+    |   folder STAR STAR? (DOT IDENTIFIER)? #folderPath
     ;
 
 folder
-    :   (DOT DOT SLASH)+ (identifier SLASH)*
-    |   (DOT DOT SLASH)* (identifier SLASH)+
+    :   (DOT DOT SLASH)+ (IDENTIFIER SLASH)*
+    |   (DOT DOT SLASH)* (IDENTIFIER SLASH)+
     ;
 
 classDeclaration
-    :   visibilityModifier? NATIVE? CLASS TypeIdentifier typeParameters? COLON
+    :   visibilityModifier? NATIVE? CLASS IDENTIFIER typeParameters? COLON
         typeParameterSpecification*
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
@@ -105,11 +105,11 @@ typeParameters
     ;
 
 typeParamer
-    :   (IN|OUT)? TypeIdentifier STAR?  //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
+    :   (IN|OUT)? IDENTIFIER STAR?  //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
     ;
 
 typeParameterSpecification
-    :   WHERE upperBound? TypeIdentifier lowerBound?
+    :   WHERE upperBound? IDENTIFIER lowerBound?
     ;
 
 upperBound
@@ -151,7 +151,7 @@ methodDeclaration
 
 methodHeader //Tuple-ize
     :   visibilityModifier? NATIVE? STATIC?
-        (LCIdentifier | OPERATOR operator)
+        (IDENTIFIER | OPERATOR operator)
         typeParameters? formalParameters
         (ARROW typeList | BACKARROW typedIdentifiers)? typeParameterSpecification*
     ;
@@ -180,7 +180,7 @@ operator
     ;
 
 fieldDeclaration
-    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? identifier COLON typeType (ASSIGN expression)? SEMI //TODO change to match local var declaration
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? IDENTIFIER COLON typeType (ASSIGN expression)? SEMI //TODO change to match local var declaration
     ;
 
 formalParameters
@@ -196,13 +196,13 @@ typedIdentifiers
     ;
 
 typedIdentifier
-    : identifier COLON typeType
+    : IDENTIFIER COLON typeType
     ;
 
 nameSelector
     :   STAR
-    |   STAR BACKSLASH (LCIdentifier (COMMA LCIdentifier)*)?
-    |   LCIdentifier (COMMA LCIdentifier)*
+    |   STAR BACKSLASH (IDENTIFIER (COMMA IDENTIFIER)*)?
+    |   IDENTIFIER (COMMA IDENTIFIER)*
     ;
 
 //types ------------------------------------------------------------------------------------
@@ -213,7 +213,7 @@ typeType
     |   typeType QUESTION
     |   LPAREN typeList ARROW typeList RPAREN
     |   predefinedType (LT typeOrTuple (COMMA typeOrTuple)* GT)?
-    |   TypeIdentifier (LT typeOrTuple (COMMA typeOrTuple)* GT)?
+    |   IDENTIFIER (LT typeOrTuple (COMMA typeOrTuple)* GT)?
     ;
 
 typeOrTuple
@@ -248,7 +248,7 @@ block
 statement
     :   block                                                                               #blockStatement
     |   ifStatement                                                                         #ifStatement_
-    |   FOR  LCIdentifier (COMMA LCIdentifier)* COLON expression block                      #foreachStatement
+    |   FOR  IDENTIFIER (COMMA IDENTIFIER)* COLON expression block                      #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
     |   RETURN tupleExpression? SEMI                                                        #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
@@ -263,7 +263,7 @@ assignLhss
     ;
 
 assignLhs
-    :   identifier COLON typeType?
+    :   IDENTIFIER COLON typeType?
     |   expression
     ;
 
@@ -279,11 +279,11 @@ expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
     |   expression EXMARK                                          #cast
     |   expression LBRACK arguments RBRACK                         #arrayAccess
-    |   expression DOT identifier (LPAREN arguments? RPAREN)?      #externalFunctionCall
-    |   LCIdentifier LPAREN arguments? RPAREN                      #internalFunctionCall
-    |   typeType DOT LCIdentifier STAR STAR (LPAREN typeList RPAREN)?   #functionAddress
+    |   expression DOT IDENTIFIER (LPAREN arguments? RPAREN)?      #externalFunctionCall
+    |   IDENTIFIER LPAREN arguments? RPAREN                        #internalFunctionCall
+    |   typeType DOT IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   typeType DOT OPERATOR operator STAR STAR (LPAREN typeList RPAREN)? #functionAddress
-    |   LCIdentifier STAR STAR (LPAREN typeList RPAREN)?           #internalFunctionAddress
+    |   IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?             #internalFunctionAddress
     |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeType (LBRACK expression RBRACK)                    #newArray
@@ -300,8 +300,8 @@ expression
     |   lambda                                                     #lambdaExpr
     |   THIS                                                       #thisExpr
     |   literal                                                    #literalExpr
+    |   IDENTIFIER                                                 #variableExpr
     |   typeType                                                   #typeTypeExpr
-    |   identifier                                                 #variableExpr
     ;
 
 arguments
@@ -318,7 +318,7 @@ namedExpressions
     ;
 
 namedExpression
-    :   identifier ASSIGN tupleExpression
+    :   IDENTIFIER ASSIGN tupleExpression
     ;
 
 lambda
@@ -326,11 +326,11 @@ lambda
     ;
 
 lambdaHeader
-    :   BACKSLASH lambdaParam* ARROW
+    :   BACKSLASH lambdaParam? (COMMA lambdaParam)* ARROW
     ;
 
 lambdaParam
-    :   typeType? identifier
+    :   IDENTIFIER (COLON typeType)?
     |   UNDERSCORE
     ;
 
@@ -605,23 +605,8 @@ ZeroToThree
 
 
 //Identifiers-------------------------------------------------------------------------------
-identifier
-    :   (LCIdentifier | TypeIdentifier)
-    ;
-
-LCIdentifier
-    :   '_'* LowerCaseLetter LetterOrDigit*
-    {
-        String text = getText();
-        Integer type = keywords.get(text);
-        if (type != null) {
-            setType(type);
-        }
-    }
-    ;
-
-TypeIdentifier //Class names
-    :   '_'* UpperCaseLetter LetterOrDigit*
+IDENTIFIER
+    :   '_'* Letter LetterOrDigit*
     {
         String text = getText();
         Integer type = keywords.get(text);
@@ -632,8 +617,7 @@ TypeIdentifier //Class names
     ;
 
 fragment LetterOrDigit   : [a-zA-Z0-9_];
-fragment LowerCaseLetter : [a-z];
-fragment UpperCaseLetter : [A-Z];
+fragment Letter : [A-Za-z];
 
 
 //    |   // covers all characters above 0x7F which are not a surrogate
