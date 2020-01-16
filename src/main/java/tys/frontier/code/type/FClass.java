@@ -37,6 +37,8 @@ public interface FClass extends FType, HasVisibility {
     @Override
     FVisibilityModifier getVisibility();
 
+    boolean isNative();
+
     FVisibilityModifier getConstructorVisibility();
 
     void setConstructorVisibility(FVisibilityModifier constructorVisibility);
@@ -167,8 +169,10 @@ public interface FClass extends FType, HasVisibility {
     }
 
     default void removeUnreachable(Reachability.ReachableClass reachable) {
-        getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
-        getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
+        if (!isNative()) { //don't touch the structure of native classes, they have their layout for a reason
+            getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
+            getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
+        }
         getFunctions(false).values().removeIf(s -> !reachable.isReachable(s.getFunction()));
         getFunctions(true).clear(); //not needed after this point
     }

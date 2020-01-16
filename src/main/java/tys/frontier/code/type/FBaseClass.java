@@ -23,6 +23,7 @@ public class FBaseClass implements FClass {
 
     private FIdentifier identifier;
     private FVisibilityModifier visibility;
+    private boolean _native;
     private FVisibilityModifier constructorVisibility;
     private ImmutableList<FTypeVariable> parametersList;
     private Map<FTypeVariable, Variance> parameterVariance;
@@ -38,9 +39,10 @@ public class FBaseClass implements FClass {
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
 
-    public FBaseClass(FIdentifier identifier, FVisibilityModifier visibility) {
+    public FBaseClass(FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
         this.identifier = identifier;
         this.visibility = visibility;
+        this._native = _native;
         this.parametersList = ImmutableList.of();
         this.parameterVariance = Collections.emptyMap();
         this.instantiations = Collections.emptyMap();
@@ -93,6 +95,11 @@ public class FBaseClass implements FClass {
     @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
+    }
+
+    @Override
+    public boolean isNative() {
+        return _native;
     }
 
     @Override

@@ -45,6 +45,11 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
+    public boolean isNative() {
+        return proxy.isNative();
+    }
+
+    @Override
     public FVisibilityModifier getConstructorVisibility() {
         return proxy.getConstructorVisibility();
     }

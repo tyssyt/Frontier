@@ -8,7 +8,7 @@ import tys.frontier.passes.analysis.reachability.Reachability;
 public abstract class FPredefinedClass extends FBaseClass {
 
     public FPredefinedClass(FIdentifier identifier) {
-        super(identifier, FVisibilityModifier.EXPORT);
+        super(identifier, FVisibilityModifier.EXPORT, false);
     }
 
     @Override
