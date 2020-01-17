@@ -32,7 +32,6 @@ export class MessageBox:
     static continuePressed : int32 = 11;
 
     static show(title: char[], message: char[], mode: int32, icon: int32?) -> int32? {
-        nullPtr := new Ptr(ptr=0); //TODO this bug needs to go!
         rc := Winuser.MessageBoxA(null, Strings.toCString(message), Strings.toCString(title), mode + (icon : 0)); //TODO | operator didn't work, why?
         if (rc == 0) {
             return null;

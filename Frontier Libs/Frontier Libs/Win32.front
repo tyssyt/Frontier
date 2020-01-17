@@ -5,6 +5,5 @@ export class Winuser:
     native static MessageBoxA(hWnd: Ptr? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
 
 
-export native class Ptr: //TODO remove
-    export constructors;
+export native class Ptr:
     export ptr: int32;

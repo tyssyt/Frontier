@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FTypeMember;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
@@ -13,6 +14,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
@@ -81,6 +83,14 @@ public class Reachability {
                 if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
                     todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
                     continue;
+                }
+
+                if (cur.isNative()) {
+                    for (FParameter p : cur.getSignature().getParameters())
+                        for (FType t : FTuple.unpackType(p.getType()))
+                            res.addClass((FClass) t);
+                    for (FType t : FTuple.unpackType(cur.getType()))
+                        res.addClass((FClass) t);
                 }
 
                 if (cur.isInstantiation()) { //for instantiated functions, we have to visit the base instead because they are not yet baked
@@ -152,8 +162,12 @@ public class Reachability {
         }
     }
 
+    private ReachableClass addClass(FClass fClass) {
+        return reachableClasses.computeIfAbsent(fClass, x -> new ReachableClass());
+    }
+
     private void addFunction(FFunction function) {
-        ReachableClass reachableClass = reachableClasses.computeIfAbsent((FClass) function.getMemberOf(), x -> new ReachableClass());
+        ReachableClass reachableClass = addClass((FClass) function.getMemberOf());
         FInstantiatedFunction value = null;
         if (function instanceof FInstantiatedFunction) {
             FInstantiatedFunction fInstantiatedFunction = (FInstantiatedFunction) function;
