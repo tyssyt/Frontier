@@ -39,9 +39,3 @@ export class MessageBox:
             return rc;
         }
     }
-
-
-export class Windows:
-
-    export static hInstance: Ptr;
-    export static nCmdShow: int32;

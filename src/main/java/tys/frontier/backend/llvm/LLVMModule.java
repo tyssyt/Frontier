@@ -317,7 +317,7 @@ public class LLVMModule implements AutoCloseable {
     private void generateMain(LLVMTransformer trans, Collection<FClass> classes, FFunction entryPoint) {
         //TODO if isWindows
         for (FClass _class : classes) {
-            if (_class.getIdentifier().name.equals("Windows")) { //TODO find a less stupid solution
+            if (_class.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
                 FField hInstance = _class.getStaticFields().get(new FIdentifier("hInstance"));
                 FField nCmdShow = _class.getStaticFields().get(new FIdentifier("nCmdShow"));
                 if (hInstance != null || nCmdShow != null) {

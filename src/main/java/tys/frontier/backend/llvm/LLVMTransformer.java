@@ -124,7 +124,6 @@ class LLVMTransformer implements
     }
 
     public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
-        System.out.println("generateWinMain");
         LLVMTypeRef ptr = LLVMPointerType(LLVMStructType(indexType, 1, FALSE), 0);
         PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(
                 ptr,

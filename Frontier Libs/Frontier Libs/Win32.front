@@ -1,9 +1,11 @@
 native include User32.Lib; //TODO platfrom dependent include, this is x64
 
+export class WinMainArgs:
+    export static hInstance: Ptr;
+    export static nCmdShow: int32;
+
 export class Winuser:
-
     native static MessageBoxA(hWnd: Ptr? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
-
 
 export native class Ptr:
     export ptr: int32;
