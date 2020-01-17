@@ -1,8 +1,48 @@
+import Win32;
+import Strings;
+
+export class MessageBox:
+
+    //mode TODO make enum
+    static modeOk                  : int32 = 0;
+    static modeOkCancel            : int32 = 1;
+    static modeCancelRetryContinue : int32 = 2;
+    static modeYesNoCancel         : int32 = 3;
+    static modeYesNo               : int32 = 4;
+    static modeRetryCancel         : int32 = 5;
+
+    //icon TODO make enum
+    static iconError    : int32 = 16;
+    static iconQuestion : int32 = 32;
+    static iconWarn     : int32 = 48;
+    static iconInfo     : int32 = 64;
+
+    //TODO consider adding option to choose default button
+    //TODO consider adding modality options
+
+    //return code TODO make enum
+    static okPressed       : int32 = 1;
+    static cancelPressed   : int32 = 2;
+    static abortPressed    : int32 = 3;
+    static retryPressed    : int32 = 4;
+    static ignorePressed   : int32 = 5;
+    static yesPressed      : int32 = 6;
+    static noPressed       : int32 = 7;
+    static tryAgainPressed : int32 = 10;
+    static continuePressed : int32 = 11;
+
+    static show(title: char[], message: char[], mode: int32, icon: int32?) -> int32? {
+        nullPtr := new Ptr(ptr=0); //TODO this bug needs to go!
+        rc := Winuser.MessageBoxA(null, Strings.toCString(message), Strings.toCString(title), mode + (icon : 0)); //TODO | operator didn't work, why?
+        if (rc == 0) {
+            return null;
+        } else {
+            return rc;
+        }
+    }
+
+
 export class Windows:
 
     export static hInstance: Ptr;
     export static nCmdShow: int32;
-
-export class Ptr:
-    export constructors;
-    export ptr: int32;

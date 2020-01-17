@@ -1,0 +1,10 @@
+native include User32.Lib; //TODO platfrom dependent include, this is x64
+
+export class Winuser:
+
+    native static MessageBoxA(hWnd: Ptr? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
+
+
+export native class Ptr: //TODO remove
+    export constructors;
+    export ptr: int32;
