@@ -75,12 +75,9 @@ public class Reachability {
                     continue;
 
                 //check whether the other accessor is reachable, if so the field was already seen
-                if (field.getGetter() == cur)
-                    if (res.isReachable(field.getSetter()))
-                        continue;
-                else
-                    if (res.isReachable(field.getGetter()))
-                        continue;
+                if ((cur == field.getGetter() && res.isReachable(field.getSetter()))
+                        || (cur == field.getSetter() && res.isReachable(field.getGetter())))
+                    continue;
 
                 //TODO when fields work in optionals, we need similar handling of optionals here as for functions below
                 if (field.getMemberOf() instanceof FInstantiatedClass) {//for fields in instantiated classes, we have to visit the base instead because they are not yet baked
