@@ -13,6 +13,7 @@ import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.function.FieldAccessor;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
@@ -57,7 +58,7 @@ public class Reachability {
                 continue;
 
             res.addFunction(cur);
-            if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
+            if (cur.getMemberOf() instanceof FOptional && !cur.getIdentifier().equals(UnaryOperator.NOT.identifier)) { //TODO if we ever switch to optional handling in front end, this is no longer needed
                 todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
                 continue;
             }

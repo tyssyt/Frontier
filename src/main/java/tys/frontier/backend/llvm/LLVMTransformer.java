@@ -725,6 +725,11 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedOptional (FFunctionCall functionCall, List<LLVMValueRef> args) { //TODO this is copy & paste from if and call...
         FFunction function = functionCall.getFunction();
         FOptional optional = (FOptional) function.getMemberOf();
+
+        if (functionCall.getFunction().getIdentifier().equals(UnaryOperator.NOT.identifier)) {
+            return LLVMBuildICmp(builder, LLVMIntEQ, args.get(0), getNull(optional), "eq");
+        }
+
         FFunction toCall = optional.getShimMap().inverse().get(function);
         assert toCall != null;
 

@@ -5,6 +5,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.type.FBaseClass;
@@ -32,6 +33,7 @@ public class FOptional extends FPredefinedClass {
         assert baseType != FTuple.VOID;
         this.baseType = baseType;
         addDefaultFunctions();
+        addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, FBool.INSTANCE));
     }
 
     public BiMap<FFunction, FFunction> getShimMap() {
@@ -60,6 +62,9 @@ public class FOptional extends FPredefinedClass {
         if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
             positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
             positionalArgs.set(0, baseType);
+        }
+        if (identifier.equals(UnaryOperator.NOT.identifier)) {
+            return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
         }
         FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
         FFunction shim = shimMap.computeIfAbsent(res.getFunction(), this::createShim);
