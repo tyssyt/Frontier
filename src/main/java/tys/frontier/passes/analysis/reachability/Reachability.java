@@ -56,13 +56,31 @@ public class Reachability {
             if (res.isReachable(cur))
                 continue;
 
+            res.addFunction(cur);
+            if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
+                todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
+                continue;
+            }
+
+
             if (cur instanceof FieldAccessor) {
                 //field
                 FField field = ((FieldAccessor) cur).getField();
-                if (res.isReachable(field))
+
+                if (field.getMemberOf().isNative())
+                    handleType(field.getType(), res);
+
+                if (!field.hasAssignment())
                     continue;
 
-                res.addFunction(cur);
+                //check whether the other accessor is reachable, if so the field was already seen
+                if (field.getGetter() == cur)
+                    if (res.isReachable(field.getSetter()))
+                        continue;
+                else
+                    if (res.isReachable(field.getGetter()))
+                        continue;
+
                 //TODO when fields work in optionals, we need similar handling of optionals here as for functions below
                 if (field.getMemberOf() instanceof FInstantiatedClass) {//for fields in instantiated classes, we have to visit the base instead because they are not yet baked
                     FInstantiatedClass instantiatedClass = (FInstantiatedClass) field.getMemberOf();
@@ -78,19 +96,11 @@ public class Reachability {
                     field.accept(reachabilityVisitor);
                 }
             } else {
-                res.addFunction(cur);
-                //function
-                if (cur.getMemberOf() instanceof FOptional) { //TODO if we ever switch to optional handling in front end, this is no longer needed
-                    todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
-                    continue;
-                }
-
+                //Function
                 if (cur.isNative()) {
                     for (FParameter p : cur.getSignature().getParameters())
-                        for (FType t : FTuple.unpackType(p.getType()))
-                            res.addClass((FClass) t);
-                    for (FType t : FTuple.unpackType(cur.getType()))
-                        res.addClass((FClass) t);
+                        handleType(p.getType(), res);
+                    handleType(cur.getType(), res);
                 }
 
                 if (cur.isInstantiation()) { //for instantiated functions, we have to visit the base instead because they are not yet baked
@@ -102,6 +112,14 @@ public class Reachability {
             }
         } //end while
         return res;
+    }
+
+    private static void handleType(FType type, Reachability reachability) {
+        for (FType t : FTuple.unpackType(type))
+            if (t instanceof FOptional)
+                reachability.addClass((FClass) ((FOptional) t).getBaseType());
+            else
+                reachability.addClass((FClass) t);
     }
 
     private static FClassVisitor reachabilityVisitor(Collection<FFunction> seenFunctions) {
