@@ -346,7 +346,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 treeData.parameters.get(ctx).setDefaultValue(visitExpression(c));
             } catch (IncompatibleTypes incompatibleTypes) {
                 errors.add(incompatibleTypes);
-            }
+            } catch (Failed ignored) {}
         }
         return null;
     }
