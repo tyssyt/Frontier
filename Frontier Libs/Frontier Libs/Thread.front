@@ -1,0 +1,14 @@
+import Kernel32;
+import TemporaryHacks;
+
+/* TODO
+    make a concept of Threading, this is just a Hack around a Windows API cause I needed a Thread
+*/
+
+export class Thread:
+    thread: WThread;
+
+    export static create(fun: (Data? -> int32)) -> Thread {
+        wThread := WThread.CreateThread(lpStartAddress=fun, dwStackSize=0); //TODO stack size?
+        return new Thread(thread=wThread);
+    }

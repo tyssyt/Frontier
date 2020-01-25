@@ -1,0 +1,18 @@
+import TemporaryHacks;
+
+//https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createthread?redirectedfrom=MSDN
+//https://docs.microsoft.com/en-us/windows/win32/procthread/creating-threads
+
+export native class WThread:
+
+    export native static CreateThread (
+        lpThreadAttributes: SecurityAttributes? = null,
+        dwStackSize: int64, //SIZE_T TODO I believe this only is the case on 64 bit os, check
+        lpStartAddress: (Data? -> int32),
+        lpParameter: Data? = null,
+        dwCreationFlags: int32 = 0,
+        lpThreadId: IntPtr? = null
+    ) -> WThread;
+
+export native class SecurityAttributes:
+    //TODO https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/aa379560(v=vs.85)
