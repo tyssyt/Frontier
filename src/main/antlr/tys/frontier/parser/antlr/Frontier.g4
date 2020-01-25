@@ -583,7 +583,7 @@ StringCharacter
 //Escape Sequences for Character and String Literals--------------------------------------
 fragment
 EscapeSequence
-    :   '\\' [n'\\]
+    :   '\\' [n0'\\]
     ;
 
 fragment

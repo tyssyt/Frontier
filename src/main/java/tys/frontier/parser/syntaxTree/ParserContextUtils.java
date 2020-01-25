@@ -256,7 +256,7 @@ public final class ParserContextUtils {
                         if (c == '\\') {
                             i++;
                             c = FCharLiteral.escapeLiterals.get(text.charAt(i));
-                            assert c != 0;
+                            assert c != 0 || text.charAt(i) == '0';
                         }
                         sb.append(c);
                     }

@@ -9,8 +9,8 @@ import tys.frontier.code.type.FClass;
 public class FCharLiteral implements FLiteral {
 
     public static final Char2CharMap escapeLiterals = Char2CharMaps.unmodifiable(new Char2CharOpenHashMap(
-            new char[] {'n' ,'\\','\''},
-            new char[] {'\n','\\','\''}
+            new char[] {'n', '0', '\\','\''},
+            new char[] {'\n', '\0', '\\','\''}
     ));
 
     public final char value;
