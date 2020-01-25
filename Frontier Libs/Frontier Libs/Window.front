@@ -1,5 +1,7 @@
 import Win32;
 import Strings;
+import Thread;
+import TemporaryHacks;
 
 export class MessageBox:
 
@@ -31,7 +33,7 @@ export class MessageBox:
     static tryAgainPressed : int32 = 10;
     static continuePressed : int32 = 11;
 
-    static show(title: char[], message: char[], mode: int32, icon: int32?) -> int32? {
+    static show(title: char[], message: char[], mode: int32, icon: int32? = null) -> int32? {
         rc := Winuser.MessageBoxA(null, Strings.toCString(message), Strings.toCString(title), mode + (icon : 0)); //TODO | operator didn't work, why?
         if (rc == 0) {
             return null;
@@ -39,3 +41,87 @@ export class MessageBox:
             return rc;
         }
     }
+
+
+
+export class Screen:
+/*
+    if I want info about other screens then the non primary, Windows requires me to:
+        use EnumDisplayMonitors https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdisplaymonitors to even find out how many screens there are and get pointers for them
+        then use GetMonitorInfoA https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmonitorinfoa to fill a
+        MONITORINFO struct https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-monitorinfo from which I then can read and store the sizes...
+
+        but the cool thing is MonitorFromWindow https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-monitorfromwindow
+        https://docs.microsoft.com/en-us/windows/win32/gdi/multiple-display-monitors-functions
+
+        systemmetrics SM_CMONITORS also gives me the number of monitors, but no way to use it...
+
+        GetDeviceCaps also is a way to get sizes, but I need the hdc of a non promary monitor
+            -which I can get from EnumDisplayMonitors again...
+*/
+    export static width() -> int32 {
+        return Winuser.GetSystemMetrics(0);
+    }
+    export static height() -> int32 {
+        return Winuser.GetSystemMetrics(1);
+    }
+
+export class Window:
+
+    private wWindow: WWindow;
+
+    export static create(
+        title: char[],
+        width:  int32 = Screen.width /2,
+        height: int32 = Screen.height /2,
+        x: int32 = Screen.width /4,
+        y: int32 = Screen.height /4
+    ) -> Thread {
+        return Thread.create(createInThread**);
+    }
+
+    private static createInThread(data: Data?) -> int32 {
+        title: char[] = "asdasd";
+        width:  int32 = Screen.width /2;
+        height: int32 = Screen.height /2;
+        x: int32 = Screen.width /4;
+        y: int32 = Screen.height /4;
+
+        className := Strings.toCString("FWindowClass");
+        i := new WndClass(lpszClassName=className).RegisterClassExA();
+        if (i == 0) {
+            return 1;
+        }
+
+        //exStyle = WS_EX_CLIENTEDGE
+        //style = WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+        // WS_CAPTION includes WS_BORDER
+
+        window := WWindow.CreateWindowExA(lpClassName=className, lpWindowName=Strings.toCString(title), dwStyle=13565952, dwExStyle=512, nWidth=width, nHeight=height, x=x, y=y); //TODO all params
+
+        if (!window) {
+            return 2;
+        }
+
+        window!.ShowWindow();
+        b := window!.UpdateWindow();
+        if (!b) {
+            //TODO cleanup the semi created window?
+            return 3;
+        }
+
+        msg := new Message();
+        while(msg.GetMessageA()) {
+            msg.TranslateMessage();
+            msg.DispatchMessageA();
+        }
+        return 42;
+    }
+
+/*
+    //TODO check GLFL for what info could/should be providable
+    export getX() -> int32;
+    export getY() -> int32;
+    export getWidth() -> int32;
+    export getHeight() -> int32;
+*/

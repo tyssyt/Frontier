@@ -1,11 +1,86 @@
+import TemporaryHacks;
+
 native include User32.Lib; //TODO platfrom dependent include, this is x64
 
 export class WinMainArgs:
-    export static hInstance: Ptr;
+    export static hInstance: Instance;
     export static nCmdShow: int32;
 
 export class Winuser:
-    native static MessageBoxA(hWnd: Ptr? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
+    native static MessageBoxA(hWnd: WWindow? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
+    native static GetSystemMetrics(nIndex: int32) -> int32;
 
-export native class Ptr:
-    export ptr: int32;
+export native class WndClass: //WNDCLASSEXA
+    export constructors;
+
+    export cbSize: int32 = 80; //UINT TODO = sizeOf(WndClass)
+    export style: int32 = 35; //UINT = CS_OWNDC | CS_HREDRAW | CS_VREDRAW
+    export lpfnWndProc: (WWindow, int32, int64, int64 -> int64) = DefWindowProcA**; //WNDPROC
+    export cbClsExtra: int32 = 0; //int
+    export cbWndExtra: int32 = 0; //int
+    export hInstance: Instance = WinMainArgs.hInstance; //HINSTANCE
+    export hicon: Icon? = null; //HICON
+    export hCursor: Cursor? = null; //HCURSOR
+    export hbrBackground: int32 = 6; //HBRUSH //TODO could also be a Pointer I guess, see what GLFL does
+    export lpszMenuName: char[c]? = null; //LPCSTR
+    export lpszClassName: char[c]; //LPCSTR
+    export hIconSm: Icon? = null; //HICON
+
+    export native RegisterClassExA() -> int32;
+
+    export native static DefWindowProcA(p: WWindow, i: int32, j: int64, k: int64) -> int64;
+
+export native class WWindow: //HWND
+
+    //extended window style TODO enum
+    //https://docs.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
+
+    //windows style TODO enum
+    //https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
+
+    export native static CreateWindowExA(
+        dwExStyle: int32, //DWORD
+        lpClassName: char[c], //LPCSTR
+        lpWindowName: char[c], //LPCSTR
+        dwStyle: int32, //DWORD
+        x: int32? = 0, //int
+        y: int32? = 0, //int
+        nWidth: int32? = 800, //int
+        nHeight: int32? = 600, //int
+        hWndParent: WWindow? = null, //HWND
+        hMenu: Menu? = null, //HMENU
+        hInstance: Instance = WinMainArgs.hInstance, //HINSTANCE
+        lpParam: Data? = null //LPVOID
+    ) -> WWindow?;
+
+    export native ShowWindow(nCmdShow: int32 = WinMainArgs.nCmdShow) -> bool;
+    export native UpdateWindow() -> bool;
+
+export native class Message:
+    export constructors;
+
+    hwnd: WWindow? = null;
+    message: int32 = 0;
+    wParam: int64 = 0;
+    lParam: int64 = 0;
+    time: int32 = 0;
+    pt_x: int32 = 0;
+    pt_y: int32 = 0;
+
+native GetMessageA(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0) -> bool;
+native TranslateMessage() -> bool;
+native DispatchMessageA() -> bool;
+
+export native class Icon: //HICON
+    //TODO
+    //private native static loadIconA(hInstance: Instance? = null, lpIconName: char[c]);
+
+export native class Cursor: //HCURSOR
+    //TODO
+    //private native static loadCursorA(hInstance: Instance? = null, lpCursorName: char[c]);
+
+export native class Menu: //HMENU
+    //TODO
+
+export native class Instance:
+    //TODO
