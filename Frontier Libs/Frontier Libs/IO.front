@@ -4,9 +4,6 @@ import Strings;
 export class IO:
 
     export static print(chara: char) {
-        //TODO remove this hack once I improved char
-        i : int64 = chara;
-        i = i % 256;
         Native.putchar(chara);
     }
 
@@ -61,4 +58,42 @@ export class IO:
 
     static charToInt(c: char) -> int32 {
         return c - 48;
+    }
+
+export class File:
+    export static modeWrite: char[c] = Strings.toCString("w\0"); //TODO there is still a bug with the compiler assuming "w" is char even though here it should be string
+    export static modeAppend: char[c] = Strings.toCString("a\0");
+
+    cFile: CFile;
+
+    export static open(filename: char[], mode: char[c]) -> File {
+        return new File(cFile = CFile.fopen(Strings.toCString(filename), mode));
+    }
+
+    export print(chara: char) {
+        printNoFlush(chara);
+        cFile.fflush();
+    }
+
+    export printInt(l: int64) {
+        print(Strings.intToString(l));
+    }
+
+    export print(string: char[]) {
+        for c : string {
+            printNoFlush(c);
+        }
+        cFile.fflush();
+    }
+
+    export printLine(string: char[]) {
+        for c : string {
+            printNoFlush(c);
+        }
+        printNoFlush("\n");
+        cFile.fflush();
+    }
+
+    printNoFlush(chara: char) {
+        CFile.fputc(chara, cFile);
     }

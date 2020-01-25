@@ -16,3 +16,9 @@ export class Native:
     export native static floor(val: float64) -> float64;
     export native static trunc(val: float32) -> float32;
     export native static trunc(val: float64) -> float64;
+
+
+export native class CFile:
+    export native static fopen(filename: char[c], mode: char[c]) -> CFile;
+    export native static fputc(character: int32, stream: CFile) -> int32;
+    export native fflush() -> int32;
