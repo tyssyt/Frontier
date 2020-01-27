@@ -247,7 +247,14 @@ public final class ParserContextUtils {
                     res = FNull.UNTYPED;
                     break;
                 case FrontierParser.FloatingPointLiteral:
-                    res = new FFloat64Literal(Double.parseDouble(text), text);
+                    switch (text.charAt(text.length()-1)) {
+                        case 'f': case 'F':
+                            res = new FFloat32Literal(Float.parseFloat(text), text);
+                            break;
+                        case 'd': case 'D': default:
+                            res = new FFloat64Literal(Double.parseDouble(text), text);
+                            break;
+                    }
                     break;
                 case FrontierParser.StringLiteral:
                     assert text.charAt(0) == '\"';
