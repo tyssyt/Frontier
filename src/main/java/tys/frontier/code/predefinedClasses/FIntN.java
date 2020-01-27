@@ -16,6 +16,7 @@ public class FIntN extends FPredefinedClass {
     private static final ConcurrentMap<Integer, FIntN> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     public static final FIntN _8 = getIntN(8);
+    public static final FIntN _16 = getIntN(16);
     public static final FIntN _32 = getIntN(32);
     public static final FIntN _64 = getIntN(64);
 

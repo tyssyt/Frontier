@@ -27,6 +27,7 @@
         "bool":         "bool",
         "int":          "int",
         "char":         "char",
+        "int16":        "int16",
         "int32":        "int32",
         "int64":        "int64",
         "float32":      "float32",

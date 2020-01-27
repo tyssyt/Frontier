@@ -44,6 +44,7 @@ tokens {
     BOOL,
     INT,
     CHAR,
+    INT16,
     INT32,
     INT64,
     FLOAT32,
@@ -231,6 +232,7 @@ predefinedType
     :   BOOL
     |   INT
     |   CHAR
+    |   INT16
     |   INT32
     |   INT64
     |   FLOAT32

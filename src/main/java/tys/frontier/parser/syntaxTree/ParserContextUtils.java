@@ -111,6 +111,8 @@ public final class ParserContextUtils {
                 return Utils.NYI("unbounded int type");
             case CHAR:
                 return FIntN._8;
+            case INT16:
+                return FIntN._16;
             case INT32:
                 return FIntN._32;
             case INT64:
