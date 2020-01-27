@@ -70,30 +70,30 @@ export class File:
         return new File(cFile = CFile.fopen(Strings.toCString(filename), mode));
     }
 
-    export print(chara: char) {
-        printNoFlush(chara);
+    export write(chara: char) {
+        writeNoFlush(chara);
         cFile.fflush();
     }
 
-    export printInt(l: int64) {
-        print(Strings.intToString(l));
+    export writeInt(l: int64) {
+        write(Strings.intToString(l));
     }
 
-    export print(string: char[]) {
+    export write(string: char[]) {
         for c : string {
-            printNoFlush(c);
+            writeNoFlush(c);
         }
         cFile.fflush();
     }
 
-    export printLine(string: char[]) {
+    export writeLine(string: char[]) {
         for c : string {
-            printNoFlush(c);
+            writeNoFlush(c);
         }
-        printNoFlush("\n");
+        writeNoFlush("\n");
         cFile.fflush();
     }
 
-    printNoFlush(chara: char) {
+    writeNoFlush(chara: char) {
         CFile.fputc(chara, cFile);
     }
