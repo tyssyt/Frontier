@@ -13,5 +13,6 @@ public class FFloat32 extends FPredefinedClass {
 
     private FFloat32 () {
         super(FIdentifier.FLOAT32);
+        addPredefinedFunctionsForArithType();
     }
 }
