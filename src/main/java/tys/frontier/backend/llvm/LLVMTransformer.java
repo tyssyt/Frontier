@@ -635,7 +635,10 @@ class LLVMTransformer implements
         if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(UnaryOperator.NEG.identifier))
-            return LLVMBuildNeg(builder, arg, "neg");
+            if (functionCall.getFunction().getMemberOf() instanceof FIntN)
+                return LLVMBuildNeg(builder, arg, "neg");
+            else
+                return LLVMBuildFNeg(builder, arg, "neg");
         else
             return Utils.cantHappen();
     }
