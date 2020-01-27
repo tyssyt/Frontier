@@ -72,6 +72,18 @@ export class Strings:
         return cString;
     }
 
+    export static startsWith(string: char[], start: char[]) -> bool {
+        if start.size > string.size {
+            return false;
+        }
+        for c, i : start {
+            if c =!= string[i] {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static charToInt(c: char) -> int32 {
         //assert c >= 48 && c <= 57 //TODO
         return c - 48;
