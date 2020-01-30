@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
+import org.bytedeco.llvm.LLVM.*;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
@@ -24,7 +25,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
-import static org.bytedeco.javacpp.LLVM.*;
+import static org.bytedeco.llvm.global.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
 public class LLVMModule implements AutoCloseable {

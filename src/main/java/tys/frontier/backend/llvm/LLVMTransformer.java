@@ -2,8 +2,12 @@ package tys.frontier.backend.llvm;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import org.bytedeco.javacpp.LLVM;
 import org.bytedeco.javacpp.PointerPointer;
+import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
+import org.bytedeco.llvm.LLVM.LLVMBuilderRef;
+import org.bytedeco.llvm.LLVM.LLVMTypeRef;
+import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.global.LLVM;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
@@ -33,7 +37,7 @@ import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.bytedeco.javacpp.LLVM.*;
+import static org.bytedeco.llvm.global.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 import static tys.frontier.code.function.operator.BinaryOperator.*;
 

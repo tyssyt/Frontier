@@ -2,9 +2,13 @@ package tys.frontier.backend.llvm;
 
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.PointerPointer;
+import org.bytedeco.llvm.LLVM.LLVMModuleRef;
+import org.bytedeco.llvm.LLVM.LLVMTargetDataRef;
+import org.bytedeco.llvm.LLVM.LLVMTargetMachineRef;
+import org.bytedeco.llvm.LLVM.LLVMTargetRef;
 import tys.frontier.util.Utils;
 
-import static org.bytedeco.javacpp.LLVM.*;
+import static org.bytedeco.llvm.global.LLVM.*;
 
 public class Target implements AutoCloseable {
 
