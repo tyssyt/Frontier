@@ -39,6 +39,11 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
+    default Expression visitCache(FCacheExpression cache) {
+        cache.getExpression().accept(this);
+        return null;
+    }
+
     default Expression visitLiteral(FLiteralExpression expression) {
         return null;
     }

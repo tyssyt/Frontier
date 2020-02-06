@@ -633,6 +633,14 @@ class LLVMTransformer implements
         return LLVMBuildSelect(builder, cond, then, elze, "ifExpr");
     }
 
+    @Override
+    public LLVMValueRef visitCache(FCacheExpression cache) {
+        LLVMValueRef res = cache.getExpression().accept(this);
+        LLVMValueRef alloca = createEntryBlockAlloca(cache.getVariable());
+        LLVMBuildStore(builder, res, alloca);
+        return res;
+    }
+
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
         FIdentifier id = functionCall.getFunction().getIdentifier();
         LLVMValueRef arg = Iterables.getOnlyElement(args);
