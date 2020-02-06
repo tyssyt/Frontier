@@ -93,7 +93,7 @@ public class MainTest {
     @Test
     public void mainOptional() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("Optional", null);
-        assertEquals("null pexists null qexists q", res);
+        assertEquals("null pexists null qexists qqqlambdaIf", res);
     }
     @Test
     public void mainGeneric() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

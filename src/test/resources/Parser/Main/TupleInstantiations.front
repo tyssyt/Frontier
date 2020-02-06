@@ -46,7 +46,7 @@ export class Main:
 
 static printOpt(str: char[]?, coord: Coord?, i: int64?) {
     if str {
-        IO.print(str!);
+        IO.print(str);
     } else {
         IO.print("no Str");
     }
@@ -58,7 +58,7 @@ static printOpt(str: char[]?, coord: Coord?, i: int64?) {
     }
     IO.print("|");
     if i {
-        IO.printInt(i!);
+        IO.printInt(i);
     } else {
         IO.print("no Int");
     }
@@ -70,7 +70,7 @@ static print(str: char[], coord: Coord, i: int64?) {
     coord.print();
     IO.print("|");
     if i {
-        IO.printInt(i!);
+        IO.printInt(i);
     } else {
         IO.print("no Int");
     }

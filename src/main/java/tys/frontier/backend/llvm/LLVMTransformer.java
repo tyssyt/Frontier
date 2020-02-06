@@ -385,6 +385,8 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitBlock(FBlock block) {
+        if (block instanceof FLambdaBlock)
+            return Utils.NYI("Lambda Block");
         LLVMValueRef last = null;
         for (FStatement statement : block)
             last = statement.accept(this);

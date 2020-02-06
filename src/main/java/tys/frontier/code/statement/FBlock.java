@@ -30,7 +30,7 @@ public class FBlock implements FStatement, List<FStatement> {
         return new FBlock(statements);
     }
 
-    private FBlock(List<FStatement> statements) {
+    protected FBlock(List<FStatement> statements) {
         assert statements.isEmpty() || statements.stream().limit(statements.size()-1).noneMatch( s -> s.redirectsControlFlow().isPresent());
         this.statements = statements;
     }

@@ -13,10 +13,14 @@ export class Test:
         return "exists ";
     }
 
+    static getLambdaIf() -> char[]? {
+        return "lambdaIf";
+    }
+
     export static main () {
         t:Test? = null;
         if t {
-            t!.print();
+            t.print();
         }
         IO.print(t.print().get() : "null ");
         t = new Test(c="p");
@@ -25,7 +29,15 @@ export class Test:
         IO.print(t.print().get() : "null ");
         t = new Test(c="q");
         IO.print(t.print().get() : "null ");
+        t!.print;
         if t {
-            t!.print();
+            t.print();
+        } else {
+            return;
+        }
+        t.print();
+
+        if getLambdaIf { \str ->
+            IO.print(str);
         }
     }

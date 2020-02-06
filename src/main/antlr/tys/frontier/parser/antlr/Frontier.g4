@@ -246,6 +246,9 @@ block
     :   LBRACE statement* RBRACE
     ;
 
+lamdaBlock
+    :   LBRACE lambdaHeader? statement* RBRACE
+    ;
 
 statement
     :   block                                                                               #blockStatement
@@ -270,7 +273,7 @@ assignLhs
     ;
 
 ifStatement
-    :   IF expression block (ELSE block | ELSE ifStatement)?
+    :   IF expression lamdaBlock (ELSE block | ELSE ifStatement)?
     ;
 
 // EXPRESSIONS -----------------------------------------------------------------------------
