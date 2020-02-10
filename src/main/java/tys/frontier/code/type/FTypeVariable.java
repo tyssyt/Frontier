@@ -13,9 +13,7 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.statement.loop.forImpl.FTypeVariableForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.HasCall;
-import tys.frontier.code.typeInference.TypeConstraint;
-import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.code.typeInference.*;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.NameGenerator;
@@ -103,18 +101,18 @@ public class FTypeVariable implements FType {
         return constraints.isFixed();
     }
 
-   public void setConstraints(TypeConstraints constraints) {
+    public void setConstraints(TypeConstraints constraints) {
         this.constraints = constraints;
     }
 
-   public TypeConstraints getConstraints() {
+    public TypeConstraints getConstraints() {
         return constraints;
     }
-    
+
     public boolean isResolved() {
         return constraints.isResolved();
     }
-    
+
     public FType getResolved() {
         return constraints.getResolved();
     }
@@ -124,9 +122,17 @@ public class FTypeVariable implements FType {
     }
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
-        if (isFixed())
-            return constraints.satisfies(constraint);
-        else {
+        if (isFixed()) {
+            if (constraints.satisfies(constraint))
+                return true;
+            //special case: cast to a nonFixed constraint, force it to be equal to us
+            if (constraint instanceof ImplicitCastable && ((ImplicitCastable) constraint).getTarget() instanceof FTypeVariable) {
+                FTypeVariable target = (FTypeVariable) ((ImplicitCastable) constraint).getTarget();
+                if (!target.isFixed())
+                    return target.tryAddConstraint(new ImplicitCastable(constraint, this, Variance.Invariant));
+            }
+            return false;
+        } else {
             try {
                 constraints = TypeConstraints.add(constraints, constraint);
             } catch (UnfulfillableConstraints unfulfillableConstraints) {

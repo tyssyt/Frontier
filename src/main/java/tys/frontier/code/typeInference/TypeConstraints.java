@@ -228,13 +228,16 @@ public class TypeConstraints {
     }
 
     public boolean satisfies(TypeConstraint constraint) {
-        if (isResolved() || isFixed()) {
+        if (isResolved()) {
             if (constraint instanceof ImplicitCastable && ((ImplicitCastable) constraint).getTarget() instanceof FTypeVariable) {
-                //for implicit castable to a type var, we can just add the reverse constraint to that var
-                ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
-                return ((FTypeVariable) implicitCastable.getTarget()).tryAddConstraint(
-                        new ImplicitCastable(constraint, equivalenceGroup.iterator().next(), implicitCastable.getVariance().opposite())
-                );
+                FTypeVariable target = (FTypeVariable) ((ImplicitCastable) constraint).getTarget();
+                if (!target.isFixed()) {
+                    //for implicit castable to a type var, we can just add the reverse constraint to that var
+                    ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
+                    return ((FTypeVariable) implicitCastable.getTarget()).tryAddConstraint(
+                            new ImplicitCastable(constraint, equivalenceGroup.iterator().next(), implicitCastable.getVariance().opposite())
+                    );
+                }
             }
             ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
             return implies(new ImplicitCastable(this, resolvedAs, Invariant), constraint, newConstraints) && newConstraints.isEmpty();
