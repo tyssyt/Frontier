@@ -10,7 +10,7 @@ public interface ExpressionVisitor<Expression>  {
 
     //Top down
     default void enterBrackets(FBracketsExpression brackets) {}
-    default void enterFunctionCall(FFunctionCall functionCall) {}
+    default boolean enterFunctionCall(FFunctionCall functionCall) {return true;} //boolean visitDefaults
     default void enterDynamicFunctionCall(DynamicFunctionCall functionCall) {}
     default void enterImplicitCast(FImplicitCast implicitCast) {}
     default void enterExplicitCast(FExplicitCast explicitCast) {}

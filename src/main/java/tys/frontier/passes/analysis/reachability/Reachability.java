@@ -124,8 +124,9 @@ public class Reachability {
         return new FClassVisitor() {
 
             @Override
-            public void enterFunctionCall(FFunctionCall functionCall) {
+            public boolean enterFunctionCall(FFunctionCall functionCall) {
                 seenFunctions.add(functionCall.getFunction());
+                return true;
             }
             @Override
             public FExpression visitFunctionAddress(FFunctionAddress address) {
@@ -137,8 +138,9 @@ public class Reachability {
     private static FClassVisitor reachabilityVisitor(Set<FFunctionCall> seenCalls, Set<FFunctionAddress> seenAddresses) {
         return new FClassVisitor() {
             @Override
-            public void enterFunctionCall(FFunctionCall functionCall) {
+            public boolean enterFunctionCall(FFunctionCall functionCall) {
                 seenCalls.add(functionCall);
+                return true;
             }
             @Override
             public FExpression visitFunctionAddress(FFunctionAddress address) {

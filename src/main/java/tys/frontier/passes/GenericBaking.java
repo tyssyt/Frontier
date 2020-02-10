@@ -1,6 +1,8 @@
 package tys.frontier.passes;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import jdk.nashorn.internal.ir.FunctionCall;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
@@ -20,6 +22,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static tys.frontier.util.Utils.removeLeadingUnderscores;
 import static tys.frontier.util.Utils.typesFromExpressionList;
 
 /**
@@ -214,10 +217,30 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
+    public boolean enterFunctionCall(FFunctionCall functionCall) {
+        return false; //do not visit defaults
+    }
+
+    @Override
     public FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
         Signature signature = functionCall.getSignature();
-        signature = Utils.findFunctionInstantiation(signature, typesFromExpressionList(params, typeInstantiation::getType), ImmutableListMultimap.of(), typeInstantiation);
-        return FFunctionCall.createTrusted(signature, params);
+
+        //params might contain null, so switch to keyword args
+        ImmutableList<FParameter> originalParams = signature.getParameters();
+        List<FType> paramTypes = new ArrayList<>(params.size());
+        BitSet defaultArgs = new BitSet(params.size());
+
+        for (int i = 0; i < params.size(); i++) {
+            FExpression param = params.get(i);
+            if (param == null) {
+                paramTypes.add(typeInstantiation.getType(originalParams.get(i).getType()));
+                defaultArgs.set(i);
+            } else
+                paramTypes.add(param.getType());
+        }
+
+        signature = Utils.findFunctionInstantiation(signature, paramTypes, ImmutableListMultimap.of(), typeInstantiation);
+        return FFunctionCall.createUnpreparedTrusted(signature, params, paramTypes, defaultArgs);
     }
 
     @Override
