@@ -18,6 +18,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.parser.syntaxTree.ParserContextUtils;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -71,12 +72,16 @@ public class GenericBaking implements FClassVisitor {
         }
 
         //set default value for fields in constructor
-        for (FParameter param : instantiatedClass.getConstructor().getSignature().getParameters()) {
+        ImmutableList<FParameter> parameters = instantiatedClass.getConstructor().getSignature().getParameters();
+        for (FParameter param : parameters) {
             if (!param.hasDefaultValue())
                 continue;
             FField field = instantiatedClass.getInstanceFields().get(param.getIdentifier());
-            if (field.hasAssignment())
-                param.setDefaultValueTrusted(field.getAssignment().get());
+            if (field.hasAssignment()) {
+                FExpression defaultValue = field.getAssignment().get();
+                Set<FParameter> defaultValueDependencies = ParserContextUtils.findDefaultValueDependencies(defaultValue, parameters);
+                param.setDefaultValueTrusted(defaultValue, defaultValueDependencies); //TODO I could just map the defaultValueDependencies instead?
+            }
         }
     }
 

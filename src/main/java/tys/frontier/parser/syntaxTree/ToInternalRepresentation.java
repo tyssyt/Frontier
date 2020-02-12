@@ -225,10 +225,13 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 }
 
                 field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
-                if (field.isInstance())
-                    for (FParameter param : currentType.getConstructor().getSignature().getParameters())
-                        if (param.getIdentifier().equals(field.getIdentifier()))
-                            param.setDefaultValue(expression);
+                if (field.isInstance()) {
+                    ImmutableList<FParameter> parameters = currentType.getConstructor().getSignature().getParameters();
+                    for (FParameter param : parameters)
+                        if (param.getIdentifier().equals(field.getIdentifier())) {
+                            param.setDefaultValue(expression, ParserContextUtils.findDefaultValueDependencies(expression, parameters));
+                        }
+                }
             } catch (Failed f) {
                 //do not allow Failed to propagate any further
             } catch (IncompatibleTypes incompatibleTypes) {
@@ -343,7 +346,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FrontierParser.ExpressionContext c = ctx.expression();
         if (c != null) {
             try {
-                treeData.parameters.get(ctx).setDefaultValue(visitExpression(c));
+                FExpression defaultValue = visitExpression(c);
+                ImmutableList<FParameter> parameters = currentFunction().function.getSignature().getParameters();
+                treeData.parameters.get(ctx).setDefaultValue(defaultValue, ParserContextUtils.findDefaultValueDependencies(defaultValue, parameters));
             } catch (IncompatibleTypes incompatibleTypes) {
                 errors.add(incompatibleTypes);
             } catch (Failed ignored) {}

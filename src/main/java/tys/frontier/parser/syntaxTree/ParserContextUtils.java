@@ -5,6 +5,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.predefinedClasses.*;
@@ -16,6 +18,7 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
@@ -277,5 +280,19 @@ public final class ParserContextUtils {
             }
         }
         return res;
+    }
+
+    public static Set<FParameter> findDefaultValueDependencies(FExpression defaultValue, List<FParameter> parameters) {
+        Set<FParameter> defaultValueDependencies = new HashSet<>();
+        defaultValue.accept(new ExpressionVisitor<Object>() {
+            @Override
+            @SuppressWarnings("SuspiciousMethodCalls")
+            public Object visitVariable(FLocalVariableExpression expression) {
+                if (parameters.contains(expression.getVariable()))
+                    defaultValueDependencies.add((FParameter) expression.getVariable());
+                return null;
+            }
+        });
+        return defaultValueDependencies;
     }
 }

@@ -10,6 +10,8 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
 
+import java.util.List;
+
 public class Signature implements Typed {
 
     private FFunction function;
@@ -33,6 +35,7 @@ public class Signature implements Typed {
 
     public static Pair<Signature, Signature> createSignatures(FFunction function, ImmutableList<FParameter> parameters, ImmutableList<FParameter> assignees, FType returnType) {
         if (assignees == null) {
+            numberParams(parameters);
             return new Pair<>(new Signature(function, parameters, returnType), null);
         } else {
             assert returnType == FTuple.VOID;
@@ -40,11 +43,17 @@ public class Signature implements Typed {
                     .addAll(parameters)
                     .addAll(assignees)
                     .build();
+            numberParams(rhsParameters);
             return new Pair<>(
                     new Signature(function, rhsParameters, returnType),
                     new Signature(function, parameters, assignees)
             );
         }
+    }
+
+    private static void numberParams(List<FParameter> params) {
+        for (int i = 0; i < params.size(); i++)
+            params.get(i).setIndex(i);
     }
 
     public FFunction getFunction() {

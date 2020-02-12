@@ -3,6 +3,9 @@ package tys.frontier.code.expression;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntLists;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
@@ -127,6 +130,42 @@ public class FFunctionCall implements FExpression {
 
     public ArgMapping getArgMapping() {
         return argMapping;
+    }
+
+    public IntList computeDefaultArgOrder() {
+        if (defaultArgs.isEmpty())
+            return IntLists.EMPTY_LIST;
+
+        IntList res = new IntArrayList();
+        ImmutableList<FParameter> parameters = signature.getParameters();
+
+        boolean changed = true;
+        while (changed) { //not the most efficient, but shouldn't need to be
+            changed = false;
+            boolean waiting = false;
+
+            parameters:
+            for (int i = 0; i < parameters.size(); i++) {
+                if (!defaultArgs.get(i) || res.contains(i))
+                    continue; //not a default arg or already in list
+                for (FParameter dependency : parameters.get(i).getDefaultValueDependencies()) {
+                    int j = dependency.getIndex();
+                    if (defaultArgs.get(j) && !res.contains(j)) {
+                        waiting = true;
+                        continue parameters; //still waiting for a dependency
+                    }
+                }
+                //default arg but not waiting on dependencies
+                res.add(i);
+                changed = true;
+                break;
+            }
+
+            if (!changed && waiting)
+                //no progress was made but values are still waiting on dependencies, this is a cycle
+                return Utils.NYI("cyclic default value dependency not broken by call"); //TODO
+        }
+        return res;
     }
 
     @Override
