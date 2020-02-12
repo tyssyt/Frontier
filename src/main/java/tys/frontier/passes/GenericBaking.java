@@ -98,6 +98,12 @@ public class GenericBaking implements FClassVisitor {
         return expression.accept(new GenericBaking(typeInstantiation));
     }
 
+    public static FExpression bake (FExpression expression, TypeInstantiation typeInstantiation, Map<FLocalVariable, FLocalVariable> varMap) {
+        GenericBaking baking = new GenericBaking(typeInstantiation);
+        baking.varMap.putAll(varMap);
+        return expression.accept(baking);
+    }
+
     @Override
     public void enterField(FField field) {
         if (field.isInstance())

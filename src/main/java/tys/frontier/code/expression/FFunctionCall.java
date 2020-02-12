@@ -3,6 +3,7 @@ package tys.frontier.code.expression;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
+import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
@@ -14,12 +15,11 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.passes.GenericBaking;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
+import java.util.*;
 
 public class FFunctionCall implements FExpression {
     private boolean prepared;
@@ -45,10 +45,16 @@ public class FFunctionCall implements FExpression {
         if (function.isInstantiation()) {
             List<FParameter> params = function.getBaseR().getSignature().getParameters();
             List<FParameter> targetParams = signature.getParameters();
+
+            //prepare varMap
+            Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
+            for (Pair<FParameter, FParameter> pair : Utils.zip(params, targetParams))
+                varMap.put(pair.a, pair.b);
+
             TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
             for (int i = 0; i < arguments.size(); i++)
                 if (arguments.get(i) == null) {
-                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue(), typeInstantiation); //TODO is there a smart way to figure out when we don't need baking?
+                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue(), typeInstantiation, varMap); //TODO is there a smart way to figure out when we don't need baking?
                     try {
                         arguments.set(i, bake.typeCheck(targetParams.get(i).getType()));
                     } catch (IncompatibleTypes incompatibleTypes) {
