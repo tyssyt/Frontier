@@ -1,5 +1,6 @@
 package tys.frontier.backend.llvm;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import org.bytedeco.javacpp.PointerPointer;
@@ -90,6 +91,7 @@ class LLVMTransformer implements
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
+    private Map<FLocalVariable, LLVMValueRef> tempVars = new HashMap<>(); //TODO this is a bit of a hack to avoid creating vars in function calls
     private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
 
     private final LLVMTypeRef indexType;
@@ -817,11 +819,37 @@ class LLVMTransformer implements
     }
 
     public LLVMValueRef visitFunctionCall(FFunctionCall functionCall, Collection<LLVMValueRef> additionalArgs) {
+        ImmutableList<FParameter> parameters = functionCall.getSignature().getParameters();
+        boolean hasPacking = functionCall.getArgMapping().hasPacking();
+        assert !hasPacking || parameters.stream()
+                .map(FParameter::getDefaultValueDependencies)
+                .allMatch(dep -> dep == null || dep.isEmpty())
+                : "can't handle function calls with packing and dependent default args yet, sorry"; //TODO
+
+        List<? extends FExpression> arguments = functionCall.getArguments();
+        List<LLVMValueRef> args = new ArrayList<>(arguments.size());
         //given arguments
-        List<LLVMValueRef> args = new ArrayList<>();
-        for (FExpression arg : functionCall.getArguments())
-            args.add(arg.accept(this));
-        args = prepareArgs(args, Utils.typesFromExpressionList(functionCall.getFunction().getSignature().getParameters()), functionCall.getArgMapping());
+        for (int i = 0; i < arguments.size(); i++) {
+            if (functionCall.isDefaultArg(i))
+                continue;
+            LLVMValueRef llvmValue = arguments.get(i).accept(this);
+            if (!hasPacking) {
+                LLVMValueRef old = tempVars.put(parameters.get(i), llvmValue);
+                assert old == null;
+            }
+            args.add(i, llvmValue);
+        }
+        //default arguments
+        for (Integer argIndex : functionCall.computeDefaultArgOrder()) {
+            LLVMValueRef llvmValue = arguments.get(argIndex).accept(this);
+            tempVars.put(parameters.get(argIndex), llvmValue);
+            args.add(argIndex, llvmValue);
+        }
+
+        for (FParameter p : parameters)
+            tempVars.remove(p);
+
+        args = prepareArgs(args, Utils.typesFromExpressionList(parameters), functionCall.getArgMapping());
         args.addAll(additionalArgs);
 
         FFunction function = functionCall.getFunction();
@@ -895,6 +923,8 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitVariable(FLocalVariableExpression expression) {
         LLVMValueRef address = localVars.get(expression.getVariable());
+        if (address == null)
+            return tempVars.get(expression.getVariable());
         switch (expression.getAccessType()) {
             case LOAD:
                 return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
