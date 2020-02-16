@@ -1,0 +1,36 @@
+import Timing;
+
+//maybe try upgrading to this? https://cr.yp.to/chacha.html
+//this is taken from https://stackoverflow.com/a/27160892
+export class Random:
+
+    export seed: int64; //TODO final/readonly
+    rng_a: int64;
+    rng_b: int64;
+    rng_c: int64;
+    rng_counter: int64 = 1;
+
+    static defaultInstance: Random = createRNG(Timing.getTimestamp());
+
+    export static createRNG(seed: int64) -> Random {
+        return new Random(seed = seed, rng_a = seed, rng_b = seed, rng_c = seed);
+        //TODO some for loop
+        i: int32 = 0;
+        while i<12 {
+            next();
+            i = i+1;
+        }
+    }
+
+    export next() -> int64 {
+        res: int64 = rng_a + rng_b + rng_counter;
+        rng_counter = rng_counter+1;
+        rng_a = rng_b ^ rng_b.uShiftR(12);
+        rng_b = rng_c + rng_c.shiftL(3);
+        rng_c = (rng_c.shiftL(25) | rng_c.uShiftR(39)) + res;
+        return res;
+    }
+
+    export static next() -> int64 {
+        return defaultInstance.next();
+    }

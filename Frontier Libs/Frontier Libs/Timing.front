@@ -1,0 +1,17 @@
+import TemporaryHacks;
+import Kernel32;
+
+export class Timing:
+
+    export static getTimestamp() -> int64 {
+        ptr := new LongPtr(i=0);
+        Kernel32.QueryPerformanceCounter(ptr);
+        return ptr.i;
+     }
+
+    export static time<I,O>(fun: (I->O), params: I) -> O, int64 { //TODO fix tuple inst for generic functions
+        start := getTimestamp();
+        res := fun(params);
+        end := getTimestamp();
+        return res, end-start;
+    }

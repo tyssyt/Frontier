@@ -3,6 +3,10 @@ import TemporaryHacks;
 //https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createthread?redirectedfrom=MSDN
 //https://docs.microsoft.com/en-us/windows/win32/procthread/creating-threads
 
+export native class Kernel32:
+
+    export native static QueryPerformanceCounter(performanceCount: LongPtr) -> bool;
+
 export native class WThread:
 
     export native static CreateThread (

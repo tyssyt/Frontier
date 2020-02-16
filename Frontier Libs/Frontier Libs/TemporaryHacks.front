@@ -9,4 +9,9 @@
 export native class Data:
 
 export native class IntPtr:
+    export constructors;
     export i: int32;
+
+export native class LongPtr:
+    export constructors;
+    export i: int64;
