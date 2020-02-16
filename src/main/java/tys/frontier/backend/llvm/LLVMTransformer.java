@@ -58,6 +58,9 @@ class LLVMTransformer implements
             .put(AAND.identifier, LLVMAnd)
             .put(AOR.identifier, LLVMOr)
             .put(XOR.identifier, LLVMXor)
+            .put(FIntN.SHIFT_L, LLVMShl)
+            .put(FIntN.U_SHIFT_R, LLVMLShr)
+            .put(FIntN.S_SHIFT_R, LLVMAShr)
             .build();
     private static final ImmutableMap<FIdentifier, Integer> cmpOpMap = ImmutableMap.<FIdentifier, Integer>builder()
             .put(EQUALS.identifier, LLVMIntEQ)

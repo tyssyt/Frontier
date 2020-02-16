@@ -23,6 +23,7 @@ public class FIntN extends FPredefinedClass {
         assert n>=4;
         this.n = n;
         addPredefinedFunctionsForArithType();
+        addPredefinedFunctionsForIntType();
     }
 
     public static FIntN getIntN(int n) {
