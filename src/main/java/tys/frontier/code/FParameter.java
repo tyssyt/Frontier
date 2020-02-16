@@ -20,29 +20,8 @@ public class FParameter extends FLocalVariable {
         this.hasDefaultValue = hasDefaultValue;
     }
 
-    private FParameter(FIdentifier identifier, FType type, FExpression defaultValue, Set<FParameter> defaultValueDependencies) throws IncompatibleTypes {
-        super(identifier, type);
-        if (defaultValue != null) {
-            this.hasDefaultValue = true;
-            this.defaultValue = defaultValue.typeCheck(type);
-            this.defaultValueDependencies = defaultValueDependencies;
-        }
-    }
-
     public static FParameter create(FIdentifier identifier, FType type, boolean hasDefaultValue) {
         return new FParameter(identifier, type, hasDefaultValue);
-    }
-
-    public static FParameter create(FIdentifier identifier, FType type, FExpression defaultValue, Set<FParameter> defaultValueDependencies) throws IncompatibleTypes {
-        return new FParameter(identifier, type, defaultValue, defaultValueDependencies);
-    }
-
-    public static FParameter createTrusted(FIdentifier identifier, FType type, FExpression defaultValue, Set<FParameter> defaultValueDependencies) {
-        try {
-            return create(identifier, type, defaultValue, defaultValueDependencies);
-        } catch (IncompatibleTypes incompatibleTypes) {
-            return Utils.cantHappen();
-        }
     }
 
     public int getIndex() {
