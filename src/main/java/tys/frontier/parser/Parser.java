@@ -6,6 +6,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
+import tys.frontier.logging.Logger;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
@@ -26,6 +27,7 @@ public class Parser {
     private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
     public static Module parse(Path file, Style style) throws IOException, SyntaxErrors, SyntaxError {
+        Log.info(Parser.class, "parsing " + file);
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
