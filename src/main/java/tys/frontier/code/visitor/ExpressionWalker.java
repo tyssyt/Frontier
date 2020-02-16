@@ -12,7 +12,7 @@ public interface ExpressionWalker<Expression> {
     }
 
     default Expression visitFunctionCall(FFunctionCall functionCall) {
-        for (FExpression param : functionCall.getArguments())
+        for (FExpression param : functionCall.getArguments(true))
             param.accept(this);
         return null;
     }

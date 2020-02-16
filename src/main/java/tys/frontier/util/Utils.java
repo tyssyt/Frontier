@@ -96,6 +96,13 @@ public final class Utils {
         return builder.build();
     }
 
+    public static <S,T> HashSet<T> map(Set<S> source, Function<S, T> mapper) {
+        HashSet<T> res = new HashSet<>(source.size());
+        for (S s : source)
+            res.add(mapper.apply(s));
+        return res;
+    }
+
     public static <K,S,T> HashMap<K,T> map(Map<K,S> source, Function<S, T> mapper) {
         HashMap<K,T> res = new HashMap<>();
         for (Map.Entry<K, S> entry : source.entrySet())

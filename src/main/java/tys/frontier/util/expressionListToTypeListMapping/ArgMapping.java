@@ -291,4 +291,16 @@ public class ArgMapping {
         }
         return packed;
     }
+
+    public int mapArgIndexToParamIndex(int i) {
+        if (!hasPacking() && !hasUnpacking())
+            return i;
+        return Utils.NYI("mapArgIndexToParamIndex, needed on a call with dependent default args and packing/unpacking"); //TODO
+    }
+
+    public int mapParamIndexToArgIndex(int i) {
+        if (!hasPacking() && !hasUnpacking())
+            return i;
+        return Utils.NYI("mapParamIndexToArgIndex, needed on a call with dependent default args and packing/unpacking"); //TODO
+    }
 }

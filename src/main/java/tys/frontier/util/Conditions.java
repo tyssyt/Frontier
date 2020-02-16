@@ -27,7 +27,7 @@ public class Conditions {
         while (!todo.isEmpty()) {
             FExpression cur = todo.remove();
             if (cur instanceof FFunctionCall && ((FFunctionCall) cur).getFunction().getIdentifier().equals(BinaryOperator.AND.identifier))
-                todo.addAll(((FFunctionCall) cur).getArguments());
+                todo.addAll(((FFunctionCall) cur).getArguments(true));
             else
                 res.add(cur);
         }

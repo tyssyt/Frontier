@@ -169,7 +169,7 @@ public class Reachability {
     private static void handleBaseAnalysis(Pair<Set<FFunctionCall>, Set<FFunctionAddress>> baseAnalysis, TypeInstantiation typeInstantiation, Collection<FFunction> seenFunctions) {
         //Instantiate Base results and add to Q/reach
         for (FFunctionCall fC : baseAnalysis.a) {
-            List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(), typeInstantiation::getType);
+            List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArguments(true), typeInstantiation::getType);
             FFunction f = Utils.findFunctionInstantiation(fC.getSignature(), paramTypes, ImmutableListMultimap.of(), typeInstantiation).getFunction();
             seenFunctions.add(f);
         }

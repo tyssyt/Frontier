@@ -826,7 +826,7 @@ class LLVMTransformer implements
                 .allMatch(dep -> dep == null || dep.isEmpty())
                 : "can't handle function calls with packing and dependent default args yet, sorry"; //TODO
 
-        List<? extends FExpression> arguments = functionCall.getArguments();
+        List<? extends FExpression> arguments = functionCall.getArguments(true);
         List<LLVMValueRef> args = new ArrayList<>(arguments.size());
         //given arguments
         for (int i = 0; i < arguments.size(); i++) {

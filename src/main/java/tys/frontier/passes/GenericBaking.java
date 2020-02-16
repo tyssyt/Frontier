@@ -2,7 +2,6 @@ package tys.frontier.passes;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import jdk.nashorn.internal.ir.FunctionCall;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
@@ -11,19 +10,22 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.*;
+import tys.frontier.code.literal.FNull;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.visitor.FClassVisitor;
-import tys.frontier.parser.syntaxTree.ParserContextUtils;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
-import static tys.frontier.util.Utils.removeLeadingUnderscores;
+import static java.util.Collections.emptySet;
 import static tys.frontier.util.Utils.typesFromExpressionList;
 
 /**
@@ -78,9 +80,7 @@ public class GenericBaking implements FClassVisitor {
                 continue;
             FField field = instantiatedClass.getInstanceFields().get(param.getIdentifier());
             if (field.hasAssignment()) {
-                FExpression defaultValue = field.getAssignment().get();
-                Set<FParameter> defaultValueDependencies = ParserContextUtils.findDefaultValueDependencies(defaultValue, parameters);
-                param.setDefaultValueTrusted(defaultValue, defaultValueDependencies); //TODO I could just map the defaultValueDependencies instead?
+                param.setDefaultValueTrusted(field.getAssignment().get(), emptySet()); //TODO dependencies between fields
             }
         }
     }
@@ -125,10 +125,18 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public void enterFunction(FFunction function) {
         assert !function.isConstructor();
-        for (int i = 0; i < function.getSignature().getParameters().size(); i++) {
-            FParameter p = currentFunction.getSignature().getParameters().get(i);
-            FParameter old = function.getSignature().getParameters().get(i);
-            varMap.put(old, p);
+
+        //map parameters
+        for (Pair<FParameter, FParameter> pair : Utils.zip(currentFunction.getSignature().getParameters(), function.getSignature().getParameters()))
+            varMap.put(pair.b, pair.a);
+
+        //bake default values
+        for (Pair<FParameter, FParameter> pair : Utils.zip(currentFunction.getSignature().getParameters(), function.getSignature().getParameters())) {
+            if (pair.a.hasDefaultValue()) {
+                assert pair.b.hasDefaultValue();
+                Set<FParameter> defaultValueDependencies = Utils.map(pair.b.getDefaultValueDependencies(), v -> (FParameter) varMap.get(v));
+                pair.a.setDefaultValueTrusted(pair.b.getDefaultValue().accept(this), defaultValueDependencies);
+            }
         }
     }
     @Override

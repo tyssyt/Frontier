@@ -6,9 +6,7 @@ import com.google.common.collect.ListMultimap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
-import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
@@ -17,59 +15,22 @@ import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
-import tys.frontier.passes.GenericBaking;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.*;
 
 public class FFunctionCall implements FExpression {
-    private boolean prepared;
     private Signature signature;
     private List<FExpression> arguments;
     private BitSet defaultArgs;
     private ArgMapping argMapping;
 
-    private FFunctionCall(boolean prepared, Signature signature, List<FExpression> arguments, BitSet defaultArgs, ArgMapping argMapping) {
-        this.prepared = prepared;
+    private FFunctionCall(Signature signature, List<FExpression> arguments, BitSet defaultArgs, ArgMapping argMapping) {
         this.signature = signature;
         this.arguments = arguments;
         this.defaultArgs = defaultArgs;
         this.argMapping = argMapping;
-    }
-
-    private void prepare() { //fills in default arguments
-        if (prepared)
-            return;
-        prepared = true;
-
-        FFunction function = signature.getFunction();
-        if (function.isInstantiation()) {
-            List<FParameter> params = function.getBaseR().getSignature().getParameters();
-            List<FParameter> targetParams = signature.getParameters();
-
-            //prepare varMap
-            Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
-            for (Pair<FParameter, FParameter> pair : Utils.zip(params, targetParams))
-                varMap.put(pair.a, pair.b);
-
-            TypeInstantiation typeInstantiation = function.getTypeInstantiationToBase();
-            for (int i = 0; i < arguments.size(); i++)
-                if (arguments.get(i) == null) {
-                    FExpression bake = GenericBaking.bake(params.get(i).getDefaultValue(), typeInstantiation, varMap); //TODO is there a smart way to figure out when we don't need baking?
-                    try {
-                        arguments.set(i, bake.typeCheck(targetParams.get(i).getType()));
-                    } catch (IncompatibleTypes incompatibleTypes) {
-                        Utils.cantHappen();
-                    }
-                }
-        } else {
-            List<FParameter> params = signature.getParameters();
-            for (int i = 0; i < arguments.size(); i++)
-                if (arguments.get(i) == null)
-                    arguments.set(i, params.get(i).getDefaultValue());
-        }
     }
 
     public static FFunctionCall create(Signature signature, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
@@ -85,13 +46,13 @@ public class FFunctionCall implements FExpression {
             } else
                 args.addAll(arg); //adds null for default args
         }
-        return new FFunctionCall(defaultArgs.isEmpty(), signature, args, defaultArgs, argMapping);
+        return new FFunctionCall(signature, args, defaultArgs, argMapping);
     }
 
     public static FFunctionCall createUnpreparedTrusted(Signature signature, List<FExpression> arguments, List<FType> paramTypes, BitSet defaultArgs) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(paramTypes, Utils.typesFromExpressionList(signature.getParameters()));
-            return new FFunctionCall(defaultArgs.isEmpty(), signature, arguments, defaultArgs, argMapping);
+            return new FFunctionCall(signature, arguments, defaultArgs, argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
@@ -100,7 +61,7 @@ public class FFunctionCall implements FExpression {
     public static FFunctionCall createTrusted(Signature signature, List<FExpression> arguments) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(signature.getParameters()));
-            return new FFunctionCall(true, signature, arguments, new BitSet(arguments.size()), argMapping);
+            return new FFunctionCall(signature, arguments, new BitSet(arguments.size()), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
@@ -114,9 +75,23 @@ public class FFunctionCall implements FExpression {
         return signature.getFunction();
     }
 
-    public List<? extends FExpression> getArguments() {
-        prepare();
-        return arguments;
+    private List<? extends FExpression> fillDefaultArgs() {
+        List<FExpression> res = new ArrayList<>(arguments.size());
+        for (int i = 0; i < arguments.size(); i++) {
+            if (arguments.get(i) == null) {
+                int j = argMapping.mapArgIndexToParamIndex(i);
+                res.add(signature.getParameters().get(j).getDefaultValue());
+            } else
+                res.add(arguments.get(i));
+        }
+        return res;
+    }
+
+    public List<? extends FExpression> getArguments(boolean fillDefaultArgs) {
+        if (fillDefaultArgs)
+            return fillDefaultArgs();
+        else
+            return arguments;
     }
 
     public boolean isDefaultArg(int n) {
@@ -145,11 +120,11 @@ public class FFunctionCall implements FExpression {
             boolean waiting = false;
 
             parameters:
-            for (int i = 0; i < parameters.size(); i++) {
+            for (int i = 0; i < arguments.size(); i++) {
                 if (!defaultArgs.get(i) || res.contains(i))
                     continue; //not a default arg or already in list
-                for (FParameter dependency : parameters.get(i).getDefaultValueDependencies()) {
-                    int j = dependency.getIndex();
+                for (FParameter dependency : parameters.get(argMapping.mapArgIndexToParamIndex(i)).getDefaultValueDependencies()) {
+                    int j = argMapping.mapParamIndexToArgIndex(dependency.getIndex());
                     if (defaultArgs.get(j) && !res.contains(j)) {
                         waiting = true;
                         continue parameters; //still waiting for a dependency
@@ -171,21 +146,18 @@ public class FFunctionCall implements FExpression {
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         boolean visitDefaults = visitor.enterFunctionCall(this);
-        if (visitDefaults)
-            prepare();
         List<E> params = new ArrayList<>(this.arguments.size());
-        for (int i = 0; i < arguments.size(); i++) {
-            if (!visitDefaults && isDefaultArg(i))
+        for (FExpression argument : getArguments(visitDefaults)) {
+            if (argument == null)
                 params.add(null);
             else
-                params.add(arguments.get(i).accept(visitor));
+                params.add(argument.accept(visitor));
         }
         return visitor.exitFunctionCall(this, params);
     }
 
     @Override
     public <E> E accept(ExpressionWalker<E> walker) {
-        prepare();
         return walker.visitFunctionCall(this);
     }
 

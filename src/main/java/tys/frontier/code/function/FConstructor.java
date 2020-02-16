@@ -18,9 +18,13 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.type.FClass;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 public class FConstructor extends FBaseFunction {
 
@@ -60,26 +64,18 @@ public class FConstructor extends FBaseFunction {
     }
 
     private static ImmutableList<FParameter> getParameters(FClass fClass) {
-        List<FParameter> arguments = new ArrayList<>();
-        List<FParameter> defaultArguments = new ArrayList<>();
+        ImmutableList.Builder<FParameter> arguments = ImmutableList.builder();
 
         for (FField field : fClass.getInstanceFields().values()) {
-            if (field.getAssignment().isPresent()) {
-                FExpression defaultValue = field.getAssignment().get();
-                defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
-            } else if (field.hasAssignment()) {
-                defaultArguments.add(FParameter.create(field.getIdentifier(), field.getType(), true));
-            } else if (FOptional.canBeTreatedAsOptional(field.getType())) {
-                FExpression defaultValue = new FLiteralExpression(new FNull(field.getType()));
-                defaultArguments.add(FParameter.createTrusted(field.getIdentifier(), field.getType(), defaultValue));
-            } else {
-                arguments.add(FParameter.create(field.getIdentifier(), field.getType(), false));
-            }
+            assert !field.getAssignment().isPresent();
+            boolean canBeTreatedAsOptional = FOptional.canBeTreatedAsOptional(field.getType());
+            FParameter parameter = FParameter.create(field.getIdentifier(), field.getType(), canBeTreatedAsOptional || field.hasAssignment());
+            if (canBeTreatedAsOptional)
+                parameter.setDefaultValueTrusted(new FLiteralExpression(new FNull(parameter.getType())), emptySet());
+            arguments.add(parameter);
         }
 
-        arguments.sort(Comparator.comparing(o -> o.getIdentifier().name)); //TODO alphabetical order is far from a good choice here, but for now...
-        defaultArguments.sort(Comparator.comparing(o -> o.getIdentifier().name));
-        return new ImmutableList.Builder<FParameter>().addAll(arguments).addAll(defaultArguments).build();
+        return arguments.build();
     }
 
     private void generateBody() {
