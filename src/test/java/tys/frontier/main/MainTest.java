@@ -160,4 +160,9 @@ public class MainTest {
         String res = doMain("Operators", null);
         assertEquals(loadOut("OperatorsOut.txt"), res);
     }
+    @Test
+    public void mainBreaksOptimizer() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("BreaksOptimizer", null);
+        assertEquals("00", res);
+    }
 }
