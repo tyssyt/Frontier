@@ -3,6 +3,7 @@ package tys.frontier.backend.llvm;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
 import org.bytedeco.llvm.LLVM.LLVMBuilderRef;
@@ -830,7 +831,7 @@ class LLVMTransformer implements
                 : "can't handle function calls with packing and dependent default args yet, sorry"; //TODO
 
         List<? extends FExpression> arguments = functionCall.getArguments(true);
-        List<LLVMValueRef> args = new ArrayList<>(arguments.size());
+        LLVMValueRef[] unpreparedArgs = new LLVMValueRef[arguments.size()];
         //given arguments
         for (int i = 0; i < arguments.size(); i++) {
             if (functionCall.isDefaultArg(i))
@@ -840,19 +841,19 @@ class LLVMTransformer implements
                 LLVMValueRef old = tempVars.put(parameters.get(i), llvmValue);
                 assert old == null;
             }
-            args.add(i, llvmValue);
+            unpreparedArgs[i] = llvmValue;
         }
         //default arguments
         for (Integer argIndex : functionCall.computeDefaultArgOrder()) {
             LLVMValueRef llvmValue = arguments.get(argIndex).accept(this);
             tempVars.put(parameters.get(argIndex), llvmValue);
-            args.add(argIndex, llvmValue);
+            unpreparedArgs[argIndex] = llvmValue;
         }
 
         for (FParameter p : parameters)
             tempVars.remove(p);
 
-        args = prepareArgs(args, Utils.typesFromExpressionList(parameters), functionCall.getArgMapping());
+        List<LLVMValueRef> args = prepareArgs(Lists.newArrayList(unpreparedArgs), Utils.typesFromExpressionList(parameters), functionCall.getArgMapping());
         args.addAll(additionalArgs);
 
         FFunction function = functionCall.getFunction();
