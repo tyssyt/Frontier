@@ -24,7 +24,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class MainTest {
 
@@ -164,5 +164,12 @@ public class MainTest {
     public void mainBreaksOptimizer() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("BreaksOptimizer", null);
         assertEquals("00", res);
+    }
+    @Test
+    public void mainSort() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("Sort", null, "50000", "100");
+        System.out.println(res);
+        assertTrue(res.contains("ordered"));
+        assertFalse(res.contains("FAILED"));
     }
 }

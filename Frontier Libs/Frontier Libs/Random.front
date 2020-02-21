@@ -1,4 +1,5 @@
 import Timing;
+import Iter;
 
 //maybe try upgrading to this? https://cr.yp.to/chacha.html
 //this is taken from https://stackoverflow.com/a/27160892
@@ -13,13 +14,11 @@ export class Random:
     static defaultInstance: Random = createRNG(Timing.getTimestamp());
 
     export static createRNG(seed: int64) -> Random {
-        return new Random(seed = seed, rng_a = seed, rng_b = seed, rng_c = seed);
-        //TODO some for loop
-        i: int32 = 0;
-        while i<12 {
-            next();
-            i = i+1;
+        res := new Random(seed = seed, rng_a = seed, rng_b = seed, rng_c = seed);
+        for i : Iter.count(12) {
+            res.next();
         }
+        return res;
     }
 
     export next() -> int64 {

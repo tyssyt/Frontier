@@ -1,0 +1,102 @@
+import Strings;
+import IO;
+import Sort;
+import Random;
+import Timing;
+import Iter;
+
+class Obj:
+    private static UID_COUNTER: int64 = 0;
+
+    i : int64;
+    name: char[] = "Dude123";
+    connection: Obj?;
+    uid: int64;
+
+    static create(i: int64) -> Obj {
+        UID_COUNTER = UID_COUNTER +1;
+        return new Obj(i=i, uid=UID_COUNTER);
+    }
+
+    static create(i: int64, uid: int64) -> Obj {
+        return new Obj(i=i, uid=uid);
+    }
+
+export class Main:
+
+    static random: Random;
+
+    static comparator: (Obj,Obj -> bool) = \i, j -> i.i<=j.i;
+
+    export static main(args: char[][]) {
+        size: int32 = (int32) Strings.parseInt(args[1]);
+        iterations: int32 = (int32) Strings.parseInt(args[2]);
+
+        if args.size > 3 {
+            random = Random.createRNG(Strings.parseInt(args[3]));
+        } else {
+            random = Random.createRNG(Timing.getTimestamp());
+        }
+        IO.print("RNG Seed: ");
+        IO.printInt(random.seed);
+        IO.printLine("");
+
+        sumSort: int64 = 0;
+        anyFail := false;
+
+        for i : Iter.count(iterations) {
+            arr := createArray(size);
+            start := Timing.getTimestamp();
+            Sort.sort(arr, comparator);
+            end := Timing.getTimestamp();
+            time := end-start;
+            sumSort = sumSort + time;
+            if !checkOrdered(arr, comparator) {
+                anyFail = true;
+            }
+        }
+
+        IO.print("sumSort:  ");
+        IO.printInt(sumSort);
+        IO.printLine("");
+
+        if anyFail {
+            IO.printLine("FAILED");
+        } else {
+            IO.printLine("ordered");
+        }
+    }
+
+    static createArray(size: int32) -> Obj[] {
+        res := new Obj[size];
+
+        for val, i : res {
+            res[i] = Obj.create(random.next);
+        }
+
+        //create a few duplicates
+        for i : Iter.count(size/10) {
+            res[rand(size)].i = res[rand(size)].i;
+        }
+
+        return res;
+    }
+
+    static rand(max: int32) -> int32 {
+        i := (int32) random.next;
+        if i < 0 {
+            i = -1 * i;
+        }
+        return i % max;
+    }
+
+    static checkOrdered <T> (arr: T[], comparator: (T,T -> bool)) -> bool {
+        i: int32 = 1;
+        while i< arr.size {
+            if !comparator(arr[i-1], arr[i]) {
+                return false;
+            }
+            i = i+1;
+        }
+        return true;
+    }
