@@ -1,0 +1,79 @@
+export class Sort:
+
+    private static SMALL_SORT_THRESHOLD: int32 = 49;
+
+    export static sort <T> (list: T[], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
+        if end <= start {
+            return;
+        }
+
+        if end - start <= SMALL_SORT_THRESHOLD {
+            sortSmall(list, comparator, start, end);
+            return;
+        }
+
+        //select pivot, swap it to beginning
+        pivotPos: int32 = (start+end)/2;
+        list[start], list[pivotPos] = list[pivotPos], list[start];
+        pivot := list[start];
+
+        l: int32 = start+1;
+        r: int32 = end;
+        while l<r {
+            //advance l to next element that needs to swap
+            while l<r && comparator(list[l], pivot) {
+                l = l+1;
+            }
+
+            //advance r to next element that needs to swap
+            while l<r && !comparator(list[r], pivot) {
+                r = r-1;
+            }
+
+            list[l], list[r] = list[r], list[l];
+        }
+
+        //assert l==r TODO
+        if l =!= r {
+            // I think I need to swap l & r again
+            list[l], list[r] = list[r], list[l];
+
+            //cause something bad!
+            list[0] = pivot;
+            list[list.size-1] = pivot;
+            return;
+        }
+
+        //check which half the "center" belongs to
+        if comparator(list[l], pivot) {
+            //left, swap pivot with center
+            list[l], list[start] = list[start], list[l];
+            l = l - 1;
+            r = r + 1;
+        } else {
+            //right, swap pivot with center-1
+            list[l-1], list[start] = list[start], list[l-1];
+            l = l - 2;
+        }
+
+        //do recursive
+        sort(list, comparator, start, l);
+        sort(list, comparator, r, end);
+    }
+
+    export static sortSmall <T> (list: T[], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
+        i := start+1;
+        while i <= end {
+            val := list[i];
+            j: int32 = i-1;
+            while j >= start {
+                if comparator(list[j], val) {
+                    break;
+                }
+                list[j+1] = list[j];
+                j = j-1;
+            }
+            list[j+1] = val;
+            i = i+1;
+        }
+    }

@@ -4,7 +4,7 @@ import Kernel32;
 export class Timing:
 
     export static getTimestamp() -> int64 {
-        ptr := new LongPtr(i=0);
+        ptr := new LongPtr(i=0); //TODO do not create an object, hand over a pointer to an int64 on the stack
         Kernel32.QueryPerformanceCounter(ptr);
         return ptr.i;
      }

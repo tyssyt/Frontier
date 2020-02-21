@@ -1,0 +1,16 @@
+export class Iter:
+
+    static count(to: int32) -> Count {
+        return new Count(size=to);
+    }
+
+
+class Count: //TODO this is a bit of a hack until we get more ways to define for loops
+    constructors;
+    for: element**(Count, int32), size**(Count);
+
+    size: int32;
+
+    element(i: int32) -> int32 {
+        return i;
+    }
