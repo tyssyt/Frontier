@@ -58,8 +58,6 @@ public class Conditions {
     public static FExpression and(List<FExpression> atoms) {
         if (atoms.isEmpty())
             return new FLiteralExpression(FBoolLiteral.TRUE);
-        if (atoms.size() == 1)
-            return atoms.get(0);
 
         Iterator<FExpression> it = atoms.iterator();
         FExpression res = it.next();

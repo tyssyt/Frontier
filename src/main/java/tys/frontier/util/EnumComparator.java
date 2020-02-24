@@ -34,7 +34,7 @@ public class EnumComparator<E extends Enum<E>> implements Comparator<E> {
             this.keyType = keyType;
         }
 
-        public Builder next(E e) {
+        public Builder<E> next(E e) {
             if (!order.contains(e))
                 order.add(e);
             return this;

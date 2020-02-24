@@ -21,7 +21,7 @@ public class NameGenerator implements Iterator<String> {
 
     @Override
     public String next() {
-        String res = new StringBuilder(prefix).append(infix).append(suffix).toString();
+        String res = prefix + String.valueOf(infix) + suffix;
         inc();
         return res;
     }
