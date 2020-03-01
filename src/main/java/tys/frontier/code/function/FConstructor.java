@@ -70,7 +70,7 @@ public class FConstructor extends FBaseFunction {
             assert !field.getAssignment().isPresent();
             boolean canBeTreatedAsOptional = FOptional.canBeTreatedAsOptional(field.getType());
             FParameter parameter = FParameter.create(field.getIdentifier(), field.getType(), canBeTreatedAsOptional || field.hasAssignment());
-            if (canBeTreatedAsOptional)
+            if (!field.hasAssignment() && canBeTreatedAsOptional)
                 parameter.setDefaultValueTrusted(new FLiteralExpression(new FNull(parameter.getType())), emptySet());
             arguments.add(parameter);
         }
