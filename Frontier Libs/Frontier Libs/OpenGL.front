@@ -1,0 +1,66 @@
+native include OpenGL32.Lib; //TODO platfrom dependent include, this is x64
+
+export native class GL:
+
+//Clear
+export static GL_COLOR_BUFFER_BIT:   int32 = 16384;
+export static GL_DEPTH_BUFFER_BIT:   int32 =   256;
+export static GL_ACCUM_BUFFER_BIT:   int32 =   512;
+export static GL_STENCIL_BUFFER_BIT: int32 =  1024;
+export native static glClear(mask: int32);
+
+//BeginMode
+export static GL_POINTS:         int32 = 0;
+export static GL_LINES:          int32 = 1;
+export static GL_LINE_LOOP:      int32 = 2;
+export static GL_LINE_STRIP:     int32 = 3;
+export static GL_TRIANGLES:      int32 = 4;
+export static GL_TRIANGLE_STRIP: int32 = 5;
+export static GL_TRIANGLE_FAN:   int32 = 6;
+export static GL_QUADS:          int32 = 7;
+export static GL_QUAD_STRIP:     int32 = 8;
+export static GL_POLYGON:        int32 = 9;
+export native static glBegin(mode: int32);
+export native static glEnd();
+
+export native static glNormal3f(x: float32, y: float32, z: float32);
+export native static glNormal3d(x: float64, y: float64, z: float64);
+export native static glVertex3f(x: float32, y: float32, z: float32);
+export native static glVertex3d(x: float64, y: float64, z: float64);
+
+//MatrixMode
+export static GL_MODELVIEW  : int32 = 5888;
+export static GL_PROJECTION : int32 = 5889;
+export static GL_TEXTURE    : int32 = 5890;
+export native static glMatrixMode(mode: int32);
+
+export native static glFrustum(
+    left:   float64,
+    right:  float64,
+    bottom: float64,
+    top:    float64,
+    zNear:  float64,
+    zFar:   float64
+);
+
+export native static glViewport(x: int32 = 0, y: int32 = 0, width: int32, height: int32);
+
+export native static glTranslatef(x: float32, y: float32, z: float32);
+export native static glTranslated(x: float64, y: float64, z: float64);
+export native static glRotatef(angle: float32, x: float32, y: float32, z: float32);
+export native static glRotated(angle: float64, x: float64, y: float64, z: float64);
+
+
+//Capabilities
+export static GL_DEPTH_TEST: int32 = 2929;
+export static GL_LIGHTING: int32 = 2896;
+export static GL_LIGHT0: int32 = 16384;
+export static GL_LIGHT1: int32 = 16385;
+export static GL_LIGHT2: int32 = 16386;
+export static GL_LIGHT3: int32 = 16387;
+export static GL_LIGHT4: int32 = 16388;
+export static GL_LIGHT5: int32 = 16389;
+export static GL_LIGHT6: int32 = 16390;
+export static GL_LIGHT7: int32 = 16391;
+export native static glEnable(cap: int32);
+export native static glDisable(cap: int32);
