@@ -15,7 +15,7 @@ export native class WndClass: //WNDCLASSEXA
 
     export cbSize: int32 = 80; //UINT TODO = sizeOf(WndClass)
     export style: int32 = 35; //UINT = CS_OWNDC | CS_HREDRAW | CS_VREDRAW
-    export lpfnWndProc: (WWindow, int32, int64, int64 -> int64) = DefWindowProcA**; //WNDPROC
+    export lpfnWndProc: (WWindow, int32, int64, int64 -> int64) = DefWindowProcA**; //WNDPROC //TODO int64 is actually a pointer and thus architecture dependent in size...
     export cbClsExtra: int32 = 0; //int
     export cbWndExtra: int32 = 0; //int
     export hInstance: Instance = WinMainArgs.hInstance; //HINSTANCE
@@ -55,6 +55,8 @@ export native class WWindow: //HWND
 
     export native ShowWindow(nCmdShow: int32 = WinMainArgs.nCmdShow) -> bool;
     export native UpdateWindow() -> bool;
+    export native static GetDC(hWnd: WWindow?) -> DeviceContext?;
+    export native static ReleaseDC(hWnd: WWindow?, hDC: DeviceContext) -> int32;
 
 export native class Message:
     export constructors;
@@ -68,8 +70,13 @@ export native class Message:
     pt_y: int32 = 0;
 
 native GetMessageA(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0) -> bool;
+native PeekMessageA(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0, wRemoveMsg: int32 = 0) -> bool;
 native TranslateMessage() -> bool;
 native DispatchMessageA() -> bool;
+
+export native class DeviceContext: //HDC
+
+    export native DeleteDC() -> bool; //usually you want to ReleaseDC when you did getDC, but it's referenced here: https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-wgldeletecontext
 
 export native class Icon: //HICON
     //TODO

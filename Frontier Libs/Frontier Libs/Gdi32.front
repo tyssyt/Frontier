@@ -1,0 +1,45 @@
+import Win32;
+
+native include Gdi32.Lib; //TODO this is x64, do all archs
+
+export native class PixelFormatDescriptor:
+    export constructors;
+    //Defaults taken from https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
+
+    nSize: int16 = 40; //TODO sizeof(PIXELFORMATDESCRIPTOR
+    nVersion: int16 = 1;
+    dwFlags: int32 = 37; // PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
+    iPixelType: char = 0; // PFD_TYPE_RGBA
+    cColorBits: char = 32;
+    cRedBits:    char = 0;
+    cRedShift:   char = 0;
+    cGreenBits:  char = 0;
+    cGreenShift: char = 0;
+    cBlueBits:   char = 0;
+    cBlueShift:  char = 0;
+    cAlphaBits:  char = 0;
+    cAlphaShift: char = 0;
+    cAccumBits:      char = 0;
+    cAccumRedBits:   char = 0;
+    cAccumGreenBits: char = 0;
+    cAccumBlueBits:  char = 0;
+    cAccumAlphaBits: char = 0;
+    cDepthBits:   char = 24;
+    cStencilBits: char =  8;
+    cAuxBuffers:  char =  0;
+    iLayerType: char = 0; // PDF_MAIN_PLANE
+    bReserved: char = 0;
+    dwLayerMask:   int32 = 0;
+    dwVisibleMask: int32 = 0;
+    dwDamageMask:  int32 = 0;
+
+    export native static ChoosePixelFormat(deviceContext: DeviceContext, pfd: PixelFormatDescriptor) -> int32;
+    export native static SetPixelFormat(deviceContext: DeviceContext, pixelFormat: int32, pfd: PixelFormatDescriptor) -> bool;
+
+export native class GLRenderingContext: //HGLRC
+
+    export native static wglCreateContext(deviceContext: DeviceContext) -> GLRenderingContext?;
+    export native wglDeleteContext() -> bool;
+    export native static wglMakeCurrent(deviceContext: DeviceContext, glrc: GLRenderingContext) -> bool;
+
+    export native static SwapBuffers(deviceContext: DeviceContext) -> bool;
