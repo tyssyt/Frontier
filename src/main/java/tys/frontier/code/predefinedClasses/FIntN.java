@@ -1,12 +1,20 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
+import tys.frontier.code.FField;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.expression.FLiteralExpression;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FIntIdentifier;
+import tys.frontier.code.literal.FIntNLiteral;
 
 import java.math.BigInteger;
 import java.util.concurrent.ConcurrentMap;
 
 public class FIntN extends FPredefinedClass {
+
+    public static final FIdentifier MAX = new FIdentifier("max");
+    public static final FIdentifier MIN = new FIdentifier("min");
 
     //classes do not override equals, so we need to make sure we get the same object every time
     private static final ConcurrentMap<Integer, FIntN> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
@@ -24,6 +32,12 @@ public class FIntN extends FPredefinedClass {
         this.n = n;
         addPredefinedFunctionsForArithType();
         addPredefinedFunctionsForIntType();
+        FField max = new FField(MAX, this, this, FVisibilityModifier.EXPORT, true, true);
+        max.setAssignmentTrusted(new FLiteralExpression(new FIntNLiteral(maxValue(), this, "" + maxValue())));
+        addFieldTrusted(max);
+        FField min = new FField(MIN, this, this, FVisibilityModifier.EXPORT, true, true);
+        min.setAssignmentTrusted(new FLiteralExpression(new FIntNLiteral(minValue(), this, "" + minValue())));
+        addFieldTrusted(min);
     }
 
     public static FIntN getIntN(int n) {

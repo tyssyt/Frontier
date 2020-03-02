@@ -24,6 +24,7 @@ import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.Function;
 
@@ -244,7 +245,7 @@ public final class ParserContextUtils {
             String text = token.getText();
             switch (token.getType()) {
                 case FrontierParser.IntegerLiteral:
-                    res = new FIntNLiteral(Long.parseLong(text), text);
+                    res = new FIntNLiteral(new BigInteger(text), text);
                     break;
                 case FrontierParser.NULL:
                     res = FNull.UNTYPED;

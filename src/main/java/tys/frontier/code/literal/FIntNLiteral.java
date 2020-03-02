@@ -11,25 +11,15 @@ public class FIntNLiteral implements FLiteral {
     private FIntN type;
     public final String originalString;
 
-    public FIntNLiteral(long value, String originalString) {
-        this(BigInteger.valueOf(value), originalString);
-    }
-
     public FIntNLiteral(long value) {
-        this(value, "" + value);
-    }
-
-    public FIntNLiteral(BigInteger value) {
-        this(value, value.toString());
+        this(BigInteger.valueOf(value), "" + value);
     }
 
     public FIntNLiteral(BigInteger value, String originalString) {
-        this.value = value;
-        this.type = FIntN.getIntN(FIntN.neededBits(value));
-        this.originalString = originalString;
+        this(value, FIntN.getIntN(FIntN.neededBits(value)), originalString);
     }
 
-    private FIntNLiteral(BigInteger value, FIntN type, String originalString) {
+    public FIntNLiteral(BigInteger value, FIntN type, String originalString) {
         this.value = value;
         this.type = type;
         this.originalString = originalString;
