@@ -304,7 +304,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FExpression visitClassExpr(FClassExpression expression) {
-        return new FClassExpression(typeInstantiation.getType(expression.getType()));
+        return new FClassExpression(typeInstantiation.getType(expression.getfClass()));
     }
 
     @Override
