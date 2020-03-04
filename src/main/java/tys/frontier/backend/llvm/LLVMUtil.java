@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collector;
 
 public class LLVMUtil {
 
@@ -68,6 +69,10 @@ public class LLVMUtil {
 
     public static String getConstantStringName(String s) {
         return "const.String." + s;
+    }
+
+    public static String getTypeInfoName(FType clazz) {
+        return "typeInfo." + clazz.getIdentifier().name;
     }
 
 }

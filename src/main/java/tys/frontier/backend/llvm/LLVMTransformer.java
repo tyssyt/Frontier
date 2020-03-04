@@ -941,7 +941,7 @@ class LLVMTransformer implements
 
     @Override
     public LLVMValueRef visitClassExpr(FClassExpression expression) {
-        return LLVMConstPointerNull(module.getLlvmType(expression.getType())); //TODO this is where we would want to have RTTI but we don't
+        return module.getTypeInfo(expression.getfClass());
     }
 
     @Override

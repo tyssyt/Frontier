@@ -50,6 +50,7 @@ public class LLVMBackend implements Backend {
                 return;
             }
             System.out.println("generated Module: " + module.emitToString());
+            module.verify();
             //module.optimize(3); //TODO see the BreaksOptimizer test for why we need to disable optimization
             //System.out.println("optimized Module: " + module.emitToString());
             module.emitToFile(fileType, out, allModules.stream().flatMap(m -> m.getNativeIncludes().stream()).collect(toList()));
@@ -61,6 +62,7 @@ public class LLVMBackend implements Backend {
         res.parseTypes(classes);
         res.parseClassMembers(classes);
         res.fillInBodies(classes, entryPoint);
+        res.createMetaData();
         return res;
     }
 

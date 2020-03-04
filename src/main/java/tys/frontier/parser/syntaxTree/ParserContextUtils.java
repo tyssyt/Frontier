@@ -107,7 +107,7 @@ public final class ParserContextUtils {
         typeVariable.setConstraints(constraints);
     }
 
-    public static FPredefinedClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
+    public static FBaseClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
         switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
             case BOOL:
                 return FBool.INSTANCE;

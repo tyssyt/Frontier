@@ -13,10 +13,9 @@ import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import static java.util.Arrays.asList;
 
 public class FReturn  implements FStatement {
 
@@ -41,6 +40,10 @@ public class FReturn  implements FStatement {
         } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints e) {
             return Utils.cantHappen();
         }
+    }
+    public static FReturn createTrusted(FExpression expression, FFunction function) {
+        //noinspection ArraysAsListWithZeroOrOneArgument
+        return createTrusted(asList(expression), function);
     }
 
     public List<FExpression> getExpressions() {
@@ -75,7 +78,6 @@ public class FReturn  implements FStatement {
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public StringBuilder toString(StringBuilder sb) {
         sb.append("return");
         sb.append(Joiner.on(", ").join(expressions));

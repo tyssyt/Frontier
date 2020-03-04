@@ -45,6 +45,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -159,7 +160,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
             FExpression exp1 = visitExpression(ctx.expression(0));
             exp1 = exp1.typeCheck(FFunctionType.from(
-                    FTuple.from(Arrays.asList(currentType, FIntN._32)),
+                    FTuple.from(asList(currentType, FIntN._32)),
                     FTypeVariable.create(new FIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
             //TODO oh god this is one ugly hack (same as in field)
             FStatement statement = new FExpressionStatement(exp1);
@@ -743,7 +744,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FIdentifier identifier = new FIdentifier(ctx.getChild(0).getText() + '_');
 
         try {
-            return functionCall(expression.getType(), identifier, Arrays.asList(expression), ImmutableListMultimap.of(), false);
+            return functionCall(expression.getType(), identifier, asList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -764,10 +765,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FIdentifier identifier = new FIdentifier(ctx.getChild(1).getText());
 
         try {
-            return functionCall(first.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), false);
+            return functionCall(first.getType(), identifier, asList(first, second), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e1) {
             try {
-                return functionCall(second.getType(), identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), false);
+                return functionCall(second.getType(), identifier, asList(first, second), ImmutableListMultimap.of(), false);
             } catch (FunctionNotFound | AccessForbidden e2) {
                 errors.add(e1);
                 errors.add(e2);
@@ -884,11 +885,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 if (!arguments.b.isEmpty())
                     throw new DynamicCallWithKeywordArgs(object, arguments.b);
                 return DynamicFunctionCall.create(object, arguments.a);
-            } else  if (object.getType() == FTypeType.INSTANCE) {
-                if (object instanceof FClassExpression)
-                    namespace = ((FClassExpression) object).getfClass();
-                else
-                    return Utils.NYI("a call on an expression of Type FTypeType that is not an FClassExpression");
+            } else  if (object instanceof FClassExpression) {
+                namespace = ((FClassExpression) object).getfClass();
             } else {
                 namespace = object.getType();
                 if (arguments.a.isEmpty())
@@ -939,7 +937,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                     _return = new FExpressionStatement(expression);
                     returnType.tryAddConstraint(new ImplicitCastable(_return, FTuple.VOID, Variance.Invariant));
                 } else
-                    _return = FReturn.createTrusted(Arrays.asList(expression), res);
+                    _return = FReturn.createTrusted(expression, res);
 
                 //as we never called visitStatement we have to manually instantiate here (important for nested lambdas)
                 try {
@@ -1085,7 +1083,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         FArray array = FArray.getArrayFrom(baseType);
         try {
-            return functionCall(array, FConstructor.IDENTIFIER, Arrays.asList(expression), ImmutableListMultimap.of(), false);
+            return functionCall(array, FConstructor.IDENTIFIER, asList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();

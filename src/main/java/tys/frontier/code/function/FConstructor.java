@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 
@@ -90,12 +91,12 @@ public class FConstructor extends FBaseFunction {
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = memberOf.getInstanceFields().get(param.getIdentifier());
-            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), Arrays.asList(thisExpr)));
+            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), asList(thisExpr)));
             params.add(new FLocalVariableExpression(param));
         }
         FAssignment fieldAssign = FAssignment.createTrusted(fields, params);
 
-        FReturn _return = FReturn.createTrusted(Arrays.asList(new FLocalVariableExpression(_this)), this);
+        FReturn _return = FReturn.createTrusted(new FLocalVariableExpression(_this), this);
 
         setBody(FBlock.from(thisDecl, fieldAssign, _return));
     }

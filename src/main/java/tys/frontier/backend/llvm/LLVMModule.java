@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
 import static org.bytedeco.llvm.global.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 
@@ -62,6 +64,7 @@ public class LLVMModule implements AutoCloseable {
     private LLVMContextRef context;
     private LLVMModuleRef module;
     private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
+    private Map<FType, LLVMValueRef> typeInfo = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private Object2IntMap<FField> fieldIndices = new Object2IntOpenHashMap<>();
     private List<FClass> todoClassBodies = new ArrayList<>();
@@ -88,7 +91,6 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FFloat32.INSTANCE, LLVMFloatTypeInContext(context));
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FTuple.VOID, LLVMVoidTypeInContext(context));
-        llvmTypes.put(FTypeType.INSTANCE, bytePointer);
         llvmTypes.put(FNull.NULL_TYPE, bytePointer);
     }
 
@@ -131,6 +133,23 @@ public class LLVMModule implements AutoCloseable {
             Utils.NYI("LLVM type for: " + fClass);
         }
         llvmTypes.put(fClass, res);
+        return res;
+    }
+
+    LLVMValueRef getTypeInfo(FType fClass) {
+        LLVMValueRef res = typeInfo.get(fClass);
+        if (res != null)
+            return res;
+        LLVMValueRef name = constantString(fClass.getIdentifier().name);
+        LLVMValueRef castedName = LLVMConstBitCast(name, getLlvmType(FStringLiteral.TYPE));
+        LLVMTypeRef typeInfoType = LLVMGetElementType(getLlvmType(FTypeType.INSTANCE));
+        LLVMValueRef typeInfo = LLVMConstNamedStruct(typeInfoType, castedName, 1);
+
+        res = LLVMAddGlobal(this.module, typeInfoType, getTypeInfoName(fClass));
+        setGlobalAttribs(res, Linkage.PRIVATE, true);
+        LLVMSetGlobalConstant(res, TRUE);
+        LLVMSetInitializer(res, typeInfo);
+        this.typeInfo.put(fClass, res);
         return res;
     }
 
@@ -330,6 +349,27 @@ public class LLVMModule implements AutoCloseable {
         trans.generateMain(entryPoint);
     }
 
+    public void createMetaData() {
+        if (!llvmTypes.containsKey(FTypeType.INSTANCE) || !FTypeType.INSTANCE.getStaticFields().containsKey(FTypeType.allTypes_ID))
+            return;
+
+        //TODO once code can handle both pointers and direct types, we no longer need to create in "intermediate diret type"
+        //create intermediate sf
+        List<LLVMValueRef> elements = llvmTypes.keySet().stream().sorted(comparing(FType::getIdentifier)).map(this::getTypeInfo).collect(toList());
+        LLVMValueRef arr = LLVMConstArray(getLlvmType(FTypeType.INSTANCE), LLVMUtil.createPointerPointer(elements), elements.size());
+        PointerPointer<LLVMValueRef> member = createPointerPointer(LLVMConstInt(getLlvmType(FIntN._32), elements.size(), FALSE), arr);
+        LLVMValueRef struct = LLVMConstStructInContext(context, member, 2, FALSE);
+
+        LLVMValueRef intermediate = LLVMAddGlobal(this.module, LLVMTypeOf(struct), "sf.allTypes.i");
+        setGlobalAttribs(intermediate, Linkage.PRIVATE, true);
+        LLVMSetGlobalConstant(intermediate, TRUE);
+        LLVMSetInitializer(intermediate, struct);
+
+        //set allTypes
+        LLVMValueRef allTypes = LLVMGetNamedGlobal(module, getStaticFieldName(FTypeType.allTypes));
+        LLVMSetInitializer(allTypes, LLVMConstBitCast(intermediate, getLlvmType(FTypeType.allTypes.getType())));
+    }
+
 
     public void verify() { //TODO this should be called at other places as well
         if (!verificationNeeded)
@@ -356,7 +396,6 @@ public class LLVMModule implements AutoCloseable {
     }
 
     public void optimize(int optimizationLevel) {
-        verify();
         LLVMPassManagerRef passManager = createPassManager(optimizationLevel);
         LLVMRunPassManager(passManager, module);
         LLVMDisposePassManager(passManager);

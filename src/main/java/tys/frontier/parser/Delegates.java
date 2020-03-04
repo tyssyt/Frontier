@@ -31,6 +31,7 @@ import tys.frontier.util.Pair;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 public class Delegates {
@@ -131,7 +132,7 @@ public class Delegates {
             FFunctionCall fieldGet;
             if (d.field.isInstance()) {
                 FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
-                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), Arrays.asList(thisExpr));
+                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), asList(thisExpr));
             } else {
                 fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), emptyList());
             }
@@ -148,7 +149,7 @@ public class Delegates {
             if (toDo.getType() == FTuple.VOID)
                 res = new FExpressionStatement(functionCall);
             else
-                res = FReturn.createTrusted(Arrays.asList(functionCall), toDo);
+                res = FReturn.createTrusted(functionCall, toDo);
 
             toDo.setBody(FBlock.from(res));
         }

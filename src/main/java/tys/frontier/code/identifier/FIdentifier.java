@@ -2,7 +2,7 @@ package tys.frontier.code.identifier;
 
 import tys.frontier.util.Utils;
 
-public class FIdentifier {
+public class FIdentifier implements Comparable<FIdentifier> {
 
     public static final FIdentifier THIS = new FIdentifier("!this");
 
@@ -15,6 +15,11 @@ public class FIdentifier {
 
     public FIdentifier(String name) {
         this.name = Utils.removeLeadingUnderscores(name);
+    }
+
+    @Override
+    public int compareTo(FIdentifier o) {
+        return name.compareTo(o.name);
     }
 
     @Override
