@@ -1,0 +1,9 @@
+import IO;
+
+export class Main:
+
+export static main() {
+    for t : type.allTypes {
+        IO.printLine(t.name);
+    }
+}

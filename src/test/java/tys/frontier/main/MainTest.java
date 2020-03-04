@@ -172,4 +172,9 @@ public class MainTest {
         assertTrue(res.contains("ordered"));
         assertFalse(res.contains("FAILED"));
     }
+    @Test
+    public void mainTypeInfo() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("TypeInfo", null);
+        assertEquals(loadOut("TypeInfoOut.txt"), res);
+    }
 }
