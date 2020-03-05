@@ -1,5 +1,5 @@
 class A:
     f() {
-        T : type = A;
+        T : Type = A;
         T<int32>;
     }

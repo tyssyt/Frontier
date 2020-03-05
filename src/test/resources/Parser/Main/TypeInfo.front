@@ -3,7 +3,7 @@ import IO;
 export class Main:
 
 export static main() {
-    for t : type.allTypes {
+    for t : Type.allTypes {
         IO.printLine(t.name);
     }
 }
