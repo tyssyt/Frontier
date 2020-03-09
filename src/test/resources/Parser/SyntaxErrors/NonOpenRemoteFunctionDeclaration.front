@@ -1,0 +1,5 @@
+class A:
+    static op<T>(t: T) {}
+
+class B:
+    static A.op(b: B) {}

@@ -1,0 +1,6 @@
+class A:
+
+    static open op<T>(t: T);
+
+class B:
+    static A.op(a: A) {}

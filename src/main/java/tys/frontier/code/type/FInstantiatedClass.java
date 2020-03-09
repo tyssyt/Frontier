@@ -128,6 +128,21 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
+    public void setOpen(FFunction fFunction) {
+        Utils.cantHappen();
+    }
+
+    @Override
+    public void addRemoteFunction(FFunction fFunction) {
+        Utils.NYI("FInstantiatedClass.addRemoteFunction");
+    }
+
+    @Override
+    public List<FFunction> getRemoteFunctions() {
+        return Utils.NYI("FInstantiatedClass.getRemoteFunctions");
+    }
+
+    @Override
     public Map<FType, FField> getDirectDelegates() {
         return newDelegates;
     }

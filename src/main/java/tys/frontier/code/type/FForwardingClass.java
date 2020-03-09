@@ -4,9 +4,11 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 
 import java.util.List;
@@ -92,6 +94,26 @@ public abstract class FForwardingClass implements FClass {
     @Override
     public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
         return proxy.getInstantiation(types);
+    }
+
+    @Override
+    public void setOpen(FFunction fFunction) throws InvalidOpenDeclaration {
+        proxy.setOpen(fFunction);
+    }
+
+    @Override
+    public FFunction getOpen(FIdentifier identifier) {
+        return proxy.getOpen(identifier);
+    }
+
+    @Override
+    public void addRemoteFunction(FFunction fFunction) {
+        proxy.addRemoteFunction(fFunction);
+    }
+
+    @Override
+    public List<FFunction> getRemoteFunctions() {
+        return proxy.getRemoteFunctions();
     }
 
     @Override

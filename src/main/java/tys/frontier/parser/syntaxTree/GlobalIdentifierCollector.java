@@ -18,10 +18,7 @@ import tys.frontier.parser.Delegates;
 import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.parser.syntaxErrors.SyntaxError;
-import tys.frontier.parser.syntaxErrors.SyntaxErrors;
-import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -76,10 +73,16 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        boolean natiwe = ctx.NATIVE() != null;
+    public Object visitMethodDeclaration(FrontierParser.MethodDeclarationContext ctx) {
+        return visitMethodHeader(ctx.methodHeader(), true);
+    }
 
+    @Override
+    public Object visitNativeMethodDeclaration(FrontierParser.NativeMethodDeclarationContext ctx) {
+        return visitMethodHeader(ctx.methodHeader(), false);
+    }
+
+    public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx, boolean hasBody) {
         //type Parameters
         Map<FIdentifier, FTypeVariable> typeParameters;
         Function<FIdentifier, FType> typeResolver;
@@ -150,23 +153,46 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
             //identifier
             FIdentifier identifier;
+            FClass namespace;
             TerminalNode identifierNode = ctx.IDENTIFIER();
             if (identifierNode != null) {
                 identifier = new FIdentifier(identifierNode.getText());
+                FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
+                if (typeTypeContext != null)
+                    namespace = (FClass) ParserContextUtils.getType(typeTypeContext, typeResolver);
+                else
+                    namespace = currentClass;
             } else {
                 //Operator overloading
                 Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
                 if (!operator.isUserDefinable())
                     return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
                 identifier = operator.getIdentifier();
+                namespace = currentClass;
             }
 
-            FFunction res = new FBaseFunction(identifier, currentClass, visibilityModifier, natiwe, returnType, parameters, assigness, typeParameters);
-            currentClass.addFunction(res);
+            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+            boolean natiwe = ctx.NATIVE() != null;
+            boolean open = ctx.OPEN() != null;
+
+            FFunction res = new FBaseFunction(identifier, namespace, visibilityModifier, natiwe, returnType, parameters, assigness, typeParameters);
             treeData.functions.put(ctx, res);
+
+            if (natiwe && hasBody)
+                throw new NativeWithBody(res);
+
+            if(!open || natiwe || hasBody) //open non native functions without body should not be added
+                namespace.addFunction(res);
+
+            if (open) //mark as open
+                namespace.setOpen(res);
+
+            if (namespace != currentClass) //mark as remote
+                currentClass.addRemoteFunction(res);
+
         } catch (SyntaxErrors e) {
             errors.addAll(e.errors);
-        } catch (SignatureCollision e) {
+        } catch (SyntaxError e) {
             errors.add(e);
         }
         return null;

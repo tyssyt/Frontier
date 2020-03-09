@@ -4,20 +4,19 @@ import com.google.common.collect.*;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class FBaseClass implements FClass {
 
@@ -33,6 +32,8 @@ public class FBaseClass implements FClass {
     private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
     private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
     private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+    private Map<FIdentifier, FFunction> openFunctions = new HashMap<>();
+    private List<FFunction> remoteFunctions = new ArrayList<>();
 
     private Map<FType, FField> delegates = new HashMap<>();
     private ForImpl forImpl;
@@ -159,6 +160,31 @@ public class FBaseClass implements FClass {
             State.get().getCurrentParser().registerInstantiatedClass(res);
         }
         return res;
+    }
+
+    @Override
+    public void setOpen(FFunction fFunction) throws InvalidOpenDeclaration {
+        if (!this.getParametersList().isEmpty())
+            throw new InvalidOpenDeclaration(fFunction, "in generic class");
+        if (fFunction.getParameters().isEmpty())
+            throw new InvalidOpenDeclaration(fFunction, "non generic function");
+        FFunction old = openFunctions.put(fFunction.getIdentifier(), fFunction);
+        assert old == null;
+    }
+
+    @Override
+    public FFunction getOpen(FIdentifier identifier) {
+        return openFunctions.get(identifier);
+    }
+
+    @Override
+    public void addRemoteFunction(FFunction fFunction) {
+        remoteFunctions.add(fFunction);
+    }
+
+    @Override
+    public List<FFunction> getRemoteFunctions() {
+        return remoteFunctions;
     }
 
     @Override

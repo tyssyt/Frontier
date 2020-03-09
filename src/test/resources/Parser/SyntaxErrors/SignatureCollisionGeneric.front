@@ -1,3 +1,0 @@
-class Q:
-    f<A>(a: A, i: int32 = 5) {}
-    f(f: float32, i: int32) {}

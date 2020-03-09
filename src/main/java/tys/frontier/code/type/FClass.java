@@ -63,6 +63,14 @@ public interface FClass extends FType, HasVisibility {
 
     void setForImpl(ForImpl forImpl);
 
+    void setOpen(FFunction fFunction) throws InvalidOpenDeclaration;
+
+    FFunction getOpen(FIdentifier identifier);
+
+    void addRemoteFunction(FFunction fFunction);
+
+    List<FFunction> getRemoteFunctions();
+
     @Override
     String toString();
 

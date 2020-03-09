@@ -149,10 +149,35 @@ public class ParserTest {
         assertEquals(InvalidForDeclaration.class, e.getClass());
     }
     @Test
+    public void parseInvalidOpenDeclaration1() throws Exception {
+        SyntaxError e = parseSyntaxError("InvalidOpenDeclaration1.front");
+        assertEquals(InvalidOpenDeclaration.class, e.getClass());
+    }
+    @Test
+    public void parseInvalidOpenDeclaration2() throws Exception {
+        SyntaxError e = parseSyntaxError("InvalidOpenDeclaration2.front");
+        assertEquals(InvalidOpenDeclaration.class, e.getClass());
+    }
+    @Test
+    public void parseInvalidSignatureRemoteFunctionDeclaration() throws Exception {
+        SyntaxError e = parseSyntaxError("InvalidSignatureRemoteFunctionDeclaration.front");
+        assertEquals(InvalidSignatureRemoteFunctionDeclaration.class, e.getClass());
+    }
+    @Test
     public void parseMissingReturn() throws Exception {
         SyntaxError e = parseSyntaxError("MissingReturn.front");
         assertEquals(MissingReturn.class, e.getClass());
         assertEquals("haveFun2", ((MissingReturn) e).function.getIdentifier().name);
+    }
+    @Test
+    public void parseNativeWithBody() throws Exception {
+        SyntaxError e = parseSyntaxError("NativeWithBody.front");
+        assertEquals(NativeWithBody.class, e.getClass());
+    }
+    @Test
+    public void parseNonOpenRemoteFunctionDeclaration() throws Exception {
+        SyntaxError e = parseSyntaxError("NonOpenRemoteFunctionDeclaration.front");
+        assertEquals(NonOpenRemoteFunctionDeclaration.class, e.getClass());
     }
     @Test
     public void parseNonOptionalExMark() throws Exception {
@@ -177,11 +202,6 @@ public class ParserTest {
     @Test
     public void parseSignatureCollision() throws Exception {
         SyntaxError e = parseSyntaxError("SignatureCollision.front");
-        assertEquals(SignatureCollision.class, e.getClass());
-    }
-    @Test
-    public void parseSignatureCollisionGeneric() throws Exception {
-        SyntaxError e = parseSyntaxError("SignatureCollisionGeneric.front");
         assertEquals(SignatureCollision.class, e.getClass());
     }
     @Test

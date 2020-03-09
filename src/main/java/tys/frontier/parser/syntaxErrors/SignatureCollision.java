@@ -33,7 +33,7 @@ public class SignatureCollision extends SyntaxError {
             FType t =  firstParams.get(i).getType();
             FType o = secondParams.get(i).getType();
             //args are not different if they are a type variable
-            if (!(t instanceof FTypeVariable) && !(o instanceof FTypeVariable) && t != o)
+            if (!(t instanceof FTypeVariable && o instanceof FTypeVariable) && t != o)
                 return false;
         }
         return true;

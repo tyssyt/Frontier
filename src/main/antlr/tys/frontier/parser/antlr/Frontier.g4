@@ -33,6 +33,7 @@ tokens {
     PRIVATE,
     STATIC,
     NATIVE,
+    OPEN,
     OPERATOR,
     DELEGATE,
     IN,
@@ -152,7 +153,7 @@ methodDeclaration
 
 methodHeader //Tuple-ize
     :   visibilityModifier? NATIVE? STATIC?
-        (IDENTIFIER | OPERATOR operator)
+        ((OPEN | typeType DOT)? IDENTIFIER | OPERATOR operator)
         typeParameters? formalParameters
         (ARROW typeList | BACKARROW typedIdentifiers)? typeParameterSpecification*
     ;

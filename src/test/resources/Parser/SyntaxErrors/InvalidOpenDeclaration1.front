@@ -1,0 +1,2 @@
+class A<B>:
+    open test<C>(c: C);

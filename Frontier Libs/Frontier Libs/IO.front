@@ -66,7 +66,7 @@ export class File:
 
     cFile: CFile;
 
-    export static open(filename: char[], mode: char[c]) -> File {
+    export static fOpen(filename: char[], mode: char[c]) -> File {
         return new File(cFile = CFile.fopen(Strings.toCString(filename), mode));
     }
 

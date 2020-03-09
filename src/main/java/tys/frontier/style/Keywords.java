@@ -20,6 +20,7 @@ public class Keywords {
             .put("private", FrontierParser.PRIVATE)
             .put("static", FrontierParser.STATIC)
             .put("native", FrontierParser.NATIVE)
+            .put("open", FrontierParser.OPEN)
             .put("operator", FrontierParser.OPERATOR)
             .put("delegate", FrontierParser.DELEGATE)
             .put("in", FrontierParser.IN)

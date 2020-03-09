@@ -331,6 +331,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
+        if (ctx.typeType() != null) {
+            try {
+                checkValidRemoteFunction();
+            } catch (SyntaxError e) {
+                errors.add(e);
+            }
+        }
+
         for (FrontierParser.TypeParameterSpecificationContext c : ctx.typeParameterSpecification()) {
             try {
                 ParserContextUtils.handleTypeParameterSpecification(c, currentFunction().function.getParameters(), this::findTypeNoThrow);
@@ -340,6 +348,27 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
         visitFormalParameters(ctx.formalParameters());
         return null;
+    }
+
+    private void checkValidRemoteFunction() throws NonOpenRemoteFunctionDeclaration, InvalidSignatureRemoteFunctionDeclaration {
+        //the function was pushed into a different namespace, make sure that was legal
+        FClass remoteNamespace = (FClass) currentFunction().function.getMemberOf();
+        FFunction open = remoteNamespace.getOpen(currentFunction().function.getIdentifier());
+        if (open == null)
+            throw new NonOpenRemoteFunctionDeclaration(currentFunction().function, "remote does not declare signature as open");
+
+        List<FTypeVariable> openParameters = open.getParametersList();
+        for (Pair<FParameter, FParameter> pair : Utils.zip(open.getSignature().getParameters(), currentFunction().function.getSignature().getParameters())) {
+            if (pair.a.getType() == pair.b.getType())
+                continue;
+            //noinspection SuspiciousMethodCalls
+            if (pair.a.getType() instanceof FTypeVariable
+                    && openParameters.contains(pair.a.getType())
+                    && pair.b.getType() == currentType)
+                continue;
+            throw new InvalidSignatureRemoteFunctionDeclaration(currentFunction().function, open);
+            //TODO formulate sensible overload requirements and then test those instead
+        }
     }
 
     @Override
