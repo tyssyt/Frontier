@@ -64,6 +64,11 @@ public final class Utils {
         return in.substring(i);
     }
 
+    @SuppressWarnings("ArraysAsListWithZeroOrOneArgument") //TODO custom implementation
+    public static <T> List<T> mutableSingletonList(T item) {
+        return Arrays.asList(item);
+    }
+
     public static <T extends IdentifierNameable> Map<FIdentifier, T> asMap (Collection<? extends T> vars) {
         Map<FIdentifier, T> map = new HashMap<>();
         for (T t : vars) {

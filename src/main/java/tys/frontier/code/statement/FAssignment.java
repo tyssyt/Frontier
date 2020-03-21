@@ -16,11 +16,11 @@ import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Collections.singletonList;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FAssignment implements FStatement {
 
@@ -64,7 +64,7 @@ public class FAssignment implements FStatement {
     public static FAssignment createDecl(FLocalVariable variable, FExpression value) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(singletonList(value.getType()), singletonList(variable.getType()));
-            return new FAssignment(singletonList(new FVarDeclaration(variable)), Arrays.asList(value), argMapping);
+            return new FAssignment(singletonList(new FVarDeclaration(variable)), mutableSingletonList(value), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }

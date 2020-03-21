@@ -23,8 +23,13 @@ import tys.frontier.util.Pair;
 import tys.frontier.util.TransformedListIterator;
 import tys.frontier.util.Utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.function.Function;
+
+import static java.util.Arrays.asList;
 
 public class ArgMapping {
 
@@ -95,7 +100,7 @@ public class ArgMapping {
     // argTypes = paramTypes
     public static ArgMapping createBasic(List<FType> types, int numberOfParamsFilledWithPositionalArgs) {
         ArgMapping res = new ArgMapping(new BitSet(types.size()), ArrayUtils.create(types.size(), 1), numberOfParamsFilledWithPositionalArgs);
-        res.casts = Arrays.asList(new ImplicitTypeCast[types.size()]);
+        res.casts = asList(new ImplicitTypeCast[types.size()]);
         return res;
     }
 

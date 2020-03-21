@@ -10,9 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
+
+import static java.util.Arrays.asList;
 
 public class Linker { //TODO clean up seperators
 
@@ -34,7 +35,7 @@ public class Linker { //TODO clean up seperators
 
     public static ProcessBuilder buildCallClang(String inputFile, String outputFile) {
         String[] command = new String[]{"clang", "-o", outputFile, inputFile};
-        return new ProcessBuilder(Arrays.asList(command)); //TODO maybe this can actually be called from the clang api?
+        return new ProcessBuilder(asList(command)); //TODO maybe this can actually be called from the clang api?
     }
 
     public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, String targetTriple) {

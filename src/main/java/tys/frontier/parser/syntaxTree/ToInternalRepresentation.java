@@ -50,6 +50,7 @@ import java.util.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
@@ -784,7 +785,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FIdentifier identifier = new FIdentifier(ctx.getChild(0).getText() + '_');
 
         try {
-            return functionCall(expression.getType().getNamespace(), identifier, asList(expression), ImmutableListMultimap.of(), false);
+            return functionCall(expression.getType().getNamespace(), identifier, mutableSingletonList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -1123,7 +1124,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         Namespace namespace = FArray.getArrayFrom(baseType).getNamespace();
         try {
-            return functionCall(namespace, FConstructor.IDENTIFIER, asList(expression), ImmutableListMultimap.of(), false);
+            return functionCall(namespace, FConstructor.IDENTIFIER, mutableSingletonList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();

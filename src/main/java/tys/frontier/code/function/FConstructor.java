@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FConstructor extends FBaseFunction {
 
@@ -91,7 +91,7 @@ public class FConstructor extends FBaseFunction {
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
             FField field = memberOf.getType().getInstanceFields().get(param.getIdentifier());
-            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), asList(thisExpr)));
+            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), mutableSingletonList(thisExpr)));
             params.add(new FLocalVariableExpression(param));
         }
         FAssignment fieldAssign = FAssignment.createTrusted(fields, params);

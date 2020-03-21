@@ -8,11 +8,12 @@ import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import static java.util.Arrays.asList;
 
 public class LLVMUtil {
 
@@ -29,7 +30,7 @@ public class LLVMUtil {
 
     @SafeVarargs
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (P... list) {
-        return createPointerPointer(Arrays.asList(list));
+        return createPointerPointer(asList(list));
     }
 
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (List<P> list) {

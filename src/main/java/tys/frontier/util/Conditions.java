@@ -13,6 +13,8 @@ import tys.frontier.code.predefinedClasses.FOptional;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 public class Conditions {
 
     private static Signature AND = BinaryOperator.AND.getFunction(FBool.INSTANCE.getNamespace()).getSignature();
@@ -48,11 +50,11 @@ public class Conditions {
 
     public static FExpression and(FExpression atom1, FExpression atom2) {
         assert atom1.getType() == FBool.INSTANCE && atom2.getType() == FBool.INSTANCE;
-        return FFunctionCall.createTrusted(AND, Arrays.asList(atom1, atom2));
+        return FFunctionCall.createTrusted(AND, asList(atom1, atom2));
     }
 
     public static FExpression and (FExpression... atoms) {
-        return and(Arrays.asList(atoms));
+        return and(asList(atoms));
     }
 
     public static FExpression and(List<FExpression> atoms) {

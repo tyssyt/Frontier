@@ -10,6 +10,8 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
+
 public class FBlock implements FStatement, List<FStatement> {
 
     private List<FStatement> statements;
@@ -23,7 +25,7 @@ public class FBlock implements FStatement, List<FStatement> {
     }
 
     public static FBlock from(FStatement... statements) {
-        return new FBlock(Arrays.asList(statements));
+        return new FBlock(asList(statements));
     }
 
     public static FBlock from(List<FStatement> statements) {
@@ -113,6 +115,7 @@ public class FBlock implements FStatement, List<FStatement> {
     }
 
     @Override
+    @SuppressWarnings("SuspiciousToArrayCall")
     public <T> T[] toArray(T[] a) {
         return statements.toArray(a);
     }

@@ -13,9 +13,12 @@ import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-import static java.util.Arrays.asList;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FReturn  implements FStatement {
 
@@ -42,8 +45,7 @@ public class FReturn  implements FStatement {
         }
     }
     public static FReturn createTrusted(FExpression expression, FFunction function) {
-        //noinspection ArraysAsListWithZeroOrOneArgument
-        return createTrusted(asList(expression), function);
+        return createTrusted(mutableSingletonList(expression), function);
     }
 
     public List<FExpression> getExpressions() {

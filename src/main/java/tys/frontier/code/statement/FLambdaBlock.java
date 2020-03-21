@@ -3,8 +3,9 @@ package tys.frontier.code.statement;
 import com.google.common.base.Joiner;
 import tys.frontier.code.FLocalVariable;
 
-import java.util.Arrays;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 
 public class FLambdaBlock extends FBlock {
 
@@ -17,7 +18,7 @@ public class FLambdaBlock extends FBlock {
     }
 
     public static FLambdaBlock from(List<FLocalVariable> variables, FStatement... statements) {
-        return new FLambdaBlock(Arrays.asList(statements), variables);
+        return new FLambdaBlock(asList(statements), variables);
     }
 
     public static FLambdaBlock from(List<FStatement> statements, List<FLocalVariable> variables) {

@@ -32,8 +32,8 @@ import tys.frontier.util.Pair;
 
 import java.util.*;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class Delegates {
 
@@ -134,7 +134,7 @@ public class Delegates {
             FFunctionCall fieldGet;
             if (d.field.isInstance()) {
                 FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
-                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), asList(thisExpr));
+                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
             } else {
                 fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), emptyList());
             }
