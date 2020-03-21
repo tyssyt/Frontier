@@ -1,20 +1,16 @@
 package tys.frontier.code.type;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 
 import java.util.List;
 import java.util.Map;
 
-public abstract class FForwardingClass implements FClass {
+public abstract class FForwardingClass extends FClass {
 
     protected FClass proxy;
 
@@ -72,11 +68,6 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
-        return proxy.getFunctions(lhsSignatures);
-    }
-
-    @Override
     public List<? extends FType> getParametersList() {
         return proxy.getParametersList();
     }
@@ -97,32 +88,12 @@ public abstract class FForwardingClass implements FClass {
     }
 
     @Override
-    public void setOpen(FFunction fFunction) throws InvalidOpenDeclaration {
-        proxy.setOpen(fFunction);
-    }
-
-    @Override
-    public FFunction getOpen(FIdentifier identifier) {
-        return proxy.getOpen(identifier);
-    }
-
-    @Override
-    public void addRemoteFunction(FFunction fFunction) {
-        proxy.addRemoteFunction(fFunction);
-    }
-
-    @Override
-    public List<FFunction> getRemoteFunctions() {
-        return proxy.getRemoteFunctions();
-    }
-
-    @Override
     public Map<FType, FField> getDirectDelegates() {
         return proxy.getDirectDelegates();
     }
 
     @Override
-    public FIdentifier getFreshLambdaName() {
-        return proxy.getFreshLambdaName();
+    public boolean isPredefined() {
+        return proxy.isPredefined();
     }
 }

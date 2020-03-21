@@ -3,15 +3,22 @@ package tys.frontier.code.visitor;
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 
-public interface ClassWalker<Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
+public interface ClassWalker<Namespace, Class, Field, Function, Statement, Expression> extends StatementWalker<Statement, Expression> {
+
+    default Namespace visitNamespace(DefaultNamespace namespace) {
+        if (namespace.getType() != null)
+            visitClass(namespace.getType());
+        for (Signature signature : namespace.getFunctions(false).values())
+            visitFunction(signature.getFunction());
+        return null;
+    }
 
     default Class visitClass(FClass fClass) {
         for (FField field : fClass.getFields())
             visitField(field);
-        for (Signature signature : fClass.getFunctions(false).values())
-            visitFunction(signature.getFunction());
         return null;
     }
 

@@ -14,6 +14,8 @@ import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -135,13 +137,18 @@ public final class Utils {
     public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
         FFunction function = signature.getFunction();
-        FType oldNamespace = function.getMemberOf();
-        FType newNamespace = typeInstantiation.getType(oldNamespace);
+        Namespace oldNamespace = function.getMemberOf();
+        FType oldType = oldNamespace.getType();
+        if (oldType == null)
+            return signature;
+        FType newType = typeInstantiation.getType(oldType);
+        Namespace newNamespace = newType.getNamespace();
 
-        if (newNamespace instanceof FTypeVariable)
+
+        if (newType instanceof FTypeVariable)
             return Utils.cantHappen();
 
-        if (oldNamespace instanceof FTypeVariable) {
+        if (oldType instanceof FTypeVariable) {
             //there is no mapping we can follow, we need to fall back to use resolve
             FIdentifier identifier = function.getIdentifier();
             if (identifier instanceof FInstantiatedFunctionIdentifier)
@@ -160,11 +167,11 @@ public final class Utils {
 
         if (oldNamespace != newNamespace) {
             //TODO oh god pls make arrys, optionals and function types use generics!
-            if (oldNamespace instanceof FArray) {
+            if (oldType instanceof FArray) {
                 if (function.isConstructor()) {
-                    return ((FArray) newNamespace).getConstructor().getSignature();
+                    return ((FArray) newType).getConstructor().getSignature();
                 } else if (function.getIdentifier().equals(Access.ID)) {
-                    for (Signature s : ((FArray) newNamespace).getFunctions(signature.isLhs()).get(Access.ID)) { //TODO not required if assignee functions can't appear on rhs!
+                    for (Signature s : ((DefaultNamespace) newNamespace).getFunctions(signature.isLhs()).get(Access.ID)) { //TODO not required if assignee functions can't appear on rhs!
                         if (s.getParameters().size() == signature.getParameters().size())
                             return s;
                     }
@@ -172,32 +179,33 @@ public final class Utils {
                 } else if (function instanceof FieldAccessor) {
                     FieldAccessor accessor = (FieldAccessor) function;
                     assert accessor.getField().isInstance() && accessor.getField().getIdentifier().equals(FArray.SIZE);
-                    FieldAccessor inst = getAccessor((FArray) newNamespace, FArray.SIZE, true, accessor.isGetter());
+                    FieldAccessor inst = getAccessor((FArray) newType, FArray.SIZE, true, accessor.isGetter());
                     return signature.isLhs() ? inst.getLhsSignature() : inst.getSignature();
                 } else {
                     return Utils.cantHappen();
                 }
-            } else if (oldNamespace instanceof FOptional) {
+            } else if (oldType instanceof FOptional) {
                 return Utils.NYI("instantiation lookup for optionals"); //TODO
-            } else if (oldNamespace instanceof FFunctionType) {
+            } else if (oldType instanceof FFunctionType) {
                 return Utils.cantHappen(); //for now function types have no callable functions
             }
 
-            if (oldNamespace instanceof FInstantiatedClass) {
+            if (oldType instanceof FInstantiatedClass) {
                 //if the old namespace is also an instantiation, go back to the base
-                FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldNamespace;
-                oldNamespace = instantiatedClass.getProxy();
+                FInstantiatedClass instantiatedClass = (FInstantiatedClass) oldType;
+                oldType = instantiatedClass.getProxy();
+                oldNamespace = oldType.getNamespace();
                 if (function instanceof ClassInstantiationFunction)
                     function = ((ClassInstantiationFunction) function).getProxy();
                 else if (function instanceof FieldAccessor)
-                    function = getAccessor((FClass) oldNamespace, (FieldAccessor) function);
+                    function = getAccessor((FClass) oldType, (FieldAccessor) function);
                 else
                     return Utils.cantHappen();
             }
             //now go to the new instantiation
-            assert newNamespace instanceof FInstantiatedClass;
-            FInstantiatedClass instantiatedClass = (FInstantiatedClass) newNamespace;
-            assert instantiatedClass.getProxy() == oldNamespace;
+            assert newType instanceof FInstantiatedClass;
+            FInstantiatedClass instantiatedClass = (FInstantiatedClass) newType;
+            assert instantiatedClass.getProxy() == oldType;
             function = instantiatedClass.getInstantiatedFunction(function);
         }
 

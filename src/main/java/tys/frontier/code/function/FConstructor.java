@@ -12,6 +12,7 @@ import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.FAssignment;
 import tys.frontier.code.statement.FBlock;
@@ -19,7 +20,6 @@ import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.type.FClass;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,11 +33,16 @@ public class FConstructor extends FBaseFunction {
     public static final FIdentifier MALLOC_ID = new FIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass, modifier, false, fClass, params, null, emptyMap());
+        super(IDENTIFIER, fClass.getNamespace(), modifier, false, fClass, params, null, emptyMap());
+    }
+
+    @Override
+    public DefaultNamespace getMemberOf() {
+        return (DefaultNamespace) super.getMemberOf();
     }
 
     public static FFunction createMalloc(FClass fClass) {
-        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass, FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of(), null, emptyMap());
+        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass.getNamespace(), FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of(), null, emptyMap());
         function.predefined = true;
         return function;
     }
@@ -52,11 +57,6 @@ public class FConstructor extends FBaseFunction {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
         res.predefined = true;
         return res;
-    }
-
-    @Override
-    public MemberType getMemberType() {
-        return MemberType.CONSTRUCTOR;
     }
 
     @Override
@@ -80,8 +80,8 @@ public class FConstructor extends FBaseFunction {
     }
 
     private void generateBody() {
-        FClass memberOf = (FClass) getMemberOf();
-        FLocalVariable _this = new FLocalVariable(FIdentifier.THIS, memberOf);
+        DefaultNamespace memberOf = getMemberOf();
+        FLocalVariable _this = new FLocalVariable(FIdentifier.THIS, memberOf.getType());
 
         FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
         FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);
@@ -90,7 +90,7 @@ public class FConstructor extends FBaseFunction {
         List<FExpression> params = new ArrayList<>(getSignature().getParameters().size());
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FLocalVariableExpression(_this);
-            FField field = memberOf.getInstanceFields().get(param.getIdentifier());
+            FField field = memberOf.getType().getInstanceFields().get(param.getIdentifier());
             fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), asList(thisExpr)));
             params.add(new FLocalVariableExpression(param));
         }

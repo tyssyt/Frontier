@@ -3,7 +3,7 @@ package tys.frontier.parser;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.util.Pair;
@@ -29,7 +29,7 @@ public class ParsedFile {
     private ParsedFile parent;
     private List<ParsedFile> includes = new ArrayList<>();
     private List<Module> imports = new ArrayList<>();
-    private Map<FIdentifier, FClass> classes = new LinkedHashMap<>();
+    private Map<FIdentifier, DefaultNamespace> namespaces = new LinkedHashMap<>();
 
     public ParsedFile(FrontierParser.FileContext fileContext, Path filePath) {
         this.treeData = new SyntaxTreeData(fileContext);
@@ -63,17 +63,13 @@ public class ParsedFile {
         imports.add(_import);
     }
 
-    public FClass getClass(FIdentifier identifier) {
-        return classes.get(identifier);
+    public DefaultNamespace addNamespace(DefaultNamespace namespace, FrontierParser.ClassDeclarationContext ctx) {
+        treeData.namespaces.put(ctx, namespace);
+        return namespaces.put(namespace.getIdentifier(), namespace);
     }
 
-    public FClass addClass(FClass _class, FrontierParser.ClassDeclarationContext ctx) {
-        treeData.classes.put(ctx, _class);
-        return classes.put(_class.getIdentifier(), _class);
-    }
-
-    public Map<FIdentifier, FClass> getClasses() {
-        return classes;
+    public Map<FIdentifier, DefaultNamespace> getNamespaces() {
+        return namespaces;
     }
 
     public List<ParsedFile> getIncludes() {
@@ -126,12 +122,12 @@ public class ParsedFile {
     }
 
     //TODO this does not work multithreaded if any of the parents is worked on!
-    public FClass resolveType(FIdentifier identifier) {
-        FClass res = classes.get(identifier); //allows private classes
+    public DefaultNamespace resolveNamespace(FIdentifier identifier) {
+        DefaultNamespace res = namespaces.get(identifier); //allows private classes
         if (res != null)
             return res;
 
-        res = module.getClass(identifier); //does not check private classes
+        res = module.getNamespace(identifier); //does not check private classes
         if (res != null)
             return res;
 
@@ -140,7 +136,7 @@ public class ParsedFile {
 
         while (cur != null) {
             for (Module _import : cur.getImports()) {
-                res = _import.getExportedClasses().get(identifier);
+                res = _import.getExportedNamespaces().get(identifier);
                 if (res != null)
                     return res;
             }

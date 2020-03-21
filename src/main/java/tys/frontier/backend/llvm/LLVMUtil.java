@@ -4,7 +4,7 @@ import org.bytedeco.javacpp.Pointer;
 import org.bytedeco.javacpp.PointerPointer;
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collector;
 
 public class LLVMUtil {
 
@@ -60,7 +59,7 @@ public class LLVMUtil {
             return function.getIdentifier().name;
         String uniqueName = uniqueFunctionNameCache.get(function);
         if (uniqueName == null) {
-            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((FClass) function.getMemberOf()).getFunctions(false));
+            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((DefaultNamespace) function.getMemberOf()).getFunctions(false));
             uniqueFunctionNameCache.putAll(newNames);
             uniqueName = newNames.get(function);
         }

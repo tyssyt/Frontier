@@ -13,6 +13,7 @@ import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.selector.Selector;
 import tys.frontier.code.statement.FBlock;
@@ -85,7 +86,7 @@ public class Delegates {
 
     private void createDelegatedFunctions(Delegate d, List<SyntaxError> errors) {
         assert d.field.getType() instanceof FClass;
-        FClass from = (FClass) d.field.getType();
+        DefaultNamespace from = ((FClass) d.field.getType()).getNamespace();
         FClass to = d.field.getMemberOf();
         for (Map.Entry<FIdentifier, Collection<Signature>> entry : from.getFunctions(false).asMap().entrySet()) {
             if (d.selector.has(entry.getKey())) {
@@ -113,8 +114,9 @@ public class Delegates {
         builder.addAll(params.subList(1, params.size()));
         assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 
-        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), to, to.getVisibility(), false, signature.getType(), builder.build(), signature.getAssignees(), toDelegate.getParameters());
-        to.addFunction(res);
+        DefaultNamespace namespace = to.getNamespace();
+        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), namespace, to.getVisibility(), false, signature.getType(), builder.build(), signature.getAssignees(), toDelegate.getParameters());
+        namespace.addFunction(res);
         return res;
     }
 

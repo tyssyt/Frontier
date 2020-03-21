@@ -2,11 +2,10 @@ package tys.frontier.parser;
 
 import tys.frontier.State;
 import tys.frontier.code.module.Module;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
-import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
-import tys.frontier.logging.Logger;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
@@ -65,10 +64,10 @@ public class Parser {
             for (FrontierParser.ClassDeclarationContext ctx : file.getTreeData().root.classDeclaration()) {
                 try {
                     FClass _class = ParserContextUtils.getClass(ctx);
-                    FType old = file.resolveType(_class.getIdentifier());
+                    DefaultNamespace old = file.resolveNamespace(_class.getIdentifier());
                     if (old != null)
                         throw new IdentifierCollision(_class, old);
-                    file.addClass(_class, ctx);
+                    file.addNamespace(_class.getNamespace(), ctx);
                 } catch (TwiceDefinedLocalVariable | IdentifierCollision e) {
                     syntaxErrors.add(e);
                 }
@@ -93,7 +92,9 @@ public class Parser {
     private static void prepareClasses(Module module, Delegates delegates, Set<FInstantiatedClass> classesToPrepare) throws SyntaxErrors {
         //these steps need to be in exactly that order, because I prepare some in createDelegate and prepare needs contructors
         for (ParsedFile file : module.getFiles())
-            file.getClasses().values().forEach(FClass::generateConstructor);
+            for (DefaultNamespace namespace : file.getNamespaces().values())
+                if (namespace.getType() != null)
+                    namespace.getType().generateConstructor();
         delegates.createDelegatedFunctions(classesToPrepare);
         classesToPrepare.forEach(FInstantiatedClass::prepare);
     }

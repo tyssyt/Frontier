@@ -1,23 +1,18 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.*;
-import tys.frontier.code.FParameter;
-import tys.frontier.code.function.FBaseFunction;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.MapMaker;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.operator.UnaryOperator;
-import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
+import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.type.FBaseClass;
+import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FunctionResolver;
-import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-
-import static java.util.Collections.emptyMap;
 
 public class FOptional extends FPredefinedClass {
 
@@ -25,23 +20,24 @@ public class FOptional extends FPredefinedClass {
     private static ConcurrentMap<FType, FOptional> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     private FType baseType;
-    private BiMap<FFunction, FFunction> shimMap = HashBiMap.create();
 
     private FOptional(FType baseType) {
         super(new FOptionalIdentifier(baseType.getIdentifier()));
         assert !(baseType instanceof FOptional);
         assert baseType != FTuple.VOID;
         this.baseType = baseType;
+        setNamespace(new OptionalNamespace(this));
         addDefaultFunctions();
-        addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, FBool.INSTANCE));
+        getNamespace().addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, FBool.INSTANCE));
     }
 
-    public BiMap<FFunction, FFunction> getShimMap() {
-        return shimMap;
+    public FType getBaseType() {
+        return baseType;
     }
 
-    public FFunction getOriginalFunction(FFunction function) {
-        return shimMap.inverse().get(function);
+    @Override
+    public OptionalNamespace getNamespace() {
+        return (OptionalNamespace) super.getNamespace();
     }
 
     @Override
@@ -53,41 +49,20 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
+    public FVisibilityModifier getVisibility() {
+        if (baseType instanceof FClass)
+            return ((FClass) baseType).getVisibility();
+        return super.getVisibility();
+    }
+
+    @Override
     public boolean canImplicitlyCast() {  //TODO once optionals use generics this is no longer necessary
         return true;
     }
 
-    @Override
-    public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
-        if (positionalArgs.size() > 0 && positionalArgs.get(0) == this) {
-            positionalArgs = new ArrayList<>(positionalArgs); //copy to not modify the original list
-            positionalArgs.set(0, baseType);
-        }
-        if (identifier.equals(UnaryOperator.NOT.identifier)) {
-            return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
-        }
-        FunctionResolver.Result res = baseType.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
-        FFunction shim = shimMap.computeIfAbsent(res.getFunction(), this::createShim);
-        res.signature = lhsResolve ? shim.getLhsSignature() : shim.getSignature();
-        return res;
-    }
-
-    private FFunction createShim(FFunction original) {
-        FType returnType = FOptional.fromFlatten(original.getType());
-        Signature sig = original.getLhsSignature() == null ? original.getSignature() : original.getLhsSignature();
-
-        ImmutableList<FParameter> params = sig.getParameters();
-        if (original.isInstance()) {
-            ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
-            builder.add(FParameter.create(params.get(0).getIdentifier(), this, false));
-            builder.addAll(params.subList(1, params.size()));
-            params = builder.build();
-        }
-
-        return new FBaseFunction(original.getIdentifier(), this, original.getVisibility(), false,
-                returnType, params, sig.getAssignees(), emptyMap()) {
-            {predefined = true;}
-        };
+    public static boolean canBeTreatedAsOptional(FType fType) {
+        return fType instanceof FOptional ||
+                (fType instanceof FTuple && Iterables.all(((FTuple) fType).getTypes(), FOptional::canBeTreatedAsOptional));
     }
 
     public static FBaseClass from(FType baseClass) {
@@ -110,14 +85,5 @@ public class FOptional extends FPredefinedClass {
             return (FOptional) baseClass;
         else
             return from(baseClass);
-    }
-
-    public FType getBaseType() {
-        return baseType;
-    }
-
-    public static boolean canBeTreatedAsOptional(FType fType) {
-        return fType instanceof FOptional ||
-              (fType instanceof FTuple && Iterables.all(((FTuple) fType).getTypes(), FOptional::canBeTreatedAsOptional));
     }
 }

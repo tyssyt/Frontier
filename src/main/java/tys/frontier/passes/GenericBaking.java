@@ -10,15 +10,11 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.*;
-import tys.frontier.code.literal.FNull;
-import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
-import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
@@ -63,7 +59,7 @@ public class GenericBaking implements FClassVisitor {
             f.accept(visitor);
         }
 
-        for (Signature signature : instantiatedClass.getFunctions(false).values()) {
+        for (Signature signature : instantiatedClass.getNamespace().getFunctions(false).values()) {
             FFunction function = signature.getFunction();
             if (function.isConstructor() || function instanceof FieldAccessor || function.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
@@ -90,7 +86,7 @@ public class GenericBaking implements FClassVisitor {
         visitor.currentFunction = instantiatedFunction;
         instantiatedFunction.getProxy().accept(visitor);
         instantiatedFunction.setBaked();
-        ((FClass) instantiatedFunction.getMemberOf()).addFunctionTrusted(instantiatedFunction);
+        instantiatedFunction.getMemberOf().addFunctionTrusted(instantiatedFunction);
     }
 
     public static FStatement bake (FStatement statement) {
@@ -303,8 +299,12 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
-    public FExpression visitClassExpr(FClassExpression expression) {
-        return new FClassExpression(typeInstantiation.getType(expression.getfClass()));
+    public FExpression visitNamespaceExpression(FNamespaceExpression expression) {
+        FType type = expression.getNamespace().getType();
+        if (type == null)
+            return expression;
+        else
+            return new FNamespaceExpression(typeInstantiation.getType(type).getNamespace());
     }
 
     @Override

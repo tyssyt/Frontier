@@ -34,12 +34,12 @@ public class Access implements Operator {
         FParameter p1 = FParameter.create(FIdentifier.THIS, memberOf, false);
         FParameter p2 = FParameter.create(new FIdentifier("key"), key, false);
         ImmutableList<FParameter> params = ImmutableList.of(p1, p2);
-        FBaseFunction getter = new FBaseFunction(ID, memberOf, memberOf.getVisibility(), false, value, params, null, emptyMap()) {
+        FBaseFunction getter = new FBaseFunction(ID, memberOf.getNamespace(), memberOf.getVisibility(), false, value, params, null, emptyMap()) {
             {predefined = true;}
         };
 
         ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), value, false));
-        FBaseFunction setter = new FBaseFunction(ID, memberOf, memberOf.getVisibility(), false, FTuple.VOID, params, assignees, emptyMap()) {
+        FBaseFunction setter = new FBaseFunction(ID, memberOf.getNamespace(), memberOf.getVisibility(), false, FTuple.VOID, params, assignees, emptyMap()) {
             {predefined = true;}
         };
         return new Pair<>(getter, setter);

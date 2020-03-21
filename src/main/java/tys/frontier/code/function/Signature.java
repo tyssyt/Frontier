@@ -82,7 +82,7 @@ public class Signature implements Typed {
     }
 
     public boolean isInstance() {
-        return parameters.size() > 0 && parameters.get(0).getType() == function.getMemberOf();
+        return parameters.size() > 0 && parameters.get(0).getType().getNamespace() == function.getMemberOf();
     }
 
     public boolean isMain() {

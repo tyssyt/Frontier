@@ -82,7 +82,7 @@ public class FForEachLowering extends StatementReplacer {
         //condition
         FExpression condition;
         {
-            Signature less = BinaryOperator.LESS.getFunction(FIntN._32).getSignature();
+            Signature less = BinaryOperator.LESS.getFunction(FIntN._32.getNamespace()).getSignature();
             condition = FFunctionCall.createTrusted(less, Arrays.asList(new FLocalVariableExpression(counter), new FLocalVariableExpression(size)));
         }
 
@@ -103,7 +103,7 @@ public class FForEachLowering extends StatementReplacer {
         {
             FLocalVariableExpression rhsCounterExp = new FLocalVariableExpression(counter);
             FLiteralExpression one = new FLiteralExpression(new FIntNLiteral(1));
-            FFunction plus = BinaryOperator.PLUS.getFunction((FClass) counter.getType());
+            FFunction plus = BinaryOperator.PLUS.getFunction(((FClass) counter.getType()).getNamespace());
             FFunctionCall plusCall = FFunctionCall.createTrusted(plus.getSignature(), Arrays.asList(rhsCounterExp, one));
 
             FLocalVariableExpression lhsCounterExp = new FLocalVariableExpression(counter);

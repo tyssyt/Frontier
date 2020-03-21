@@ -3,6 +3,7 @@ package tys.frontier.code.function;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -26,6 +27,11 @@ public class FInstantiatedFunction extends WithInstantiatedSignature {
 
     static FInstantiatedFunction fromFunctionInstantiation(FFunction base, TypeInstantiation typeInstantiation) {
         return new FInstantiatedFunction(base, typeInstantiation);
+    }
+
+    @Override
+    public DefaultNamespace getMemberOf() {
+        return (DefaultNamespace) super.getMemberOf();
     }
 
     @Override

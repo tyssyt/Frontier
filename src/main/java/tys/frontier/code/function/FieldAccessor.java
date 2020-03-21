@@ -3,6 +3,7 @@ package tys.frontier.code.function;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
@@ -60,8 +61,8 @@ public class FieldAccessor implements FFunction {
     }
 
     @Override
-    public FType getMemberOf() {
-        return field.getMemberOf();
+    public DefaultNamespace getMemberOf() {
+        return field.getMemberOf().getNamespace();
     }
 
     @Override

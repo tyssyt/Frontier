@@ -52,7 +52,7 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
-    default Expression visitClassExpr(FClassExpression expression) {
+    default Expression visitNamespaceExpression(FNamespaceExpression expression) {
         return null;
     }
 

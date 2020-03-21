@@ -9,6 +9,8 @@ import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.type.FClass;
@@ -18,7 +20,10 @@ import tys.frontier.parser.Delegates;
 import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
-import tys.frontier.parser.syntaxErrors.*;
+import tys.frontier.parser.syntaxErrors.NativeWithBody;
+import tys.frontier.parser.syntaxErrors.SyntaxError;
+import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -32,6 +37,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     private Delegates delegates;
     private List<SyntaxError> errors;
 
+    private DefaultNamespace currentNamespace;
     private FClass currentClass;
 
     private GlobalIdentifierCollector(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
@@ -51,11 +57,13 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
-        currentClass = treeData.classes.get(ctx);
+        currentNamespace = treeData.namespaces.get(ctx);
+        currentClass = currentNamespace.getType();
         try {
             visitChildren(ctx);
             return null;
         } finally {
+            currentNamespace = null;
             currentClass = null;
         }
     }
@@ -85,25 +93,24 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx, boolean hasBody) {
         //type Parameters
         Map<FIdentifier, FTypeVariable> typeParameters;
-        Function<FIdentifier, FType> typeResolver;
+        Function<FIdentifier, Namespace> typeResolver;
         {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
                 try {
                     typeParameters = Utils.asTypeMap(ParserContextUtils.getTypeParameters(c).a);
-                    for (FType classParam : currentClass.getParametersList()) {
-                        if (typeParameters.containsKey(classParam.getIdentifier())) {
-                            throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
-                        }
-                    }
-                    typeResolver = id -> Optional.<FType>ofNullable(typeParameters.get(id)).orElseGet(() -> resolveType(id));
+                    if (currentClass != null)
+                        for (FType classParam : currentClass.getParametersList())
+                            if (typeParameters.containsKey(classParam.getIdentifier()))
+                                throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
+                    typeResolver = id -> Optional.ofNullable(typeParameters.get(id)).map(FTypeVariable::getNamespace).orElseGet(() -> resolveNamespace(id));
                 } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
                     errors.add(twiceDefinedLocalVariable);
                     return null;
                 }
             } else {
                 typeParameters = Collections.emptyMap();
-                typeResolver = this::resolveType;
+                typeResolver = this::resolveNamespace;
             }
         }
 
@@ -142,7 +149,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         }
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
-        if (ctx.STATIC() == null) {
+        if (currentClass != null && ctx.STATIC() == null) {
             params.add(FParameter.create(FIdentifier.THIS, currentClass, false));
         }
 
@@ -153,22 +160,24 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
             //identifier
             FIdentifier identifier;
-            FClass namespace;
+            DefaultNamespace namespace;
             TerminalNode identifierNode = ctx.IDENTIFIER();
             if (identifierNode != null) {
                 identifier = new FIdentifier(identifierNode.getText());
                 FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
                 if (typeTypeContext != null)
-                    namespace = (FClass) ParserContextUtils.getType(typeTypeContext, typeResolver);
+                    namespace = (DefaultNamespace) ParserContextUtils.getNamespace(typeTypeContext, typeResolver);
                 else
-                    namespace = currentClass;
+                    namespace = currentNamespace;
             } else {
                 //Operator overloading
+                if (currentClass == null)
+                    return Utils.NYI("operator overloading in namespace without class");
                 Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
                 if (!operator.isUserDefinable())
                     return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
                 identifier = operator.getIdentifier();
-                namespace = currentClass;
+                namespace = currentNamespace;
             }
 
             FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
@@ -187,8 +196,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             if (open) //mark as open
                 namespace.setOpen(res);
 
-            if (namespace != currentClass) //mark as remote
-                currentClass.addRemoteFunction(res);
+            if (namespace != currentNamespace) //mark as remote
+                currentNamespace.addRemoteFunction(res);
 
         } catch (SyntaxErrors e) {
             errors.addAll(e.errors);
@@ -198,12 +207,12 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         return null;
     }
 
-    public void formalParameters(FrontierParser.FormalParametersContext ctx, ImmutableList.Builder<FParameter> params, Function<FIdentifier, FType> possibleTypes) throws SyntaxErrors {
+    public void formalParameters(FrontierParser.FormalParametersContext ctx, ImmutableList.Builder<FParameter> params, Function<FIdentifier, Namespace> possibleNamespaces) throws SyntaxErrors {
         List<FrontierParser.FormalParameterContext> cs = ctx.formalParameter();
         List<SyntaxError> errors = new ArrayList<>();
         for (FrontierParser.FormalParameterContext c : cs) {
             try {
-                FParameter param = ParserContextUtils.getParameter(c, possibleTypes);
+                FParameter param = ParserContextUtils.getParameter(c, possibleNamespaces);
                 treeData.parameters.put(c, param);
                 params.add(param);
             } catch (SyntaxError e) {
@@ -220,7 +229,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         boolean statik = ParserContextUtils.isStatic(ctx.modifier());
         try {
             FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-            FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveType);
+            FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveNamespace);
             FField res = new FField(identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
@@ -238,11 +247,11 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         return null;
     }
 
-    private FType resolveType(FIdentifier identifier) {
-        for (FType p : currentClass.getParametersList()) {
-            if (p.getIdentifier().equals(identifier))
-                return p;
-        }
-        return file.resolveType(identifier);
+    private Namespace resolveNamespace(FIdentifier identifier) {
+        if (currentClass != null)
+            for (FType p : currentClass.getParametersList())
+                if (p.getIdentifier().equals(identifier))
+                    return p.getNamespace();
+        return file.resolveNamespace(identifier);
     }
 }

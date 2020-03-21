@@ -1,21 +1,21 @@
 package tys.frontier.code.expression;
 
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.type.FClass;
-import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 
-public class FClassExpression implements FExpression {
+public class FNamespaceExpression implements FExpression {
 
-    private FType fClass;
+    private Namespace namespace;
 
-    public FClassExpression(FType fClass) {
-        this.fClass = fClass;
+    public FNamespaceExpression(Namespace namespace) {
+        this.namespace = namespace;
     }
 
-    public FType getfClass() {
-        return fClass;
+    public Namespace getNamespace() {
+        return namespace;
     }
 
     @Override
@@ -25,17 +25,17 @@ public class FClassExpression implements FExpression {
 
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
-        return visitor.visitClassExpr(this);
+        return visitor.visitNamespaceExpression(this);
     }
 
     @Override
     public <E> E accept(ExpressionWalker<E> walker) {
-        return walker.visitClassExpr(this);
+        return walker.visitNamespaceExpression(this);
     }
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        return sb.append(fClass.getIdentifier().name);
+        return sb.append(namespace.getIdentifier().name);
     }
 
     @Override

@@ -3,6 +3,7 @@ package tys.frontier.code.function;
 import tys.frontier.code.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
@@ -15,15 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface FFunction extends FTypeMember, IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
+public interface FFunction extends IdentifierNameable, HasVisibility, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
-    @Override
     default boolean isInstance() {
         return getSignature().isInstance();
     }
 
-    @Override
-    FType getMemberOf();
+    Namespace getMemberOf();
 
     @Override
     FVisibilityModifier getVisibility();
@@ -45,11 +44,6 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
         return getSignature().getType();
     }
 
-    @Override
-    default MemberType getMemberType() {
-        return MemberType.FUNCTION;
-    }
-
     boolean isConstructor();
 
     boolean isPredefined();
@@ -68,7 +62,7 @@ public interface FFunction extends FTypeMember, IdentifierNameable, Typed, Contr
 
     FFunction getInstantiation(TypeInstantiation typeInstantiation);
 
-    default <C,Fi,Fu,S,E> Fu accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {
+    default <N,C,Fi,Fu,S,E> Fu accept(ClassVisitor<N,C, Fi, Fu, S, E> visitor) {
         visitor.enterFunction(this);
         return visitor.exitFunction(this, getBody().map(body -> body.accept(visitor)));
     }

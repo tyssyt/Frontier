@@ -4,17 +4,16 @@ import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.expression.FClassExpression;
+import tys.frontier.code.expression.FNamespaceExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FStringLiteral;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FTypeVariable;
-
-import java.util.Collections;
 
 import static java.util.Collections.singletonMap;
 
@@ -44,9 +43,10 @@ public class FTypeType extends FBaseClass {
 
         FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
         ImmutableList<FParameter> of = ImmutableList.of(FParameter.create(FIdentifier.THIS, t, false));
-        typeOf = new FBaseFunction(typeof_ID, INSTANCE, FVisibilityModifier.EXPORT, false, FTypeType.INSTANCE, of, null, singletonMap(t.getIdentifier(), t));
-        typeOf.setBody(FBlock.from(FReturn.createTrusted(new FClassExpression(t), typeOf)));
-        INSTANCE.addFunctionTrusted(typeOf);
+        DefaultNamespace namespace = INSTANCE.getNamespace();
+        typeOf = new FBaseFunction(typeof_ID, namespace, FVisibilityModifier.EXPORT, false, FTypeType.INSTANCE, of, null, singletonMap(t.getIdentifier(), t));
+        typeOf.setBody(FBlock.from(FReturn.createTrusted(new FNamespaceExpression(t.getNamespace()), typeOf)));
+        namespace.addFunctionTrusted(typeOf);
     }
 
 

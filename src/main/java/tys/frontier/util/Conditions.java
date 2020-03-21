@@ -15,7 +15,7 @@ import java.util.*;
 
 public class Conditions {
 
-    private static Signature AND = BinaryOperator.AND.getFunction(FBool.INSTANCE).getSignature();
+    private static Signature AND = BinaryOperator.AND.getFunction(FBool.INSTANCE.getNamespace()).getSignature();
 
     private Conditions() {}
 

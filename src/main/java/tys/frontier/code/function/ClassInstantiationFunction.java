@@ -2,6 +2,7 @@ package tys.frontier.code.function;
 
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FInstantiatedClass;
 
@@ -20,7 +21,7 @@ public class ClassInstantiationFunction extends WithInstantiatedSignature {
 
     private ClassInstantiationFunction(FFunction base, FInstantiatedClass memberOf) {
         super(base, memberOf.getTypeInstantiation());
-        assert base.getMemberOf() == memberOf.getProxy();
+        assert base.getMemberOf() == memberOf.getProxy().getNamespace();
         assert (base instanceof FBaseFunction);
         assert getTypeInstantiation().intersect(base.getParametersList()).isEmpty();
         newMemberOf = memberOf;
@@ -33,8 +34,8 @@ public class ClassInstantiationFunction extends WithInstantiatedSignature {
 
 
     @Override
-    public FInstantiatedClass getMemberOf() {
-        return newMemberOf;
+    public DefaultNamespace getMemberOf() {
+        return newMemberOf.getNamespace();
     }
 
     @Override

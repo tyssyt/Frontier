@@ -4,6 +4,7 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -30,7 +31,7 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public FType getMemberOf() {
+    public Namespace getMemberOf() {
         return proxy.getMemberOf();
     }
 
@@ -67,11 +68,6 @@ public abstract class ForwardingFunction implements FFunction {
     @Override
     public FIdentifier getIdentifier() {
         return proxy.getIdentifier();
-    }
-
-    @Override
-    public MemberType getMemberType() {
-        return proxy.getMemberType();
     }
 
     @Override

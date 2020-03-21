@@ -23,6 +23,7 @@ import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
+import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
@@ -45,7 +46,7 @@ import static tys.frontier.code.function.operator.BinaryOperator.*;
 
 class LLVMTransformer implements
         AutoCloseable,
-        ClassWalker<LLVMValueRef, LLVMValueRef, LLVMValueRef, LLVMValueRef, LLVMValueRef> {
+        ClassWalker<LLVMValueRef, LLVMValueRef, LLVMValueRef, LLVMValueRef, LLVMValueRef, LLVMValueRef> {
 
     private static final int TRUE = 1;
     private static final int FALSE = 0;
@@ -655,7 +656,7 @@ class LLVMTransformer implements
         if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(UnaryOperator.NEG.identifier))
-            if (functionCall.getFunction().getMemberOf() instanceof FIntN)
+            if (functionCall.getFunction().getMemberOf().getType() instanceof FIntN)
                 return LLVMBuildNeg(builder, arg, "neg");
             else
                 return LLVMBuildFNeg(builder, arg, "neg");
@@ -674,7 +675,8 @@ class LLVMTransformer implements
         else if (id.equals(BinaryOperator.OR.identifier))
             return shortCircuitLogic(left, right, false);
 
-        if (functionCall.getFunction().getMemberOf() instanceof FIntN || functionCall.getFunction().getMemberOf() == FBool.INSTANCE) {
+        FType type = functionCall.getFunction().getMemberOf().getType();
+        if (type instanceof FIntN || type == FBool.INSTANCE) {
             Integer arith = arithOpMap.get(id);
             if (arith != null)
                 return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
@@ -747,13 +749,14 @@ class LLVMTransformer implements
 
     private LLVMValueRef predefinedOptional (FFunctionCall functionCall, List<LLVMValueRef> args) { //TODO this is copy & paste from if and call...
         FFunction function = functionCall.getFunction();
-        FOptional optional = (FOptional) function.getMemberOf();
+        OptionalNamespace optionalNamespace = (OptionalNamespace) function.getMemberOf();
+        FOptional optional = optionalNamespace.getType();
 
         if (functionCall.getFunction().getIdentifier().equals(UnaryOperator.NOT.identifier)) {
             return LLVMBuildICmp(builder, LLVMIntEQ, args.get(0), getNull(optional), "eq");
         }
 
-        FFunction toCall = optional.getShimMap().inverse().get(function);
+        FFunction toCall = optionalNamespace.getShimMap().inverse().get(function);
         assert toCall != null;
 
         LLVMValueRef This = args.get(0);
@@ -787,9 +790,11 @@ class LLVMTransformer implements
         FFunction function = functionCall.getFunction();
         if (function instanceof FieldAccessor) {
             return visitFieldAccess((FieldAccessor) function, args);
-        } else if (function.getMemberOf() instanceof FArray) {
+        }
+        FType type = function.getMemberOf().getType();
+        if (type instanceof FArray) {
             return predefinedArray(functionCall, args);
-        } else if (function.getMemberOf() instanceof FOptional) {
+        } else if (type instanceof FOptional) {
             return predefinedOptional(functionCall, args);
         } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
             assert args.isEmpty();
@@ -940,8 +945,8 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitClassExpr(FClassExpression expression) {
-        return module.getTypeInfo(expression.getfClass());
+    public LLVMValueRef visitNamespaceExpression(FNamespaceExpression expression) {
+        return module.getTypeInfo(expression.getNamespace().getType());
     }
 
     @Override

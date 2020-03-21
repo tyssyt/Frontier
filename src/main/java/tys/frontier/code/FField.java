@@ -13,7 +13,7 @@ import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FField extends FVariable implements FTypeMember, StringBuilderToString {
+public class FField extends FVariable implements HasVisibility, StringBuilderToString {
     private FClass memberOf;
     private FVisibilityModifier visibility;
     private boolean statik;
@@ -51,7 +51,6 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         return visibility;
     }
 
-    @Override
     public boolean isInstance() {
         return !statik;
     }
@@ -60,14 +59,8 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         return _this;
     }
 
-    @Override
     public FClass getMemberOf() {
         return memberOf;
-    }
-
-    @Override
-    public MemberType getMemberType() {
-        return MemberType.FIELD;
     }
 
     public boolean hasAssignment() {
@@ -91,7 +84,7 @@ public class FField extends FVariable implements FTypeMember, StringBuilderToStr
         return Optional.ofNullable(assignment);
     }
 
-    public <C,Fi,Fu,S,E> Fi accept(ClassVisitor<C,Fi,Fu,S,E> visitor) {
+    public <N,C,Fi,Fu,S,E> Fi accept(ClassVisitor<N,C,Fi,Fu,S,E> visitor) {
         visitor.enterField(this);
         return visitor.exitField(this, getAssignment().map(assignment -> assignment.accept(visitor)));
     }

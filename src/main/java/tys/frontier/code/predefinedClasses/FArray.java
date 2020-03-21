@@ -11,6 +11,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
@@ -35,16 +36,18 @@ public class FArray extends FPredefinedClass {
     private FArray(FType baseType) {
         super(new FArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;
+        DefaultNamespace namespace = getNamespace();
+
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
         FField size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final
         Pair<FFunction, FFunction> access = Access.createPredefined(this, FIntN._32, baseType);
-        addFunctionTrusted(access.a);
-        addFunctionTrusted(access.b);
-        addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, this, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(FIdentifier.THIS, this, false)), null, Collections.emptyMap()));
+        namespace.addFunctionTrusted(access.a);
+        namespace.addFunctionTrusted(access.b);
+        namespace.addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, namespace, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(FIdentifier.THIS, this, false)), null, Collections.emptyMap()));
 
-        addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
+        namespace.addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
         setForImpl(new ForByIdx(access.a, size.getGetter()));
     }
 

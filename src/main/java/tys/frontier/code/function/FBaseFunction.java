@@ -7,8 +7,9 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.statement.FBlock;
-import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.util.NameGenerator;
@@ -19,7 +20,7 @@ import java.util.*;
 public class FBaseFunction implements FFunction {
 
     private FIdentifier identifier;
-    private FType memberOf;
+    private Namespace memberOf;
     private FVisibilityModifier modifier;
     private boolean natiwe;
     private FBlock body;
@@ -33,7 +34,7 @@ public class FBaseFunction implements FFunction {
 
     protected boolean predefined = false;
 
-    public FBaseFunction(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+    public FBaseFunction(FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -54,14 +55,14 @@ public class FBaseFunction implements FFunction {
         }
     }
 
-    public static FBaseFunction createPredefined(FIdentifier identifier, FType memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+    public static FBaseFunction createPredefined(FIdentifier identifier, DefaultNamespace memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         FBaseFunction res = new FBaseFunction(identifier, memberOf, modifier, false, returnType, params, assignees, parameters);
         res.predefined = true;
         return res;
     }
 
     @Override
-    public FType getMemberOf() {
+    public Namespace getMemberOf() {
         return memberOf;
     }
 
@@ -116,7 +117,8 @@ public class FBaseFunction implements FFunction {
     public boolean isMain() {
         return identifier.name.equals("main")
                 && modifier == FVisibilityModifier.EXPORT
-                && ((FClass) memberOf).getVisibility() == FVisibilityModifier.EXPORT
+                && memberOf instanceof DefaultNamespace
+                && ((DefaultNamespace) memberOf).getVisibility() == FVisibilityModifier.EXPORT
                 && signature.isMain();
     }
 

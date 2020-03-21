@@ -44,7 +44,7 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
-    default FExpression visitClassExpr(FClassExpression expression) {
+    default FExpression visitNamespaceExpression(FNamespaceExpression expression) {
         return expression;
     }
 

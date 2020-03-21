@@ -9,6 +9,7 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.selector.Selector;
 import tys.frontier.code.type.FBaseClass;
@@ -87,7 +88,7 @@ public final class ParserContextUtils {
         return ctx !=  null;
     }
 
-    public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FIdentifier, FTypeVariable> params, Function<FIdentifier, FType> possibleTypes) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
+    public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FIdentifier, FTypeVariable> params, Function<FIdentifier, Namespace> possibleNamespaces) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         FTypeVariable typeVariable = params.get(identifier);
         if (typeVariable == null)
@@ -96,12 +97,12 @@ public final class ParserContextUtils {
         TypeConstraints constraints = TypeConstraints.create();
         UpperBoundContext uC = ctx.upperBound();
         if (uC != null) {
-            for (FType type : typeListFromList(uC.typeList(), possibleTypes))
+            for (FType type : typeListFromList(uC.typeList(), possibleNamespaces))
                 constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Contravariant));
         }
         LowerBoundContext lC = ctx.lowerBound();
         if (lC != null) {
-            for (FType type : typeListFromList(lC.typeList(), possibleTypes))
+            for (FType type : typeListFromList(lC.typeList(), possibleNamespaces))
                 constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Covariant));
         }
         typeVariable.setConstraints(constraints);
@@ -132,53 +133,63 @@ public final class ParserContextUtils {
         }
     }
 
-    public static FType getNonPredefined(String id, Function<FIdentifier, FType> possibleTypes) throws TypeNotFound {
+    public static Namespace getNonPredefined(String id, Function<FIdentifier, Namespace> possibleNamespaces) throws TypeNotFound {
         FIdentifier identifier = new FIdentifier(id);
-        FType type = possibleTypes.apply(identifier);
-        if (type==null) {
+        Namespace namespace = possibleNamespaces.apply(identifier);
+        if (namespace==null)
             throw new TypeNotFound(identifier);
-        }
-        return type;
+        return namespace;
     }
 
-    public static FType tupleFromList(TypeListContext ctx, Function<FIdentifier, FType> possibleTypes)
+    public static FType tupleFromList(TypeListContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
-        return FTuple.from(typeListFromList(ctx, possibleTypes));
+        return FTuple.from(typeListFromList(ctx, possibleNamespaces));
     }
 
-    public static List<FType> typeListFromList(TypeListContext ctx, Function<FIdentifier, FType> possibleTypes)
+    public static List<FType> typeListFromList(TypeListContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
         List<TypeTypeContext> cs = ctx.typeType();
         List<FType> res = new ArrayList<>(cs.size());
         for (TypeTypeContext c : cs) {
-            res.add(getType(c, possibleTypes));
+            res.add(getType(c, possibleNamespaces));
         }
         return res;
     }
 
-    public static FType getType (FrontierParser.TypeTypeContext ctx, Function<FIdentifier, FType> possibleTypes)
+    public static Namespace getNamespace (TypeTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        if (ctx.IDENTIFIER() != null && ctx.typeOrTuple().isEmpty()) {
+            return getNonPredefined(ctx.IDENTIFIER().getText(), possibleNamespaces);
+        }
+        return getType(ctx, possibleNamespaces).getNamespace();
+    }
+
+    public static FType getType (TypeTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType base;
         if (ctx.Array() != null) {
-            base = getType(ctx.typeType(), possibleTypes);
+            base = getType(ctx.typeType(), possibleNamespaces);
             return FArray.getArrayFrom(base);
         } if (ctx.CArray() != null) {
-            base = getType(ctx.typeType(), possibleTypes);
+            base = getType(ctx.typeType(), possibleNamespaces);
             return tys.frontier.code.predefinedClasses.CArray.getArrayFrom(base);
         } else if (ctx.QUESTION() != null) {
-            base = getType(ctx.typeType(), possibleTypes);
+            base = getType(ctx.typeType(), possibleNamespaces);
             return FOptional.from(base);
         } else if (ctx.ARROW() != null) {
             List<TypeListContext> typeListContexts = ctx.typeList();
-            FType  in = tupleFromList(typeListContexts.get(0), possibleTypes);
-            FType out = tupleFromList(typeListContexts.get(1), possibleTypes);
+            FType  in = tupleFromList(typeListContexts.get(0), possibleNamespaces);
+            FType out = tupleFromList(typeListContexts.get(1), possibleNamespaces);
             return FFunctionType.from(in, out);
         } else if (ctx.predefinedType() != null) {
             base = getPredefined(ctx.predefinedType());
         } else if (ctx.IDENTIFIER() != null) {
-            base = getNonPredefined(ctx.IDENTIFIER().getText(), possibleTypes);
+            Namespace nonPredefined = getNonPredefined(ctx.IDENTIFIER().getText(), possibleNamespaces);
+            base = nonPredefined.getType();
+            if (base == null)
+                throw new TypeNotFound(nonPredefined.getIdentifier()); //maybe custom exception is better?
         } else if (ctx.typeType() != null) {
-            return getType(ctx.typeType(), possibleTypes);
+            return getType(ctx.typeType(), possibleNamespaces);
         } else {
             return Utils.cantHappen();
         }
@@ -190,9 +201,9 @@ public final class ParserContextUtils {
         for (TypeOrTupleContext ttc : ttCtxs) {
             TypeTypeContext c = ttc.typeType();
             if (c != null)
-                parameters.add(getType(c, possibleTypes));
+                parameters.add(getType(c, possibleNamespaces));
             else
-                parameters.add(tupleFromList(ttc.typeList(), possibleTypes));
+                parameters.add(tupleFromList(ttc.typeList(), possibleNamespaces));
         }
 
         if (base instanceof FClass)
@@ -217,16 +228,16 @@ public final class ParserContextUtils {
             return Selector.notIn(res);
     }
 
-    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FIdentifier, FType> possibleTypes)
+    public static FParameter getParameter (FrontierParser.FormalParameterContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         boolean hasDefaultValue = ctx.expression() != null;
-        Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleTypes);
+        Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleNamespaces);
         return FParameter.create(pair.a, pair.b, hasDefaultValue);
     }
 
-    public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FIdentifier, FType> possibleTypes)
+    public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
-        FType type = getType(ctx.typeType(), possibleTypes);
+        FType type = getType(ctx.typeType(), possibleNamespaces);
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         return new Pair<>(identifier, type);
     }

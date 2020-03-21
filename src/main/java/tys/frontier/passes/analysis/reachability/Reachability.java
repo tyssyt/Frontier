@@ -5,7 +5,6 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.FTypeMember;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionAddress;
@@ -14,6 +13,8 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.operator.UnaryOperator;
+import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
@@ -27,7 +28,7 @@ import java.util.*;
 
 public class Reachability {
 
-    public static class ReachableClass {
+    public static class ReachableNamespace {
         public final SetMultimap<FFunction, FInstantiatedFunction> reachableFunctions = MultimapBuilder.hashKeys().hashSetValues().build();
 
         public boolean isReachable (FFunction function) {
@@ -42,7 +43,7 @@ public class Reachability {
         }
     }
 
-    private Map<FClass, ReachableClass> reachableClasses = new HashMap<>();
+    private Map<DefaultNamespace, ReachableNamespace> reachableNamespaces = new HashMap<>();
 
     private Reachability() {}
 
@@ -58,8 +59,9 @@ public class Reachability {
                 continue;
 
             res.addFunction(cur);
-            if (cur.getMemberOf() instanceof FOptional && !cur.getIdentifier().equals(UnaryOperator.NOT.identifier)) { //TODO if we ever switch to optional handling in front end, this is no longer needed
-                todoFunctions.addFirst(((FOptional) cur.getMemberOf()).getOriginalFunction(cur));
+            if (cur.getMemberOf() instanceof OptionalNamespace && !cur.getIdentifier().equals(UnaryOperator.NOT.identifier)) { //TODO if we ever switch to optional handling in front end, this is no longer needed
+                OptionalNamespace memberOf = (OptionalNamespace) cur.getMemberOf();
+                todoFunctions.addFirst(memberOf.getOriginalFunction(cur));
                 continue;
             }
 
@@ -115,9 +117,9 @@ public class Reachability {
     private static void handleType(FType type, Reachability reachability) {
         for (FType t : FTuple.unpackType(type))
             if (t instanceof FOptional)
-                reachability.addClass((FClass) ((FOptional) t).getBaseType());
+                reachability.addNamespace(((FClass) ((FOptional) t).getBaseType()).getNamespace());
             else
-                reachability.addClass((FClass) t);
+                reachability.addNamespace(((FClass) t).getNamespace());
     }
 
     private static FClassVisitor reachabilityVisitor(Collection<FFunction> seenFunctions) {
@@ -150,17 +152,22 @@ public class Reachability {
         };
     }
 
-    private static Map<FTypeMember, Pair<Set<FFunctionCall>, Set<FFunctionAddress>>> cachedBaseFunctionAnalysis = new HashMap<>();
-    private static Pair<Set<FFunctionCall>, Set<FFunctionAddress>> analyseBase(FTypeMember base) {
+    private static Map<FField, Pair<Set<FFunctionCall>, Set<FFunctionAddress>>> cachedBaseFieldAnalysis = new HashMap<>();
+    private static Pair<Set<FFunctionCall>, Set<FFunctionAddress>> analyseBase(FField base) {
+        Pair<Set<FFunctionCall>, Set<FFunctionAddress>> res = cachedBaseFieldAnalysis.get(base);
+        if (res == null) {
+            res = new Pair<>(new HashSet<>(), new HashSet<>());
+            base.accept(reachabilityVisitor(res.a, res.b));
+            cachedBaseFieldAnalysis.put(base, res);
+        }
+        return res;
+    }
+    private static Map<FFunction, Pair<Set<FFunctionCall>, Set<FFunctionAddress>>> cachedBaseFunctionAnalysis = new HashMap<>();
+    private static Pair<Set<FFunctionCall>, Set<FFunctionAddress>> analyseBase(FFunction base) {
         Pair<Set<FFunctionCall>, Set<FFunctionAddress>> res = cachedBaseFunctionAnalysis.get(base);
         if (res == null) {
             res = new Pair<>(new HashSet<>(), new HashSet<>());
-            if (base instanceof FField) //TODO this should be doable with an interface but Java doesn't agree
-                ((FField)base).accept(reachabilityVisitor(res.a, res.b));
-            else if (base instanceof FFunction)
-                ((FFunction)base).accept(reachabilityVisitor(res.a, res.b));
-            else
-                return Utils.cantHappen();
+            base.accept(reachabilityVisitor(res.a, res.b));
             cachedBaseFunctionAnalysis.put(base, res);
         }
         return res;
@@ -180,37 +187,30 @@ public class Reachability {
         }
     }
 
-    private ReachableClass addClass(FClass fClass) {
-        return reachableClasses.computeIfAbsent(fClass, x -> new ReachableClass());
+    private ReachableNamespace addNamespace(DefaultNamespace namespace) {
+        return reachableNamespaces.computeIfAbsent(namespace, x -> new ReachableNamespace());
     }
 
     private void addFunction(FFunction function) {
-        ReachableClass reachableClass = addClass((FClass) function.getMemberOf());
+        ReachableNamespace reachableNamespace = addNamespace((DefaultNamespace) function.getMemberOf());
         FInstantiatedFunction value = null;
         if (function instanceof FInstantiatedFunction) {
             FInstantiatedFunction fInstantiatedFunction = (FInstantiatedFunction) function;
             value = fInstantiatedFunction;
             function = fInstantiatedFunction.getProxy();
         }
-        reachableClass.reachableFunctions.put(function, value);
+        reachableNamespace.reachableFunctions.put(function, value);
     }
 
     @SuppressWarnings("SuspiciousMethodCalls")
     public boolean isReachable(FFunction function) {
-        ReachableClass reachableClass = reachableClasses.get(function.getMemberOf());
-        if (reachableClass == null)
+        ReachableNamespace reachableNamespace = reachableNamespaces.get(function.getMemberOf());
+        if (reachableNamespace == null)
             return false;
-        return reachableClass.isReachable(function);
+        return reachableNamespace.isReachable(function);
     }
 
-    public boolean isReachable(FField field) {
-        ReachableClass reachableClass = reachableClasses.get(field.getMemberOf());
-        if (reachableClass == null)
-            return false;
-        return reachableClass.isReachable(field);
-    }
-
-    public Map<FClass, ReachableClass> getReachableClasses() {
-        return reachableClasses;
+    public Map<DefaultNamespace, ReachableNamespace> getReachableNamespaces() {
+        return reachableNamespaces;
     }
 }

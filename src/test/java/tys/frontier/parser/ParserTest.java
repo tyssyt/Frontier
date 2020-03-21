@@ -6,6 +6,7 @@ import org.junit.Test;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
@@ -73,7 +74,7 @@ public class ParserTest {
         assertEquals(IdentifierCollision.class, e.getClass());
         IdentifierCollision c = ((IdentifierCollision) e);
         assertTrue(c.a instanceof FClass);
-        assertTrue(c.b instanceof FClass);
+        assertTrue(c.b instanceof DefaultNamespace);
     }
     @Test
     public void parseContinueOutsideLoop() throws Exception {

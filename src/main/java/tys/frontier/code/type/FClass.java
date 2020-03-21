@@ -2,16 +2,14 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.HasVisibility;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
@@ -25,57 +23,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public interface FClass extends FType, HasVisibility {
-    void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance);
+public abstract class FClass implements FType, HasVisibility {
+    public abstract void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance);
+
+    public abstract boolean isNative();
+
+    public abstract FVisibilityModifier getConstructorVisibility();
+
+    public abstract void setConstructorVisibility(FVisibilityModifier constructorVisibility);
+
+    public abstract BiMap<FIdentifier, FField> getInstanceFields();
+
+    public abstract BiMap<FIdentifier, FField> getStaticFields();
+
+    public abstract List<? extends FType> getParametersList();
+
+    public abstract Variance getParameterVariance(FTypeVariable parameter);
+
+    public abstract Variance getParameterVariance(int i);
+
+    public abstract FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments;
+
+    public abstract Map<FType, FField> getDirectDelegates();
+
+    public abstract void setForImpl(ForImpl forImpl);
+
+    public abstract boolean isPredefined();
 
     @Override
-    long concreteness();
+    public abstract DefaultNamespace getNamespace();
 
     @Override
-    FIdentifier getIdentifier();
-
-    @Override
-    FVisibilityModifier getVisibility();
-
-    boolean isNative();
-
-    FVisibilityModifier getConstructorVisibility();
-
-    void setConstructorVisibility(FVisibilityModifier constructorVisibility);
-
-    BiMap<FIdentifier, FField> getInstanceFields();
-
-    BiMap<FIdentifier, FField> getStaticFields();
-
-    ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures);
-
-    List<? extends FType> getParametersList();
-
-    Variance getParameterVariance(FTypeVariable parameter);
-
-    Variance getParameterVariance(int i);
-
-    FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments;
-
-    Map<FType, FField> getDirectDelegates();
-
-    FIdentifier getFreshLambdaName();
-
-    void setForImpl(ForImpl forImpl);
-
-    void setOpen(FFunction fFunction) throws InvalidOpenDeclaration;
-
-    FFunction getOpen(FIdentifier identifier);
-
-    void addRemoteFunction(FFunction fFunction);
-
-    List<FFunction> getRemoteFunctions();
-
-    @Override
-    String toString();
-
-    @Override
-    default boolean canImplicitlyCast() {
+    public boolean canImplicitlyCast() {
         if (!getDirectDelegates().isEmpty())
             return true;
         for (int i = 0; i < getParametersList().size(); i++) {
@@ -88,7 +67,7 @@ public interface FClass extends FType, HasVisibility {
         return false;
     }
 
-    default void addDelegate(FField field) throws DelegateFromTypeVar {
+    public void addDelegate(FField field) throws DelegateFromTypeVar {
         assert field.getMemberOf() == this;
         if (!(field.getType() instanceof FClass))
             throw new DelegateFromTypeVar(field);
@@ -96,7 +75,7 @@ public interface FClass extends FType, HasVisibility {
             getDirectDelegates().put(field.getType(), field);
     }
 
-    default Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, TypeConstraint> constraints) {
         FField res = getDirectDelegates().get(toType);
         if (res != null)
             return new Pair<>(res, null);
@@ -109,11 +88,11 @@ public interface FClass extends FType, HasVisibility {
         return null;
     }
 
-    default Iterable<FField> getFields() {
+    public Iterable<FField> getFields() {
         return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
     }
 
-    default void addField(FField field) throws IdentifierCollision, SignatureCollision {
+    public void addField(FField field) throws IdentifierCollision, SignatureCollision {
         if (field.isInstance()) {
             FField old = getInstanceFields().put(field.getIdentifier(), field);
             if (old != null) {
@@ -125,11 +104,11 @@ public interface FClass extends FType, HasVisibility {
                 throw new IdentifierCollision(field, old);
             }
         }
-        addFunction(field.getGetter());
-        addFunction(field.getSetter());
+        getNamespace().addFunction(field.getGetter());
+        getNamespace().addFunction(field.getSetter());
     }
 
-    default void addFieldTrusted(FField field) {
+    public void addFieldTrusted(FField field) {
         try {
             addField(field);
         } catch (IdentifierCollision | SignatureCollision collision) {
@@ -137,62 +116,31 @@ public interface FClass extends FType, HasVisibility {
         }
     }
 
-    default void addFunction(FFunction function) throws SignatureCollision {
-        addFunction(function.getSignature(), false);
-        if (function.getLhsSignature() != null)
-            addFunction(function.getLhsSignature(), true);
+    public FConstructor getConstructor() {
+        return (FConstructor) Iterables.getOnlyElement(getNamespace().getFunctions(false).get(FConstructor.IDENTIFIER)).getFunction();
     }
 
-    //TODO this is supposed to be private, but Java sucks
-    default void addFunction(Signature signature, boolean lhs) throws SignatureCollision {
-        for (Signature other : getFunctions(lhs).get(signature.getFunction().getIdentifier())) {
-            if (SignatureCollision.collide(signature, other))
-                throw new SignatureCollision(signature, other);
-        }
-        getFunctions(lhs).put(signature.getFunction().getIdentifier(), signature);
-    }
-
-    default void addFunctionTrusted(FFunction function) {
-        try {
-            addFunction(function);
-        } catch (SignatureCollision signatureCollision) {
-            Utils.cantHappen();
-        }
-    }
-
-    default FConstructor getConstructor() {
-        return (FConstructor) Iterables.getOnlyElement(getFunctions(false).get(FConstructor.IDENTIFIER)).getFunction();
-    }
-
-    default FConstructor generateConstructor() {
+    public FConstructor generateConstructor() {
         FVisibilityModifier visibility = getConstructorVisibility() == null ? FVisibilityModifier.PRIVATE : getConstructorVisibility();
         try {
-            addFunction(FConstructor.createMalloc(this));
+            getNamespace().addFunction(FConstructor.createMalloc(this));
             FConstructor res = FConstructor.create(visibility, this);
-            addFunction(res);
+            getNamespace().addFunction(res);
             return res;
         } catch (SignatureCollision signatureCollision) {
             return Utils.handleException(signatureCollision);
         }
     }
 
-    default void removeUnreachable(Reachability.ReachableClass reachable) {
+    public void removeUnreachable(Reachability.ReachableNamespace reachable) {
         if (!isNative()) { //don't touch the structure of native classes, they have their layout for a reason
             getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
             getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
         }
-        getFunctions(false).values().removeIf(s -> !reachable.isReachable(s.getFunction()));
-        getFunctions(true).clear(); //not needed after this point
     }
 
-    @Override
-    default FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
-        assert returnType == null || !lhsResolve;
-        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
-    }
-
-    default  <C,Fi,Fu,S,E> C accept(ClassVisitor<C, Fi, Fu, S, E> visitor) {
-        visitor.enterType(this);
+    public <N, C,Fi,Fu,S,E> C accept(ClassVisitor<N, C, Fi, Fu, S, E> visitor) {
+        visitor.enterClass(this);
         List<Fi> fields = new ArrayList<>(this.getInstanceFields().size() + this.getStaticFields().size());
         for (FField f : this.getInstanceFields().values()) {
             fields.add(f.accept(visitor));
@@ -200,15 +148,16 @@ public interface FClass extends FType, HasVisibility {
         for (FField f : this.getStaticFields().values()) {
             fields.add(f.accept(visitor));
         }
-        List<Fu> functions = new ArrayList<>(this.getFunctions(false).size());
-        for (Signature s : this.getFunctions(false).values()) {
-            functions.add(s.getFunction().accept(visitor));
-        }
-        return visitor.exitType(this, fields, functions);
+        return visitor.exitClass(this, fields);
     }
 
     @Override
-    default StringBuilder toString(StringBuilder sb) {
+    public String toString() {
+        return getIdentifier().name;
+    }
+
+    @Override
+    public StringBuilder toString(StringBuilder sb) {
         return sb.append(getIdentifier().name);
     }
 }

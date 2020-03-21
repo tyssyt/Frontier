@@ -1,14 +1,11 @@
 package tys.frontier.code.literal;
 
-import com.google.common.collect.ListMultimap;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.util.Utils;
-
-import java.util.List;
 
 public class FNull implements FLiteral {
 
@@ -26,7 +23,7 @@ public class FNull implements FLiteral {
         }
 
         @Override
-        public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) {
+        public Namespace getNamespace() {
             return Utils.cantHappen();
         }
 

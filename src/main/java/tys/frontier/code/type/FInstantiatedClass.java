@@ -1,11 +1,14 @@
 package tys.frontier.code.type;
 
-import com.google.common.collect.*;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
@@ -25,8 +28,8 @@ public class FInstantiatedClass extends FForwardingClass {
 
     private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
-    private ListMultimap<FIdentifier, Signature> newLhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private ListMultimap<FIdentifier, Signature> newRhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
+
+    private DefaultNamespace newNamespace;
 
     private Map<FType, FField> newDelegates;
 
@@ -38,6 +41,7 @@ public class FInstantiatedClass extends FForwardingClass {
         assert instantiatedParameters.size() == baseClass.getParametersList().size();
         newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
         this.instantiatedParameters = instantiatedParameters;
+        this.newNamespace = new DefaultNamespace(this);
     }
 
     @Override
@@ -63,13 +67,13 @@ public class FInstantiatedClass extends FForwardingClass {
         }
 
         //add functions
-        for (Signature base : proxy.getFunctions(false).values()) {
+        for (Signature base : proxy.getNamespace().getFunctions(false).values()) {
             FFunction baseFunction = base.getFunction();
             if (baseFunction.isConstructor() || baseFunction instanceof FieldAccessor || baseFunction.getIdentifier() == FConstructor.MALLOC_ID)
                 continue;
             ClassInstantiationFunction instantiatedFunction = ClassInstantiationFunction.fromClassInstantiation(this, baseFunction);
             baseFunctionMap.put(baseFunction, instantiatedFunction);
-            this.addFunctionTrusted(instantiatedFunction);
+            this.newNamespace.addFunctionTrusted(instantiatedFunction);
         }
 
         //constructor
@@ -128,21 +132,6 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public void setOpen(FFunction fFunction) {
-        Utils.cantHappen();
-    }
-
-    @Override
-    public void addRemoteFunction(FFunction fFunction) {
-        Utils.NYI("FInstantiatedClass.addRemoteFunction");
-    }
-
-    @Override
-    public List<FFunction> getRemoteFunctions() {
-        return Utils.NYI("FInstantiatedClass.getRemoteFunctions");
-    }
-
-    @Override
     public Map<FType, FField> getDirectDelegates() {
         return newDelegates;
     }
@@ -158,8 +147,8 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
-        return lhsSignatures ? newLhsFunctions : newRhsFunctions;
+    public DefaultNamespace getNamespace() {
+        return newNamespace;
     }
 
     public boolean isBaked() {

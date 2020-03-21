@@ -1,24 +1,27 @@
 package tys.frontier.code.type;
 
-import com.google.common.collect.*;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MapMaker;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
-import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class FBaseClass implements FClass {
+public class FBaseClass extends FClass {
 
     private FIdentifier identifier;
     private FVisibilityModifier visibility;
@@ -30,15 +33,11 @@ public class FBaseClass implements FClass {
 
     private BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
     private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
-    private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private Map<FIdentifier, FFunction> openFunctions = new HashMap<>();
-    private List<FFunction> remoteFunctions = new ArrayList<>();
+    private DefaultNamespace namespace;
 
     private Map<FType, FField> delegates = new HashMap<>();
     private ForImpl forImpl;
 
-    private NameGenerator lambdaNames = new NameGenerator("λ", "");
 
     public FBaseClass(FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
         this.identifier = identifier;
@@ -47,12 +46,13 @@ public class FBaseClass implements FClass {
         this.parametersList = ImmutableList.of();
         this.parameterVariance = Collections.emptyMap();
         this.instantiations = Collections.emptyMap();
+        this.namespace = new DefaultNamespace(this);
     }
 
     protected void addDefaultFunctions() {
         try {
-            addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
-            addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
+            namespace.addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
+            namespace.addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }
@@ -71,6 +71,16 @@ public class FBaseClass implements FClass {
                 this.parameterVariance.put(var, parameterVariance.get(i));
             }
         }
+    }
+
+    @Override
+    public DefaultNamespace getNamespace() {
+        return namespace;
+    }
+
+    protected void setNamespace(DefaultNamespace namespace) {
+        assert this.namespace.isEmpty();
+        this.namespace = namespace;
     }
 
     @Override
@@ -124,11 +134,6 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
-        return lhsSignatures ? lhsFunctions : rhsFunctions;
-    }
-
-    @Override
     public List<? extends FType> getParametersList() {
         return parametersList;
     }
@@ -163,43 +168,12 @@ public class FBaseClass implements FClass {
     }
 
     @Override
-    public void setOpen(FFunction fFunction) throws InvalidOpenDeclaration {
-        if (!this.getParametersList().isEmpty())
-            throw new InvalidOpenDeclaration(fFunction, "in generic class");
-        if (fFunction.getParameters().isEmpty())
-            throw new InvalidOpenDeclaration(fFunction, "non generic function");
-        FFunction old = openFunctions.put(fFunction.getIdentifier(), fFunction);
-        assert old == null;
-    }
-
-    @Override
-    public FFunction getOpen(FIdentifier identifier) {
-        return openFunctions.get(identifier);
-    }
-
-    @Override
-    public void addRemoteFunction(FFunction fFunction) {
-        remoteFunctions.add(fFunction);
-    }
-
-    @Override
-    public List<FFunction> getRemoteFunctions() {
-        return remoteFunctions;
-    }
-
-    @Override
     public Map<FType, FField> getDirectDelegates() {
         return delegates;
     }
 
     @Override
-    public FIdentifier getFreshLambdaName() {
-        return new FIdentifier(lambdaNames.next());
+    public boolean isPredefined() {
+        return false;
     }
-
-    @Override
-    public String toString() {
-        return tS();
-    }
-
 }

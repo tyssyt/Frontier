@@ -446,7 +446,7 @@ public class TypeConstraints {
             aTarget = ((FTypeVariable) aTarget).getResolved();
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
-            aTarget.softResolveFunction(b.getIdentifier(), b.getPositionalArgs(), b.getKeywordArgs(), null, b.isLhsResolve());
+            aTarget.getNamespace().softResolveFunction(b.getIdentifier(), b.getPositionalArgs(), b.getKeywordArgs(), null, b.isLhsResolve());
             return true;
         } catch (FunctionNotFound functionNotFound) {
             return false;

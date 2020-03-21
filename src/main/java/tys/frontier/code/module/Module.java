@@ -5,7 +5,7 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
 import tys.frontier.parser.ParsedFile;
@@ -24,7 +24,7 @@ public class Module {
     private List<Path> nativeIncludes = new ArrayList<>();
 
     //cached thingies
-    private Map<FIdentifier, FClass> exportedClasses;
+    private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
     private List<ParsedFile> files;
 
     public ParsedFile getEntryPoint() {
@@ -32,8 +32,8 @@ public class Module {
     }
 
     public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
-        return getExportedClasses().values().stream()
-                .flatMap(_class -> _class.getFunctions(false).values().stream())
+        return getExportedNamespaces().values().stream()
+                .flatMap(namespace -> namespace.getFunctions(false).values().stream())
                 .map(Signature::getFunction)
                 .filter(FFunction::isMain)
                 .collect(MoreCollectors.onlyElement());
@@ -44,29 +44,29 @@ public class Module {
         this.entryPoint = entryPoint;
     }
 
-    public Map<FIdentifier, FClass> getExportedClasses() {
-        if (exportedClasses == null)
-            exportedClasses = initExportedClasses();
-        return exportedClasses;
+    public Map<FIdentifier, DefaultNamespace> getExportedNamespaces() {
+        if (exportedNamespaces == null)
+            exportedNamespaces = initExportedNamespaces();
+        return exportedNamespaces;
     }
 
-    private Map<FIdentifier, FClass> initExportedClasses() {
-        return getClasses()
-                .filter(_class -> _class.getVisibility() == FVisibilityModifier.EXPORT)
-                .collect(toMap(FClass::getIdentifier, Function.identity()));
+    private Map<FIdentifier, DefaultNamespace> initExportedNamespaces() {
+        return getNamespaces()
+                .filter(namespace -> namespace.getVisibility() == FVisibilityModifier.EXPORT)
+                .collect(toMap(DefaultNamespace::getIdentifier, Function.identity()));
     }
 
-    public FClass getClass(FIdentifier identifier) {
+    public DefaultNamespace getNamespace(FIdentifier identifier) {
         for (ParsedFile file : getFiles()) {
-            FClass _class = file.getClass(identifier);
-            if (_class != null && _class.getVisibility() != FVisibilityModifier.PRIVATE)
-                return _class;
+            DefaultNamespace namespace = file.getNamespaces().get(identifier);
+            if (namespace != null && namespace.getVisibility() != FVisibilityModifier.PRIVATE)
+                return namespace;
         }
         return null;
     }
 
-    public Stream<FClass> getClasses() {
-        return getFiles().stream().flatMap(file -> file.getClasses().values().stream());
+    public Stream<DefaultNamespace> getNamespaces() {
+        return getFiles().stream().flatMap(file -> file.getNamespaces().values().stream());
     }
 
     public List<ParsedFile> getFiles() {
@@ -109,13 +109,13 @@ public class Module {
         return res;
     }
 
-    public <M,C,Fi,Fu,S,E> M accept(ModuleWalker<M,C,Fi,Fu,S,E> walker) {
+    public <M,N,C,Fi,Fu,S,E> M accept(ModuleWalker<M,N,C,Fi,Fu,S,E> walker) {
         return walker.enterModule(this);
     }
 
-    public <M,C,Fi,Fu,S,E> M accept(ModuleVisitor<M,C,Fi,Fu,S,E> visitor) {
+    public <M,N,C,Fi,Fu,S,E> M accept(ModuleVisitor<M,N,C,Fi,Fu,S,E> visitor) {
         visitor.enterModule(this);
-        List<C> cs = getClasses().map(_class -> _class.accept(visitor)).collect(toList());
-        return visitor.exitModule(this, cs);
+        List<N> ns = getNamespaces().map(namespace -> namespace.accept(visitor)).collect(toList());
+        return visitor.exitModule(this, ns);
     }
 }

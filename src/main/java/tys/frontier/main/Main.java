@@ -6,7 +6,7 @@ import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.modules.FolderRepository;
@@ -100,26 +100,27 @@ public class Main {
             Reachability reachability = Reachability.analyse(Collections.singleton(module.findMain()));
 
             //remove unreachable fields & functions from reachable classes
-            for (Map.Entry<FClass, Reachability.ReachableClass> entry : reachability.getReachableClasses().entrySet())
+            for (Map.Entry<DefaultNamespace, Reachability.ReachableNamespace> entry : reachability.getReachableNamespaces().entrySet())
                 entry.getKey().removeUnreachable(entry.getValue());
 
             //bake
-            for (Map.Entry<FClass, Reachability.ReachableClass> fClass : reachability.getReachableClasses().entrySet()) {
-                if (fClass.getKey() instanceof FInstantiatedClass)
-                    ((FInstantiatedClass) fClass.getKey()).bake();
-                for (FInstantiatedFunction instantiation : fClass.getValue().reachableFunctions.values()) {
+            for (Map.Entry<DefaultNamespace, Reachability.ReachableNamespace> entry : reachability.getReachableNamespaces().entrySet()) {
+                DefaultNamespace namespace = entry.getKey();
+                if (namespace.getType() != null && namespace.getType() instanceof FInstantiatedClass)
+                    ((FInstantiatedClass) namespace.getType()).bake();
+                for (FInstantiatedFunction instantiation : entry.getValue().reachableFunctions.values()) {
                     if (instantiation != null)
                         instantiation.bake();
                 }
             }
 
             //remove bases of instantiated functions
-            for (Map.Entry<FClass, Reachability.ReachableClass> fClass : reachability.getReachableClasses().entrySet()) {
-                for (Map.Entry<FFunction, Collection<FInstantiatedFunction>> entry : fClass.getValue().reachableFunctions.asMap().entrySet()) {
+            for (Map.Entry<DefaultNamespace, Reachability.ReachableNamespace> reachableNamespace : reachability.getReachableNamespaces().entrySet()) {
+                for (Map.Entry<FFunction, Collection<FInstantiatedFunction>> entry : reachableNamespace.getValue().reachableFunctions.asMap().entrySet()) {
                     Collection<FInstantiatedFunction> instantiations = entry.getValue();
                     if (instantiations.size() > 1 || instantiations.iterator().next() != null) {
                         FFunction baseFunction = entry.getKey();
-                        fClass.getKey().getFunctions(false).get(baseFunction.getIdentifier()).remove(baseFunction.getSignature());
+                        reachableNamespace.getKey().getFunctions(false).get(baseFunction.getIdentifier()).remove(baseFunction.getSignature());
                     }
                 }
             }

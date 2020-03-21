@@ -4,6 +4,8 @@ import com.google.common.collect.ListMultimap;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.Namespace;
+import tys.frontier.code.namespace.TypeVariableNamespace.ReturnTypeOf;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -149,13 +151,13 @@ public class TypeInstantiation {
             if (typeVariable.isResolved())
                 return getType(typeVariable.getResolved());
 
-            if (original instanceof FTypeVariable.ReturnTypeOf) {
-                FTypeVariable.ReturnTypeOf returnTypeOf = (FTypeVariable.ReturnTypeOf) original;
+            if (original instanceof ReturnTypeOf) {
+                ReturnTypeOf returnTypeOf = (ReturnTypeOf) original;
                 FType oldMemberOf = returnTypeOf.getBase();
                 FType newMemberOf = getType(oldMemberOf);
 
                 if (newMemberOf != oldMemberOf) {
-                    return instantiatedReturnType(returnTypeOf, newMemberOf);
+                    return instantiatedReturnType(returnTypeOf, newMemberOf.getNamespace());
                 }
             }
 
@@ -169,7 +171,7 @@ public class TypeInstantiation {
         }
     }
 
-    private FType instantiatedReturnType(FTypeVariable.ReturnTypeOf returnTypeOf, FType newMemberOf) {
+    private FType instantiatedReturnType(ReturnTypeOf returnTypeOf, Namespace newMemberOf) {
         List<FType> positionalArgs = Utils.map(returnTypeOf.getPositionalArgs(), this::getType);
         ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {

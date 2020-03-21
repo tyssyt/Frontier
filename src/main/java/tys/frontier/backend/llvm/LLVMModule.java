@@ -15,6 +15,7 @@ import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
@@ -217,12 +218,15 @@ public class LLVMModule implements AutoCloseable {
 
     /**
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
-     * @param classes classes to parse
+     * @param namespaces namespaces to parse
      */
-    public void parseTypes(Iterable<FClass> classes) {
+    public void parseTypes(Iterable<DefaultNamespace> namespaces) {
         verificationNeeded = true;
-        for (FClass fClass : classes) {
-            if (fClass instanceof FPredefinedClass)
+        for (DefaultNamespace namespace : namespaces) {
+            FClass fClass = namespace.getType();
+            if (fClass == null)
+                continue;
+            if (fClass.isPredefined())
                 continue;
             parseClass(fClass);
             todoClassBodies.add(fClass);
@@ -240,13 +244,24 @@ public class LLVMModule implements AutoCloseable {
     /**
      * Parses all function Headers found in the file, creating corresponding function prototypes in this module.
      * Should be called after {@link #parseTypes}.
-     * @param classes classes to parse
+     * @param namespaces namespaces to parse
      */
-    public void parseClassMembers(Iterable<FClass> classes) {
+    public void parseClassMembers(Iterable<DefaultNamespace> namespaces) {
         verificationNeeded = true;
         //TODO initializers for fields that are done in the fields
-        for (FClass fClass : classes) {
+        for (DefaultNamespace namespace : namespaces) {
+            for (Signature signature : namespace.getFunctions(false).values()) {
+                FFunction function = signature.getFunction();
+                if (!function.isPredefined()) {
+                    addFunctionHeader(function);
+                    if (!function.isNative())
+                        todoFunctionBodies.add(function);
+                }
+            }
 
+            FClass fClass = namespace.getType();
+            if (fClass == null)
+                continue;
             for (FField field : fClass.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?
                 //TODO see if something can be done for final?
@@ -257,15 +272,6 @@ public class LLVMModule implements AutoCloseable {
 
                 setGlobalAttribs(global, Linkage.findLinkage(false), false);
                 todoFieldInitilizers.add(field);
-            }
-
-            for (Signature signature : fClass.getFunctions(false).values()) {
-                FFunction function = signature.getFunction();
-                if (!function.isPredefined()) {
-                    addFunctionHeader(function);
-                    if (!function.isNative())
-                        todoFunctionBodies.add(function);
-                }
             }
         }
     }
@@ -305,7 +311,7 @@ public class LLVMModule implements AutoCloseable {
      * Creates LLVM Code for all parsed Functions and Classes in this module.
      * Should be called after {@link #parseClassMembers}.
      */
-    public void fillInBodies(Collection<FClass> classes, FFunction entryPoint) {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
+    public void fillInBodies(Collection<DefaultNamespace> namespaces, FFunction entryPoint) {//TODO consider parallelizing this, but first check how much LLVM likes in module parallelization
         verificationNeeded = true;
 
         //start with filling in the bodies for missing types
@@ -329,17 +335,18 @@ public class LLVMModule implements AutoCloseable {
 
             //main
             if (entryPoint != null)
-                generateMain(trans, classes, entryPoint);
+                generateMain(trans, namespaces, entryPoint);
         }
 
     }
 
-    private void generateMain(LLVMTransformer trans, Collection<FClass> classes, FFunction entryPoint) {
+    private void generateMain(LLVMTransformer trans, Collection<DefaultNamespace> namespaces, FFunction entryPoint) {
         //TODO if isWindows
-        for (FClass _class : classes) {
-            if (_class.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
-                FField hInstance = _class.getStaticFields().get(new FIdentifier("hInstance"));
-                FField nCmdShow = _class.getStaticFields().get(new FIdentifier("nCmdShow"));
+        for (DefaultNamespace namespace : namespaces) {
+            if (namespace.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
+                FClass fClass = namespace.getType();
+                FField hInstance = fClass.getStaticFields().get(new FIdentifier("hInstance"));
+                FField nCmdShow = fClass.getStaticFields().get(new FIdentifier("nCmdShow"));
                 if (hInstance != null || nCmdShow != null) {
                     trans.generateWinMain(entryPoint, hInstance, nCmdShow);
                     return;
@@ -378,6 +385,11 @@ public class LLVMModule implements AutoCloseable {
         if (LLVMVerifyModule(module, 1, outMassage) == 1) {
             String s = outMassage.getString();
             LLVMDisposeMessage(outMassage);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Utils.handleException(e);
+            }
             Utils.handleError(s);
         }
         verificationNeeded = false;

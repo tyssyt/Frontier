@@ -3,7 +3,7 @@ package tys.frontier.backend.llvm;
 import tys.frontier.backend.Backend;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
 import java.util.Collection;
@@ -31,18 +31,18 @@ public class LLVMBackend implements Backend {
     //TODO see if LTO is anything worth investing time into
 
     public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
-        Collection<FClass> classes;
+        Collection<DefaultNamespace> namespaces;
         List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {
-            classes = allModules.stream()
-                    .flatMap(Module::getClasses)
+            namespaces = allModules.stream()
+                    .flatMap(Module::getNamespaces)
                     .collect(toList());
         } else {
-            classes = reachability.getReachableClasses().keySet();
+            namespaces = reachability.getReachableNamespaces().keySet();
         }
         //TODO a pass that creates init function from all field initializers and appends it to constructors
         //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), classes, fModule.findMain())) {
+        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), namespaces, fModule.findMain())) {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
@@ -57,11 +57,11 @@ public class LLVMBackend implements Backend {
         }
     }
 
-    public static LLVMModule createModule(String name, Collection<FClass> classes, FFunction entryPoint) {
+    public static LLVMModule createModule(String name, Collection<DefaultNamespace> namespaces, FFunction entryPoint) {
         LLVMModule res = new LLVMModule(name);
-        res.parseTypes(classes);
-        res.parseClassMembers(classes);
-        res.fillInBodies(classes, entryPoint);
+        res.parseTypes(namespaces);
+        res.parseClassMembers(namespaces);
+        res.fillInBodies(namespaces, entryPoint);
         res.createMetaData();
         return res;
     }
