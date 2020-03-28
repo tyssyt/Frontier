@@ -177,7 +177,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
                 if (!operator.isUserDefinable())
                     return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
                 identifier = operator.getIdentifier();
-                namespace = currentNamespace;
+                namespace = operator.getNamespace().orElse(currentNamespace);
             }
 
             FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());

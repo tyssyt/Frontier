@@ -1,16 +1,19 @@
 package tys.frontier.code.function.operator;
 
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.util.Utils;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface Operator {
 
     FIdentifier getIdentifier();
     boolean isUserDefinable();
+    Optional<DefaultNamespace> getNamespace();
 
     static Operator get(String stringRepresentation, List<FType> argTypes) {
         Operator operator = null;

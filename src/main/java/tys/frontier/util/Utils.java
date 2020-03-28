@@ -6,10 +6,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
-import tys.frontier.code.function.ClassInstantiationFunction;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.FieldAccessor;
-import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.*;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
@@ -144,16 +141,8 @@ public final class Utils {
         FFunction function = signature.getFunction();
         Namespace oldNamespace = function.getMemberOf();
         FType oldType = oldNamespace.getType();
-        if (oldType == null)
-            return signature;
-        FType newType = typeInstantiation.getType(oldType);
-        Namespace newNamespace = newType.getNamespace();
 
-
-        if (newType instanceof FTypeVariable)
-            return Utils.cantHappen();
-
-        if (oldType instanceof FTypeVariable) {
+        if (function instanceof DummyFunction) {
             //there is no mapping we can follow, we need to fall back to use resolve
             FIdentifier identifier = function.getIdentifier();
             if (identifier instanceof FInstantiatedFunctionIdentifier)
@@ -163,12 +152,26 @@ public final class Utils {
 
             FType returnType = typeInstantiation.getType(signature.getType());
 
+            Namespace namespace;
+            if (oldType instanceof FTypeVariable) {
+                namespace = typeInstantiation.getType(oldType).getNamespace();
+            } else {
+                namespace = oldNamespace;
+            }
+
             try {
-                return newNamespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, signature.isLhs()).signature;
+                return namespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, signature.isLhs()).signature;
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
         }
+
+        if (oldType == null)
+            return signature;
+        FType newType = typeInstantiation.getType(oldType);
+        Namespace newNamespace = newType.getNamespace();
+
+        assert !(oldType instanceof FTypeVariable) && !(newType instanceof FTypeVariable);
 
         if (oldNamespace != newNamespace) {
             //TODO oh god pls make arrys, optionals and function types use generics!

@@ -50,7 +50,7 @@ public class OptionalNamespace extends DefaultNamespace {
             positionalArgs.set(0, getType().getBaseType());
         }
         if (identifier.equals(UnaryOperator.NOT.identifier)) {
-            return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
+            return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, this, lhsResolve);
         }
         FunctionResolver.Result res = baseNamespace.softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
         FFunction shim = shimMap.computeIfAbsent(res.getFunction(), this::createShim);

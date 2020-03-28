@@ -51,8 +51,8 @@ public class FBaseClass extends FClass {
 
     protected void addDefaultFunctions() {
         try {
-            namespace.addFunction(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
-            namespace.addFunction(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
+            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, this));
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }

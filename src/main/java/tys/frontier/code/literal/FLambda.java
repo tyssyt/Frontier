@@ -49,7 +49,7 @@ public class FLambda extends FBaseFunction {
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
         //Lambda is only used with addresses, so when this is called typeInstantiation should be emtpy, and all newParameters should be instantiated
-        if (typeInstantiation.isEmpty()) { //TODO this is one hell pf an unstable hack, good luck future me
+        if (typeInstantiation.isEmpty()) { //TODO this is one hell of an unstable hack, good luck future me
             Map<FTypeVariable, FType> baseMap = new HashMap<>(getParameters().size());
             for (FTypeVariable var : getParametersList()) {
                 assert var.isResolved();

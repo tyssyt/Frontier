@@ -10,7 +10,9 @@ import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FBaseClass;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.passes.analysis.reachability.Reachability;
+import tys.frontier.util.Utils;
 
 import static java.util.Collections.emptyMap;
 
@@ -36,27 +38,37 @@ public abstract class FPredefinedClass extends FBaseClass {
         DefaultNamespace namespace = this.getNamespace();
         namespace.addFunctionTrusted(UnaryOperator.NEG.createPredefined(this, this));
 
-        namespace.addFunctionTrusted(BinaryOperator.EQUALS.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.NOT_EQUALS.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.EQUALS_ID.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.LESS.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.LESS_EQUAL.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.GREATER.createPredefined(this, this, FBool.INSTANCE));
-        namespace.addFunctionTrusted(BinaryOperator.GREATER_EQUAL.createPredefined(this, this, FBool.INSTANCE));
+        try {
+            namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.LESS.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.LESS_EQUAL.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.GREATER.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.GREATER_EQUAL.addPredefined(this, FBool.INSTANCE));
 
-        namespace.addFunctionTrusted(BinaryOperator.PLUS.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.MINUS.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.TIMES.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.DIVIDED.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.MODULO.createPredefined(this, this, this));
+            namespace.addRemoteFunction(BinaryOperator.PLUS.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.MINUS.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.TIMES.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.DIVIDED.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.MODULO.addPredefined(this, this));
+        } catch (SignatureCollision signatureCollision) {
+            Utils.cantHappen();
+        }
     }
 
     protected void addPredefinedFunctionsForIntType() {
         DefaultNamespace namespace = this.getNamespace();
-        namespace.addFunctionTrusted(BinaryOperator.AAND.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.AOR.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.XOR.createPredefined(this, this, this));
+
+        try {
+            namespace.addRemoteFunction(BinaryOperator.AAND.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.AOR.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.XOR.addPredefined(this, this));
+        } catch (SignatureCollision signatureCollision) {
+            Utils.cantHappen();
+        }
+
         namespace.addFunctionTrusted(createPredefined(SHIFT_L));
         namespace.addFunctionTrusted(createPredefined(U_SHIFT_R));
         namespace.addFunctionTrusted(createPredefined(S_SHIFT_R));

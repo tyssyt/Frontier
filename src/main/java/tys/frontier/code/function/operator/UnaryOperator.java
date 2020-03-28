@@ -6,10 +6,12 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 import tys.frontier.parser.antlr.FrontierLexer;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Collections.emptyMap;
@@ -42,6 +44,11 @@ public enum UnaryOperator implements Operator {
     @Override
     public boolean isUserDefinable() {
         return true;
+    }
+
+    @Override
+    public Optional<DefaultNamespace> getNamespace() {
+        return Optional.empty();
     }
 
     public FFunction createPredefined(FClass memberOf, FClass ret) {

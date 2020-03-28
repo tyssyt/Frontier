@@ -5,6 +5,7 @@ import tys.frontier.State;
 import tys.frontier.backend.llvm.LLVMBackend;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FInstantiatedClass;
@@ -89,6 +90,9 @@ public class Main {
         State.get().setTempDir(Files.createTempDir());
         try {
             Module module = Parser.parse(Paths.get(input), Style.DEFAULT_STYLE);
+
+            //add the binOp namespace, so passes can run over it (reachability can find it without that)
+            module.getEntryPoint().addNamespace(BinaryOperator.sGetNamespace(), null);
 
             //Lowering Passes
             for (Module m : module.findImportedModulesReflexiveTransitive()) {

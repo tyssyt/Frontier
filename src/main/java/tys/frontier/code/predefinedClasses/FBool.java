@@ -4,6 +4,8 @@ import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
 
 public class FBool extends FPredefinedClass {
 
@@ -22,15 +24,20 @@ public class FBool extends FPredefinedClass {
     private void addPredefinedFunctionsForBoolType() {
         DefaultNamespace namespace = getNamespace();
         namespace.addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, this));
-        namespace.addFunctionTrusted(BinaryOperator.EQUALS_ID.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.NOT_EQUALS_ID.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.EQUALS.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.NOT_EQUALS.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.AND.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.OR.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.AAND.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.AOR.createPredefined(this, this, this));
-        namespace.addFunctionTrusted(BinaryOperator.XOR.createPredefined(this, this, this));
+
+        try {
+            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.AND.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.OR.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.AAND.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.AOR.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.XOR.addPredefined(this, this));
+        } catch (SignatureCollision signatureCollision) {
+            Utils.cantHappen();
+        }
     }
 
     @Override

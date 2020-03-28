@@ -4,10 +4,12 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
@@ -34,10 +36,16 @@ public class MainTest {
     public TemporaryFolder folder = new TemporaryFolder();
 
     @BeforeClass
-    public static void setUp() {
+    public static void beforeClass() {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
             ((StdOutLogger) logger).setLevel(Logger.Level.INFO);
+    }
+
+    @Before
+    public void setUp() {
+        //clear binOp namespace
+        BinaryOperator.sGetNamespace().getFunctions(false).values().removeIf( sig -> !sig.getFunction().isPredefined());
     }
 
     private String doMain(String fileName, String input, String... args) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

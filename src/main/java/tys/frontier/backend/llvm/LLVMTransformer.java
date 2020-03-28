@@ -666,28 +666,32 @@ class LLVMTransformer implements
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall, List<LLVMValueRef> args) {
         assert args.size() == 2;
+        FFunction function = functionCall.getFunction();
+        FIdentifier id = function.getIdentifier();
         LLVMValueRef left = args.get(0);
         LLVMValueRef right = args.get(1);
-        FIdentifier id = functionCall.getFunction().getIdentifier();
 
         if (id.equals(BinaryOperator.AND.identifier))
             return shortCircuitLogic(left, right, true);
         else if (id.equals(BinaryOperator.OR.identifier))
             return shortCircuitLogic(left, right, false);
 
-        FType type = functionCall.getFunction().getMemberOf().getType();
+        FType type = function.getSignature().getParameters().get(0).getType();
+        assert function.getSignature().getParameters().get(1).getType() == type;
         if (type instanceof FIntN || type == FBool.INSTANCE) {
             Integer arith = arithOpMap.get(id);
             if (arith != null)
                 return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
             else
                 return LLVMBuildICmp(builder, cmpOpMap.get(id), left, right, "cmp_" + id.name);
-        } else {
+        } else if (type == FFloat32.INSTANCE || type == FFloat64.INSTANCE) {
             Integer arith = arithFOpMap.get(id);
             if (arith != null)
                 return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
             else
                 return LLVMBuildFCmp(builder, cmpFOpMap.get(id), left, right, "cmp_" + id.name);
+        } else {
+            return Utils.cantHappen();
         }
     }
 

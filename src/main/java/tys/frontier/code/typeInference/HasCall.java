@@ -1,13 +1,16 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ListMultimap;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FunctionResolver;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.List;
 
-public class HasCall extends TypeConstraint {
+public abstract class HasCall extends TypeConstraint {
 
     //TODO can there be a case where we know the return Type and want a member for that?
     private FIdentifier identifier;
@@ -38,6 +41,8 @@ public class HasCall extends TypeConstraint {
     public boolean isLhsResolve() {
         return lhsResolve;
     }
+
+    abstract FunctionResolver.Result resolve(TypeInstantiation typeInstantiation) throws FunctionNotFound;
 
     @Override
     public String toString() {

@@ -3,6 +3,7 @@ package tys.frontier.code.typeInference;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
@@ -56,7 +57,7 @@ public class TypeConstraints {
         this.fixed = true;
     }
 
-    @SuppressWarnings("AssertWithSideEffects")
+    @SuppressWarnings({"AssertWithSideEffects", "ConstantConditions"})
     private TypeConstraints merge(TypeConstraints other) {
         if ((other.fixed && !this.fixed) || (other.isResolved() && !this.isResolved())) {
             return other.merge(this);
@@ -79,9 +80,7 @@ public class TypeConstraints {
         this.equivalenceGroup.addAll(other.equivalenceGroup);
 
         //force error in case there are somehow reference to other left (and have some fun with Java & asserts ;)
-        //noinspection ConstantConditions
         assert (other.equivalenceGroup = null) == null;
-        //noinspection ConstantConditions
         assert (other.constraints = null) == null;
         return this;
     }
@@ -161,7 +160,7 @@ public class TypeConstraints {
             ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
             for (Iterator<TypeConstraint> it = _this.constraints.iterator(); it.hasNext();) {
                 TypeConstraint c = it.next();
-                if (implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
+                if (_this.implies(implicitCastable, c, newConstraints) && newConstraints.isEmpty())
                     it.remove();
                 newConstraints.clear();
             }
@@ -408,7 +407,7 @@ public class TypeConstraints {
     }
 
 
-    public static boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
+    public boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (b instanceof ImplicitCastable)
             return implies(a, (ImplicitCastable) b, newConstraints);
         else if (b instanceof HasCall)
@@ -437,7 +436,7 @@ public class TypeConstraints {
         }
     }
 
-    public static boolean implies(ImplicitCastable a, HasCall b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
+    public boolean implies(ImplicitCastable a, HasCall b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (a.getVariance() == Contravariant) //casts from constraints cannot be used for function resolving
             return false;
 
@@ -446,7 +445,11 @@ public class TypeConstraints {
             aTarget = ((FTypeVariable) aTarget).getResolved();
         try {
             //TODO I have no Idea how/if the variance of a should be considered in resolving
-            aTarget.getNamespace().softResolveFunction(b.getIdentifier(), b.getPositionalArgs(), b.getKeywordArgs(), null, b.isLhsResolve());
+            HashMap<FTypeVariable, FType> typeInstantiation = new HashMap<>();
+            for (FTypeVariable eqVar : equivalenceGroup) {
+                typeInstantiation.put(eqVar, aTarget);
+            }
+            b.resolve(TypeInstantiation.create(typeInstantiation));
             return true;
         } catch (FunctionNotFound functionNotFound) {
             return false;

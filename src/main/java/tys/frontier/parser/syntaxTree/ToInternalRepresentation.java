@@ -14,6 +14,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.UnnamedIdentifier;
@@ -806,15 +807,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         FIdentifier identifier = new FIdentifier(ctx.getChild(1).getText());
 
         try {
-            return functionCall(first.getType().getNamespace(), identifier, asList(first, second), ImmutableListMultimap.of(), false);
-        } catch (FunctionNotFound | AccessForbidden e1) {
-            try {
-                return functionCall(second.getType().getNamespace(), identifier, asList(first, second), ImmutableListMultimap.of(), false);
-            } catch (FunctionNotFound | AccessForbidden e2) {
-                errors.add(e1);
-                errors.add(e2);
-                throw new Failed();
-            }
+            return functionCall(BinaryOperator.sGetNamespace(), identifier, asList(first, second), ImmutableListMultimap.of(), false);
+        } catch (FunctionNotFound | AccessForbidden syntaxError) {
+            errors.add(syntaxError);
+            throw new Failed();
         }
     }
 
@@ -1156,11 +1152,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         try {
             List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findNamespaceNoThrow)) : null;
             FIdentifier identifier;
-            if (ctx.IDENTIFIER() != null)
+            DefaultNamespace namespace;
+            if (ctx.IDENTIFIER() != null) {
                 identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-            else
-                identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
-            FFunction function = getFunction(currentNamespace, identifier, params);
+                namespace = currentNamespace;
+            } else {
+                Operator operator = Operator.get(ctx.operator().getText(), params);
+                identifier = operator.getIdentifier();
+                namespace = operator.getNamespace().orElse(currentNamespace);
+            }
+            FFunction function = getFunction(namespace, identifier, params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);
         } catch (SyntaxError syntaxError) {
@@ -1177,8 +1178,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             FIdentifier identifier;
             if (ctx.IDENTIFIER() != null)
                 identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-            else
-                identifier = Operator.get(ctx.operator().getText(), params).getIdentifier();
+            else {
+                Operator operator = Operator.get(ctx.operator().getText(), params);
+                identifier = operator.getIdentifier();
+                if (operator.getNamespace().isPresent())
+                    namespace = operator.getNamespace().get();
+            }
             FFunction function = getFunction(namespace, identifier, params);
             function = sthsthFunctionAddress(function);
             return new FFunctionAddress(function);

@@ -5,11 +5,14 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.util.Pair;
+
+import java.util.Optional;
 
 import static java.util.Collections.emptyMap;
 
@@ -23,6 +26,11 @@ public class Access implements Operator {
     @Override
     public FIdentifier getIdentifier() {
         return ID;
+    }
+
+    @Override
+    public Optional<DefaultNamespace> getNamespace() {
+        return Optional.empty();
     }
 
     @Override

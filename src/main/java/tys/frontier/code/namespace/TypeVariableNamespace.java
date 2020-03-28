@@ -6,7 +6,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.DummyFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -15,6 +15,7 @@ import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.HasCall;
+import tys.frontier.code.typeInference.HasSelfCall;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
@@ -47,6 +48,11 @@ public class TypeVariableNamespace implements Namespace {
     }
 
     @Override
+    public FIdentifier nextReturnTypeIdentifier() {
+        return new FIdentifier(returnTypeNames.next());
+    }
+
+    @Override
     public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         if (typeVariable.isResolved())
             return typeVariable.getResolved().getNamespace().softResolveFunction(identifier, positionalArgs, keywordArgs, returnType, lhsResolve);
@@ -59,11 +65,29 @@ public class TypeVariableNamespace implements Namespace {
         if (lhsResolve)
             return Utils.NYI("Lhs resolve on TypeVariable");
 
-        HasCall constraint = new HasCall(null, identifier, positionalArgs, keywordArgs, lhsResolve);
+        HasCall constraint = new HasSelfCall(null, identifier, positionalArgs, keywordArgs, lhsResolve, this.typeVariable);
         if (!typeVariable.tryAddConstraint(constraint))
             throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
 
         //just return some fitting dummy function
+        return createDummyResult(identifier, positionalArgs, keywordArgs, returnType, lhsResolve, constraint);
+    }
+
+    public FunctionResolver.Result createDummyResult(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve, HasCall constraint) {
+        //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
+        if (returnType == null)
+            returnType = new ReturnTypeOf(nextReturnTypeIdentifier(), typeVariable.isFixed(), positionalArgs, keywordArgs, lhsResolve);
+        FFunction f = createDummyFunction(this, identifier, positionalArgs, keywordArgs, returnType);
+
+        FunctionResolver.Result res = new FunctionResolver.Result();
+        res.signature = lhsResolve ? f.getLhsSignature() : f.getSignature();
+        List<FType> paramTypes = Utils.typesFromExpressionList(res.signature.getParameters());
+        res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
+        res.constraints = ImmutableMultimap.of(typeVariable, constraint);
+        return res;
+    }
+
+    public static DummyFunction createDummyFunction(Namespace namespace, FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) {
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
@@ -74,20 +98,12 @@ public class TypeVariableNamespace implements Namespace {
             paramsBuilder.add(FParameter.create(entry.getKey(), FTuple.from(entry.getValue()), false));
         }
         ImmutableList<FParameter> params = paramsBuilder.build();
-        //TODO we might have constraints on the return type, if we are fixed we must have constraints and maybe the return type is fixed as well?
-        if (returnType == null)
-            returnType = new ReturnTypeOf(new FIdentifier(returnTypeNames.next()), typeVariable.isFixed(), positionalArgs, keywordArgs, lhsResolve);
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        FBaseFunction f = new FBaseFunction(identifier, this, FVisibilityModifier.EXPORT, true, returnType, params, null, emptyMap());
+        DummyFunction f = new DummyFunction(identifier, namespace, FVisibilityModifier.EXPORT, false, returnType, params, null, emptyMap());
         if (returnType instanceof ReturnTypeOf)
             ((ReturnTypeOf) returnType).function = f;
 
-        FunctionResolver.Result res = new FunctionResolver.Result();
-        res.signature = lhsResolve ? f.getLhsSignature() : f.getSignature();
-        List<FType> paramTypes = Utils.typesFromExpressionList(params);
-        res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
-        res.constraints = ImmutableMultimap.of(typeVariable, constraint);
-        return res;
+        return f;
     }
 
     @Override

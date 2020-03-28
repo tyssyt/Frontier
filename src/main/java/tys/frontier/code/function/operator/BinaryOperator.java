@@ -1,17 +1,26 @@
 package tys.frontier.code.function.operator;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
+import tys.frontier.code.type.FType;
+import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.antlr.FrontierLexer;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
+import tys.frontier.parser.syntaxErrors.SignatureCollision;
+import tys.frontier.util.Utils;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Collections.emptyMap;
@@ -45,6 +54,31 @@ public enum BinaryOperator implements Operator {
     private static final ImmutableMap<String, BinaryOperator> parserTokenMap =
             Arrays.stream(values()).collect(toImmutableMap(o -> o.parserToken, o -> o));
 
+    private static DefaultNamespace binOpNamespace;
+
+    static { //init binOpNamespace
+        FIdentifier p1Id = new FIdentifier("P1");
+        FIdentifier p2Id = new FIdentifier("P2");
+        FIdentifier rId = new FIdentifier("R");
+
+        binOpNamespace =  new DefaultNamespace(new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, true);
+        for (BinaryOperator binaryOperator : parserTokenMap.values()) {
+            //add open function to binOp namespace
+            FTypeVariable p1 = FTypeVariable.create(p1Id, true);
+            FTypeVariable p2 = FTypeVariable.create(p2Id, true);
+            FTypeVariable r = FTypeVariable.create(rId, true);
+            ImmutableList<FParameter> parameters = ImmutableList.of(FParameter.create(p1Id, p1, false), FParameter.create(p2Id, p2, false));
+
+            FBaseFunction function = new FBaseFunction(binaryOperator.identifier, binOpNamespace, FVisibilityModifier.EXPORT, false, r, parameters, null, ImmutableMap.of(p1Id, p1, p2Id, p2, rId, r));
+            try {
+                binOpNamespace.setOpen(function);
+            } catch (InvalidOpenDeclaration invalidOpenDeclaration) {
+                Utils.cantHappen();
+            }
+        }
+    }
+
+
     public final String parserToken;
     public final FIdentifier identifier;
 
@@ -72,17 +106,36 @@ public enum BinaryOperator implements Operator {
         }
     }
 
-    public FFunction getFunction(DefaultNamespace namespace) { //TODO remove on binOp remake
-        return Iterables.getOnlyElement(namespace.getFunctions(false).get(identifier)).getFunction();
+    public static DefaultNamespace sGetNamespace() {
+        return binOpNamespace;
     }
 
-    public FFunction createPredefined(FClass memberOf, FClass second, FClass ret) {
+    @Override
+    public Optional<DefaultNamespace> getNamespace() {
+        return Optional.of(binOpNamespace);
+    }
+
+    public Signature getFunction(FType first, FType second) throws FunctionNotFound {
+        return binOpNamespace.hardResolveFunction(identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), null, false).signature;
+    }
+
+    public Signature getFunctionTrusted(FType first, FType second) {
+        try {
+            return getFunction(first, second);
+        } catch (FunctionNotFound functionNotFound) {
+            return Utils.cantHappen();
+        }
+    }
+
+    public FFunction addPredefined(FClass fClass, FClass ret) throws SignatureCollision {
         ImmutableList<FParameter> params = ImmutableList.of(
-                FParameter.create(new FIdentifier("first"), memberOf, false),
-                FParameter.create(new FIdentifier("second"), second, false)
+                FParameter.create(new FIdentifier("first"), fClass, false),
+                FParameter.create(new FIdentifier("second"), fClass, false)
         );
-        return new FBaseFunction(identifier, memberOf.getNamespace(), memberOf.getVisibility(), false, ret, params, null, emptyMap()) {
+        FBaseFunction res = new FBaseFunction(identifier, binOpNamespace, fClass.getVisibility(), false, ret, params, null, emptyMap()) {
             {predefined = true;}
         };
+        binOpNamespace.addFunction(res);
+        return res;
     }
 }

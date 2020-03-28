@@ -16,6 +16,8 @@ public interface Namespace extends IdentifierNameable {
 
     FType getType();
 
+    FIdentifier nextReturnTypeIdentifier();
+
     FFunction getOpen(FIdentifier identifier);
 
     void addRemoteFunction(FFunction fFunction);

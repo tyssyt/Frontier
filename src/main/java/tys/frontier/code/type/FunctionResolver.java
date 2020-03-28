@@ -8,19 +8,22 @@ import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.typeInference.TypeConstraint;
-import tys.frontier.code.typeInference.TypeConstraints;
-import tys.frontier.code.typeInference.Variance;
+import tys.frontier.code.typeInference.*;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.collect.Iterables.getOnlyElement;
 
 public class FunctionResolver {
 
@@ -40,22 +43,26 @@ public class FunctionResolver {
     private List<FType> positionalArgs;
     private ListMultimap<FIdentifier, FType> keywordArgs;
     private FType returnType;
+    private DefaultNamespace namespace;
+    private boolean lhsResolve;
 
     private Result bestResult;
 
-    public static Result resolve(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, Iterable<Signature> candidates) throws FunctionNotFound {
-        return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType).resolve(candidates);
+    public static Result resolve(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, DefaultNamespace namespace, boolean lhsResove) throws FunctionNotFound {
+        return new FunctionResolver(identifier, positionalArgs, keywordArgs, returnType, namespace, lhsResove).resolve();
     }
 
-    private FunctionResolver(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType) {
+    private FunctionResolver(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, DefaultNamespace namespace, boolean lhsResolve) {
         this.identifier = identifier;
         this.positionalArgs = positionalArgs;
         this.keywordArgs = keywordArgs;
         this.returnType = returnType;
+        this.namespace = namespace;
+        this.lhsResolve = lhsResolve;
     }
 
-    private Result resolve(Iterable<Signature> candidates) throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
-        for (Signature s : candidates) {
+    private Result resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
+        for (Signature s : namespace.getFunctions(lhsResolve).get(identifier)) {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
@@ -125,7 +132,41 @@ public class FunctionResolver {
             bestResult = newResult;
             return;
         }
-        if (!bestResult.constraints.isEmpty() || !newResult.constraints.isEmpty()) {
+        if ((!bestResult.constraints.isEmpty() || !newResult.constraints.isEmpty()) && !bestResult.constraints.equals(newResult.constraints)) {
+            Multimap<FTypeVariable, TypeConstraint> computedConstraints = MultimapBuilder.hashKeys().arrayListValues(1).build();
+            if (bestResult.constraints.keySet().equals(newResult.constraints.keySet())) {
+
+                for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : bestResult.constraints.asMap().entrySet()) {
+                    FTypeVariable typeVariable = entry.getKey();
+                    Collection<TypeConstraint> bestConstraints = entry.getValue();
+                    Collection<TypeConstraint> newConstraints = newResult.constraints.get(typeVariable);
+
+                    if (bestConstraints.size() != 1 || newConstraints.size() != 1
+                            || !(getOnlyElement(bestConstraints) instanceof ImplicitCastable || getOnlyElement(bestConstraints) instanceof HasRemoteCall)
+                            || !(getOnlyElement(newConstraints)  instanceof ImplicitCastable || getOnlyElement(newConstraints)  instanceof HasRemoteCall)
+                    ) {
+                        Utils.NYI("ambiguous function call with constraints");
+                        return;
+                    }
+
+                    computedConstraints.put(typeVariable, new HasRemoteCall(null, identifier, positionalArgs, keywordArgs, lhsResolve, namespace));
+
+                    //return some dummy function
+                    FType returnType;
+                    if (this.returnType != null)
+                        returnType = this.returnType;
+                    else if (bestResult.signature.getType() == newResult.signature.getType())
+                        returnType = newResult.signature.getType();
+                    else
+                        returnType = TypeVariableNamespace.ReturnTypeOf.create(namespace.nextReturnTypeIdentifier(), false); //TODO no idea what to set fixed to
+
+                    FFunction dummyFunction = TypeVariableNamespace.createDummyFunction(namespace, identifier, positionalArgs, keywordArgs, returnType);
+                    bestResult.signature = lhsResolve ? dummyFunction.getLhsSignature() : dummyFunction.getSignature();
+
+                }
+                bestResult.constraints = computedConstraints;
+                return;
+            }
             Utils.NYI("ambiguous function call with constraints");
         }
 

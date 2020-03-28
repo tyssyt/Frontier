@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
 
 public class Conditions {
 
-    private static Signature AND = BinaryOperator.AND.getFunction(FBool.INSTANCE.getNamespace()).getSignature();
+    private static Signature AND = BinaryOperator.AND.getFunctionTrusted(FBool.INSTANCE, FBool.INSTANCE);
 
     private Conditions() {}
 

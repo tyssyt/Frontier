@@ -33,23 +33,28 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     private List<FFunction> remoteFunctions = new ArrayList<>();
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
+    private NameGenerator returnTypeNames;
 
     public DefaultNamespace(FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
         this.identifier = identifier;
         this.visibility = visibility;
         this._native = _native;
+        this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + "ret.", "");
     }
 
     public DefaultNamespace(FClass fClass) {
-        this.identifier = fClass.getIdentifier();
-        this.visibility = fClass.getVisibility();
+        this(fClass.getIdentifier(), fClass.getVisibility(), fClass.isNative() || fClass.isPredefined());
         this.fClass = fClass;
-        this._native = fClass.isNative() || fClass.isPredefined();
     }
 
     @Override
     public FIdentifier getIdentifier() {
         return identifier;
+    }
+
+    @Override
+    public FIdentifier nextReturnTypeIdentifier() {
+        return new FIdentifier(returnTypeNames.next());
     }
 
     @Override
@@ -119,7 +124,7 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     @Override
     public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
         assert returnType == null || !lhsResolve;
-        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, getFunctions(lhsResolve).get(identifier));
+        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, this, lhsResolve);
     }
 
     public FIdentifier getFreshLambdaName() {
