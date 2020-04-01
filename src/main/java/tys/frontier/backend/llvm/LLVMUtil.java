@@ -8,12 +8,11 @@ import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
-
-import static java.util.Arrays.asList;
 
 public class LLVMUtil {
 
@@ -30,20 +29,22 @@ public class LLVMUtil {
 
     @SafeVarargs
     public static <P extends Pointer> PointerPointer<P> createPointerPointer (P... list) {
-        return createPointerPointer(asList(list));
+        return new PointerPointer<>(list);
     }
 
-    public static <P extends Pointer> PointerPointer<P> createPointerPointer (List<P> list) {
-        PointerPointer<P> res = new PointerPointer<>(list.size());
-        for (int i=0; i<list.size(); i++)
-            res.put(i, list.get(i));
+    public static <P extends Pointer> PointerPointer<P> createPointerPointer (Collection<P> collection) {
+        PointerPointer<P> res = new PointerPointer<>(collection.size());
+        Iterator<P> iterator = collection.iterator();
+        for (int i=0; i<collection.size(); i++)
+            res.put(i, iterator.next());
         return res;
     }
 
-    public static <P extends Pointer, L> PointerPointer<P> createPointerPointer (List<L> list, Function<L,P> function) {
-        PointerPointer<P> res = new PointerPointer<>(list.size());
-        for (int i=0; i<list.size(); i++)
-            res.put(i, function.apply(list.get(i)));
+    public static <P extends Pointer, L> PointerPointer<P> createPointerPointer (Collection<L> collection, Function<L,P> function) {
+        PointerPointer<P> res = new PointerPointer<>(collection.size());
+        Iterator<L> iterator = collection.iterator();
+        for (int i=0; i<collection.size(); i++)
+            res.put(i, function.apply(iterator.next()));
         return res;
     }
 
@@ -73,6 +74,14 @@ public class LLVMUtil {
 
     public static String getTypeInfoName(FType clazz) {
         return "typeInfo." + clazz.getIdentifier().name;
+    }
+
+    public static String getTypeInfoFieldsName(FType clazz) {
+        return "typeInfo.fields." + clazz.getIdentifier().name;
+    }
+
+    public static String getFieldInfoName(FField field) {
+        return "fieldInfo." + field.getMemberOf().getIdentifier().name + '.' + field.getIdentifier().name;
     }
 
 }

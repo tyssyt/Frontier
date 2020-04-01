@@ -56,6 +56,8 @@ public class LLVMModule implements AutoCloseable {
     private static final int TRUE = 1;
     private static final int FALSE = 0;
 
+    private LLVMValueRef constEmptyArray;
+
     final LLVMTypeRef byteType;
     final LLVMTypeRef bytePointer;
     final LLVMTypeRef bytePointerPointer;
@@ -65,7 +67,7 @@ public class LLVMModule implements AutoCloseable {
     private LLVMContextRef context;
     private LLVMModuleRef module;
     private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
-    private Map<FType, LLVMValueRef> typeInfo = new HashMap<>();
+    private Map<FClass, LLVMValueRef> typeInfo = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
     private Object2IntMap<FField> fieldIndices = new Object2IntOpenHashMap<>();
     private List<FClass> todoClassBodies = new ArrayList<>();
@@ -84,6 +86,7 @@ public class LLVMModule implements AutoCloseable {
         bytePointer = LLVMPointerType(byteType, 0);
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
         fillInPredefinedTypes();
+        constEmptyArray = initConstEmptyArray();
     }
 
     private void fillInPredefinedTypes() {
@@ -93,6 +96,18 @@ public class LLVMModule implements AutoCloseable {
         llvmTypes.put(FFloat64.INSTANCE, LLVMDoubleTypeInContext(context));
         llvmTypes.put(FTuple.VOID, LLVMVoidTypeInContext(context));
         llvmTypes.put(FNull.NULL_TYPE, bytePointer);
+    }
+
+    private LLVMValueRef initConstEmptyArray() {
+        LLVMTypeRef intType = getLlvmType(FIntN._32);
+        LLVMTypeRef arrayType = LLVMArrayType(LLVMPointerType(LLVMVoidType(), 0), 0);
+        LLVMTypeRef type = LLVMStructTypeInContext(context, createPointerPointer(intType, arrayType), 2, FALSE);
+
+        LLVMValueRef res = LLVMAddGlobal(module, type, "emptyArray");
+        setGlobalAttribs(res, Linkage.PRIVATE, true);
+        LLVMSetGlobalConstant(res, TRUE);
+        LLVMSetInitializer(res, LLVMConstNull(type)); //empty array is {0, []}, which is a zero-initializer
+        return res;
     }
 
     @Override
@@ -137,19 +152,16 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    LLVMValueRef getTypeInfo(FType fClass) {
+    LLVMValueRef getTypeInfo(FType type) {
+        FClass fClass = (FClass) type;
         LLVMValueRef res = typeInfo.get(fClass);
         if (res != null)
             return res;
-        LLVMValueRef name = constantString(fClass.getIdentifier().name);
-        LLVMValueRef castedName = LLVMConstBitCast(name, getLlvmType(FStringLiteral.TYPE));
-        LLVMTypeRef typeInfoType = LLVMGetElementType(getLlvmType(FTypeType.INSTANCE));
-        LLVMValueRef typeInfo = LLVMConstNamedStruct(typeInfoType, castedName, 1);
 
-        res = LLVMAddGlobal(this.module, typeInfoType, getTypeInfoName(fClass));
+        LLVMTypeRef typeInfoType = LLVMGetElementType(getLlvmType(FTypeType.INSTANCE));
+        res = LLVMAddGlobal(this.module, typeInfoType, getTypeInfoName(type));
         setGlobalAttribs(res, Linkage.PRIVATE, true);
         LLVMSetGlobalConstant(res, TRUE);
-        LLVMSetInitializer(res, typeInfo);
         this.typeInfo.put(fClass, res);
         return res;
     }
@@ -357,24 +369,95 @@ public class LLVMModule implements AutoCloseable {
     }
 
     public void createMetaData() {
-        if (!llvmTypes.containsKey(FTypeType.INSTANCE) || !FTypeType.INSTANCE.getStaticFields().containsKey(FTypeType.allTypes_ID))
-            return;
+        if (llvmTypes.containsKey(FTypeType.INSTANCE) && FTypeType.INSTANCE.getStaticFields().containsKey(FTypeType.allTypes_ID)) {
+            //TODO once code can handle both pointers and direct types, we no longer need to create in "intermediate direct type"
+            //create intermediate sf
+            List<LLVMValueRef> elements = llvmTypes.keySet().stream()
+                    .sorted(comparing(FType::getIdentifier)).map(this::getTypeInfo).collect(toList());
+            LLVMValueRef arr = LLVMConstArray(getLlvmType(FTypeType.INSTANCE), LLVMUtil.createPointerPointer(elements), elements.size());
+            PointerPointer<LLVMValueRef> member = createPointerPointer(LLVMConstInt(getLlvmType(FIntN._32), elements.size(), FALSE), arr);
+            LLVMValueRef struct = LLVMConstStructInContext(context, member, 2, FALSE);
 
-        //TODO once code can handle both pointers and direct types, we no longer need to create in "intermediate diret type"
-        //create intermediate sf
-        List<LLVMValueRef> elements = llvmTypes.keySet().stream().sorted(comparing(FType::getIdentifier)).map(this::getTypeInfo).collect(toList());
-        LLVMValueRef arr = LLVMConstArray(getLlvmType(FTypeType.INSTANCE), LLVMUtil.createPointerPointer(elements), elements.size());
-        PointerPointer<LLVMValueRef> member = createPointerPointer(LLVMConstInt(getLlvmType(FIntN._32), elements.size(), FALSE), arr);
-        LLVMValueRef struct = LLVMConstStructInContext(context, member, 2, FALSE);
+            LLVMValueRef intermediate = LLVMAddGlobal(this.module, LLVMTypeOf(struct), "sf.allTypes.i");
+            setGlobalAttribs(intermediate, Linkage.PRIVATE, true);
+            LLVMSetGlobalConstant(intermediate, TRUE);
+            LLVMSetInitializer(intermediate, struct);
 
-        LLVMValueRef intermediate = LLVMAddGlobal(this.module, LLVMTypeOf(struct), "sf.allTypes.i");
-        setGlobalAttribs(intermediate, Linkage.PRIVATE, true);
-        LLVMSetGlobalConstant(intermediate, TRUE);
-        LLVMSetInitializer(intermediate, struct);
+            //set allTypes
+            LLVMValueRef allTypes = LLVMGetNamedGlobal(module, getStaticFieldName(FTypeType.allTypes));
+            LLVMSetInitializer(allTypes, LLVMConstBitCast(intermediate, getLlvmType(FTypeType.allTypes.getType())));
+        }
 
-        //set allTypes
-        LLVMValueRef allTypes = LLVMGetNamedGlobal(module, getStaticFieldName(FTypeType.allTypes));
-        LLVMSetInitializer(allTypes, LLVMConstBitCast(intermediate, getLlvmType(FTypeType.allTypes.getType())));
+        //fill type Info
+        Queue<FClass> todo = new ArrayDeque<>(typeInfo.keySet());
+        while (!todo.isEmpty()) {
+            fillTypeInfo(todo.remove(), todo);
+        }
+
+    }
+
+    private void fillTypeInfo(FType type, Queue<FClass> todo) {
+        FClass fClass = (FClass) type;
+        LLVMValueRef res = typeInfo.get(fClass);
+
+        LLVMValueRef name = constantString(fClass.getIdentifier().name);
+        LLVMValueRef castedName = LLVMConstBitCast(name, getLlvmType(FStringLiteral.TYPE));
+
+        LLVMValueRef fields = constFieldsForTypeInfo(fClass, todo);
+        LLVMValueRef castedFields = LLVMConstBitCast(fields, getLlvmType(FArray.getArrayFrom(FFieldType.INSTANCE)));
+
+        LLVMTypeRef typeInfoType = LLVMGetElementType(getLlvmType(FTypeType.INSTANCE));
+        LLVMValueRef typeInfo = LLVMConstNamedStruct(typeInfoType, createPointerPointer(castedName, castedFields), 2);
+        //TODO account for field reorder
+
+        LLVMSetInitializer(res, typeInfo);
+    }
+
+    private LLVMValueRef constFieldsForTypeInfo(FClass fClass, Queue<FClass> todo) {
+        int fieldsSize = fClass.getInstanceFields().size();
+
+        if (fieldsSize == 0) {
+            return constEmptyArray(FArray.getArrayFrom(FFieldType.INSTANCE));
+        }
+
+        LLVMValueRef llvmFieldsSize = LLVMConstInt(getLlvmType(FIntN._32), fieldsSize, FALSE);
+        PointerPointer<LLVMValueRef> fieldPtrs = createPointerPointer(fClass.getInstanceFields().values(), f -> createFieldInfo(f, todo));
+        LLVMValueRef fieldsArray = LLVMConstArray(getLlvmType(FFieldType.INSTANCE), fieldPtrs, fieldsSize);
+        LLVMValueRef fields = LLVMConstStructInContext(context, createPointerPointer(llvmFieldsSize, fieldsArray), 2, FALSE);
+
+        LLVMTypeRef fieldsArrayType = LLVMGetElementType(arrayType(FArray.getArrayFrom(FFieldType.INSTANCE), fieldsSize));
+        LLVMValueRef res = LLVMAddGlobal(this.module, fieldsArrayType, getTypeInfoFieldsName(fClass));
+        setGlobalAttribs(res, Linkage.PRIVATE, true);
+        LLVMSetGlobalConstant(res, TRUE);
+        LLVMSetInitializer(res, fields);
+
+        return res;
+    }
+
+    public LLVMValueRef constEmptyArray(FArray fArray) {
+        return LLVMConstBitCast(constEmptyArray, getLlvmType(fArray));
+    }
+
+    private LLVMValueRef createFieldInfo(FField field, Queue<FClass> todo) {
+        LLVMValueRef name = constantString(field.getIdentifier().name);
+        LLVMValueRef castedName = LLVMConstBitCast(name, getLlvmType(FStringLiteral.TYPE));
+
+        //noinspection SuspiciousMethodCalls
+        if (!typeInfo.containsKey(field.getType()))
+            todo.add((FClass) field.getType());
+        LLVMValueRef type = getTypeInfo(field.getType());
+        LLVMValueRef memberOf = getTypeInfo(field.getMemberOf());
+
+        //create Global
+        LLVMTypeRef fieldInfoType = LLVMGetElementType(getLlvmType(FFieldType.INSTANCE));
+        LLVMValueRef res = LLVMAddGlobal(this.module, fieldInfoType, getFieldInfoName(field));
+        setGlobalAttribs(res, Linkage.PRIVATE, true);
+        LLVMSetGlobalConstant(res, TRUE);
+        LLVMValueRef fieldInfo = LLVMConstNamedStruct(fieldInfoType, createPointerPointer(castedName, type, memberOf), 3);
+        //TODO account for field reorder
+
+        LLVMSetInitializer(res, fieldInfo);
+        return res;
     }
 
 

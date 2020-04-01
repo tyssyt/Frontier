@@ -5,5 +5,11 @@ export class Main:
 export static main() {
     for t : Type.allTypes {
         IO.printLine(t.name);
+        for f : t.fields {
+            IO.print("   ");
+            IO.print(f.name);
+            IO.print(" : ");
+            IO.printLine(f.type.name);
+        }
     }
 }

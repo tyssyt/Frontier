@@ -1,47 +1,16 @@
 package tys.frontier.code.literal;
 
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.statement.loop.forImpl.ForImpl;
+import tys.frontier.code.type.FBaseClass;
+import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.util.Utils;
 
 public class FNull implements FLiteral {
 
     private static final FIdentifier IDENTIFIER = new FIdentifier("!NullType");
-    public static FType NULL_TYPE = new FType() {
-
-        @Override
-        public long concreteness() {
-            return Long.MAX_VALUE;
-        }
-
-        @Override
-        public boolean canImplicitlyCast() {
-            return false;
-        }
-
-        @Override
-        public Namespace getNamespace() {
-            return Utils.cantHappen();
-        }
-
-        @Override
-        public FIdentifier getIdentifier() {
-            return IDENTIFIER;
-        }
-
-        @Override
-        public ForImpl getForImpl() {
-            return null;
-        }
-
-        @Override
-        public StringBuilder toString(StringBuilder sb) {
-            return Utils.cantHappen();
-        }
-    };
+    public static FClass NULL_TYPE = new FBaseClass(IDENTIFIER, FVisibilityModifier.EXPORT, false);
     public static final FNull UNTYPED = new FNull(NULL_TYPE);
 
     private FType type;
