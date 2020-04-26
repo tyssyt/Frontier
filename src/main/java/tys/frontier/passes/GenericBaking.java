@@ -13,15 +13,20 @@ import tys.frontier.code.function.*;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.*;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
+import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.FClassVisitor;
+import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Collections.emptySet;
+import static tys.frontier.passes.GenericBaking.VariableMode.*;
 import static tys.frontier.util.Utils.typesFromExpressionList;
 
 /**
@@ -29,24 +34,29 @@ import static tys.frontier.util.Utils.typesFromExpressionList;
  */
 public class GenericBaking implements FClassVisitor {
 
+    public enum VariableMode {
+        USE_ORIGINAL,
+        FALLBACK_ORIGINAL,
+        NO_ORIGINAL
+    }
+
     private TypeInstantiation typeInstantiation;
 
     private FField currentField;
     private FFunction currentFunction;
-    private boolean useOriginal = false;
+    private VariableMode variableMode;
 
     private Map<FLocalVariable, FLocalVariable> varMap = new HashMap<>();
     private Map<FLoopIdentifier, FLoopIdentifier> loopMap = new HashMap<>();
 
-    public GenericBaking(TypeInstantiation typeInstantiation) {
+    public GenericBaking(TypeInstantiation typeInstantiation, VariableMode variableMode) {
         this.typeInstantiation = typeInstantiation;
+        this.variableMode = variableMode;
     }
 
-    /*
-            actually this should be a two pass visitor that first adds fields and then adds functions, but atm this works because of specific ways certain things are coded
-         */
+    // actually this should be a two pass visitor that first adds fields and then adds functions, but atm this works because of specific ways certain things are coded
     public static void bake (FInstantiatedClass instantiatedClass) {
-        GenericBaking visitor = new GenericBaking(instantiatedClass.getTypeInstantiation());
+        GenericBaking visitor = new GenericBaking(instantiatedClass.getTypeInstantiation(), NO_ORIGINAL);
 
         //field has no instantiated version yet, but it is also much easier to find the corresponding field
         for (FField field : instantiatedClass.getFields()) {
@@ -82,7 +92,7 @@ public class GenericBaking implements FClassVisitor {
     }
 
     public static void bake (FInstantiatedFunction instantiatedFunction) {
-        GenericBaking visitor = new GenericBaking(instantiatedFunction.getTypeInstantiation());
+        GenericBaking visitor = new GenericBaking(instantiatedFunction.getTypeInstantiation(), NO_ORIGINAL);
         visitor.currentFunction = instantiatedFunction;
         instantiatedFunction.getProxy().accept(visitor);
         instantiatedFunction.setBaked();
@@ -90,19 +100,14 @@ public class GenericBaking implements FClassVisitor {
     }
 
     public static FStatement bake (FStatement statement) {
-        GenericBaking visitor = new GenericBaking(TypeInstantiation.EMPTY);
-        visitor.useOriginal = true;
+        GenericBaking visitor = new GenericBaking(TypeInstantiation.EMPTY, USE_ORIGINAL);
         return statement.accept(visitor);
     }
 
-    public static FExpression bake (FExpression expression, TypeInstantiation typeInstantiation) {
-        return expression.accept(new GenericBaking(typeInstantiation));
-    }
-
-    public static FExpression bake (FExpression expression, TypeInstantiation typeInstantiation, Map<FLocalVariable, FLocalVariable> varMap) {
-        GenericBaking baking = new GenericBaking(typeInstantiation);
+    public static FStatement bake (FStatement statement, TypeInstantiation typeInstantiation, Map<FLocalVariable, FLocalVariable> varMap) {
+        GenericBaking baking = new GenericBaking(typeInstantiation, FALLBACK_ORIGINAL);
         baking.varMap.putAll(varMap);
-        return expression.accept(baking);
+        return statement.accept(baking);
     }
 
     @Override
@@ -161,7 +166,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitReturn(FReturn fReturn, List<FExpression> values) {
-        if (useOriginal)
+        if (variableMode == USE_ORIGINAL || variableMode == FALLBACK_ORIGINAL)
             return FReturn.createTrusted(values, fReturn.getFunction());
 
         List<FExpression> returnExps = new ArrayList<>();
@@ -189,6 +194,19 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public void enterForEach(FForEach forEach) {
+        ForImpl forImpl = forEach.getForImpl();
+        if (forImpl instanceof PrimitiveFor) {
+            //this code would need to be done always, but other cases may only appear in NO_ORIGINAL mode
+            for (FLocalVariable old : forEach.getIterators()) {
+                FLocalVariable iterator = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's a type var
+                varMap.put(old, iterator);
+            }
+            forEach.getCounter().ifPresent(old -> {
+                FLocalVariable counter = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's a type var
+                varMap.put(old, counter);
+            });
+        }
+
         loopMap.put(forEach.getIdentifier(), new FLoopIdentifier());
     }
 
@@ -199,8 +217,16 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitForEach(FForEach forEach, FExpression container, FStatement body) {
-        assert !useOriginal;
+        ForImpl forImpl = forEach.getForImpl();
+        if (forImpl instanceof PrimitiveFor) {
+            ArrayList<FLocalVariable> iterators = Utils.map(forEach.getIterators(), it -> varMap.get(it));
+            FLocalVariable counter = forEach.getCounter().map(c -> varMap.get(c)).orElse(null);
+            FExpression actualContainer = getOnlyElement(((FFunctionCall) container).getArguments(false));
+            FForEach pseudoForEach = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, actualContainer, FBlock.from(body));
+            return FForEachLowering.buildPrimitiveFor((PrimitiveFor) forImpl, currentFunction, pseudoForEach);
+        }
 
+        assert variableMode == NO_ORIGINAL;
         List<FLocalVariable> iterators = new ArrayList<>(forEach.getIterators().size());
         for (FLocalVariable old : forEach.getIterators()) {
             varMap.put(old, new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType())));
@@ -286,16 +312,28 @@ public class GenericBaking implements FClassVisitor {
     public FExpression visitVariable(FLocalVariableExpression expression) { //TODO decl
         if (expression instanceof FVarDeclaration) {
             FLocalVariable old = expression.getVariable();
-            FLocalVariable _new;
-            if(useOriginal)
-                _new = old;
-            else
-                _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
-            varMap.put(old, _new);
-            return new FVarDeclaration(_new);
+            switch (variableMode) {
+                case USE_ORIGINAL:
+                    return new FVarDeclaration(old);
+                case FALLBACK_ORIGINAL: case NO_ORIGINAL:
+                    FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+                    varMap.put(old, _new);
+                    return new FVarDeclaration(_new);
+                default:
+                    return Utils.cantHappen();
+            }
         }
 
-        return new FLocalVariableExpression(useOriginal ? expression.getVariable() : varMap.get(expression.getVariable()));
+        switch (variableMode) { //in theory, the fallback_original call works in both other cases as well, but may hide errors
+            case USE_ORIGINAL:
+                return new FLocalVariableExpression(expression.getVariable());
+            case FALLBACK_ORIGINAL:
+                return new FLocalVariableExpression(varMap.getOrDefault(expression.getVariable(), expression.getVariable()));
+            case NO_ORIGINAL:
+                return new FLocalVariableExpression(varMap.get(expression.getVariable()));
+            default:
+                return Utils.cantHappen();
+        }
     }
 
     @Override

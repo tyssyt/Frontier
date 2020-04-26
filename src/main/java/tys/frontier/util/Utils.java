@@ -66,6 +66,12 @@ public final class Utils {
         return Arrays.asList(item);
     }
 
+    public static <K, V> Map<K, V> mutableSingletonMap(K key, V value) { //TODO custom implementation
+        HashMap<K, V> map = new HashMap<>(1, 1);
+        map.put(key, value);
+        return map;
+    }
+
     public static <T extends IdentifierNameable> Map<FIdentifier, T> asMap (Collection<? extends T> vars) {
         Map<FIdentifier, T> map = new HashMap<>();
         for (T t : vars) {
@@ -136,20 +142,26 @@ public final class Utils {
         return res;
     }
 
+    private static boolean needsReResolve(FFunction function, Namespace namespace, FIdentifier identifier) {
+        if (function instanceof DummyFunction)
+            return true;
+        if (namespace.getOpen(identifier) != null) //TODO optimisation: only reresolve when the original call needed casts
+            return true;
+        return false;
+    }
+
     public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
         //handle namespace/class instantiation
         FFunction function = signature.getFunction();
         Namespace oldNamespace = function.getMemberOf();
         FType oldType = oldNamespace.getType();
 
-        if (function instanceof DummyFunction) {
-            //there is no mapping we can follow, we need to fall back to use resolve
-            FIdentifier identifier = function.getIdentifier();
-            if (identifier instanceof FInstantiatedFunctionIdentifier)
-                identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
-            else
-                identifier = function.getIdentifier();
-
+        FIdentifier identifier = function.getIdentifier();
+        if (identifier instanceof FInstantiatedFunctionIdentifier)
+            identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
+        else
+            identifier = function.getIdentifier();
+        if (needsReResolve(function, oldNamespace, identifier)) {
             FType returnType = typeInstantiation.getType(signature.getType());
 
             Namespace namespace;

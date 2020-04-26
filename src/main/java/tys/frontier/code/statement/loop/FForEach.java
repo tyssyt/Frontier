@@ -3,6 +3,7 @@ package tys.frontier.code.statement.loop;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.util.Utils;
@@ -37,6 +38,10 @@ public class FForEach extends FLoop {
 
     public FExpression getContainer() {
         return container;
+    }
+
+    public ForImpl getForImpl() {
+        return container.getType().getForImpl();
     }
 
     @Override

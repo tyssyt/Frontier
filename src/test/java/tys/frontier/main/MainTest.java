@@ -131,7 +131,7 @@ public class MainTest {
     @Test
     public void mainDelegateGeneric() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("DelegateGeneric", null);
-        assertEquals("1098|116|10985151|59|onetwo", res);
+        assertEquals("1098|116|10985151|59|onethree", res);
     }
     @Test
     public void mainParams() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

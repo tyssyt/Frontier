@@ -173,7 +173,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
             FExpression exp1 = visitExpression(ctx.expression(0));
             exp1 = exp1.typeCheck(FFunctionType.from(
-                    FTuple.from(asList(currenClass, FIntN._32)),
+                    FTuple.from(currenClass, FIntN._32),
                     FTypeVariable.create(new FIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
             //TODO oh god this is one ugly hack (same as in field)
             FStatement statement = new FExpressionStatement(exp1);

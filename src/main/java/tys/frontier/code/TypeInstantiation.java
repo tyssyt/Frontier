@@ -22,6 +22,8 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static java.util.Collections.singletonMap;
+
 public class TypeInstantiation {
 
     public static final TypeInstantiation EMPTY = new TypeInstantiation(Collections.emptyMap()) {
@@ -222,6 +224,10 @@ public class TypeInstantiation {
             assert old == null;
         }
         return create(newMap);
+    }
+
+    public TypeInstantiation with(FTypeVariable from, FType to) {
+        return new TypeInstantiation(singletonMap(from, to)).then(this);
     }
 
     @Override

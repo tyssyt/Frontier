@@ -5,10 +5,8 @@ import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.statement.loop.forImpl.FTypeVariableForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
-import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 
 public class FTypeVariable implements FType {
@@ -74,15 +72,7 @@ public class FTypeVariable implements FType {
 
     public boolean tryAddConstraint(TypeConstraint constraint) {
         if (isFixed()) {
-            if (constraints.satisfies(constraint))
-                return true;
-            //special case: cast to a nonFixed constraint, force it to be equal to us
-            if (constraint instanceof ImplicitCastable && ((ImplicitCastable) constraint).getTarget() instanceof FTypeVariable) {
-                FTypeVariable target = (FTypeVariable) ((ImplicitCastable) constraint).getTarget();
-                if (!target.isFixed())
-                    return target.tryAddConstraint(new ImplicitCastable(constraint, this, Variance.Invariant));
-            }
-            return false;
+            return constraints.satisfies(constraint);
         } else {
             try {
                 constraints = TypeConstraints.add(constraints, constraint);

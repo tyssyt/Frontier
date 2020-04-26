@@ -18,7 +18,9 @@ import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
 
 public class FFunctionCall implements FExpression {
     private Signature signature;
@@ -75,7 +77,7 @@ public class FFunctionCall implements FExpression {
         return signature.getFunction();
     }
 
-    private List<? extends FExpression> fillDefaultArgs() {
+    public List<? extends FExpression> fillDefaultArgs(Signature signature) {
         List<FExpression> res = new ArrayList<>(arguments.size());
         for (int i = 0; i < arguments.size(); i++) {
             if (arguments.get(i) == null) {
@@ -89,7 +91,7 @@ public class FFunctionCall implements FExpression {
 
     public List<? extends FExpression> getArguments(boolean fillDefaultArgs) {
         if (fillDefaultArgs)
-            return fillDefaultArgs();
+            return fillDefaultArgs(signature);
         else
             return arguments;
     }

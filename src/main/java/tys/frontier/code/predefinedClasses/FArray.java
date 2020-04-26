@@ -27,6 +27,7 @@ public class FArray extends FPredefinedClass {
     private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
     private FType baseType;
+    private Pair<FFunction, FFunction> access;
 
     @Override
     public boolean canImplicitlyCast() {
@@ -42,7 +43,7 @@ public class FArray extends FPredefinedClass {
         //TODO add container equals, and prolly do something to equality once that is done
         FField size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final
-        Pair<FFunction, FFunction> access = Access.createPredefined(this, FIntN._32, baseType);
+        access = Access.createPredefined(this, FIntN._32, baseType);
         namespace.addFunctionTrusted(access.a);
         namespace.addFunctionTrusted(access.b);
         namespace.addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, namespace, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(FIdentifier.THIS, this, false)), null, Collections.emptyMap()));
@@ -57,6 +58,14 @@ public class FArray extends FPredefinedClass {
 
     public FType getBaseType() {
         return baseType;
+    }
+
+    public FFunction getArrayGet() {
+        return access.a;
+    }
+
+    public FFunction getArraySet() {
+        return access.b;
     }
 
     @Override

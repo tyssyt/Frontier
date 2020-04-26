@@ -80,6 +80,7 @@ public class FunctionResolver {
 
                 //fast path for perfect fit
                 result.casts = result.argMapping.getNUmberOfCasts();
+                result.costs = result.argMapping.getCostsOfCasts();
                 if (result.casts == 0 && result.constraints.isEmpty()) {
                     result.signature = s;
                     return result; //perfect fit
@@ -96,7 +97,6 @@ public class FunctionResolver {
                 //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
                 result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.signature.getParameters()));
 
-                result.costs = result.argMapping.getCostsOfCasts();
                 updateCost(result);
             } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NotEnoughArguments ignored) {}
         }

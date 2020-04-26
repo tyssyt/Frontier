@@ -12,6 +12,7 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
+import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.passes.analysis.reachability.Reachability;
@@ -68,6 +69,20 @@ public class FTypeType extends FBaseClass {
             typeOf.setBody(FBlock.from(FReturn.createTrusted(new FNamespaceExpression(t.getNamespace()), typeOf)));
             namespace.addFunctionTrusted(typeOf);
         }
+
+        //function fieldsOf
+        {
+            FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
+            ImmutableList<FParameter> of = ImmutableList.of(FParameter.create(FIdentifier.THIS, t, false));
+
+            //Dummy return Type that has nothing but a forEach Impl TODO change when we have a simpler mechanism to return an iterable
+            FBaseClass dummy = new FBaseClass(new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, false);
+            dummy.setForImpl(new PrimitiveFor());
+            fieldsOf = new FBaseFunction(fieldsOf_ID, namespace, FVisibilityModifier.EXPORT, false, dummy, of, null, singletonMap(t.getIdentifier(), t))
+                {{predefined = true;}};
+            namespace.addFunctionTrusted(fieldsOf);
+        }
+    }
 
 
     private FTypeType() {

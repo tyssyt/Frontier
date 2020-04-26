@@ -936,8 +936,10 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitVariable(FLocalVariableExpression expression) {
         LLVMValueRef address = localVars.get(expression.getVariable());
-        if (address == null)
+        if (address == null) {
+            assert tempVars.containsKey(expression.getVariable());
             return tempVars.get(expression.getVariable());
+        }
         switch (expression.getAccessType()) {
             case LOAD:
                 return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);

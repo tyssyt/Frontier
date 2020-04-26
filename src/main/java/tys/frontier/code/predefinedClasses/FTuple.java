@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.util.Arrays.asList;
+
 public class FTuple extends FPredefinedClass {
 
 
@@ -55,7 +57,11 @@ public class FTuple extends FPredefinedClass {
         return types;
     }
 
-    public static FType from (List<FType> types) {
+    public static FType from(FType... types) {
+        return from(asList(types));
+    }
+
+    public static FType from(List<FType> types) {
         List<FType> flattened = new ArrayList<>();
         for (FType type : types) {
             if (type == VOID)
