@@ -10,7 +10,6 @@ import tys.frontier.code.function.DummyFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FTuple;
-import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.type.FunctionResolver;
@@ -91,7 +90,7 @@ public class TypeVariableNamespace implements Namespace {
         NameGenerator paramNames = new NameGenerator("?", "");
         ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
-            FIdentifier id = arg == FTypeType.INSTANCE ? new FIdentifier(paramNames.next()) : new FIdentifier(paramNames.next());
+            FIdentifier id = new FIdentifier(paramNames.next());
             paramsBuilder.add(FParameter.create(id, arg, false));
         }
         for (Map.Entry<FIdentifier, List<FType>> entry : Multimaps.asMap(keywordArgs).entrySet()) {
