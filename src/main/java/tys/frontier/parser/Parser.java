@@ -1,6 +1,7 @@
 package tys.frontier.parser;
 
 import tys.frontier.State;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
@@ -30,7 +31,7 @@ public class Parser {
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
-            Module module = buildModule(file, style);
+            FrontierModule module = buildModule(file, style);
             resolveImports(module);
             collectTypes(module);
             Delegates delegates = collectMembers(module);
@@ -45,11 +46,11 @@ public class Parser {
         }
     }
 
-    private static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
+    private static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
         return ModuleParser.buildModule(entryPoint, style);
     }
 
-    private static void resolveImports(Module module) throws SyntaxError, SyntaxErrors {
+    private static void resolveImports(FrontierModule module) throws SyntaxError, SyntaxErrors {
         for (ParsedFile file : module.getFiles()) {
             for (String _import : file.findImports()) {
                 Module importedModule = State.get().getImportResolver().requestModule(_import);
@@ -58,7 +59,7 @@ public class Parser {
         }
     }
 
-    private static void collectTypes(Module module) throws SyntaxErrors {
+    private static void collectTypes(FrontierModule module) throws SyntaxErrors {
         List<SyntaxError> syntaxErrors = new ArrayList<>();
         for (ParsedFile file : module.getFiles()) {
             for (FrontierParser.ClassDeclarationContext ctx : file.getTreeData().root.classDeclaration()) {
@@ -78,7 +79,7 @@ public class Parser {
             throw SyntaxErrors.create(syntaxErrors);
     }
 
-    private static Delegates collectMembers(Module module) throws SyntaxErrors {
+    private static Delegates collectMembers(FrontierModule module) throws SyntaxErrors {
         List<SyntaxError> syntaxErrors = new ArrayList<>();
         Delegates delegates = new Delegates();
         for (ParsedFile file : module.getFiles())
@@ -89,7 +90,7 @@ public class Parser {
         return delegates;
     }
 
-    private static void prepareClasses(Module module, Delegates delegates, Set<FInstantiatedClass> classesToPrepare) throws SyntaxErrors {
+    private static void prepareClasses(FrontierModule module, Delegates delegates, Set<FInstantiatedClass> classesToPrepare) throws SyntaxErrors {
         //these steps need to be in exactly that order, because I prepare some in createDelegate and prepare needs contructors
         for (ParsedFile file : module.getFiles())
             for (DefaultNamespace namespace : file.getNamespaces().values())
@@ -99,7 +100,7 @@ public class Parser {
         classesToPrepare.forEach(FInstantiatedClass::prepare);
     }
 
-    private static void visitBodies(Module module, Delegates delegates) throws SyntaxErrors {
+    private static void visitBodies(FrontierModule module, Delegates delegates) throws SyntaxErrors {
         List<SyntaxError> syntaxErrors = new ArrayList<>();
         List<Warning> warnings = new ArrayList<>();
         for (ParsedFile file : module.getFiles())

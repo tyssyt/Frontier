@@ -1,0 +1,20 @@
+//this file is treated special by the parser and will actually not be parsed TODO maybe actually parse, I mean why not?
+import Strings;
+
+export class Type:
+    export static allTypes : Type[];
+
+    export name: char[];
+    export fields: Field[];
+
+    export static of <T> (t: T) -> Type {
+        return T;
+    }
+
+    export static fieldsOf <T,F> (t: T) -> Iterable<(T, Field)>; //thats why
+
+
+export class Field:
+    export name: char[];
+    export type: Type;
+    export memberOf: Type;

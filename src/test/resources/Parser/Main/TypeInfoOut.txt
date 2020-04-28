@@ -1,11 +1,5 @@
 !Bool
 !Bool?
-!Field
-   name : !Int8[]
-   type : !Type
-   memberOf : !Type
-!Field[]
-   size : !Int32
 !Float32
 !Float64
 !Int32
@@ -15,12 +9,18 @@
 !Int8[]
    size : !Int32
 !NullType
-!Type
-   name : !Int8[]
-   fields : !Field[]
-!Type[]
-   size : !Int32
 ()
+Field
+   name : !Int8[]
+   type : Type
+   memberOf : Type
+Field[]
+   size : !Int32
 IO
 Main
 Native
+Type
+   name : !Int8[]
+   fields : Field[]
+Type[]
+   size : !Int32

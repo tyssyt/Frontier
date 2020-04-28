@@ -11,7 +11,7 @@ public class FFieldType extends FBaseClass {
 
     //TODO we could make it a generic class and instantiate the generic with the class we are in?
 
-    public static final FIdentifier IDENTIFIER = new FIdentifier("!Field");
+    public static final FIdentifier IDENTIFIER = new FIdentifier("Field");
 
     public static final FFieldType INSTANCE = new FFieldType();
 

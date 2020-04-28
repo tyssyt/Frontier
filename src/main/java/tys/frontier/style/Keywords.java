@@ -37,7 +37,6 @@ public class Keywords {
             .put("int64", FrontierParser.INT64)
             .put("float32", FrontierParser.FLOAT32)
             .put("float64", FrontierParser.FLOAT64)
-            .put("Type", FrontierParser.TYPE)
             .put("if", FrontierParser.IF)
             .put("then", FrontierParser.THEN)
             .put("else", FrontierParser.ELSE)

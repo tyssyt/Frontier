@@ -1,6 +1,6 @@
 package tys.frontier.parser;
 
-import tys.frontier.code.module.Module;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.parser.syntaxErrors.CyclicInclude;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
@@ -14,8 +14,8 @@ import java.util.Queue;
 
 public class ModuleParser {
 
-    public static Module buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
-        Module res = new Module();
+    public static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
+        FrontierModule res = new FrontierModule();
         ParsedFile entryFile = FileParser.runAntlr(entryPoint, style);
         entryFile.setModule(res);
         Queue<ParsedFile> toDo = new ArrayDeque<>();

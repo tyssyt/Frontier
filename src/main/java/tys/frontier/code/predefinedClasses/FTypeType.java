@@ -21,7 +21,7 @@ import static java.util.Collections.singletonMap;
 
 public class FTypeType extends FBaseClass {
 
-    public static final FIdentifier IDENTIFIER = new FIdentifier("!Type");
+    public static final FIdentifier IDENTIFIER = new FIdentifier("Type");
 
     public static final FTypeType INSTANCE = new FTypeType();
 

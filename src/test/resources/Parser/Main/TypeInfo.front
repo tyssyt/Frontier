@@ -1,4 +1,5 @@
 import IO;
+import Type;
 
 export class Main:
 

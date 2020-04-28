@@ -1,119 +1,47 @@
 package tys.frontier.code.module;
 
-import com.google.common.collect.MoreCollectors;
-import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
-import tys.frontier.parser.ParsedFile;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
-public class Module {
+public interface Module {
+    FFunction findMain() throws IllegalArgumentException, NoSuchElementException;
 
-    private ParsedFile entryPoint;
-    private List<Path> nativeIncludes = new ArrayList<>();
+    Map<FIdentifier, DefaultNamespace> getExportedNamespaces();
 
-    //cached thingies
-    private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
-    private List<ParsedFile> files;
+    DefaultNamespace getNamespace(FIdentifier identifier);
 
-    public ParsedFile getEntryPoint() {
-        return entryPoint;
-    }
+    Stream<DefaultNamespace> getNamespaces();
 
-    public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
-        return getExportedNamespaces().values().stream()
-                .flatMap(namespace -> namespace.getFunctions(false).values().stream())
-                .map(Signature::getFunction)
-                .filter(FFunction::isMain)
-                .collect(MoreCollectors.onlyElement());
-    }
+    List<Path> getNativeIncludes();
 
-    public void setEntryPoint(ParsedFile entryPoint) {
-        assert this.entryPoint == null;
-        this.entryPoint = entryPoint;
-    }
+    List<Module> getImports();
 
-    public Map<FIdentifier, DefaultNamespace> getExportedNamespaces() {
-        if (exportedNamespaces == null)
-            exportedNamespaces = initExportedNamespaces();
-        return exportedNamespaces;
-    }
-
-    private Map<FIdentifier, DefaultNamespace> initExportedNamespaces() {
-        return getNamespaces()
-                .filter(namespace -> namespace.getVisibility() == FVisibilityModifier.EXPORT)
-                .collect(toMap(DefaultNamespace::getIdentifier, Function.identity()));
-    }
-
-    public DefaultNamespace getNamespace(FIdentifier identifier) {
-        for (ParsedFile file : getFiles()) {
-            DefaultNamespace namespace = file.getNamespaces().get(identifier);
-            if (namespace != null && namespace.getVisibility() != FVisibilityModifier.PRIVATE)
-                return namespace;
-        }
-        return null;
-    }
-
-    public Stream<DefaultNamespace> getNamespaces() {
-        return getFiles().stream().flatMap(file -> file.getNamespaces().values().stream());
-    }
-
-    public List<ParsedFile> getFiles() {
-        if (files == null)
-            files = initFiles();
-        return files;
-    }
-
-    private List<ParsedFile> initFiles()  {
-        List<ParsedFile> res = new ArrayList<>();
-        Queue<ParsedFile> toDo = new ArrayDeque<>();
-        toDo.add(entryPoint);
-        while (!toDo.isEmpty()) {
-            ParsedFile cur = toDo.remove();
-            res.add(cur);
-            toDo.addAll(cur.getIncludes());
-        }
-        return res;
-    }
-
-    public List<Path> getNativeIncludes() {
-        return nativeIncludes;
-    }
-
-    public void addNativeIncludes(List<Path> nativeIncludes) {
-        this.nativeIncludes.addAll(nativeIncludes);
-    }
-
-    public List<Module> findImportedModulesReflexiveTransitive() {
+    default List<Module> findImportedModulesReflexiveTransitive() {
         List<Module> res = new ArrayList<>();
         Queue<Module> toDo = new ArrayDeque<>();
         toDo.add(this);
         while (!toDo.isEmpty()) {
             Module cur = toDo.remove();
             res.add(cur);
-            for (ParsedFile file : cur.getFiles()) {
-                toDo.addAll(file.getImports());
-            }
+            toDo.addAll(cur.getImports());
         }
         return res;
     }
 
-    public <M,N,C,Fi,Fu,S,E> M accept(ModuleWalker<M,N,C,Fi,Fu,S,E> walker) {
+    default <M,N,C,Fi,Fu,S,E> M accept(ModuleWalker<M, N, C, Fi, Fu, S, E> walker) {
         return walker.enterModule(this);
     }
 
-    public <M,N,C,Fi,Fu,S,E> M accept(ModuleVisitor<M,N,C,Fi,Fu,S,E> visitor) {
+    default <M,N,C,Fi,Fu,S,E> M accept(ModuleVisitor<M, N, C, Fi, Fu, S, E> visitor) {
         visitor.enterModule(this);
         List<N> ns = getNamespaces().map(namespace -> namespace.accept(visitor)).collect(toList());
         return visitor.exitModule(this, ns);

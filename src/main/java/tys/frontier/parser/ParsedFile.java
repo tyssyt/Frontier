@@ -2,6 +2,7 @@ package tys.frontier.parser;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -24,7 +25,7 @@ public class ParsedFile {
     private SyntaxTreeData treeData; //TODO this is only needed in the initial parsing and should maybe be stored on parser level instead
 
     private Path filePath;
-    private Module module;
+    private FrontierModule module;
 
     private ParsedFile parent;
     private List<ParsedFile> includes = new ArrayList<>();
@@ -42,7 +43,7 @@ public class ParsedFile {
         this.module = parent.module;
     }
 
-    public void setModule(Module module) {
+    public void setModule(FrontierModule module) {
         assert this.module == null;
         this.module = module;
     }

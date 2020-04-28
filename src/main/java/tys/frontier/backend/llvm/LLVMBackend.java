@@ -2,6 +2,7 @@ package tys.frontier.backend.llvm;
 
 import tys.frontier.backend.Backend;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.passes.analysis.reachability.Reachability;
@@ -30,7 +31,7 @@ public class LLVMBackend implements Backend {
 
     //TODO see if LTO is anything worth investing time into
 
-    public static void runBackend(Module fModule, Reachability reachability, String out, OutputFileType fileType) {
+    public static void runBackend(FrontierModule fModule, Reachability reachability, String out, OutputFileType fileType) {
         Collection<DefaultNamespace> namespaces;
         List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {

@@ -50,7 +50,6 @@ tokens {
     INT64,
     FLOAT32,
     FLOAT64,
-    TYPE,
     PRIMITIVES,
     IF,
     THEN,
@@ -238,7 +237,6 @@ predefinedType
     |   INT64
     |   FLOAT32
     |   FLOAT64
-    |   TYPE
     ;
 
 
