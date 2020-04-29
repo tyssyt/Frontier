@@ -26,6 +26,13 @@ export class List<T>:
         size = size+1;
     }
 
+    export addAll(elements: T[]) { //TODO iterable interface
+        //TODO one expand check at the beginning, that add without expand check
+        for e : elements {
+            add(e);
+        }
+    }
+
     export operator [] (pos: int32) <- e: T {
         elements[pos] = e;
     }
@@ -39,7 +46,7 @@ export class List<T>:
     }
 
     export remove() -> T {
-        --size;
+        size = size-1;
         return elements[size];
     }
 
@@ -50,6 +57,12 @@ export class List<T>:
         return res;
     }
 
+    export trim() -> T[] {
+        res := new T[size];
+        arrayCopy(elements, res, size);
+        return res;
+    }
+
     private expand() {
         newSize:int32 = 2*elements.size;
         if newSize < 10 {
@@ -57,7 +70,7 @@ export class List<T>:
         }
 
         newElements := new T[newSize];
-        arrayCopy(elements, newElements);
+        arrayCopy(elements, newElements, elements.size);
         elements = newElements;
     }
 
@@ -77,9 +90,9 @@ export class List<T>:
         }
     }
 
-    private static arrayCopy(from: T[], to: T[]) { //TODO replace by arrayCopy... once we have that
+    private static arrayCopy(from: T[], to: T[], size: int32) { //TODO replace by arrayCopy... once we have that
         i:int32 = 0;
-        while i<from.size {
+        while i<size {
             to[i] = from[i];
             i = i+1;
         }

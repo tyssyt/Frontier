@@ -1,5 +1,6 @@
 package tys.frontier;
 
+import tys.frontier.code.module.Module;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.modules.ImportResolver;
 
@@ -16,6 +17,8 @@ public class State {
     private Parser currentParser = null;
     private ImportResolver importResolver;
     private File tempDir;
+
+    private Module typeModule;
 
     public Parser getCurrentParser() {
         return currentParser;
@@ -42,5 +45,14 @@ public class State {
     public void setTempDir(File tempDir) {
         assert this.tempDir == null || tempDir == null;
         this.tempDir = tempDir;
+    }
+
+    public Module getTypeModule() {
+        return typeModule;
+    }
+
+    public void setTypeModule(Module typeModule) {
+        assert this.typeModule == null;
+        this.typeModule = typeModule;
     }
 }

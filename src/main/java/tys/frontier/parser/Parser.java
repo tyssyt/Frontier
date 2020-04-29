@@ -26,8 +26,8 @@ public class Parser {
 
     private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
-    public static Module parse(Path file, Style style) throws IOException, SyntaxErrors, SyntaxError {
-        Log.info(Parser.class, "parsing " + file);
+    public static FrontierModule parse(Path file, Style style) throws IOException, SyntaxErrors, SyntaxError {
+        Log.info(Parser.class, "parsing  " + file);
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
@@ -39,6 +39,7 @@ public class Parser {
             parser.classesToPrepare = null;
             prepareClasses(module, delegates, classesToPrepare);
             visitBodies(module, delegates);
+            Log.info(Parser.class, "finished " + file);
             return module;
         } finally {
             old = State.get().setCurrentParser(old);

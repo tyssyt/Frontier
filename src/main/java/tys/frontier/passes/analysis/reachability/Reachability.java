@@ -103,6 +103,7 @@ public class Reachability {
         addNamespace(FFieldType.INSTANCE.getNamespace());
         addFunction(FFieldType.type.getGetter());
         addFunction(FFieldType.name.getGetter());
+        addFunction(FFieldType.INSTANCE.getConstructor());
     }
 
     public static Reachability analyse (Set<FFunction> startingPoints) {

@@ -46,6 +46,8 @@ public class ResourceRepository implements ModuleRepository {
     private static SimpleModule createTypeModule() throws SyntaxErrors, SyntaxError {
         Module _import = State.get().getImportResolver().requestModule("Strings"); //TODO requests strings specifically from this repo...
         ImmutableMap<FIdentifier, DefaultNamespace> namespaces = ImmutableMap.of(FTypeType.IDENTIFIER, FTypeType.INSTANCE.getNamespace(), FFieldType.IDENTIFIER, FFieldType.INSTANCE.getNamespace());
-        return new SimpleModule(namespaces, singletonList(_import), emptyList());
+        SimpleModule res = new SimpleModule(namespaces, singletonList(_import), emptyList());
+        State.get().setTypeModule(res);
+        return res;
     }
 }

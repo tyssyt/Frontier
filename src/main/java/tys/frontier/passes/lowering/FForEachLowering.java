@@ -1,6 +1,8 @@
 package tys.frontier.passes.lowering;
 
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.TypeInstantiation;
@@ -8,8 +10,11 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FIntNLiteral;
+import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
+import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.FAssignment;
 import tys.frontier.code.statement.FBlock;
@@ -23,15 +28,19 @@ import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static tys.frontier.util.Utils.mutableSingletonList;
 import static tys.frontier.util.Utils.mutableSingletonMap;
@@ -73,6 +82,14 @@ public class FForEachLowering extends StatementReplacer {
     }
 
     private static FStatement buildForByIdx(ForByIdx forImpl, FForEach forEach, FFunction function) {
+        return buildForByIdx(
+                c -> FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), mutableSingletonList(c)),
+                (c, i) -> mutableSingletonList(FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), asList(c, i))),
+                forEach, function
+        );
+    }
+
+    private static FStatement buildForByIdx(Function<FExpression,FExpression> getSize, BiFunction<FExpression, FExpression, List<FExpression>> getElement, FForEach forEach, FFunction function) {
         List<FStatement> res = new ArrayList<>(4);
 
         //first store the container expression in a local variable, if necessary
@@ -82,8 +99,7 @@ public class FForEachLowering extends StatementReplacer {
         FLocalVariable size = function.getFreshVariable(FIntN._32);
         {
             FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
-            FFunctionCall sizeGetterFc = FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), mutableSingletonList(containerAccess));
-            res.add(FAssignment.createDecl(size, sizeGetterFc));
+            res.add(FAssignment.createDecl(size, getSize.apply(containerAccess)));
         }
 
         //declare counter
@@ -104,9 +120,9 @@ public class FForEachLowering extends StatementReplacer {
             for (FLocalVariable it : forEach.getIterators()) {
                 decls.add(new FVarDeclaration(it));
             }
-            List<FExpression> arguments = asList(new FLocalVariableExpression(container), new FLocalVariableExpression(counter));
-            FFunctionCall arrayAccess = FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), arguments);
-            itDecl = FAssignment.createTrusted(decls, mutableSingletonList(arrayAccess));
+            FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
+            FLocalVariableExpression counterAccess = new FLocalVariableExpression(counter);
+            itDecl = FAssignment.createTrusted(decls, getElement.apply(containerAccess, counterAccess));
         }
 
         //increment
@@ -140,21 +156,22 @@ public class FForEachLowering extends StatementReplacer {
         FLocalVariable container = getContainer(forEach.getContainer(), function, res);
 
         if (container.getType() instanceof FArray) {
-            return Utils.NYI("array primitiveFor");
+            buildPrimitiveForArray(forImpl, function, forEach, container, res);
         } else if (container.getType() instanceof FTuple) {
             return Utils.NYI("tuple primitive for");
         } else if (container.getType() instanceof FOptional) {
             return Utils.NYI("optional primitive for");
         } else {
-            return buildPrimitiveForNormal(forImpl, forEach, container, res);
+            buildPrimitiveForNormal(forImpl, forEach, container, res);
         }
+
+        return FBlock.from(res);
     }
 
-    private static FStatement buildPrimitiveForNormal(PrimitiveFor forImpl, FForEach forEach, FLocalVariable container, List<FStatement> res) {
+    private static void buildPrimitiveForNormal(PrimitiveFor forImpl, FForEach forEach, FLocalVariable container, List<FStatement> res) {
         FTypeVariable elementType = (FTypeVariable) ((FTuple) forImpl.getElementType()).getTypes().get(0);
         List<FLocalVariable> iterators = forEach.getIterators();
         assert iterators.size() == 2 && iterators.get(0).getType() == elementType && iterators.get(1).getType() == FFieldType.INSTANCE;
-
 
         FFunction fieldInfoGet = FArray.getArrayFrom(FFieldType.INSTANCE).getArrayGet();
 
@@ -197,8 +214,61 @@ public class FForEachLowering extends StatementReplacer {
 
             i++;
         }
+    }
 
-        return FBlock.from(res);
+
+
+    private static void buildPrimitiveForArray(PrimitiveFor forImpl, FFunction function, FForEach forEach, FLocalVariable container, List<FStatement> res) {
+        FTypeVariable elementType = (FTypeVariable) ((FTuple) forImpl.getElementType()).getTypes().get(0);
+        List<FLocalVariable> iterators = forEach.getIterators();
+        assert iterators.size() == 2 && iterators.get(0).getType() == elementType && iterators.get(1).getType() == FFieldType.INSTANCE;
+
+        FArray containerType = (FArray) container.getType();
+
+        iterators.get(0).setType(containerType.getBaseType());
+        Signature intToString = getIntToString();
+
+        //bake the body
+        TypeInstantiation typeInstantiation = TypeInstantiation.create(mutableSingletonMap(elementType, containerType.getBaseType()));
+        FStatement bakedBody = GenericBaking.bake(forEach.getBody(), typeInstantiation, emptyMap());
+
+        FForEach proxy = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators,
+                forEach.getCounter().orElse(null), forEach.getContainer(), FBlock.from(bakedBody));
+
+        //hurray for readable code, I am sorry
+        FStatement forByIdx = buildForByIdx(
+                c -> FFunctionCall.createTrusted(containerType.getSize().getGetter().getSignature(), mutableSingletonList(c)),
+                (c, i) -> asList(
+                        FFunctionCall.createTrusted(containerType.getArrayGet().getSignature(), asList(c, i)),
+                        FFunctionCall.createTrusted(FFieldType.INSTANCE.getConstructor().getSignature(), asList(
+                                FFunctionCall.createTrusted(intToString, mutableSingletonList(i)), //TODO
+                                new FNamespaceExpression(containerType.getNamespace()),
+                                new FNamespaceExpression(containerType.getNamespace())
+                        ))
+                ),
+                proxy, function
+        );
+
+        res.add(forByIdx);
+    }
+
+    private static Signature getIntToString() {
+        //not the most elegant solution, but it works
+        FIdentifier stringsIdentifier = new FIdentifier("Strings");
+        Namespace stringsNamespace = null;
+        for (Module _import : State.get().getTypeModule().getImports()) {
+            stringsNamespace = _import.getNamespace(stringsIdentifier);
+            if (stringsNamespace != null)
+                break;
+        }
+        assert stringsNamespace != null;
+        try {
+            return stringsNamespace.hardResolveFunction(new FIdentifier("intToString"),
+                    singletonList(FIntN._64), ImmutableListMultimap.of(), FStringLiteral.TYPE, false
+            ).signature;
+        } catch (FunctionNotFound functionNotFound) {
+            return Utils.handleException(functionNotFound);
+        }
     }
 
     private static FLocalVariable getContainer(FExpression containerExpression, FFunction function, List<FStatement> res) {

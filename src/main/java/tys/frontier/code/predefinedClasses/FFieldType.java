@@ -36,6 +36,8 @@ public class FFieldType extends FBaseClass {
             memberOf = new FField(new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(memberOf); //TODO make final
         }
+
+        INSTANCE.generateConstructor();
     }
 
 

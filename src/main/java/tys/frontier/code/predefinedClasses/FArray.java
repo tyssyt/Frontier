@@ -28,6 +28,7 @@ public class FArray extends FPredefinedClass {
 
     private FType baseType;
     private Pair<FFunction, FFunction> access;
+    private FField size;
 
     @Override
     public boolean canImplicitlyCast() {
@@ -41,7 +42,7 @@ public class FArray extends FPredefinedClass {
 
         addDefaultFunctions();
         //TODO add container equals, and prolly do something to equality once that is done
-        FField size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
+        size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final
         access = Access.createPredefined(this, FIntN._32, baseType);
         namespace.addFunctionTrusted(access.a);
@@ -66,6 +67,10 @@ public class FArray extends FPredefinedClass {
 
     public FFunction getArraySet() {
         return access.b;
+    }
+
+    public FField getSize() {
+        return size;
     }
 
     @Override
