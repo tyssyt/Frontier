@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import tys.frontier.State;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
@@ -46,6 +47,7 @@ public class MainTest {
     public void setUp() {
         //clear binOp namespace
         BinaryOperator.sGetNamespace().getFunctions(false).values().removeIf( sig -> !sig.getFunction().isPredefined());
+        State.reset();
     }
 
     private String doMain(String fileName, String input, String... args) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

@@ -33,6 +33,7 @@ public class ParserTest {
         Logger logger = Log.DEFAULT_LOGGER;
         if (logger instanceof StdOutLogger)
             ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
+        State.reset();
         State.get().setImportResolver(new ImportResolver(Collections.singletonList(ResourceRepository.INSTANCE)));
     }
 

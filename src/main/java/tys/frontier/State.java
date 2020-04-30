@@ -14,6 +14,10 @@ public class State {
         return instance;
     }
 
+    public static void reset() {
+        instance = new State();
+    }
+
     private Parser currentParser = null;
     private ImportResolver importResolver;
     private File tempDir;
@@ -43,7 +47,7 @@ public class State {
     }
 
     public void setTempDir(File tempDir) {
-        assert this.tempDir == null || tempDir == null;
+        assert this.tempDir == null;
         this.tempDir = tempDir;
     }
 

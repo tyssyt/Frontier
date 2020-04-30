@@ -135,7 +135,6 @@ public class Main {
         } finally {
             if (!keepTmpDir)
                 FileUtils.deleteDir(State.get().getTempDir());
-            State.get().setTempDir(null);
         }
     }
 }
