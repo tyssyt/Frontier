@@ -117,6 +117,11 @@ public class ArgMapping {
         while (argIt.hasNext() && paramIt.hasNext()) {
             FType arg = argIt.next();
             FType param = paramIt.next();
+
+            if (param instanceof FTypeVariable)
+                //just accept whatever is given
+                continue;
+
             int argArity = FTuple.arity(arg);
             int paramArity = FTuple.arity(param);
             if (argArity > paramArity) {
@@ -131,9 +136,15 @@ public class ArgMapping {
             } // else param is passed over without any packing/unpacking
         }
 
-        if (argIt.hasNext())
-            throw new TooManyArguments(argIt.next());
-        if (useAllParams && paramIt.hasNext())
+        if (argIt.hasNext()) {
+            FType param = paramIt.previous();
+            if (param instanceof FTypeVariable) {
+                //pack all remaining args into the last param
+                Utils.NYI("pack last param of generic functions"); //TODO
+            } else
+                throw new TooManyArguments(argIt.next());
+
+        } else if (useAllParams && paramIt.hasNext())
             throw new NotEnoughArguments("no Arguments for Parameter", paramIt.next());
     }
 
