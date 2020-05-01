@@ -9,6 +9,11 @@
 !Int8[]
    size : !Int32
 !NullType
+(!Int32 !Int64)
+   a : !Int32
+   b : !Int64
+(!Int32 !Int64)[]
+   size : !Int32
 ()
 Field
    name : !Int8[]
@@ -17,6 +22,9 @@ Field
 Field[]
    size : !Int32
 IO
+List<(!Int32 !Int64)>
+   elements : (!Int32 !Int64)[]
+   size : !Int32
 Main
 Native
 Type

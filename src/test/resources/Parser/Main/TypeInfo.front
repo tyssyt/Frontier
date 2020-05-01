@@ -1,9 +1,14 @@
 import IO;
 import Type;
 
+import List;
+
 export class Main:
 
 export static main() {
+    //add some classes to get more info
+    lst := List<(int32, int64)>.create();
+
     for t : Type.allTypes {
         IO.printLine(t.name);
         for f : t.fields {

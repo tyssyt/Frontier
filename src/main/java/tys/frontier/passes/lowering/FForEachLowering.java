@@ -158,7 +158,7 @@ public class FForEachLowering extends StatementReplacer {
         if (container.getType() instanceof FArray) {
             buildPrimitiveForArray(forImpl, function, forEach, container, res);
         } else if (container.getType() instanceof FTuple) {
-            return Utils.NYI("tuple primitive for");
+            buildPrimitiveForNormal(forImpl, forEach, container, res);
         } else if (container.getType() instanceof FOptional) {
             return Utils.NYI("optional primitive for");
         } else {

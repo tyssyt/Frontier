@@ -14,6 +14,21 @@ public class NameGenerator implements Iterator<String> {
         this.suffix = suffix;
     }
 
+    public static int infixIndex(String infix) {
+        int res = 0;
+        for (char c : infix.toCharArray()) {
+            res *= 26*2;
+            if ('a' <= c && c <= 'z') {
+                res += 1 + c-'a';
+            } else if ('A' <= c && c <= 'Z') {
+                res += 27 + c-'A';
+            } else {
+                return Utils.cantHappen();
+            }
+        }
+        return res-1;
+    }
+
     @Override
     public boolean hasNext() {
         return true;

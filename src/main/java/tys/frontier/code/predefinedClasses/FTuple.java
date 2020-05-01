@@ -2,9 +2,16 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
+import tys.frontier.code.FField;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.Typed;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTupleIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
+import tys.frontier.util.NameGenerator;
+import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -23,10 +30,24 @@ public class FTuple extends FPredefinedClass {
     public static final FTuple VOID = existing.computeIfAbsent(Collections.emptyList(), FTuple::new);
 
     private List<FType> types;
+    private Pair<FFunction, FFunction> access;
 
     private FTuple(List<FType> types) {
         super(new FTupleIdentifier(types));
         this.types = types;
+
+        DefaultNamespace namespace = getNamespace();
+        NameGenerator names = new NameGenerator("", "");
+
+        //add fields and getters
+        for (FType fieldType : types) {
+            FField field = new FField(new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false, false);
+            addFieldTrusted(field); //TODO make final
+        }
+        //remove setter TODO no longer needed when field final
+        namespace.getFunctions(true).clear();
+
+        //TODO for homogenous tuples, I can add array access operators and for by idx
     }
 
     @Override

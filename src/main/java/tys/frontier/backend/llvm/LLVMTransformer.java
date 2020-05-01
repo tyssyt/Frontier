@@ -31,6 +31,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
+import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
@@ -793,7 +794,10 @@ class LLVMTransformer implements
     private LLVMValueRef predefinedFunctionCall (FFunctionCall functionCall, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
         if (function instanceof FieldAccessor) {
-            return visitFieldAccess((FieldAccessor) function, args);
+            if (function.getMemberOf().getType() instanceof FTuple)
+                return visitTupleAccess((FieldAccessor) function, args);
+            else
+                return visitFieldAccess((FieldAccessor) function, args);
         }
         FType type = function.getMemberOf().getType();
         if (type instanceof FArray) {
@@ -810,6 +814,16 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef visitTupleAccess(FieldAccessor fieldAccessor, List<LLVMValueRef> args) {
+        assert fieldAccessor.isInstance();
+        assert fieldAccessor.isGetter();
+        assert args.size() == 1;
+
+        FField field = fieldAccessor.getField();
+        int i = NameGenerator.infixIndex(field.getIdentifier().name);
+        return LLVMBuildExtractValue(builder, args.get(0), i, "tupleAccess_" + i);
     }
 
     private LLVMValueRef visitFieldAccess(FieldAccessor fieldAccessor, List<LLVMValueRef> args) {
