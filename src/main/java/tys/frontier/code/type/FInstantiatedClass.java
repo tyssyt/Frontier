@@ -121,13 +121,13 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public long concreteness() {
-        long res = Long.MAX_VALUE;
+    public int concreteness() {
+        int res = Integer.MAX_VALUE;
         for (FType param : instantiatedParameters) {
-            res = Long.min(res, param.concreteness());
+            res = Integer.min(res, param.concreteness());
         }
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 

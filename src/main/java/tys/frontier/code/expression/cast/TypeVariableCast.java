@@ -59,8 +59,8 @@ public class TypeVariableCast extends ImplicitTypeCast {
     }
 
     @Override
-    public int getCost() {
-        return 32768;
+    public long getCost() {
+        return Integer.MAX_VALUE;
     }
 
     @Override

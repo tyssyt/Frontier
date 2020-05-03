@@ -41,10 +41,10 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public long concreteness() { //TODO once optionals use generics this is no longer necessary
-        long res = baseType.concreteness();
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+    public int concreteness() { //TODO once optionals use generics this is no longer necessary
+        int res = baseType.concreteness();
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 

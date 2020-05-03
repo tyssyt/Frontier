@@ -7,7 +7,7 @@ import tys.frontier.util.StringBuilderToString;
 
 public interface FType extends IdentifierNameable, StringBuilderToString {
 
-    long concreteness(); //TODO there probably is an established term for this
+    int concreteness(); //TODO there probably is an established term for this
 
     boolean canImplicitlyCast();
 

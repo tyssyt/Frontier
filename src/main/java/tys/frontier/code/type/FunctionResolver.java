@@ -32,7 +32,7 @@ public class FunctionResolver {
         public ArgMapping argMapping;
         public Multimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
-        public int costs;
+        public long costs;
 
         public FFunction getFunction() {
             return signature.getFunction();

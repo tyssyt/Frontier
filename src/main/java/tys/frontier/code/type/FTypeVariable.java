@@ -35,7 +35,7 @@ public class FTypeVariable implements FType {
     }
 
     @Override
-    public long concreteness() {
+    public int concreteness() {
         return 0;
     }
 

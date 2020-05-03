@@ -30,10 +30,10 @@ public class FFunctionType extends FPredefinedClass {
     }
 
     @Override
-    public long concreteness() { //TODO remove once function types are implemented with parameterized classes
-        long res = Long.min(in.concreteness(), out.concreteness());
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+    public int concreteness() { //TODO remove once function types are implemented with parameterized classes
+        int res = Integer.min(in.concreteness(), out.concreteness());
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 

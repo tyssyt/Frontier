@@ -157,13 +157,13 @@ public class TypeParameterCast extends ImplicitTypeCast {
     }
 
     @Override
-    public int getCost() {
-        int cost = 0;
+    public long getCost() {
+        long cost = 0;
         for (ImplicitTypeCast cast : casts) {
             if (cast != null)
                 cost += cast.getCost();
         }
-        return cost;
+        return Long.max(cost-1, 0);
     }
 
     @Override

@@ -94,8 +94,8 @@ public class FBaseClass extends FClass {
     }
 
     @Override
-    public long concreteness() {
-        return parametersList.isEmpty() ? Long.MAX_VALUE : 1;
+    public int concreteness() {
+        return parametersList.isEmpty() ? Integer.MAX_VALUE : 1;
     }
 
     @Override

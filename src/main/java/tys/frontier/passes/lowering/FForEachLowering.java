@@ -7,6 +7,7 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.*;
+import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
@@ -16,10 +17,7 @@ import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.*;
-import tys.frontier.code.statement.FAssignment;
-import tys.frontier.code.statement.FBlock;
-import tys.frontier.code.statement.FStatement;
-import tys.frontier.code.statement.FVarDeclaration;
+import tys.frontier.code.statement.*;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
@@ -82,19 +80,19 @@ public class FForEachLowering extends StatementReplacer {
     }
 
     private static FStatement buildForByIdx(ForByIdx forImpl, FForEach forEach, FFunction function) {
-        return buildForByIdx(
-                c -> FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), mutableSingletonList(c)),
-                (c, i) -> mutableSingletonList(FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), asList(c, i))),
-                forEach, function
-        );
-    }
-
-    private static FStatement buildForByIdx(Function<FExpression,FExpression> getSize, BiFunction<FExpression, FExpression, List<FExpression>> getElement, FForEach forEach, FFunction function) {
         List<FStatement> res = new ArrayList<>(4);
-
         //first store the container expression in a local variable, if necessary
         FLocalVariable container = getContainer(forEach.getContainer(), function, res);
+        buildForByIdx(
+                c -> FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), mutableSingletonList(c)),
+                (c, i) -> mutableSingletonList(FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), asList(c, i))),
+                forEach, function, container, res
+        );
+        return FBlock.from(res);
+    }
 
+    private static void buildForByIdx(Function<FExpression,FExpression> getSize, BiFunction<FExpression, FExpression,
+            List<FExpression>> getElement, FForEach forEach, FFunction function, FLocalVariable container, List<FStatement> res) {
         //store the size in a local variable
         FLocalVariable size = function.getFreshVariable(FIntN._32);
         {
@@ -144,8 +142,6 @@ public class FForEachLowering extends StatementReplacer {
         FWhile fWhile = FWhile.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), condition, loopBody);
         forEach.getIdentifier().setLoop(fWhile);
         res.add(fWhile);
-
-        return FBlock.from(res);
     }
 
     public static FStatement buildPrimitiveFor(PrimitiveFor forImpl, FFunction function, FForEach forEach)
@@ -155,17 +151,21 @@ public class FForEachLowering extends StatementReplacer {
         //first store the container expression in a local variable, if necessary
         FLocalVariable container = getContainer(forEach.getContainer(), function, res);
 
+        buildPrimitiveFor(forImpl, function, forEach, container, res);
+
+        return FBlock.from(res);
+    }
+
+    private static void buildPrimitiveFor(PrimitiveFor forImpl, FFunction function, FForEach forEach, FLocalVariable container, List<FStatement> res) {
         if (container.getType() instanceof FArray) {
             buildPrimitiveForArray(forImpl, function, forEach, container, res);
         } else if (container.getType() instanceof FTuple) {
             buildPrimitiveForNormal(forImpl, forEach, container, res);
         } else if (container.getType() instanceof FOptional) {
-            return Utils.NYI("optional primitive for");
+            buildPrimitiveForOptional(forImpl, function, forEach, container, res);
         } else {
             buildPrimitiveForNormal(forImpl, forEach, container, res);
         }
-
-        return FBlock.from(res);
     }
 
     private static void buildPrimitiveForNormal(PrimitiveFor forImpl, FForEach forEach, FLocalVariable container, List<FStatement> res) {
@@ -236,7 +236,7 @@ public class FForEachLowering extends StatementReplacer {
                 forEach.getCounter().orElse(null), forEach.getContainer(), FBlock.from(bakedBody));
 
         //hurray for readable code, I am sorry
-        FStatement forByIdx = buildForByIdx(
+        buildForByIdx(
                 c -> FFunctionCall.createTrusted(containerType.getSize().getGetter().getSignature(), mutableSingletonList(c)),
                 (c, i) -> asList(
                         FFunctionCall.createTrusted(containerType.getArrayGet().getSignature(), asList(c, i)),
@@ -246,10 +246,30 @@ public class FForEachLowering extends StatementReplacer {
                                 new FNamespaceExpression(containerType.getNamespace())
                         ))
                 ),
-                proxy, function
+                proxy, function, container, res
         );
+    }
 
-        res.add(forByIdx);
+
+
+    private static void buildPrimitiveForOptional(PrimitiveFor forImpl, FFunction function, FForEach forEach, FLocalVariable container, List<FStatement> res) {
+        FTypeVariable elementType = (FTypeVariable) ((FTuple) forImpl.getElementType()).getTypes().get(0);
+        List<FLocalVariable> iterators = forEach.getIterators();
+        assert iterators.size() == 2 && iterators.get(0).getType() == elementType && iterators.get(1).getType() == FFieldType.INSTANCE;
+
+        //make optional concrete
+        FOptional containerType = (FOptional) container.getType();
+        FExplicitCast containerPromote = FExplicitCast.createTrusted(containerType.getBaseType(), new FLocalVariableExpression(container));
+        FLocalVariable promotedContainer = new FLocalVariable(container.getIdentifier(), containerType.getBaseType());
+        FAssignment decl = FAssignment.createDecl(promotedContainer, containerPromote);
+
+        //set then
+        List<FStatement> then = new ArrayList<>();
+        then.add(decl);
+        buildPrimitiveFor(forImpl, function, forEach, promotedContainer, then);
+
+        FIf fIf = FIf.createTrusted(new FLocalVariableExpression(container), FBlock.from(then), null);
+        res.add(fIf);
     }
 
     private static Signature getIntToString() {

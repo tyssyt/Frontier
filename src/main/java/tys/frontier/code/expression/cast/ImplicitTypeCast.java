@@ -36,7 +36,7 @@ public abstract class ImplicitTypeCast {
             if (FOptional.canBeTreatedAsOptional(targetType))
                 return new ImplicitTypeCast(baseType, targetType, variance) { //TODO this is a bit of a hack, but atm there is no need for a non Anon class
                     @Override
-                    public int getCost() {
+                    public long getCost() {
                         return 0;
                     }
                     @Override
@@ -100,7 +100,7 @@ public abstract class ImplicitTypeCast {
         return variance;
     }
 
-    public abstract int getCost();
+    public abstract long getCost();
 
     public abstract boolean isNoOpCast();
 }

@@ -28,7 +28,7 @@ public abstract class FForwardingClass extends FClass {
     }
 
     @Override
-    public long concreteness() {
+    public int concreteness() {
         return proxy.concreteness();
     }
 

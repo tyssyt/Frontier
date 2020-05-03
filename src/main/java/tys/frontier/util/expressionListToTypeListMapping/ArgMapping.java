@@ -229,8 +229,8 @@ public class ArgMapping {
         return Utils.countNonNull(casts);
     }
 
-    public int getCostsOfCasts() {
-        int cost = 0;
+    public long getCostsOfCasts() {
+        long cost = 0;
         for (ImplicitTypeCast cast : casts) {
             if (cast != null)
                 cost += cast.getCost();

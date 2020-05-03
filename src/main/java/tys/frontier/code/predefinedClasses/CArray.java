@@ -33,10 +33,10 @@ public class CArray extends FPredefinedClass {
     }
 
     @Override
-    public long concreteness() {
-        long res = baseType.concreteness();
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+    public int concreteness() {
+        int res = baseType.concreteness();
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 }

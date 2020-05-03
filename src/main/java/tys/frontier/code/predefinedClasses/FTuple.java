@@ -51,13 +51,13 @@ public class FTuple extends FPredefinedClass {
     }
 
     @Override
-    public long concreteness() {
-        long res = 0;
+    public int concreteness() {
+        int res = Integer.MAX_VALUE;
         for (FType type : types) {
-            res = Long.min(res, type.concreteness());
+            res = Integer.min(res, type.concreteness());
         }
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 

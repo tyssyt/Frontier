@@ -113,16 +113,16 @@ public class TypeConversion extends ImplicitTypeCast {
     }
 
     @Override
-    public int getCost() {
-        int i = inner == null ? 0 : inner.getCost();
+    public long getCost() {
+        long l = inner == null ? 0 : inner.getCost();
         switch (castType) {
             case INTEGER_PROMOTION:
-                return i + castType.getCost(variance.sign * (((FIntN) target).getN() - ((FIntN) base).getN()));
+                return l + castType.getCost(variance.sign * (((FIntN) target).getN() - ((FIntN) base).getN()));
             case FLOAT_PROMOTION:
             case TO_OPTIONAL:
             case OPTIONAL_TO_BOOL:
             case DELEGATE:
-                return i + castType.getCost(1);
+                return l + castType.getCost(1);
             default:
                 return Utils.cantHappen();
         }

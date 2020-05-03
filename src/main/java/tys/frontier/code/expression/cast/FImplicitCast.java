@@ -87,10 +87,6 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         return typeCast.getTarget();
     }
 
-    public int getCost() {
-        return typeCast.getCost();
-    }
-
     @Override
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterImplicitCast(this);

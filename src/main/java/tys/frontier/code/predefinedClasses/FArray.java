@@ -75,10 +75,10 @@ public class FArray extends FPredefinedClass {
     }
 
     @Override
-    public long concreteness() { //TODO once array uses generics this is no longer necessary
-        long res = baseType.concreteness();
-        if (res == Long.MAX_VALUE) //avoid overflow
-            return Long.MAX_VALUE;
+    public int concreteness() { //TODO once array uses generics this is no longer necessary
+        int res = baseType.concreteness();
+        if (res == Integer.MAX_VALUE) //avoid overflow
+            return Integer.MAX_VALUE;
         return res+1;
     }
 }

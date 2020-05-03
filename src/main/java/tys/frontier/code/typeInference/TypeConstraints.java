@@ -395,8 +395,8 @@ public class TypeConstraints {
 
     private FClass proposeType(Set<FClass> contra, Set<FClass> co) {
         //just pick the most concrete out of all upper and lower Bounds for now TODO improve: change mindset to find the most concrete type you can, but not more!
-        FClass maxContra = contra.isEmpty() ? null : Collections.max(contra, Comparator.comparingLong(FClass::concreteness));
-        FClass maxCo     =     co.isEmpty() ? null : Collections.max(co,     Comparator.comparingLong(FClass::concreteness));
+        FClass maxContra = contra.isEmpty() ? null : Collections.max(contra, Comparator.comparingInt(FClass::concreteness));
+        FClass maxCo     =     co.isEmpty() ? null : Collections.max(co,     Comparator.comparingInt(FClass::concreteness));
         if (maxContra == null && maxCo == null)
             return null;
         if (maxContra == null)
