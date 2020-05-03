@@ -15,6 +15,7 @@ public class Keywords {
             .put("import", FrontierParser.IMPORT)
             .put("include", FrontierParser.INCLUDE)
             .put("class", FrontierParser.CLASS)
+            .put("namespace", FrontierParser.NAMESPACE)
             .put("constructors", FrontierParser.CONSTRUCTORS)
             .put("export", FrontierParser.EXPORT)
             .put("private", FrontierParser.PRIVATE)

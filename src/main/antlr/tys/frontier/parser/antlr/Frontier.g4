@@ -28,6 +28,7 @@ tokens {
     IMPORT,
     INCLUDE,
     CLASS,
+    NAMESPACE,
     CONSTRUCTORS,
     EXPORT,
     PRIVATE,
@@ -72,7 +73,7 @@ tokens {
 file
     :   importStatement*
         includeStatement*
-        classDeclaration*
+        (classDeclaration|namespaceDeclaration)*
         EOF
     ;
 
@@ -100,6 +101,12 @@ classDeclaration
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
     ;
+
+namespaceDeclaration
+    :   visibilityModifier? NAMESPACE IDENTIFIER COLON
+        (methodDeclaration|nativeMethodDeclaration)*
+    ;
+
 
 typeParameters
     :   LT typeParamer (COMMA typeParamer)* GT

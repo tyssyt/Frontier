@@ -65,6 +65,11 @@ public class ParsedFile {
     }
 
     public DefaultNamespace addNamespace(DefaultNamespace namespace, FrontierParser.ClassDeclarationContext ctx) {
+        treeData.classNamespaces.put(ctx, namespace);
+        return namespaces.put(namespace.getIdentifier(), namespace);
+    }
+
+    public DefaultNamespace addNamespace(DefaultNamespace namespace, FrontierParser.NamespaceDeclarationContext ctx) {
         treeData.namespaces.put(ctx, namespace);
         return namespaces.put(namespace.getIdentifier(), namespace);
     }

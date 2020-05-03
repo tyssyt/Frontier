@@ -3,6 +3,7 @@
         "import":       "import",
         "include":      "include",
         "class":        "class",
+        "namespace":    "namespace",
 
         "constructors": "constructors",
 

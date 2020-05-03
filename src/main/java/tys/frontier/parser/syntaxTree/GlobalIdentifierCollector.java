@@ -52,12 +52,15 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         for (FrontierParser.ClassDeclarationContext ctx : collector.treeData.root.classDeclaration()) {
             ctx.accept(collector);
         }
+        for (FrontierParser.NamespaceDeclarationContext ctx : collector.treeData.root.namespaceDeclaration()) {
+            ctx.accept(collector);
+        }
         return collector.delegates;
     }
 
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
-        currentNamespace = treeData.namespaces.get(ctx);
+        currentNamespace = treeData.classNamespaces.get(ctx);
         currentClass = currentNamespace.getType();
         try {
             visitChildren(ctx);
@@ -65,6 +68,17 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         } finally {
             currentNamespace = null;
             currentClass = null;
+        }
+    }
+
+    @Override
+    public Object visitNamespaceDeclaration(FrontierParser.NamespaceDeclarationContext ctx) {
+        currentNamespace = treeData.namespaces.get(ctx);
+        try {
+            visitChildren(ctx);
+            return null;
+        } finally {
+            currentNamespace = null;
         }
     }
 

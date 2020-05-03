@@ -110,9 +110,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 return res.getNamespace();
         }
         //check type parameters of current class
-        FType type = currentTypeParams.get(identifier);
-        if (type != null)
-            return type.getNamespace();
+        if (currentTypeParams != null) {
+            FType type = currentTypeParams.get(identifier);
+            if (type != null)
+                return type.getNamespace();
+        }
         //check module & imports
         Namespace namespace = file.resolveNamespace(identifier);
         if (namespace != null)
@@ -143,7 +145,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public Object visitClassDeclaration(FrontierParser.ClassDeclarationContext ctx) {
-        currentNamespace = treeData.namespaces.get(ctx);
+        currentNamespace = treeData.classNamespaces.get(ctx);
         currenClass = currentNamespace.getType();
         //noinspection unchecked
         currentTypeParams = Utils.asTypeMap((List<FTypeVariable>) currenClass.getParametersList());
@@ -161,6 +163,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             currentNamespace = null;
             currenClass = null;
             currentTypeParams = null;
+        }
+    }
+
+    @Override
+    public Object visitNamespaceDeclaration(FrontierParser.NamespaceDeclarationContext ctx) {
+        currentNamespace = treeData.namespaces.get(ctx);
+        try {
+            return visitChildren(ctx);
+        } finally {
+            currentNamespace = null;
         }
     }
 

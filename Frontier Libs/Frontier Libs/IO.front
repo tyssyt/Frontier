@@ -1,34 +1,34 @@
 import Native;
 import Strings;
 
-export class IO:
+export namespace IO:
 
-    export static print(chara: char) {
+    export print(chara: char) {
         Native.putchar(chara);
     }
 
-    export static printInt(l: int64) { //TODO once we have better Math this can be cleaned up a lot
+    export printInt(l: int64) { //TODO once we have better Math this can be cleaned up a lot
         print(Strings.intToString(l));
     }
 
-    export static print(string: char[]) {
+    export print(string: char[]) {
         for c : string {
             print(c);
         }
     }
 
-    export static printLine(string: char[]) {
+    export printLine(string: char[]) {
         for c : string {
             print(c);
         }
         print("\n");
     }
 
-    export static getChar() -> char {
+    export getChar() -> char {
         return (char)Native.getchar();
     }
 
-    export static getInt() -> int64 {
+    export getInt() -> int64 {
         res: int64 = 0;
 
         //check for first char '-'
@@ -52,11 +52,11 @@ export class IO:
         return res;
     }
 
-    static isWhitspace(c: char) -> bool {
+    isWhitspace(c: char) -> bool {
         return (c >= 9 && c <= 13) || c =*= 32;
     }
 
-    static charToInt(c: char) -> int32 {
+    charToInt(c: char) -> int32 {
         return c - 48;
     }
 

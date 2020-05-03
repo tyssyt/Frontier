@@ -1,11 +1,16 @@
 package tys.frontier.parser;
 
 import tys.frontier.State;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
+import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.syntaxErrors.*;
@@ -14,6 +19,7 @@ import tys.frontier.parser.syntaxTree.ParserContextUtils;
 import tys.frontier.parser.syntaxTree.ToInternalRepresentation;
 import tys.frontier.parser.warnings.Warning;
 import tys.frontier.style.Style;
+import tys.frontier.util.Pair;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -65,12 +71,23 @@ public class Parser {
         for (ParsedFile file : module.getFiles()) {
             for (FrontierParser.ClassDeclarationContext ctx : file.getTreeData().root.classDeclaration()) {
                 try {
-                    FClass _class = ParserContextUtils.getClass(ctx);
+                    FClass _class = createClass(ctx);
                     DefaultNamespace old = file.resolveNamespace(_class.getIdentifier());
                     if (old != null)
                         throw new IdentifierCollision(_class, old);
                     file.addNamespace(_class.getNamespace(), ctx);
                 } catch (TwiceDefinedLocalVariable | IdentifierCollision e) {
+                    syntaxErrors.add(e);
+                }
+            }
+            for (FrontierParser.NamespaceDeclarationContext ctx : file.getTreeData().root.namespaceDeclaration()) {
+                try {
+                    DefaultNamespace namespace = createNamespace(ctx);
+                    DefaultNamespace old = file.resolveNamespace(namespace.getIdentifier());
+                    if (old != null)
+                        throw new IdentifierCollision(namespace, old);
+                    file.addNamespace(namespace, ctx);
+                } catch (IdentifierCollision e) {
                     syntaxErrors.add(e);
                 }
             }
@@ -119,6 +136,25 @@ public class Parser {
             toRegister.prepare();
         else
             classesToPrepare.add(toRegister);
+    }
+
+    public static FClass createClass(FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
+        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
+        boolean _native = ctx.NATIVE() != null;
+        FrontierParser.TypeParametersContext c = ctx.typeParameters();
+        FClass res =  new FBaseClass(identifier, visibilityModifier, _native);
+        if (c != null) {
+            Pair<List<FTypeVariable>, List<Variance>> typeParameters = ParserContextUtils.getTypeParameters(c);
+            res.setParameters(typeParameters.a, typeParameters.b);
+        }
+        return res;
+    }
+
+    public static DefaultNamespace createNamespace(FrontierParser.NamespaceDeclarationContext ctx) {
+        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
+        return new DefaultNamespace(identifier, visibilityModifier, false);
     }
 
 }

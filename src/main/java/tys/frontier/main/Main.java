@@ -11,6 +11,7 @@ import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.parser.Parser;
+import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.modules.FolderRepository;
 import tys.frontier.parser.modules.ImportResolver;
 import tys.frontier.parser.modules.ModuleRepository;
@@ -93,7 +94,7 @@ public class Main {
             FrontierModule module = Parser.parse(Paths.get(input), Style.DEFAULT_STYLE);
 
             //add the binOp namespace, so passes can run over it (reachability can find it without that)
-            module.getEntryPoint().addNamespace(BinaryOperator.sGetNamespace(), null);
+            module.getEntryPoint().addNamespace(BinaryOperator.sGetNamespace(), (FrontierParser.NamespaceDeclarationContext) null);
 
             //Lowering Passes
             for (Module m : module.findImportedModulesReflexiveTransitive()) {

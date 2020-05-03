@@ -35,19 +35,6 @@ public final class ParserContextUtils {
 
     private ParserContextUtils() {}
 
-    public static FClass getClass (FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
-        FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-        boolean _native = ctx.NATIVE() != null;
-        FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        FClass res =  new FBaseClass(identifier, visibilityModifier, _native);
-        if (c != null) {
-            Pair<List<FTypeVariable>, List<Variance>> typeParameters = getTypeParameters(c);
-            res.setParameters(typeParameters.a, typeParameters.b);
-        }
-        return res;
-    }
-
     public static Pair<List<FTypeVariable>, List<Variance>> getTypeParameters(FrontierParser.TypeParametersContext ctx) throws TwiceDefinedLocalVariable {
         List<TypeParamerContext> nodes = ctx.typeParamer();
         List<FTypeVariable> vars = new ArrayList<>(nodes.size());

@@ -3,9 +3,9 @@ import Type;
 
 import List;
 
-export class Main:
+export namespace Main:
 
-export static main() {
+export main() {
     //add some classes to get more info
     lst := List<(int32, int64)>.create();
 
