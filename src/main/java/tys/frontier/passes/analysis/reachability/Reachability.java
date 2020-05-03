@@ -16,10 +16,7 @@ import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.OptionalNamespace;
-import tys.frontier.code.predefinedClasses.FFieldType;
-import tys.frontier.code.predefinedClasses.FOptional;
-import tys.frontier.code.predefinedClasses.FTuple;
-import tys.frontier.code.predefinedClasses.FTypeType;
+import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
@@ -65,7 +62,15 @@ public class Reachability {
                 assert typeInstantiation.contains(subSegment.c);
                 FClass instantiatedType = (FClass) typeInstantiation.getType(subSegment.c);
 
-                //TODO special cases like array & tuple, see primitive for lowering
+                //special handling for optionals
+                if (instantiatedType instanceof FOptional)
+                    instantiatedType = (FClass) ((FOptional) instantiatedType).getBaseType();
+
+                //special handling for arrays, because there is no "field" for the base type visit them manually
+                if (instantiatedType instanceof FArray)
+                    subSegment.a.handle(typeInstantiation.with(subSegment.b, ((FArray) instantiatedType).getBaseType()), seenFunctions);
+
+                //this also handles tuples, since they have fields
                 for (FField field : instantiatedType.getFields()) {
                     subSegment.a.handle(typeInstantiation.with(subSegment.b, field.getType()), seenFunctions);
                 }
