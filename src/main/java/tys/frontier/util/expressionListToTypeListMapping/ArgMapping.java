@@ -3,7 +3,6 @@ package tys.frontier.util.expressionListToTypeListMapping;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import com.pivovarit.function.ThrowingBiConsumer;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.Typed;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
@@ -138,9 +137,18 @@ public class ArgMapping {
 
         if (argIt.hasNext()) {
             FType param = paramIt.previous();
+            paramIt.next();
             if (param instanceof FTypeVariable) {
+                //count remaining args
+                int remainingArgs = 0;
+                while (argIt.hasNext()) {
+                    remainingArgs++;
+                    argIt.next();
+                }
+
                 //pack all remaining args into the last param
-                Utils.NYI("pack last param of generic functions"); //TODO
+                int paramIdx = paramIt.previousIndex();
+                packParam[paramIdx] = packParam[paramIdx] + remainingArgs;
             } else
                 throw new TooManyArguments(argIt.next());
 
@@ -241,21 +249,37 @@ public class ArgMapping {
     public ListMultimap<FTypeVariable, TypeConstraint> computeCasts(List<FType> argumentTypes, List<FType> target) throws IncompatibleTypes {
         casts = new ArrayList<>();
         ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
-        consumeUnpacked(argumentTypes, target, (baseType, targetType) -> {
-            if (baseType != targetType)
-                casts.add(ImplicitTypeCast.create(baseType, targetType, Variance.Covariant, constraints));
-            else
-                casts.add(null);
-        });
+        List<FType> unpackedArguments = unpackBase(argumentTypes, FTuple::unpackType);
+
+        int argumentIdx = 0;
+        for (int targetIdx = 0; targetIdx < target.size(); targetIdx++) {
+            FType targetType = target.get(targetIdx);
+            int numberPackedArgs = packParam[targetIdx];
+            if (numberPackedArgs > 1) {
+                if (targetType instanceof FTypeVariable) {
+                    FType packedArgs = FTuple.from(unpackedArguments.subList(argumentIdx, argumentIdx + numberPackedArgs));
+                    computeCast(packedArgs, targetType, constraints);
+                    argumentIdx += numberPackedArgs;
+                } else {
+                    for (FType unpacked : FTuple.unpackType(targetType)) {
+                        computeCast(unpackedArguments.get(argumentIdx), unpacked, constraints);
+                        argumentIdx++;
+                    }
+                }
+            } else {
+                computeCast(unpackedArguments.get(argumentIdx), targetType, constraints);
+                argumentIdx++;
+            }
+        }
+        assert argumentIdx == unpackedArguments.size();
         return constraints;
     }
 
-    public <E extends Exception> void consumeUnpacked(List<FType> argumentTypes, List<FType> target, ThrowingBiConsumer<FType, FType, E> consumer) throws E {
-        List<FType> unpackedBase = unpackBase(argumentTypes, FTuple::unpackType);
-        List<FType> unpackedTarget = unpackTarget(target, FTuple::unpackType);
-        assert unpackedBase.size() == unpackedTarget.size();
-        for (Pair<FType, FType> pair : Utils.zip(unpackedBase, unpackedTarget))
-            consumer.accept(pair.a, pair.b);
+    public void computeCast(FType argumentType, FType targetType, ListMultimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+        if (argumentType != targetType)
+            casts.add(ImplicitTypeCast.create(argumentType, targetType, Variance.Covariant, constraints));
+        else
+            casts.add(null);
     }
 
     public <T> List<T> unpackBase(List<T> items, Function<T, List<T>> unpacker) {
