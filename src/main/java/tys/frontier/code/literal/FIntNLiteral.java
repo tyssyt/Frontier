@@ -1,7 +1,6 @@
 package tys.frontier.code.literal;
 
 import tys.frontier.code.predefinedClasses.FIntN;
-import tys.frontier.code.type.FClass;
 
 import java.math.BigInteger;
 
@@ -36,7 +35,7 @@ public class FIntNLiteral implements FLiteral {
     }
 
     @Override
-    public FClass getType() {
+    public FIntN getType() {
         return type;
     }
 

@@ -16,11 +16,10 @@ import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.Operator;
+import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.UnnamedIdentifier;
-import tys.frontier.code.literal.FLambda;
-import tys.frontier.code.literal.FLiteral;
-import tys.frontier.code.literal.FNull;
+import tys.frontier.code.literal.*;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.predefinedClasses.*;
@@ -790,12 +789,28 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public FFunctionCall visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
+    public FExpression visitPreUnaryOp(FrontierParser.PreUnaryOpContext ctx) {
         if (useLhsresolve)
             return Utils.NYI("unary op lhs resolve");
 
         FExpression expression = visitExpression(ctx.expression());
         FIdentifier identifier = new FIdentifier(ctx.getChild(0).getText() + '_');
+
+        if (expression instanceof FLiteralExpression && identifier.equals(UnaryOperator.NEG.identifier)) {
+            FLiteral literal = ((FLiteralExpression) expression).getLiteral();
+            if (literal instanceof FIntNLiteral) {
+                FIntNLiteral intN = (FIntNLiteral) literal;
+                return new FLiteralExpression(new FIntNLiteral(intN.value.negate(), intN.getType(), '-' + intN.originalString));
+            }
+            if (literal instanceof FFloat32Literal) {
+                FFloat32Literal float32 = (FFloat32Literal) literal;
+                return new FLiteralExpression(new FFloat32Literal(-float32.value, '-' + float32.originalString));
+            }
+            if (literal instanceof FFloat64Literal) {
+                FFloat64Literal float64 = (FFloat64Literal) literal;
+                return new FLiteralExpression(new FFloat64Literal(-float64.value, '-' + float64.originalString));
+            }
+        }
 
         try {
             return functionCall(expression.getType().getNamespace(), identifier, mutableSingletonList(expression), ImmutableListMultimap.of(), false);
