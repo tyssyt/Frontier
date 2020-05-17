@@ -19,6 +19,6 @@ export namespace Native:
 
 
 export native class CFile:
-    export native static fopen(filename: char[c], mode: char[c]) -> CFile;
+    export native static fopen(filename: native[char], mode: native[char]) -> CFile;
     export native static fputc(character: int32, stream: CFile) -> int32;
     export native fflush() -> int32;

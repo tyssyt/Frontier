@@ -1,4 +1,4 @@
 class A:
-    f() -> char[], A {
+    f() -> [char], A {
         return "g2esports.com/shop";
     }

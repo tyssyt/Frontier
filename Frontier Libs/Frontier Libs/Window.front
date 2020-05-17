@@ -33,7 +33,7 @@ export class MessageBox:
     static tryAgainPressed : int32 = 10;
     static continuePressed : int32 = 11;
 
-    static show(title: char[], message: char[], mode: int32, icon: int32? = null) -> int32? {
+    static show(title: [char], message: [char], mode: int32, icon: int32? = null) -> int32? {
         rc := Winuser.MessageBoxA(null, Strings.toCString(message), Strings.toCString(title), mode + (icon : 0)); //TODO | operator didn't work, why?
         if (rc == 0) {
             return null;
@@ -71,7 +71,7 @@ export class Window:
     private wWindow: WWindow;
 
     export static create(
-        title: char[],
+        title: [char],
         width:  int32 = Screen.width /2,
         height: int32 = Screen.height /2,
         x: int32 = Screen.width /4,
@@ -81,7 +81,7 @@ export class Window:
     }
 
     private static createInThread(data: Data?) -> int32 {
-        title: char[] = "asdasd";
+        title: [char] = "asdasd";
         width:  int32 = Screen.width /2;
         height: int32 = Screen.height /2;
         x: int32 = Screen.width /4;

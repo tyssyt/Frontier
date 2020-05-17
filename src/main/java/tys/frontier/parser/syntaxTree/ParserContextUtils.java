@@ -149,15 +149,23 @@ public final class ParserContextUtils {
         return getType(ctx, possibleNamespaces).getNamespace();
     }
 
+    public static FType getType (TypeOrTupleContext ctx, Function<FIdentifier, Namespace> possibleNamespaces) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+        TypeTypeContext c = ctx.typeType();
+        if (c != null)
+            return getType(c, possibleNamespaces);
+        else
+            return tupleFromList(ctx.typeList(), possibleNamespaces);
+    }
+
     public static FType getType (TypeTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         FType base;
-        if (ctx.Array() != null) {
-            base = getType(ctx.typeType(), possibleNamespaces);
-            return FArray.getArrayFrom(base);
-        } if (ctx.CArray() != null) {
-            base = getType(ctx.typeType(), possibleNamespaces);
+        if (ctx.NATIVE() != null) {
+            base = getType(ctx.typeOrTuple(0), possibleNamespaces);
             return tys.frontier.code.predefinedClasses.CArray.getArrayFrom(base);
+        } else if (ctx.LBRACK() != null) {
+            base = getType(ctx.typeOrTuple(0), possibleNamespaces);
+            return FArray.getArrayFrom(base);
         } else if (ctx.QUESTION() != null) {
             base = getType(ctx.typeType(), possibleNamespaces);
             return FOptional.from(base);
@@ -183,13 +191,8 @@ public final class ParserContextUtils {
         List<TypeOrTupleContext> ttCtxs = ctx.typeOrTuple();
 
         List<FType> parameters = new ArrayList<>();
-        for (TypeOrTupleContext ttc : ttCtxs) {
-            TypeTypeContext c = ttc.typeType();
-            if (c != null)
-                parameters.add(getType(c, possibleNamespaces));
-            else
-                parameters.add(tupleFromList(ttc.typeList(), possibleNamespaces));
-        }
+        for (TypeOrTupleContext ttc : ttCtxs)
+            parameters.add(getType(ttc, possibleNamespaces));
 
         if (base instanceof FClass)
             return ((FClass) base).getInstantiation(parameters);

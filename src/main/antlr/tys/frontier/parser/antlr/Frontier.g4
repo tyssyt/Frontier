@@ -216,8 +216,8 @@ nameSelector
 //types ------------------------------------------------------------------------------------
 
 typeType
-    :   typeType Array
-    |   typeType CArray
+    :   LBRACK typeOrTuple RBRACK
+    |   NATIVE LBRACK  typeOrTuple RBRACK
     |   typeType QUESTION
     |   LPAREN typeList ARROW typeList RPAREN
     |   predefinedType (LT typeOrTuple (COMMA typeOrTuple)* GT)?
@@ -297,7 +297,7 @@ expression
     |   IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?             #internalFunctionAddress
     |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
-    |   NEW typeType (LBRACK expression RBRACK)                    #newArray
+    |   NEW typeOrTuple (LBRACK expression RBRACK)                 #newArray
     |   (EXMARK|SUB) expression                                    #preUnaryOp
     |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp
@@ -410,7 +410,6 @@ STAR            : '*';
 MOD             : '%';
 
 Array           : '[]';
-CArray           : '[c]';
 
 //Datatypes---------------------------------------------------------------------
 

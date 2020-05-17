@@ -7,7 +7,7 @@ export class WinMainArgs:
     export static nCmdShow: int32;
 
 export class Winuser:
-    native static MessageBoxA(hWnd: WWindow? = null, message: char[c], windowTitle: char[c], uType: int32) -> int32;
+    native static MessageBoxA(hWnd: WWindow? = null, message: native[char], windowTitle: native[char], uType: int32) -> int32;
     native static GetSystemMetrics(nIndex: int32) -> int32;
 
 export native class WndClass: //WNDCLASSEXA
@@ -22,8 +22,8 @@ export native class WndClass: //WNDCLASSEXA
     export hicon: Icon? = null; //HICON
     export hCursor: Cursor? = null; //HCURSOR
     export hbrBackground: int32 = 6; //HBRUSH //TODO could also be a Pointer I guess, see what GLFL does
-    export lpszMenuName: char[c]? = null; //LPCSTR
-    export lpszClassName: char[c]; //LPCSTR
+    export lpszMenuName: native[char]? = null; //LPCSTR
+    export lpszClassName: native[char]; //LPCSTR
     export hIconSm: Icon? = null; //HICON
 
     export native RegisterClassExA() -> int32;
@@ -40,8 +40,8 @@ export native class WWindow: //HWND
 
     export native static CreateWindowExA(
         dwExStyle: int32, //DWORD
-        lpClassName: char[c], //LPCSTR
-        lpWindowName: char[c], //LPCSTR
+        lpClassName: native[char], //LPCSTR
+        lpWindowName: native[char], //LPCSTR
         dwStyle: int32, //DWORD
         x: int32? = 0, //int
         y: int32? = 0, //int
@@ -80,11 +80,11 @@ export native class DeviceContext: //HDC
 
 export native class Icon: //HICON
     //TODO
-    //private native static loadIconA(hInstance: Instance? = null, lpIconName: char[c]);
+    //private native static loadIconA(hInstance: Instance? = null, lpIconName: native[char]);
 
 export native class Cursor: //HCURSOR
     //TODO
-    //private native static loadCursorA(hInstance: Instance? = null, lpCursorName: char[c]);
+    //private native static loadCursorA(hInstance: Instance? = null, lpCursorName: native[char]);
 
 export native class Menu: //HMENU
     //TODO

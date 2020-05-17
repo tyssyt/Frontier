@@ -13,6 +13,6 @@ import java.util.Map;
 public class DummyFunction extends FBaseFunction {
 
     public DummyFunction(FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
-        super(identifier, memberOf, modifier, natiwe, returnType, params, assignees, parameters);
+        super(identifier, memberOf, modifier, natiwe, false, returnType, params, assignees, parameters);
     }
 }

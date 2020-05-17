@@ -1,7 +1,7 @@
 export class List<T>:
     for: operator[]**(List<T>, int32), size**(List<T>);
 
-    export elements: T[] ; //TODO no ouotside access once we have user definable iterators
+    export elements: [T] ; //TODO no ouotside access once we have user definable iterators
     export size: int32 = 0; //TODO export getter, private setter
 
     export static create(startSize: int32 = 5) -> List<T> {
@@ -26,7 +26,7 @@ export class List<T>:
         size = size+1;
     }
 
-    export addAll(elements: T[]) { //TODO iterable interface
+    export addAll(elements: [T]) { //TODO iterable interface
         //TODO one expand check at the beginning, that add without expand check
         for e : elements {
             add(e);
@@ -57,7 +57,7 @@ export class List<T>:
         return res;
     }
 
-    export trim() -> T[] {
+    export trim() -> [T] {
         res := new T[size];
         arrayCopy(elements, res, size);
         return res;
@@ -90,7 +90,7 @@ export class List<T>:
         }
     }
 
-    private static arrayCopy(from: T[], to: T[], size: int32) { //TODO replace by arrayCopy... once we have that
+    private static arrayCopy(from: [T], to: [T], size: int32) { //TODO replace by arrayCopy... once we have that
         i:int32 = 0;
         while i<size {
             to[i] = from[i];

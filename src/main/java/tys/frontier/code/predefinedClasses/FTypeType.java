@@ -1,12 +1,10 @@
 package tys.frontier.code.predefinedClasses;
 
-import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FField;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FNamespaceExpression;
-import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -16,8 +14,6 @@ import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.passes.analysis.reachability.Reachability;
-
-import static java.util.Collections.singletonMap;
 
 public class FTypeType extends FBaseClass {
 
@@ -64,8 +60,8 @@ public class FTypeType extends FBaseClass {
         //function typeOf
         {
             FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
-            ImmutableList<FParameter> of = ImmutableList.of(FParameter.create(FIdentifier.THIS, t, false));
-            typeOf = new FBaseFunction(typeof_ID, namespace, FVisibilityModifier.EXPORT, false, FTypeType.INSTANCE, of, null, singletonMap(t.getIdentifier(), t));
+            typeOf = new FunctionBuilder(typeof_ID, namespace)
+                    .setParams(t).setReturnType(FTypeType.INSTANCE).setParameters(t).build();
             typeOf.setBody(FBlock.from(FReturn.createTrusted(new FNamespaceExpression(t.getNamespace()), typeOf)));
             namespace.addFunctionTrusted(typeOf);
         }
@@ -73,13 +69,12 @@ public class FTypeType extends FBaseClass {
         //function fieldsOf
         {
             FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
-            ImmutableList<FParameter> of = ImmutableList.of(FParameter.create(FIdentifier.THIS, t, false));
 
             //Dummy return Type that has nothing but a forEach Impl TODO change when we have a simpler mechanism to return an iterable
             FBaseClass dummy = new FBaseClass(new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, false);
             dummy.setForImpl(new PrimitiveFor());
-            fieldsOf = new FBaseFunction(fieldsOf_ID, namespace, FVisibilityModifier.EXPORT, false, dummy, of, null, singletonMap(t.getIdentifier(), t))
-                {{predefined = true;}};
+            fieldsOf = new FunctionBuilder(fieldsOf_ID, namespace)
+                    .setPredefined(true).setParams(t).setReturnType(dummy).setParameters(t).build();
             namespace.addFunctionTrusted(fieldsOf);
         }
     }

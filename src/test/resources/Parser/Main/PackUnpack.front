@@ -32,7 +32,7 @@ export static main () {
     IO.printInt(d);
     IO.printLine("");
 
-    arr :int32[] = new int32[5];
+    arr :[int32] = new int32[5];
     arr[2] = -42;
     arr2 := arr;
     arr, arr[2], f:int32 = new int32[3], 42, 0; //wait, thats illegal
@@ -44,12 +44,12 @@ export static main () {
     //IO.printInt(e);
     //IO.printInt(f);
 
-    l := List<(char[], int64)>.create();
+    l := List<([char], int64)>.create();
 
     l.add("string", e);
     l.add("g2esports.com/shop", 42);
-    qwe:char[], rtz:int64 = l[0];
-    qwe2:char[], rtz2:int64 = l[1];
+    qwe:[char], rtz:int64 = l[0];
+    qwe2:[char], rtz2:int64 = l[1];
     IO.printInt(rtz);
     IO.printLine(qwe);
     IO.printInt(rtz2);

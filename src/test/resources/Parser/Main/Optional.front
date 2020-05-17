@@ -9,11 +9,11 @@ export class Test:
         return this;
     }
 
-    get() -> char[] {
+    get() -> [char] {
         return "exists ";
     }
 
-    static getLambdaIf() -> char[]? {
+    static getLambdaIf() -> [char]? {
         return "lambdaIf";
     }
 

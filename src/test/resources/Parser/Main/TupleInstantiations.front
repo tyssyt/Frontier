@@ -27,7 +27,7 @@ getOptional(n: bool) -> T? {
 	}
 }
 
-getArray(n: int32) -> T[] {
+getArray(n: int32) -> [T] {
 	res := new T[n];
 	i:int32= 0;
 	while i<n {
@@ -44,7 +44,7 @@ getTuple() -> T, int32, T {
 
 export class Main:
 
-static printOpt(str: char[]?, coord: Coord?, i: int64?) {
+static printOpt(str: [char]?, coord: Coord?, i: int64?) {
     if str {
         IO.print(str);
     } else {
@@ -64,7 +64,7 @@ static printOpt(str: char[]?, coord: Coord?, i: int64?) {
     }
 }
 
-static print(str: char[], coord: Coord, i: int64?) {
+static print(str: [char], coord: Coord, i: int64?) {
     IO.print(str);
     IO.print("|");
     coord.print();
@@ -78,7 +78,7 @@ static print(str: char[], coord: Coord, i: int64?) {
 
 export static main () {
 
-	gen := new Generic<(char[], Coord, int64?)>(t="nice", new Coord(x=6, y=9), null);
+	gen := new Generic<([char], Coord, int64?)>(t="nice", new Coord(x=6, y=9), null);
 
     { //opt null
         IO.printLine("--Opt null--");
@@ -132,8 +132,8 @@ export static main () {
 
     { //Address
         IO.printLine("--Address--");
-        f := Generic<(char[], char[])>.getArray**;
-        a := f(new Generic<(char[], char[])>(t="Beep", "Boop"), 3);
+        f := Generic<([char], [char])>.getArray**;
+        a := f(new Generic<([char], [char])>(t="Beep", "Boop"), 3);
         s1:, s2: = a[2];
         IO.print(s1);
         IO.print(s2);

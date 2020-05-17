@@ -7,13 +7,13 @@ constructors;
 // for: \s i -> s.string[i], \s -> s.string.size; //TODO make a way that when Resolving a Type Parameter that all ReturnTypesOf of that, or constraints somehow related to that have a change to resolve as well that does not rely on the to delete logic I put in ReturnType of, so all info needs to be passed via constraints and I prolly need a new constrinat to model that connection
 for: operator[]**(String, int32), size**;
 
-string: char[];
+string: [char];
 
 operator + (other: String) -> String {
     return this+other.string;
 }
 
-operator + (other: char[]) -> String {
+operator + (other: [char]) -> String {
     res := new String(string = new char[string.size + other.size]);
     for s, i : string { //TODO change when I have somthing like a zip
         res.string[i] = s;
@@ -44,7 +44,7 @@ size() -> int32 {
 
 export class Main:
 
-export static main (args: char[][]) {
+export static main (args: [[char]]) {
     s1 := new String(string = "Hello");
     s2 := new String(string = "World!");
     IO.printLine((s1 + s2).string);

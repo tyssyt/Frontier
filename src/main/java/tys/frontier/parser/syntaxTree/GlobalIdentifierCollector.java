@@ -5,13 +5,12 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.Namespace;
-import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
@@ -27,7 +26,10 @@ import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
@@ -105,60 +107,56 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     }
 
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx, boolean hasBody) {
+        FunctionBuilder builder = new FunctionBuilder();
+
         //type Parameters
-        Map<FIdentifier, FTypeVariable> typeParameters;
         Function<FIdentifier, Namespace> typeResolver;
         {
             FrontierParser.TypeParametersContext c = ctx.typeParameters();
             if (c != null) {
                 try {
-                    typeParameters = Utils.asTypeMap(ParserContextUtils.getTypeParameters(c).a);
+                    Map<FIdentifier, FTypeVariable> typeParameters = Utils.asTypeMap(ParserContextUtils.getTypeParameters(c).a);
                     if (currentClass != null)
                         for (FType classParam : currentClass.getParametersList())
                             if (typeParameters.containsKey(classParam.getIdentifier()))
                                 throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
                     typeResolver = id -> Optional.ofNullable(typeParameters.get(id)).map(FTypeVariable::getNamespace).orElseGet(() -> resolveNamespace(id));
+                    builder.setParameters(typeParameters);
                 } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
                     errors.add(twiceDefinedLocalVariable);
                     return null;
                 }
             } else {
-                typeParameters = Collections.emptyMap();
                 typeResolver = this::resolveNamespace;
             }
         }
 
         //return type
-        FType returnType;
         {
             FrontierParser.TypeListContext c = ctx.typeList();
             if (c != null) {
                 try {
-                    returnType = ParserContextUtils.tupleFromList(c, typeResolver);
+                    builder.setReturnType(ParserContextUtils.tupleFromList(c, typeResolver));
                 } catch (SyntaxError e) {
                     errors.add(e);
-                    returnType = FTuple.VOID; //TODO do we want some error related type here?
                 }
-            } else {
-                returnType = FTuple.VOID;
             }
         }
 
         //assignees
-        ImmutableList<FParameter> assigness = null;
         {
-            ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
+            ImmutableList.Builder<FParameter> b = ImmutableList.builder();
             FrontierParser.TypedIdentifiersContext ct = ctx.typedIdentifiers();
             if (ct != null) {
                 for (FrontierParser.TypedIdentifierContext c : ct.typedIdentifier()) {
                     try {
                         Pair<FIdentifier, FType> pair = ParserContextUtils.getTypedIdentifier(c, typeResolver);
-                        builder.add(FParameter.create(pair.a, pair.b, false));
+                        b.add(FParameter.create(pair.a, pair.b, false));
                     } catch (SyntaxError e) {
                         errors.add(e);
                     }
                 }
-                assigness = builder.build();
+                builder.setAssignees(b.build());
             }
         }
 
@@ -173,11 +171,10 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             ImmutableList<FParameter> parameters = params.build();
 
             //identifier
-            FIdentifier identifier;
             DefaultNamespace namespace;
             TerminalNode identifierNode = ctx.IDENTIFIER();
             if (identifierNode != null) {
-                identifier = new FIdentifier(identifierNode.getText());
+                builder.setIdentifier(new FIdentifier(identifierNode.getText()));
                 FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
                 if (typeTypeContext != null)
                     namespace = (DefaultNamespace) ParserContextUtils.getNamespace(typeTypeContext, typeResolver);
@@ -190,15 +187,15 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
                 Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
                 if (!operator.isUserDefinable())
                     return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
-                identifier = operator.getIdentifier();
+                builder.setIdentifier(operator.getIdentifier());
                 namespace = operator.getNamespace().orElse(currentNamespace);
             }
 
-            FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
+            builder.setVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
             boolean natiwe = ctx.NATIVE() != null;
             boolean open = ctx.OPEN() != null;
 
-            FFunction res = new FBaseFunction(identifier, namespace, visibilityModifier, natiwe, returnType, parameters, assigness, typeParameters);
+            FFunction res = builder.setMemberOf(namespace).setNative(natiwe).setParams(parameters).build();
             treeData.functions.put(ctx, res);
 
             if (natiwe && hasBody)

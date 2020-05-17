@@ -43,5 +43,5 @@ export static main() {
     IO.print("\n5:");
     call(doNothing(forEach**), doNothing(list), doNothing(IO.printInt**));
     //doNothing(doNothing**); this is invalid
-    call(call2**, IO.print**(char[]), "\ndone");
+    call(call2**, IO.print**([char]), "\ndone");
 }

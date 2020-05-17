@@ -33,7 +33,7 @@ public class FConstructor extends FBaseFunction {
     public static final FIdentifier MALLOC_ID = new FIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass.getNamespace(), modifier, false, fClass, params, null, emptyMap());
+        super(IDENTIFIER, fClass.getNamespace(), modifier, false, false, fClass, params, null, emptyMap());
     }
 
     @Override
@@ -42,7 +42,7 @@ public class FConstructor extends FBaseFunction {
     }
 
     public static FFunction createMalloc(FClass fClass) {
-        FBaseFunction function = new FBaseFunction(MALLOC_ID, fClass.getNamespace(), FVisibilityModifier.PRIVATE, false, fClass, ImmutableList.of(), null, emptyMap());
+        FBaseFunction function = new FunctionBuilder(MALLOC_ID, fClass.getNamespace()).setVisibility(FVisibilityModifier.PRIVATE).setReturnType(fClass).build();
         function.predefined = true;
         return function;
     }

@@ -3,7 +3,7 @@ import IO;
 export class Main:
 
     export static main() {
-        arr: int64[] = new int64[1];
+        arr: [int64] = new int64[1];
         arr[0] = 0;
 
         //breaks
@@ -13,7 +13,7 @@ export class Main:
         IO.printInt(arr[0]);
     }
 
-    static print(arr: int64[]) {
+    static print(arr: [int64]) {
         for v : arr {
             IO.printInt(v);
         }

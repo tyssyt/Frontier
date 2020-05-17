@@ -17,7 +17,7 @@ generic <S> (mapper: (T, O -> S)) -> S {
 
 export class Main:
 
-static mapper (t: int32, o: float64) -> char[] {
+static mapper (t: int32, o: float64) -> [char] {
     if t + (int32)o =*= 32 {
         return "aye";
     } else {

@@ -1,4 +1,4 @@
 class A:
-    test(i: A[]) {
+    test(i: [A]) {
         i: int32 = 0;
     }

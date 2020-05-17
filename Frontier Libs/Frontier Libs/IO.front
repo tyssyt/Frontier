@@ -11,13 +11,13 @@ export namespace IO:
         print(Strings.intToString(l));
     }
 
-    export print(string: char[]) {
+    export print(string: [char]) {
         for c : string {
             print(c);
         }
     }
 
-    export printLine(string: char[]) {
+    export printLine(string: [char]) {
         for c : string {
             print(c);
         }
@@ -61,12 +61,12 @@ export namespace IO:
     }
 
 export class File:
-    export static modeWrite: char[c] = Strings.toCString("w\0"); //TODO there is still a bug with the compiler assuming "w" is char even though here it should be string
-    export static modeAppend: char[c] = Strings.toCString("a\0");
+    export static modeWrite: native[char] = Strings.toCString("w\0"); //TODO there is still a bug with the compiler assuming "w" is char even though here it should be string
+    export static modeAppend: native[char] = Strings.toCString("a\0");
 
     cFile: CFile;
 
-    export static fOpen(filename: char[], mode: char[c]) -> File {
+    export static fOpen(filename: [char], mode: native[char]) -> File {
         return new File(cFile = CFile.fopen(Strings.toCString(filename), mode));
     }
 
@@ -79,14 +79,14 @@ export class File:
         write(Strings.intToString(l));
     }
 
-    export write(string: char[]) {
+    export write(string: [char]) {
         for c : string {
             writeNoFlush(c);
         }
         cFile.fflush();
     }
 
-    export writeLine(string: char[]) {
+    export writeLine(string: [char]) {
         for c : string {
             writeNoFlush(c);
         }

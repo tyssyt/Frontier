@@ -1,12 +1,11 @@
 package tys.frontier.code.function.operator;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -23,7 +22,6 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static java.util.Collections.emptyMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum BinaryOperator implements Operator {
@@ -67,9 +65,9 @@ public enum BinaryOperator implements Operator {
             FTypeVariable p1 = FTypeVariable.create(p1Id, true);
             FTypeVariable p2 = FTypeVariable.create(p2Id, true);
             FTypeVariable r = FTypeVariable.create(rId, true);
-            ImmutableList<FParameter> parameters = ImmutableList.of(FParameter.create(p1Id, p1, false), FParameter.create(p2Id, p2, false));
 
-            FBaseFunction function = new FBaseFunction(binaryOperator.identifier, binOpNamespace, FVisibilityModifier.EXPORT, false, r, parameters, null, ImmutableMap.of(p1Id, p1, p2Id, p2, rId, r));
+            FBaseFunction function = new FunctionBuilder(binaryOperator.identifier, binOpNamespace)
+                    .setParams(p1, p2).setReturnType(r).setParameters(p1, p2, r).build();
             try {
                 binOpNamespace.setOpen(function);
             } catch (InvalidOpenDeclaration invalidOpenDeclaration) {
@@ -128,13 +126,8 @@ public enum BinaryOperator implements Operator {
     }
 
     public FFunction addPredefined(FClass fClass, FClass ret) throws SignatureCollision {
-        ImmutableList<FParameter> params = ImmutableList.of(
-                FParameter.create(new FIdentifier("first"), fClass, false),
-                FParameter.create(new FIdentifier("second"), fClass, false)
-        );
-        FBaseFunction res = new FBaseFunction(identifier, binOpNamespace, fClass.getVisibility(), false, ret, params, null, emptyMap()) {
-            {predefined = true;}
-        };
+        FBaseFunction res = new FunctionBuilder(identifier, binOpNamespace)
+                .setVisibility(fClass.getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
         binOpNamespace.addFunction(res);
         return res;
     }

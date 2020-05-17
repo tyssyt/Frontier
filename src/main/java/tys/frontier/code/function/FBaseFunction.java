@@ -23,6 +23,7 @@ public class FBaseFunction implements FFunction {
     private Namespace memberOf;
     private FVisibilityModifier modifier;
     private boolean natiwe;
+    protected boolean predefined;
     private FBlock body;
 
     private Signature signature;
@@ -32,13 +33,13 @@ public class FBaseFunction implements FFunction {
     protected List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
-    protected boolean predefined = false;
 
-    public FBaseFunction(FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+    protected FBaseFunction(FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, boolean predefined, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
         this.natiwe = natiwe;
+        this.predefined = predefined;
 
         Pair<Signature, Signature> pair = Signature.createSignatures(this, params, assignees, returnType);
         this.signature = pair.a;
@@ -53,12 +54,6 @@ public class FBaseFunction implements FFunction {
             this.parametersList = new ArrayList<>(parameters.values());
             this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
         }
-    }
-
-    public static FBaseFunction createPredefined(FIdentifier identifier, DefaultNamespace memberOf, FVisibilityModifier modifier, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
-        FBaseFunction res = new FBaseFunction(identifier, memberOf, modifier, false, returnType, params, assignees, parameters);
-        res.predefined = true;
-        return res;
     }
 
     @Override

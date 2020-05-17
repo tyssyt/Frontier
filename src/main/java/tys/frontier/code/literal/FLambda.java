@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class FLambda extends FBaseFunction {
     private FLambda(FIdentifier identifier, DefaultNamespace memberOf, FType returnType, ImmutableList<FParameter> params, Map<FIdentifier, FTypeVariable> parameters) {
-        super(identifier, memberOf, FVisibilityModifier.NONE, false, returnType, params, null, parameters);
+        super(identifier, memberOf, FVisibilityModifier.NONE, false, false, returnType, params, null, parameters);
     }
 
     public static FLambda create(FIdentifier identifier, DefaultNamespace memberOf, FType returnType, ImmutableList<FParameter> params, Map<FIdentifier, FTypeVariable> parameters) {

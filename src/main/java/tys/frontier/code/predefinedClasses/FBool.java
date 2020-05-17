@@ -1,5 +1,6 @@
 package tys.frontier.code.predefinedClasses;
 
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
@@ -23,7 +24,8 @@ public class FBool extends FPredefinedClass {
 
     private void addPredefinedFunctionsForBoolType() {
         DefaultNamespace namespace = getNamespace();
-        namespace.addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, this));
+        namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
+                .setPredefined(true).setParams(this).setReturnType(this).build());
 
         try {
             namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, this));

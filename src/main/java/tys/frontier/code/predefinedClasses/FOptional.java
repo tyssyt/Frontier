@@ -3,6 +3,7 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.namespace.OptionalNamespace;
@@ -26,9 +27,11 @@ public class FOptional extends FPredefinedClass {
         assert !(baseType instanceof FOptional);
         assert baseType != FTuple.VOID;
         this.baseType = baseType;
-        setNamespace(new OptionalNamespace(this));
+        OptionalNamespace namespace = new OptionalNamespace(this);
+        setNamespace(namespace);
         addDefaultFunctions();
-        getNamespace().addFunctionTrusted(UnaryOperator.NOT.createPredefined(this, FBool.INSTANCE));
+        namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
+                .setVisibility(getVisibility()).setPredefined(true).setParams(this).setReturnType(FBool.INSTANCE).build());
     }
 
     public FType getBaseType() {

@@ -228,6 +228,38 @@ public class LLVMModule implements AutoCloseable {
         return fieldIndices.getInt(field);
     }
 
+    LLVMValueRef getIntIntrinsicFunction(String name, FIntN type) {
+        String fullName = name + ".i" + type.getN();
+        LLVMValueRef res = LLVMGetNamedFunction(module, fullName);
+        if (res == null) {
+            LLVMTypeRef intType = getLlvmType(type);
+            LLVMTypeRef functionType;
+            switch (name) {
+                case "llvm.ctlz": case "llvm.cttz":
+                    functionType = LLVMFunctionType(intType, createPointerPointer(intType, LLVMInt1TypeInContext(context)), 2, FALSE);
+                    break;
+                case "llvm.smul.with.overflow": case "llvm.umul.with.overflow":
+                    LLVMTypeRef returnType = getLlvmType(FTuple.from(type, FBool.INSTANCE));
+                    functionType = LLVMFunctionType(returnType, createPointerPointer(intType, intType), 2, FALSE);
+                    break;
+                default:
+                    functionType = LLVMFunctionType(intType, intType, 1, FALSE);
+            }
+            res = LLVMAddFunction(module, fullName, functionType);
+        }
+        return res;
+    }
+
+    LLVMValueRef getMemcopyInstrinsic() {
+        String fullName = "llvm.memcpy.p0i8.p0i8.i32";
+        LLVMValueRef res = LLVMGetNamedFunction(module, fullName);
+        if (res == null) {
+            LLVMTypeRef functionType = LLVMFunctionType(LLVMVoidType(), createPointerPointer(bytePointer, bytePointer, getLlvmType(FIntN._32), LLVMInt1TypeInContext(context)), 4, FALSE);
+            res = LLVMAddFunction(module, fullName, functionType);
+        }
+        return res;
+    }
+
     /**
      * Parses all class types found in the file, creating corresponding LLVM types in this module.
      * @param namespaces namespaces to parse

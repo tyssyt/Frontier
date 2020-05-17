@@ -1124,7 +1124,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         FType baseType;
         try {
-            baseType = ParserContextUtils.getType(ctx.typeType(), this::findNamespaceNoThrow);
+            baseType = ParserContextUtils.getType(ctx.typeOrTuple(), this::findNamespaceNoThrow);
         } catch (SyntaxError e) {
             errors.add(e);
             throw new Failed();

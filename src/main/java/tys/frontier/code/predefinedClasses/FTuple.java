@@ -86,7 +86,7 @@ public class FTuple extends FPredefinedClass {
         List<FType> flattened = new ArrayList<>();
         for (FType type : types) {
             if (type == VOID)
-                return Utils.NYI("void in from flatten"); //maybe this can happen if I instantiate a type variable with void? Not sure what to do in that case...
+                continue;
             if (type instanceof FTuple)
                 flattened.addAll(((FTuple) type).types);
             else

@@ -2,7 +2,7 @@ export class Sort:
 
     private static SMALL_SORT_THRESHOLD: int32 = 49;
 
-    export static sort <T> (list: T[], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
+    export static sort <T> (list: [T], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
         if end <= start {
             return;
         }
@@ -61,7 +61,7 @@ export class Sort:
         sort(list, comparator, r, end);
     }
 
-    export static sortSmall <T> (list: T[], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
+    export static sortSmall <T> (list: [T], comparator: (T,T -> bool), start: int32 = 0, end: int32 = list.size()-1) {
         i := start+1;
         while i <= end {
             val := list[i];

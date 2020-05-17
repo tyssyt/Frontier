@@ -5,8 +5,8 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FParameter;
-import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
@@ -17,8 +17,6 @@ import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Collections.emptyMap;
 
 public class OptionalNamespace extends DefaultNamespace {
 
@@ -59,20 +57,20 @@ public class OptionalNamespace extends DefaultNamespace {
     }
 
     private FFunction createShim(FFunction original) {
-        FType returnType = FOptional.fromFlatten(original.getType());
+        FunctionBuilder builder = new FunctionBuilder(original.getIdentifier(), this).setPredefined(true);
+        builder.setVisibility(original.getVisibility());
+        builder.setReturnType(FOptional.fromFlatten(original.getType()));
+
         Signature sig = original.getLhsSignature() == null ? original.getSignature() : original.getLhsSignature();
+        builder.setAssignees(sig.getAssignees());
 
         ImmutableList<FParameter> params = sig.getParameters();
         if (original.isInstance()) {
-            ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
-            builder.add(FParameter.create(params.get(0).getIdentifier(), getType(), false));
-            builder.addAll(params.subList(1, params.size()));
-            params = builder.build();
+            ImmutableList.Builder<FParameter> b = ImmutableList.builder();
+            b.add(FParameter.create(params.get(0).getIdentifier(), getType(), false));
+            b.addAll(params.subList(1, params.size()));
+            params = b.build();
         }
-
-        return new FBaseFunction(original.getIdentifier(), this, original.getVisibility(), false,
-                returnType, params, sig.getAssignees(), emptyMap()) {
-            {predefined = true;}
-        };
+        return builder.setParams(params).build();
     }
 }

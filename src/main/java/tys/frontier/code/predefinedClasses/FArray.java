@@ -5,24 +5,32 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.expression.FLiteralExpression;
+import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
 
-import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.Collections.emptySet;
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FArray extends FPredefinedClass {
 
     public static final FIdentifier SIZE = new FIdentifier("size");
     public static final FIdentifier C_ARRAY = new FIdentifier("c_array");
+    public static final FIdentifier COPY = new FIdentifier("copy");
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<FType, FArray> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
@@ -48,7 +56,25 @@ public class FArray extends FPredefinedClass {
         access = Access.createPredefined(this, FIntN._32, baseType);
         namespace.addFunctionTrusted(access.a);
         namespace.addFunctionTrusted(access.b);
-        namespace.addFunctionTrusted(FBaseFunction.createPredefined(C_ARRAY, namespace, FVisibilityModifier.EXPORT, CArray.getArrayFrom(baseType), ImmutableList.of(FParameter.create(FIdentifier.THIS, this, false)), null, Collections.emptyMap()));
+
+        FunctionBuilder builder = new FunctionBuilder().setMemberOf(namespace).setPredefined(true);
+
+        builder.setIdentifier(C_ARRAY);
+        namespace.addFunctionTrusted(builder.setParams(this).setReturnType(CArray.getArrayFrom(baseType)).build());
+
+        builder.setIdentifier(COPY);
+        ImmutableList<FParameter> params = ImmutableList.of(
+                FParameter.create(new FIdentifier("source"), this, false),
+                FParameter.create(new FIdentifier("target"), this, false),
+                FParameter.create(new FIdentifier("sourceOffset"), FIntN._32, true),
+                FParameter.create(new FIdentifier("targetOffset"), FIntN._32, true),
+                FParameter.create(new FIdentifier("length"), FIntN._32, true)
+        );
+        params.get(2).setDefaultValueTrusted(new FLiteralExpression(new FIntNLiteral(0)), emptySet());
+        params.get(3).setDefaultValueTrusted(new FLiteralExpression(new FIntNLiteral(0)), emptySet());
+        FFunctionCall sourceSize = FFunctionCall.createTrusted(size.getGetter().getSignature(), mutableSingletonList(new FLocalVariableExpression(params.get(0))));
+        params.get(4).setDefaultValueTrusted(sourceSize, Set.of(params.get(0)));
+        namespace.addFunctionTrusted(builder.setParams(params).setReturnType(FTuple.VOID).build());
 
         namespace.addFunctionTrusted(FConstructor.createPredefined(FVisibilityModifier.EXPORT, this));
         setForImpl(new ForByIdx(access.a, size.getGetter()));

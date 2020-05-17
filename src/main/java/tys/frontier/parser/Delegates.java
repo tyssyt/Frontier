@@ -11,6 +11,7 @@ import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -115,7 +116,9 @@ public class Delegates {
         assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 
         DefaultNamespace namespace = to.getNamespace();
-        FBaseFunction res = new FBaseFunction(toDelegate.getIdentifier(), namespace, to.getVisibility(), false, signature.getType(), builder.build(), signature.getAssignees(), toDelegate.getParameters());
+        FBaseFunction res = new FunctionBuilder(toDelegate.getIdentifier(), namespace).setVisibility(to.getVisibility())
+                .setParams(builder.build()).setReturnType(signature.getType()).setAssignees(signature.getAssignees())
+                .setParameters(toDelegate.getParameters()).build();
         namespace.addFunction(res);
         return res;
     }

@@ -9,7 +9,7 @@ class Obj:
     private static UID_COUNTER: int64 = 0;
 
     i : int64;
-    name: char[] = "Dude123";
+    name: [char] = "Dude123";
     connection: Obj?;
     uid: int64;
 
@@ -28,7 +28,7 @@ export class Main:
 
     static comparator: (Obj,Obj -> bool) = \i, j -> i.i<=j.i;
 
-    export static main(args: char[][]) {
+    export static main(args: [[char]]) {
         size: int32 = (int32) Strings.parseInt(args[1]);
         iterations: int32 = (int32) Strings.parseInt(args[2]);
 
@@ -46,6 +46,7 @@ export class Main:
 
         for i : Iter.count(iterations) {
             arr := createArray(size);
+            //time := Timing.time(Sort.sort**, arr, comparator, 0, arr.size);
             start := Timing.getTimestamp();
             Sort.sort(arr, comparator);
             end := Timing.getTimestamp();
@@ -67,7 +68,7 @@ export class Main:
         }
     }
 
-    static createArray(size: int32) -> Obj[] {
+    static createArray(size: int32) -> [Obj] {
         res := new Obj[size];
 
         for val, i : res {
@@ -90,7 +91,7 @@ export class Main:
         return i % max;
     }
 
-    static checkOrdered <T> (arr: T[], comparator: (T,T -> bool)) -> bool {
+    static checkOrdered <T> (arr: [T], comparator: (T,T -> bool)) -> bool {
         i: int32 = 1;
         while i< arr.size {
             if !comparator(arr[i-1], arr[i]) {

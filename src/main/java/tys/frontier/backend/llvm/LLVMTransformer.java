@@ -2,7 +2,6 @@ package tys.frontier.backend.llvm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
@@ -39,6 +38,7 @@ import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 import java.math.BigInteger;
 import java.util.*;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.bytedeco.llvm.global.LLVM.*;
@@ -137,7 +137,7 @@ class LLVMTransformer implements
 
     public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
         LLVMTypeRef ptr = LLVMPointerType(LLVMStructType((PointerPointer<LLVMTypeRef>) null, 0, FALSE), 0);
-        PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(
+        PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(
                 ptr,
                 ptr,
                 LLVMPointerType(module.getLlvmType(FIntN._8), 0),
@@ -169,7 +169,7 @@ class LLVMTransformer implements
         } else {
             //convert input to Frontier String
             LLVMValueRef args = convertArg(function, LLVMGetParam(function, 2));
-            LLVMBuildCall(builder, userMain, LLVMUtil.createPointerPointer(args), 1, "");
+            LLVMBuildCall(builder, userMain, createPointerPointer(args), 1, "");
         }
         LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
         LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
@@ -180,7 +180,7 @@ class LLVMTransformer implements
     }
 
     public void generateMain(FFunction entryPoint) {
-        PointerPointer<LLVMTypeRef> argTypes = LLVMUtil.createPointerPointer(indexType,
+        PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(indexType,
                 LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
         );
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 2, FALSE);
@@ -199,7 +199,7 @@ class LLVMTransformer implements
         } else {
             //convert input to Frontier String
             LLVMValueRef args = convertArgs(function, LLVMGetParam(function, 0), LLVMGetParam(function, 1));
-            LLVMBuildCall(builder, userMain, LLVMUtil.createPointerPointer(args), 1, "");
+            LLVMBuildCall(builder, userMain, createPointerPointer(args), 1, "");
         }
         LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 0, FALSE));
         LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
@@ -258,7 +258,7 @@ class LLVMTransformer implements
         LLVMBuildCondBr(builder, _continue, copy2Block, endBlock);
 
         LLVMPositionBuilderAtEnd(builder, copy2Block);
-        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(load_i);
+        PointerPointer<LLVMValueRef> indices = createPointerPointer(load_i);
         LLVMValueRef stringAddr = LLVMBuildInBoundsGEP(builder, argv, indices, 1, "GEP_string");
         LLVMValueRef string = LLVMBuildLoad(builder, stringAddr, "loadstr");
         LLVMValueRef fString = LLVMBuildCall(builder, cStringToFString, createPointerPointer(string), 1, "cString2FString");
@@ -299,7 +299,7 @@ class LLVMTransformer implements
         LLVMPositionBuilderAtEnd(builder, countLengthBlock);
         LLVMValueRef inc = LLVMBuildAdd(builder, LLVMBuildLoad(builder, i, "load_i"), indexLiteral(1), "inc_i");
         LLVMBuildStore(builder, inc, i);
-        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(inc);
+        PointerPointer<LLVMValueRef> indices = createPointerPointer(inc);
         LLVMValueRef charAddr = LLVMBuildInBoundsGEP(builder, cString, indices, 1, "GEP_string");
         LLVMValueRef _char = LLVMBuildLoad(builder, charAddr, "loadChar");
         LLVMValueRef isNull = LLVMBuildICmp(builder, LLVMIntEQ, _char, LLVMConstInt(charType, 0, FALSE), "isNull");
@@ -314,7 +314,7 @@ class LLVMTransformer implements
         //copyString
         LLVMPositionBuilderAtEnd(builder, copyStringBlock);
         LLVMValueRef load_i = LLVMBuildLoad(builder, i, "load_i");
-        indices = LLVMUtil.createPointerPointer(load_i);
+        indices = createPointerPointer(load_i);
         charAddr = LLVMBuildInBoundsGEP(builder, cString, indices, 1, "GEP_string");
         _char = LLVMBuildLoad(builder, charAddr, "loadChar");
         isNull = LLVMBuildICmp(builder, LLVMIntEQ, _char, LLVMConstInt(charType, 0, FALSE), "isNull");
@@ -454,9 +454,9 @@ class LLVMTransformer implements
             case 0:
                 return LLVMBuildRetVoid(builder);
             case 1:
-                return LLVMBuildRet(builder, Iterables.getOnlyElement(values));
+                return LLVMBuildRet(builder, getOnlyElement(values));
             default:
-                return LLVMBuildAggregateRet(builder, LLVMUtil.createPointerPointer(values), values.size());
+                return LLVMBuildAggregateRet(builder, createPointerPointer(values), values.size());
         }
     }
 
@@ -652,17 +652,44 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
-        FIdentifier id = functionCall.getFunction().getIdentifier();
-        LLVMValueRef arg = Iterables.getOnlyElement(args);
+        FFunction function = functionCall.getFunction();
+        FIdentifier id = function.getIdentifier();
+        LLVMValueRef arg = getOnlyElement(args);
         if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(UnaryOperator.NEG.identifier))
-            if (functionCall.getFunction().getMemberOf().getType() instanceof FIntN)
+            if (function.getMemberOf().getType() instanceof FIntN)
                 return LLVMBuildNeg(builder, arg, "neg");
             else
                 return LLVMBuildFNeg(builder, arg, "neg");
-        else
-            return Utils.cantHappen();
+
+        FType type = function.getSignature().getParameters().get(0).getType();
+        if (type instanceof FIntN)
+            return predefinedUnaryInt(id, (FIntN) type, arg);
+        if (type instanceof FFloat32)
+            return predefinedUnaryFloat(id, (FFloat32) type, arg);
+        return Utils.NYI("predefined Unary function call to: " + function);
+    }
+
+    private LLVMValueRef predefinedUnaryInt(FIdentifier id, FIntN type, LLVMValueRef arg) {
+        if (id.equals(FIntN.COUNT_LEADING_ZEROS)) {
+            LLVMValueRef function = module.getIntIntrinsicFunction("llvm.ctlz", type);
+            PointerPointer<LLVMValueRef> args = createPointerPointer(arg, boolLiteral(false));
+            return LLVMBuildCall(builder, function , args, 2, "countLeadingZeros");
+        } else if (id.equals(FIntN.COUNT_TRAILING_ZEROS)) {
+            LLVMValueRef function = module.getIntIntrinsicFunction("llvm.cttz", type);
+            PointerPointer<LLVMValueRef> args = createPointerPointer(arg, boolLiteral(false));
+            return LLVMBuildCall(builder, function , args, 2, "countTrailingZeros");
+        }
+
+        return Utils.NYI("predefined unary Int/Bool operation: " + id);
+    }
+
+    private LLVMValueRef predefinedUnaryFloat(FIdentifier id, FFloat32 type, LLVMValueRef arg) {
+        if (id.equals(FFloat32.RAW_BITS))
+            return LLVMBuildBitCast(builder, arg, module.getLlvmType(FIntN._32), "rawFloatBits");
+
+        return Utils.NYI("predefined unary Float operation: " + id);
     }
 
     private LLVMValueRef predefinedBinary(FFunctionCall functionCall, List<LLVMValueRef> args) {
@@ -680,11 +707,7 @@ class LLVMTransformer implements
         FType type = function.getSignature().getParameters().get(0).getType();
         assert function.getSignature().getParameters().get(1).getType() == type;
         if (type instanceof FIntN || type == FBool.INSTANCE) {
-            Integer arith = arithOpMap.get(id);
-            if (arith != null)
-                return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
-            else
-                return LLVMBuildICmp(builder, cmpOpMap.get(id), left, right, "cmp_" + id.name);
+            return predefinedBinaryInt(id, type, left, right);
         } else if (type == FFloat32.INSTANCE || type == FFloat64.INSTANCE) {
             Integer arith = arithFOpMap.get(id);
             if (arith != null)
@@ -694,6 +717,33 @@ class LLVMTransformer implements
         } else {
             return Utils.cantHappen();
         }
+    }
+
+    private LLVMValueRef predefinedBinaryInt(FIdentifier id, FType type, LLVMValueRef left, LLVMValueRef right) {
+        Integer arith = arithOpMap.get(id);
+        if (arith != null)
+            return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
+
+        Integer cmp = cmpOpMap.get(id);
+        if (cmp != null)
+            return LLVMBuildICmp(builder, cmp, left, right, "cmp_" + id.name);
+
+        if (type == FBool.INSTANCE)
+            return Utils.NYI("predifined binary Bool operation: " + id);
+
+        FIntN intN = (FIntN) type;
+
+        if (id.equals(FIntN.S_MUL_OVERFLOW)) {
+            LLVMValueRef function = module.getIntIntrinsicFunction("llvm.smul.with.overflow", intN);
+            PointerPointer<LLVMValueRef> args = createPointerPointer(left, right);
+            return LLVMBuildCall(builder, function , args, 2, "smulWithOverflow");
+        } else if (id.equals(FIntN.U_MUL_OVERFLOW)) {
+            LLVMValueRef function = module.getIntIntrinsicFunction("llvm.umul.with.overflow", intN);
+            PointerPointer<LLVMValueRef> args = createPointerPointer(left, right);
+            return LLVMBuildCall(builder, function , args, 2, "umulWithOverflow");
+        }
+
+        return Utils.NYI("predifined binary Int operation: " + id);
     }
 
     private LLVMValueRef shortCircuitLogic(LLVMValueRef first, LLVMValueRef second, boolean isAnd) {
@@ -717,16 +767,26 @@ class LLVMTransformer implements
         return phi;
     }
 
-    private LLVMValueRef predefinedArray (FFunctionCall functionCall, List<LLVMValueRef> args) {
+    private LLVMValueRef predefinedArray (FFunctionCall functionCall, FArray type, List<LLVMValueRef> args) {
         FFunction function = functionCall.getFunction();
-        if (function.isConstructor()) {
-            return buildArrayMalloc(module.getLlvmType(functionCall.getType()), Iterables.getOnlyElement(args));
-        } else if (function.getIdentifier().equals(Access.ID)) {
+        if (function.isConstructor())
+            return buildArrayMalloc(module.getLlvmType(functionCall.getType()), getOnlyElement(args));
+        if (function.getIdentifier().equals(Access.ID))
             return visitArrayAccess(args);
-        } else if (function.getIdentifier().equals(FArray.C_ARRAY)) {
+        if (function.getIdentifier().equals(FArray.C_ARRAY))
             return arrayGep(args.get(0),indexLiteral(0));
-        } else
-            return Utils.NYI(function.headerToString() + " in the backend");
+        if (function.getIdentifier().equals(FArray.COPY)) {
+            //TODO bounds check
+            LLVMValueRef srcAddress = LLVMBuildBitCast(builder, arrayGep(args.get(0), args.get(2)), module.bytePointer, "src");
+            LLVMValueRef targetAddress = LLVMBuildBitCast(builder, arrayGep(args.get(1), args.get(3)), module.bytePointer, "target");
+
+            LLVMValueRef bytesToCopyAsPtr = LLVMBuildGEP(builder, LLVMConstNull(LLVMPointerType(module.getLlvmType(type.getBaseType()), 0)), createPointerPointer(args.get(4)), 1, "bytesToCopyPtr");
+            LLVMValueRef bytesToCopy = LLVMBuildPtrToInt(builder, bytesToCopyAsPtr, module.getLlvmType(FIntN._32), "bytesToCopy");
+
+            return LLVMBuildCall(builder, module.getMemcopyInstrinsic(), createPointerPointer(targetAddress, srcAddress, bytesToCopy, boolLiteral(false)), 4, "");
+        }
+
+        return Utils.NYI(function.headerToString() + " in the backend");
     }
 
     public LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
@@ -801,7 +861,7 @@ class LLVMTransformer implements
         }
         FType type = function.getMemberOf().getType();
         if (type instanceof FArray) {
-            return predefinedArray(functionCall, args);
+            return predefinedArray(functionCall, (FArray) type, args);
         } else if (type instanceof FOptional) {
             return predefinedOptional(functionCall, args);
         } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
@@ -987,7 +1047,7 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef arrayGep(LLVMValueRef value, LLVMValueRef index) {
-        PointerPointer<LLVMValueRef> indices = LLVMUtil.createPointerPointer(indexLiteral(0), indexLiteral(1), index);
+        PointerPointer<LLVMValueRef> indices = createPointerPointer(indexLiteral(0), indexLiteral(1), index);
         return LLVMBuildGEP(builder, value, indices, 3, "GEP_array");
     }
 
@@ -1012,7 +1072,7 @@ class LLVMTransformer implements
     private LLVMValueRef packTuple(List<LLVMValueRef> values) {
         assert values.size() > 1;
 
-        PointerPointer<LLVMTypeRef> types = LLVMUtil.createPointerPointer(values, LLVM::LLVMTypeOf);
+        PointerPointer<LLVMTypeRef> types = createPointerPointer(values, LLVM::LLVMTypeOf);
         LLVMTypeRef structType = LLVMStructTypeInContext(module.getContext(), types, values.size(), FALSE);
 
         LLVMValueRef agg = LLVMGetUndef(structType);
