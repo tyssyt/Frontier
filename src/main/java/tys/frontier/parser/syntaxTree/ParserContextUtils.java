@@ -284,7 +284,7 @@ public final class ParserContextUtils {
 
     public static Set<FParameter> findDefaultValueDependencies(FExpression defaultValue, List<FParameter> parameters) {
         Set<FParameter> defaultValueDependencies = new HashSet<>();
-        defaultValue.accept(new ExpressionVisitor<Object>() {
+        defaultValue.accept(new ExpressionVisitor<>() {
             @Override
             @SuppressWarnings("SuspiciousMethodCalls")
             public Object visitVariable(FLocalVariableExpression expression) {
