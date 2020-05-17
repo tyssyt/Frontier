@@ -52,11 +52,12 @@ public class FExplicitCast extends FCast {
         if (targetType instanceof FIntN && baseType instanceof FIntN &&
                 ((FIntN) targetType).getN() < ((FIntN) baseType).getN())
             return CastType.INTEGER_DEMOTION;
+        if (targetType instanceof FFloat32 && baseType instanceof FFloat64)
+            return CastType.FLOAT_DEMOTION;
         if ((baseType == FFloat32.INSTANCE ||baseType == FFloat64.INSTANCE) && targetType instanceof FIntN)
             return CastType.FLOAT_TO_INT;
         if (baseType instanceof FIntN && (targetType == FFloat32.INSTANCE || targetType == FFloat64.INSTANCE))
             return CastType.INT_TO_FLOAT;
-        //TODO downwards float cast
         if (baseType instanceof FOptional && targetType == ((FOptional) baseType).getBaseType())
             return CastType.REMOVE_OPTIONAL;
 
