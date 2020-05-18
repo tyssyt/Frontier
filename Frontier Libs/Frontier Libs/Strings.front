@@ -56,22 +56,43 @@ export namespace Strings:
         return digits;
     }
 
-    /* Interprets 'l' as binary digits, with the leftmost bit being the 8 bit.
-     * Does ignore the top 4 bits and will only print the "fractional" bits
+    export intToBitString(l: int64) -> [char] {
+        digits:[char] = new char[64];
+        i:int32 = 1;
+        while i<=64 {
+            remainder:int64 = l % 2;
+            digits[64-i] = intToChar((int32)remainder);
+            l = l.uShiftR(1);
+            i = i+1;
+        }
+        return digits;
+    }
+
+    /*
+     * Interprets 'l' as binary digits, with the leftmost bit being the 8 bit.
+     * Returns the number in front of the dot followed by the dot followed by digits
      * Prints at most 'digits' many decimal digits
      */
-    static fractionToString(l: int64, maxDigits: int32) -> [char] { //TODO rounding
+    static fractionToString(l: int64, maxDigits: int32) -> [char], bool {
         size: int32 =  60 - (int32) l.countTrailingZeros();
-
-        if size > maxDigits {
+        rounding := size > maxDigits;
+        if rounding {
             size = maxDigits;
         }
+
+        size = size + 2;
         digits:[char] = new char[size];
 
-        i:int32 = 0;
+        {
+            digit := l.uShiftR(60);
+            digits[0] = intToChar((int32)digit);
+        }
+        digits[1] = ".";
+
+        i:int32 = 2;
         while i < size {
             //clear top 4 bits
-            l = l & 1152921504606846975; //TODO hex literals?
+            l = l & 1152921504606846975; //0b1111 << 60 TODO bin literals?
 
             //multiply by 10 to get the next number in the top 4 bits
             l = l*10;
@@ -82,7 +103,46 @@ export namespace Strings:
 
             i = i+1;
         }
-        return digits;
+
+        if !rounding {
+            return digits, false;
+        }
+
+        l = l & 1152921504606846975; //0b1111 << 60 TODO bin literals?
+        //don't shift in top 4, just check it the remaining number is bigger then 0.5
+
+        if l <= 576460752303423488 { // 1 << 59 TODO
+            return digits, false; //rounding down means no change to the digits
+        }
+
+        //we need to round up, go through digits back to front as long as there are 9s, increase the first non 9 encountered
+        i = size-1;
+        while i > 1 {
+            if digits[i] =!= "9" {
+                digits[i] = digits[i] + 1;
+                break;
+            }
+            i = i - 1;
+        }
+
+        if i == size-1 {
+            return digits, false; //no digits zeroed by rounding
+        }
+
+        if i =!= 1 { //we found a non 9 digit before the dot, shorten the result
+            newDigits := new char[i+1];
+            digits.copy(newDigits, length=i+1);
+            return newDigits, false;
+        }
+
+        digit := new char[1];
+        if digits[0] =!= 9 {
+            digit[0] = digits[0] + 1;
+            return digit, false;
+        } else {
+            digit[0] = "1";
+            return digit, true;
+        }
     }
 
     //TODO for small exponents, print the full number instead of scientific notation
@@ -91,14 +151,6 @@ export namespace Strings:
         //decimals = decimals.clamp(0, ???); TODO
 
         sign:, exponent:, mantissa: = f.splitRepresentation();
-
-        if exponent == 0 { //denormalised representation
-            if sign {
-                return intToString(-mantissa);
-            } else {
-                return intToString(mantissa);
-            }
-        }
 
         if exponent == 255 { //special floats
             if mantissa == 0 {
@@ -114,33 +166,45 @@ export namespace Strings:
             }
         }
 
-        mantissa = mantissa + 8388608; //implicit 24th bit
+        if exponent =!= 0 { // if not denormalised, the 24th bit is implicitly assumed to be 1
+            mantissa = mantissa + 8388608; // 1 << 23 implicit 24th bit TODO
+        }
 
-        // lookup decimal exponent and mantissa factors
+        //lookup decimal exponent and mantissa factors
         decimalExponent:, mantissaFactor:, mantissaOverflowFactor: = LookupTables.float32ToStringLookupTable[exponent];
 
-
+        //mantissa factor * mantissa might be > 10, in which case we need to divide it by 10 and increase the exponent
         decMantissa:, overflow: = mantissaFactor.unsignedMultiplicationWithOverflow(mantissa);
-
-        if overflow || ( decMantissa < 0  && decMantissa >= -6917529027641081856 ) { //TODO an unsigned decMantissa > 10<<60 would be way nicer...
+        if overflow || ( decMantissa < 0  && decMantissa >= -6917529027641081856 ) { //TODO a > 10<<60 would be way nicer but we only have signed
+            //division by 10 is weird with using the overflow bit, so instead we multiply the mantissa with mantissaFactor/10
             decMantissa = mantissa * mantissaOverflowFactor;
             decimalExponent = decimalExponent + 1;
         }
 
         //build parts
-        decimalsString := fractionToString(decMantissa, decimals); //TODO avoid intermediate [char]
+        decimalsString:, overflow = fractionToString(decMantissa, decimals); //TODO avoid intermediate [char]
+        if overflow { //if the mantissa is 9.9... rounding might cause it to be 10, which we represent as 1 with an increased exponent
+            decimalExponent = decimalExponent + 1;
+        }
         exponentString := intToString(decimalExponent); //TODO avoid intermediate [char]
 
-        //assemble Result TODO im missing sign...
-        size: int32 = 3 + decimalsString.size + exponentString.size;
-        res := new char[size];
-        firstDigit := decMantissa.uShiftR(60);
-        res[0], res[1] = intToChar((int32)firstDigit), ".";
-        [char].copy(decimalsString, res, targetOffset=2);
-        res[2+decimalsString.size] = "e";
-        [char].copy(exponentString, res, targetOffset=3+decimalsString.size);
-
-        return res;
+        //assemble Result
+        if sign {
+            size: int32 = 2 + decimalsString.size + exponentString.size;
+            res := new char[size];
+            res[0] = "-";
+            decimalsString.copy(res, targetOffset=1);
+            res[1+decimalsString.size] = "e";
+            exponentString.copy(res, targetOffset=2+decimalsString.size);
+            return res;
+        } else {
+            size: int32 = 1 + decimalsString.size + exponentString.size;
+            res := new char[size];
+            decimalsString.copy(res);
+            res[decimalsString.size] = "e";
+            exponentString.copy(res, targetOffset=1+decimalsString.size);
+            return res;
+        }
     }
 
     export toCString(fString: [char]) -> native[char] {
@@ -187,7 +251,7 @@ class LookupTables:
     static createFloat32ToStringLookupTable() -> [(int32, int64, int64)] {
         //a bunch of magic numbers, how I came up with them is left as an exercise for the reader
         table := new (int32, int64, int64)[255];
-        table[0] = -39, 807793566946, 80779356694;
+        table[0] = -38, 161558713389, 16155871338; //denormalised
         table[1] = -38, 161558713389, 16155871338;
         table[2] = -38, 323117426778, 32311742677;
         table[3] = -38, 646234853557, 64623485355;
