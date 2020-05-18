@@ -574,12 +574,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return FBlock.from(createBlock(ctx.statement()));
 
         List<FLocalVariable> lambdaVars = visitLambdaHeader(lambdaHeaderContext, types);
-        currentFunction().declaredVars.push(Utils.asMap(lambdaVars));
-        try {
-            return FLambdaBlock.from(createBlock(ctx.statement()), lambdaVars);
-        } finally {
-            currentFunction().declaredVars.pop();
-        }
+        currentFunction().declaredVars.putAll(Utils.asMap(lambdaVars));
+        return FLambdaBlock.from(createBlock(ctx.statement()), lambdaVars);
     }
 
     @Override
@@ -614,11 +610,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     private FBlock handleIfBranch(FrontierParser.LamdaBlockContext ctx, OptionalInformationForIf info) throws SyntaxError {
-        if (info.getPromotableVars().isEmpty())
-            return visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
-
         currentFunction().declaredVars.push();
         try {
+            if (info.getPromotableVars().isEmpty())
+                return visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
+
             FAssignment promotion = info.createPromotions(currentFunction().declaredVars.peek());
             FBlock block = visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
             return FBlock.from(promotion, block);
