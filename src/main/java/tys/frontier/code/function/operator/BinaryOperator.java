@@ -9,6 +9,7 @@ import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -130,5 +131,10 @@ public enum BinaryOperator implements Operator {
                 .setVisibility(fClass.getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
         binOpNamespace.addFunction(res);
         return res;
+    }
+
+    public static void resetNamespace() {
+        BinaryOperator.sGetNamespace().getFunctions(false).values()
+                .removeIf( sig -> !sig.getFunction().isPredefined() || sig.getType() instanceof FOptional);
     }
 }

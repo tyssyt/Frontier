@@ -46,7 +46,7 @@ public class MainTest {
     @Before
     public void setUp() {
         //clear binOp namespace
-        BinaryOperator.sGetNamespace().getFunctions(false).values().removeIf( sig -> !sig.getFunction().isPredefined());
+        BinaryOperator.resetNamespace();
         State.reset();
     }
 

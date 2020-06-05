@@ -105,6 +105,7 @@ public class Reachability {
         addFunction(FTypeType.allTypes.getGetter());
         addFunction(FTypeType.fields.getGetter());
         addFunction(FTypeType.name.getGetter());
+        addFunction(FTypeType.fieldsOf);
         addNamespace(FFieldType.INSTANCE.getNamespace());
         addFunction(FFieldType.type.getGetter());
         addFunction(FFieldType.name.getGetter());
