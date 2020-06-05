@@ -1,0 +1,36 @@
+import IO;
+import Stringer;
+import Type;
+
+
+import Native;
+
+
+class Something<T>:
+constructors;
+    i: int32;
+    f: float32;
+    arr: [int64];
+    t: T;
+    q: SomethingElse;
+
+
+class SomethingElse:
+constructors;
+    i: int32;
+
+    Stringer.toString() -> [char] {
+        return "a cat";
+    }
+
+export class Main:
+
+export static main() {
+    arr := new int64[3];
+    arr[0] = 22;
+    arr[1] = -1337;
+    arr[2] = 0;
+    obj := new Something<(int32,char,[char]?,Main?)>(i=5,f=(float32)(-3.6),arr=arr, t=5, "a", "tuple", null, q=new SomethingElse(i=1));
+
+    IO.print(Stringer.toString(obj));
+}

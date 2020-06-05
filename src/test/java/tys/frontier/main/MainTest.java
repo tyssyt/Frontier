@@ -187,4 +187,10 @@ public class MainTest {
         String res = doMain("TypeInfo", null);
         assertEquals(loadOut("TypeInfoOut.txt"), res);
     }
+    @Test
+    public void mainStringer() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String e = "Something<(!Int32 !Int8 !Int8[]? Main?)>(i: 5, f: -3.6e0, arr: !Int64[](0: 22, 1: -1337, 2: 0), t: (!Int32 !Int8 !Int8[]? Main?)(a: 5, b: a, c: tuple, d: null), q: a cat)";
+        String res = doMain("Stringer", null);
+        assertEquals(e, res);
+    }
 }

@@ -1,0 +1,56 @@
+import Strings;
+import List;
+import Type;
+
+export namespace Stringer:
+
+    open toString <T> (t: T) -> [char] {
+        stringBuilder := List<char>.create();
+
+        X := T; //TODO control that weirdness
+        stringBuilder.addAll(X.name);
+        stringBuilder.add("(");
+
+        first := true; //TODO somthing like a concat with seperator symbol thingy
+        for val, field, i : Type.fieldsOf(t) {
+            if !first {
+                stringBuilder.addAll(", ");
+            }
+            first = false;
+
+            stringBuilder.addAll(field.name);
+            stringBuilder.addAll(": ");
+            stringBuilder.addAll(toString(val));
+        }
+        stringBuilder.add(")");
+        return stringBuilder.trim();
+    }
+
+    static toString <T> (t: T?) -> [char] {
+        if t {
+            return toString(t);
+        }
+        return "null";
+    }
+
+    static toString(i: int64) -> [char] {
+        return Strings.intToString(i);
+    }
+
+    static toString(f: float32) -> [char] {
+        return Strings.float32ToString(f);
+    }
+
+    static toString(f: float64) -> [char] {
+        return "a float64"; //TODO
+    }
+
+    static toString(c: char) -> [char] { //TODO change once we have array literals
+        res := new char[1];
+        res[0] = c;
+        return res;
+    }
+
+    static toString(string: [char]) -> [char] {
+        return string;
+    }
