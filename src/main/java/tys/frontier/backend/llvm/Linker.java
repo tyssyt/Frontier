@@ -1,6 +1,7 @@
 package tys.frontier.backend.llvm;
 
 import com.google.common.collect.ImmutableList;
+import tys.frontier.code.module.Include;
 import tys.frontier.util.JarUtils;
 import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
@@ -17,17 +18,20 @@ import static java.util.Arrays.asList;
 
 public class Linker { //TODO clean up seperators
 
-    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<Path> userLibs, String targetTriple) {
+    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<Include> userLibs, String targetTriple) {
         List<String> inputFiles = new ArrayList<>();
+        List<String> weirdExcludeThingies = new ArrayList<>();
         inputFiles.add(inputFile);
 
         //add all Libs as inputFiles
-        for (Path userLib : userLibs) {
-            inputFiles.add(userLib.toString());
+        for (Include userLib : userLibs) {
+            inputFiles.add(userLib.path.toString());
+            if (userLib.out)
+                weirdExcludeThingies.add(userLib.path.getFileName().toString());
         }
 
         if (OS.isWindows()) {
-            return buildCallWindows(inputFiles, outputFile, targetTriple);
+            return buildCallWindows(inputFiles, outputFile, weirdExcludeThingies, targetTriple);
         } else {
             return buildCallClang(inputFile, outputFile); //TODO linux linker call
         }
@@ -38,7 +42,7 @@ public class Linker { //TODO clean up seperators
         return new ProcessBuilder(asList(command)); //TODO maybe this can actually be called from the clang api?
     }
 
-    public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, String targetTriple) {
+    public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, List<String> weirdExcludeThingies, String targetTriple) {
         String linker;
         String libDir;
         if (JarUtils.isRunningInJar()) {
@@ -71,6 +75,9 @@ public class Linker { //TODO clean up seperators
         builder.add(linker).add("-nologo").add("-defaultlib:libcmt").add("-out:" + outputFile);
         builder.add("-libpath:" + libDir);
         builder.addAll(inputFiles);
+        builder.add("-nodefaultlib:OLDNAMES.lib");
+        for (String weirdExcludeThingy : weirdExcludeThingies)
+            builder.add("-nodefaultlib:" + weirdExcludeThingy);
         return new ProcessBuilder(builder.build());
     }
 

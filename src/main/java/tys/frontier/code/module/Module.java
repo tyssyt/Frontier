@@ -6,7 +6,6 @@ import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -21,7 +20,7 @@ public interface Module {
 
     Stream<DefaultNamespace> getNamespaces();
 
-    List<Path> getNativeIncludes();
+    List<Include> getNativeIncludes();
 
     List<Module> getImports();
 

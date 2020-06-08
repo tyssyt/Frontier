@@ -8,7 +8,6 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.ParsedFile;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -18,7 +17,7 @@ import static java.util.stream.Collectors.toMap;
 public class FrontierModule implements Module {
 
     private ParsedFile entryPoint;
-    private List<Path> nativeIncludes = new ArrayList<>();
+    private List<Include> nativeIncludes = new ArrayList<>();
 
     //cached thingies
     private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
@@ -89,11 +88,11 @@ public class FrontierModule implements Module {
     }
 
     @Override
-    public List<Path> getNativeIncludes() {
+    public List<Include> getNativeIncludes() {
         return nativeIncludes;
     }
 
-    public void addNativeIncludes(List<Path> nativeIncludes) {
+    public void addNativeIncludes(List<Include> nativeIncludes) {
         this.nativeIncludes.addAll(nativeIncludes);
     }
 

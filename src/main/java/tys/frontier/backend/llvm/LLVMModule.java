@@ -15,6 +15,7 @@ import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.literal.FStringLiteral;
+import tys.frontier.code.module.Include;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
@@ -23,7 +24,6 @@ import tys.frontier.logging.Log;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
 
 import static java.util.Comparator.comparing;
@@ -549,7 +549,7 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName, List<Path> userLibs) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
+    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName, List<Include> userLibs) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
         BytePointer error = new BytePointer();
         int errorId = 0;
         switch (fileType) {

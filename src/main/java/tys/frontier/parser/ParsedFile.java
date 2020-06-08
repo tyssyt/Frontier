@@ -3,6 +3,7 @@ package tys.frontier.parser;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.FrontierModule;
+import tys.frontier.code.module.Include;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -95,15 +96,16 @@ public class ParsedFile {
         return res;
     }
 
-    public Pair<List<Path>, List<Path>> findIncludes() throws IOException {
+    public Pair<List<Include>, List<Include>> findIncludes() throws IOException {
         List<FrontierParser.IncludeStatementContext> ctxs = treeData.root.includeStatement();
-        List<Path> includes = new ArrayList<>();
-        List<Path> nativeIncludes = new ArrayList<>();
+        List<Include> includes = new ArrayList<>();
+        List<Include> nativeIncludes = new ArrayList<>();
         for (FrontierParser.IncludeStatementContext ctx : ctxs) {
-            List<Path> res = ctx.NATIVE() != null ? nativeIncludes : includes;
+            List<Include> res = ctx.NATIVE() != null ? nativeIncludes : includes;
+            boolean out = ctx.OUT() != null;
             FrontierParser.PathContext pathContext = ctx.path();
             if (pathContext instanceof FrontierParser.FilePathContext) {
-                res.add(filePath.resolveSibling(pathContext.getText()).normalize());
+                res.add(new Include(filePath.resolveSibling(pathContext.getText()).normalize(), out));
             } else if (pathContext instanceof FrontierParser.FolderPathContext) {
                 FrontierParser.FolderPathContext folderPathContext = (FrontierParser.FolderPathContext) pathContext;
 
@@ -115,7 +117,7 @@ public class ParsedFile {
                 String fileExtension = identifierContext == null ? null : identifierContext.getText();
                 for (Path path : pathIterable)
                     if (!isDirectory(path) && (fileExtension == null || fileExtension.equals(getFileExtension(path))))
-                        res.add(path);
+                        res.add(new Include(path, out));
             } else {
                 return Utils.cantHappen();
             }

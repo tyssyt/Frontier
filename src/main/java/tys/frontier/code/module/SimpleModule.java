@@ -4,7 +4,6 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -14,9 +13,9 @@ public class SimpleModule implements Module {
 
     private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
     private List<Module> imports;
-    private List<Path> nativeIncludes;
+    private List<Include> nativeIncludes;
 
-    public SimpleModule(Map<FIdentifier, DefaultNamespace> exportedNamespaces, List<Module> imports, List<Path> nativeIncludes) {
+    public SimpleModule(Map<FIdentifier, DefaultNamespace> exportedNamespaces, List<Module> imports, List<Include> nativeIncludes) {
         this.exportedNamespaces = exportedNamespaces;
         this.imports = imports;
         this.nativeIncludes = nativeIncludes;
@@ -43,7 +42,7 @@ public class SimpleModule implements Module {
     }
 
     @Override
-    public List<Path> getNativeIncludes() {
+    public List<Include> getNativeIncludes() {
         return nativeIncludes;
     }
 

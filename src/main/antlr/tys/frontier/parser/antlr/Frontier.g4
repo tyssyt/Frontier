@@ -82,7 +82,7 @@ importStatement //TODO this is an ugly mess, I should just change modes (also ca
     ;
 
 includeStatement
-    :   NATIVE? INCLUDE path SEMI
+    :   NATIVE? INCLUDE path OUT? SEMI
     ;
 
 path

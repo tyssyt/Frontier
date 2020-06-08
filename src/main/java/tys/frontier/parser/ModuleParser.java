@@ -1,6 +1,7 @@
 package tys.frontier.parser;
 
 import tys.frontier.code.module.FrontierModule;
+import tys.frontier.code.module.Include;
 import tys.frontier.parser.syntaxErrors.CyclicInclude;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
@@ -23,12 +24,12 @@ public class ModuleParser {
 
         while (!toDo.isEmpty()) {
             ParsedFile cur = toDo.remove();
-            Pair<List<Path>, List<Path>> pair = cur.findIncludes();
-            for (Path include : pair.a) {
-                if (isCyclicInclude(include, cur))
-                    throw new CyclicInclude(include);
+            Pair<List<Include>, List<Include>> pair = cur.findIncludes();
+            for (Include include : pair.a) {
+                if (isCyclicInclude(include.path, cur))
+                    throw new CyclicInclude(include.path);
 
-                ParsedFile parsedFile = FileParser.runAntlr(include, style);
+                ParsedFile parsedFile = FileParser.runAntlr(include.path, style);
                 parsedFile.setParent(cur);
                 cur.addInclude(parsedFile);
                 toDo.add(parsedFile);
