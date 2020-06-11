@@ -136,21 +136,24 @@ public class ArgMapping {
         }
 
         if (argIt.hasNext()) {
+            if (!paramIt.hasPrevious())
+                throw new TooManyArguments(argIt.next());
+
             FType param = paramIt.previous();
             paramIt.next();
-            if (param instanceof FTypeVariable) {
-                //count remaining args
-                int remainingArgs = 0;
-                while (argIt.hasNext()) {
-                    remainingArgs++;
-                    argIt.next();
-                }
-
-                //pack all remaining args into the last param
-                int paramIdx = paramIt.previousIndex();
-                packParam[paramIdx] = packParam[paramIdx] + remainingArgs;
-            } else
+            if (!(param instanceof FTypeVariable))
                 throw new TooManyArguments(argIt.next());
+
+            //count remaining args
+            int remainingArgs = 0;
+            while (argIt.hasNext()) {
+                remainingArgs++;
+                argIt.next();
+            }
+
+            //pack all remaining args into the last param
+            int paramIdx = paramIt.previousIndex();
+            packParam[paramIdx] = packParam[paramIdx] + remainingArgs;
 
         } else if (useAllParams && paramIt.hasNext())
             throw new NotEnoughArguments("no Arguments for Parameter", paramIt.next());
