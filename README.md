@@ -1,6 +1,6 @@
 # Frontier
 
-Self-made Programming Language
+I made dis :)
 
 ## Getting Started
 
