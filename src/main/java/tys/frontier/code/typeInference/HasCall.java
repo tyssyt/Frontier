@@ -42,6 +42,11 @@ public abstract class HasCall extends TypeConstraint {
         return lhsResolve;
     }
 
+    @Override
+    public TypeConstraint copy() {
+        return this;
+    }
+
     abstract FunctionResolver.Result resolve(TypeInstantiation typeInstantiation) throws FunctionNotFound;
 
     @Override

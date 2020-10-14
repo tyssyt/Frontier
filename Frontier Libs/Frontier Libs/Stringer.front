@@ -4,6 +4,26 @@ import Type;
 
 export namespace Stringer:
 
+    //TODO this would benefit from a toString form that takes a stringbuilder to append to, to avoid creating stringBuilders
+    format <Tup*> (string: [char], args: Tup) -> [char] { //TODO a constraint that allows iter on T
+        stringBuilder := List<char>.create();
+
+        i : int32 = 0;
+        for arg : args {
+            while i < string.size {
+                if string[i] =*= "%" {
+                    stringBuilder.addAll(toString(arg));
+                    i = i+1;
+                    break;
+                } else {
+                    stringBuilder.add(string[i]);
+                    i = i+1;
+                }
+            }
+        }
+        return stringBuilder.trim();
+    }
+
     open toString <T> (t: T) -> [char] {
         stringBuilder := List<char>.create();
 

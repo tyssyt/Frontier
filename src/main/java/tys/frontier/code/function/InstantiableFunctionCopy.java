@@ -21,9 +21,9 @@ public class InstantiableFunctionCopy extends WithInstantiatedSignature {
         assert !(base instanceof InstantiableFunctionCopy);
 
         @SuppressWarnings({"rawtypes", "unchecked"})
-        Map<FTypeVariable, FTypeVariable> varMap = (Map) getTypeInstantiation().getTypeMap();
-        newParameters = Utils.asTypeMap(varMap.values());
-        newParametersList = new ArrayList<>(varMap.values());
+        Collection<FTypeVariable> varMap = (Collection) getTypeInstantiation().values();
+        newParameters = Utils.asTypeMap(varMap);
+        newParametersList = new ArrayList<>(varMap);
     }
 
     private static TypeInstantiation withNonFixedParameters(FFunction base) {

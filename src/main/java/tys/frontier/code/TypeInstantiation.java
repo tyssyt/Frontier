@@ -5,6 +5,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
+import tys.frontier.code.namespace.TypeVariableNamespace.IterationElementType;
 import tys.frontier.code.namespace.TypeVariableNamespace.ReturnTypeOf;
 import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
@@ -52,10 +53,6 @@ public class TypeInstantiation {
         this.typeMap = typeMap;
     }
 
-    public Map<FTypeVariable, FType> getTypeMap() {
-        return typeMap;
-    }
-
     /**
      * Do not modify the map after calling this!
      */
@@ -99,6 +96,15 @@ public class TypeInstantiation {
         return typeMap.containsKey(var);
     }
 
+    public Set<Map.Entry<FTypeVariable, FType>> entries() {
+        return typeMap.entrySet();
+    }
+
+    public Collection<FType> values() {
+        return typeMap.values();
+    }
+
+
     public boolean fits(FFunction hasParam) {
         return typeMap.size() == hasParam.getParameters().size() && typeMap.keySet().containsAll(hasParam.getParameters().values());
     }
@@ -121,6 +127,7 @@ public class TypeInstantiation {
     }
 
     public FType getType(FType original) {
+        assert original != null;
         if (original instanceof FArray) {
             FArray array = (FArray) original;
             return FArray.getArrayFrom(getType(array.getBaseType()));
@@ -153,21 +160,31 @@ public class TypeInstantiation {
             if (typeVariable.isResolved())
                 return getType(typeVariable.getResolved());
 
+            FType res = typeMap.get(original);
+            if (res != null)
+                return getType(res);
+
+            if (original instanceof IterationElementType) {
+                IterationElementType iterationElementType = (IterationElementType) original;
+                FTypeVariable oldIterable = iterationElementType.getBase();
+                FType newIterable = getType(oldIterable);
+
+                if (newIterable != oldIterable)
+                    return getType(newIterable.getForImpl().getElementType());
+            }
+
             if (original instanceof ReturnTypeOf) {
                 ReturnTypeOf returnTypeOf = (ReturnTypeOf) original;
                 FType oldMemberOf = returnTypeOf.getBase();
-                FType newMemberOf = getType(oldMemberOf);
+                if (oldMemberOf != null) {
+                    FType newMemberOf = getType(oldMemberOf);
 
-                if (newMemberOf != oldMemberOf) {
-                    return instantiatedReturnType(returnTypeOf, newMemberOf.getNamespace());
+                    if (newMemberOf != oldMemberOf)
+                        return instantiatedReturnType(returnTypeOf, newMemberOf.getNamespace());
                 }
             }
 
-            FType res = typeMap.get(original);
-            if (res == null)
-                return original;
-            else
-                return getType(res);
+            return original;
         } else {
             return Utils.cantHappen();
         }

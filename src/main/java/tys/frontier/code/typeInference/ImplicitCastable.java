@@ -30,6 +30,14 @@ public class ImplicitCastable extends TypeConstraint {
     }
 
     @Override
+    public TypeConstraint copy() {
+        if (target instanceof FTypeVariable)
+            return Utils.NYI("TypeVariable DeepCopy"); //TODO see TypeConstraint
+        else
+            return this;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ImplicitCastable)) return false;

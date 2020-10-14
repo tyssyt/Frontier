@@ -5,7 +5,9 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
+import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -34,7 +36,7 @@ public class TypeConstraints {
     }
 
     public TypeConstraints copy() {
-        return new TypeConstraints(new ArrayList<>(constraints));
+        return new TypeConstraints(Utils.map(constraints, TypeConstraint::copy));
     }
 
     public void addVar(FTypeVariable var) {
@@ -55,6 +57,25 @@ public class TypeConstraints {
 
     public void setFixed() {
         this.fixed = true;
+    }
+
+    public ForImpl getForImpl() {
+        if (isResolved())
+            return getResolved().getForImpl();
+        IsIterable forImpl = findIsIterable();
+        if (forImpl == null && !isFixed()) {
+            FTypeVariable elementType = new TypeVariableNamespace.IterationElementType(equivalenceGroup.get(0), false);
+            forImpl = new IsIterable(null, elementType);
+            constraints.add(forImpl);
+        }
+        return forImpl;
+    }
+
+    private IsIterable findIsIterable() { //caching this would be overkill
+        for (TypeConstraint constraint : constraints)
+            if (constraint instanceof IsIterable)
+                return (IsIterable) constraint;
+        return null;
     }
 
     @SuppressWarnings({"AssertWithSideEffects", "ConstantConditions"})
@@ -171,7 +192,22 @@ public class TypeConstraints {
         } else if (constraint instanceof HasCall) {
             _this.constraints.add(constraint);
             return _this;
-        } else {
+        } else if (constraint instanceof IsIterable) {
+            IsIterable newIsIterable = (IsIterable) constraint;
+            IsIterable oldIsIterable = _this.findIsIterable();
+            if (oldIsIterable != null) { //merge if a Iterable constraint already exists
+                if (newIsIterable.getElementType() instanceof FTypeVariable && oldIsIterable.getElementType() instanceof FTypeVariable) {
+                    FTypeVariable oldElementType = (FTypeVariable) oldIsIterable.getElementType();
+                    FTypeVariable newElementType = (FTypeVariable) newIsIterable.getElementType();
+                    oldElementType.getConstraints().merge(newElementType.getConstraints());
+                } else {
+                    return Utils.NYI("merge of IsIterable constraints, where at least one constraint has no TypeVariable as elementType"); //TODO can this even happen?
+                }
+
+            } else
+                _this.constraints.add(constraint);
+            return _this;
+        }  else {
             return Utils.cantHappen();
         }
     }
@@ -251,6 +287,8 @@ public class TypeConstraints {
             }
         } else if (constraint instanceof HasCall) {
             direction = Covariant;
+        } else if (constraint instanceof IsIterable) {
+            direction = Covariant; //TODO this wasn't thought through, but my feeling is that covariant is correct here
         } else {
             return Utils.cantHappen();
         }
@@ -406,12 +444,14 @@ public class TypeConstraints {
         return maxContra.concreteness() > maxCo.concreteness() ? maxContra : maxCo;
     }
 
-
+    //TODO move implies to the TypeConstraint
     public boolean implies(ImplicitCastable a, TypeConstraint b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
         if (b instanceof ImplicitCastable)
             return implies(a, (ImplicitCastable) b, newConstraints);
         else if (b instanceof HasCall)
             return implies(a, (HasCall) b, newConstraints);
+        else if (b instanceof IsIterable)
+            return implies(a, (IsIterable) b, newConstraints);
         else
             return Utils.cantHappen();
     }
@@ -454,6 +494,23 @@ public class TypeConstraints {
         } catch (FunctionNotFound functionNotFound) {
             return false;
         }
+    }
+
+    public boolean implies(ImplicitCastable a, IsIterable b, Multimap<FTypeVariable, TypeConstraint> newConstraints) {
+        if (a.getVariance() == Contravariant) //casts from constraints cannot be used for iterable
+            return false;
+
+        FType aTarget = a.getTarget();
+        if (aTarget instanceof FTypeVariable && ((FTypeVariable) aTarget).isResolved())
+            aTarget = ((FTypeVariable) aTarget).getResolved();
+        if (aTarget.getForImpl() == null)
+            return false;
+        FType elementType = aTarget.getForImpl().getElementType();
+
+        ImplicitCastable implicitCastableA = new ImplicitCastable(a, elementType, Invariant);
+        ImplicitCastable implicitCastableB = new ImplicitCastable(b, b.getElementType(), Invariant);
+
+        return implies(implicitCastableA, implicitCastableB, newConstraints);
     }
 
     public static TypeConstraint removeSatisfiableCheckUnsatisfiable(Multimap<FTypeVariable, TypeConstraint> constraints) {

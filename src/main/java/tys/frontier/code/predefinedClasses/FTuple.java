@@ -9,6 +9,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTupleIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
@@ -46,6 +47,9 @@ public class FTuple extends FPredefinedClass {
         }
         //remove setter TODO no longer needed when field final
         namespace.getFunctions(true).clear();
+
+        //set for Impl
+        setForImpl(new TupleFor());
 
         //TODO for homogenous tuples, I can add array access operators and for by idx
     }

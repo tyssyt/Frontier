@@ -1,7 +1,7 @@
 package tys.frontier.code.namespace;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import tys.frontier.code.FParameter;
@@ -33,7 +33,7 @@ public class TypeVariableNamespace implements Namespace {
 
     public TypeVariableNamespace(FTypeVariable typeVariable) {
         this.typeVariable = typeVariable;
-        this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + "ret.", "");
+        this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + ".ret.", "");
     }
 
     @Override
@@ -82,7 +82,7 @@ public class TypeVariableNamespace implements Namespace {
         res.signature = lhsResolve ? f.getLhsSignature() : f.getSignature();
         List<FType> paramTypes = Utils.typesFromExpressionList(res.signature.getParameters());
         res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
-        res.constraints = ImmutableMultimap.of(typeVariable, constraint);
+        res.constraints = ImmutableListMultimap.of(typeVariable, constraint);
         return res;
     }
 
@@ -149,6 +149,20 @@ public class TypeVariableNamespace implements Namespace {
 
         public boolean isLhsResolve() {
             return lhsResolve;
+        }
+    }
+
+    public static class IterationElementType extends FTypeVariable {
+
+        private FTypeVariable base;
+
+        public IterationElementType(FTypeVariable base, boolean fixed) {
+            super(new FIdentifier("?" + base.getIdentifier().name + ".iter"), fixed, TypeConstraints.create());
+            this.base = base;
+        }
+
+        public FTypeVariable getBase() {
+            return base;
         }
     }
 }

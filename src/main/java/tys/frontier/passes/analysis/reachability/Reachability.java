@@ -19,13 +19,15 @@ import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.FForEach;
+import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
+import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.code.typeInference.IsIterable;
 import tys.frontier.code.visitor.FClassVisitor;
-import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 
 import java.util.*;
@@ -50,30 +52,65 @@ public class Reachability {
     }
 
     private static class BaseAnalysis {
+
+
+        private static class SubSegment {
+            FForEach loop;
+            BaseAnalysis baseAnalysis;
+            FTypeVariable containerType;
+            FTypeVariable iteratorType;
+
+            public SubSegment(FForEach loop, BaseAnalysis baseAnalysis, FTypeVariable containerType, FTypeVariable iteratorType) {
+                this.loop = loop;
+                this.baseAnalysis = baseAnalysis;
+                this.containerType = containerType;
+                this.iteratorType = iteratorType;
+            }
+        }
+
+
         BaseAnalysis parentSegment;
-        List<Triple<BaseAnalysis, FTypeVariable, FTypeVariable>> subSegments = new ArrayList<>(); //special logic for primitive for loops that get lowered during baking
+        List<SubSegment> subSegments = new ArrayList<>(); //special logic for primitive for loops that get lowered during baking
         Set<FFunctionCall> seenCalls = new HashSet<>();
         Set<FFunctionAddress> seenAddresses = new HashSet<>();
 
         private void handle(TypeInstantiation typeInstantiation, Collection<FFunction> seenFunctions) {
             doHandle(typeInstantiation, seenFunctions);
 
-            for (Triple<BaseAnalysis, FTypeVariable, FTypeVariable> subSegment : subSegments) {
-                assert typeInstantiation.contains(subSegment.c);
-                FClass instantiatedType = (FClass) typeInstantiation.getType(subSegment.c);
+            for (SubSegment subSegment : subSegments) {
+                assert typeInstantiation.contains(subSegment.containerType);
+                FClass instantiatedType = (FClass) typeInstantiation.getType(subSegment.containerType);
 
-                //special handling for optionals
-                if (instantiatedType instanceof FOptional)
-                    instantiatedType = (FClass) ((FOptional) instantiatedType).getBaseType();
+                if (subSegment.loop.getForImpl() instanceof PrimitiveFor) {
+                    //special handling for optionals
+                    if (instantiatedType instanceof FOptional)
+                        instantiatedType = (FClass) ((FOptional) instantiatedType).getBaseType();
 
-                //special handling for arrays, because there is no "field" for the base type visit them manually
-                if (instantiatedType instanceof FArray)
-                    subSegment.a.handle(typeInstantiation.with(subSegment.b, ((FArray) instantiatedType).getBaseType()), seenFunctions);
+                    //special handling for arrays, because there is no "field" for the base type visit them manually
+                    if (instantiatedType instanceof FArray)
+                        subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, ((FArray) instantiatedType).getBaseType()), seenFunctions);
 
-                //this also handles tuples, since they have fields
-                for (FField field : instantiatedType.getFields()) {
-                    subSegment.a.handle(typeInstantiation.with(subSegment.b, field.getType()), seenFunctions);
+                    //this also handles tuples, since they have fields
+                    for (FField field : instantiatedType.getFields()) {
+                        subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
+                    }
+                } else if (subSegment.loop.getForImpl() instanceof IsIterable) {
+                    ForImpl instantiatedImpl = instantiatedType.getForImpl();
+                    assert instantiatedImpl != null;
+                    if (instantiatedImpl instanceof TupleFor) {
+                        assert instantiatedType instanceof FTuple;
+                        //same handling as Tuples in PrimitiveFor
+                        for (FField field : instantiatedType.getFields()) {
+                            subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
+                        }
+                    } else {
+                        FType instantietedIteratorType = typeInstantiation.getType(instantiatedImpl.getElementType());
+                        subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, instantietedIteratorType), seenFunctions);
+                    }
+                } else {
+                    Utils.cantHappen();
                 }
+
             }
         }
 
@@ -216,18 +253,22 @@ public class Reachability {
             }
             @Override
             public void enterForEach(FForEach forEach) {
-                assert forEach.getForImpl() instanceof PrimitiveFor;
+                ForImpl forImpl = forEach.getForImpl();
+                assert forImpl instanceof PrimitiveFor || forImpl instanceof IsIterable;
                 BaseAnalysis analysis = new BaseAnalysis();
                 analysis.parentSegment = current;
-                //b is the type of the for loop iter var, c is type of container
                 FType loopVarType = forEach.getIterators().get(0).getType();
-                FType containerType = getOnlyElement(((FFunctionCall) forEach.getContainer()).getArguments(false)).getType();
-                current.subSegments.add(new Triple<>(analysis, (FTypeVariable) loopVarType, (FTypeVariable) containerType));
+                FType containerType;
+                if (forImpl instanceof PrimitiveFor)
+                    containerType = getOnlyElement(((FFunctionCall) forEach.getContainer()).getArguments(false)).getType();
+                else
+                    containerType = forEach.getContainer().getType();
+                current.subSegments.add(new BaseAnalysis.SubSegment(forEach, analysis, (FTypeVariable) containerType, (FTypeVariable) loopVarType));
                 current = analysis;
             }
             @Override
             public FStatement exitForEach(FForEach forEach, FExpression container, FStatement body) {
-                assert forEach.getForImpl() instanceof PrimitiveFor;
+                assert forEach.getForImpl() instanceof PrimitiveFor || forEach.getForImpl() instanceof IsIterable;
                 current = current.parentSegment;
                 return null;
             }

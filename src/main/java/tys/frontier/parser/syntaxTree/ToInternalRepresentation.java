@@ -357,9 +357,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public Object visitMethodHeader(FrontierParser.MethodHeaderContext ctx) {
         if (ctx.typeType() != null) {
             try {
-                checkValidRemoteFunction();
+                validateRemoteFunction();
             } catch (SyntaxError e) {
                 errors.add(e);
+            }
+        } else if (currenClass != null) {
+            //overloads of open functions follow more strict requirements, even if not remote
+            FFunction open = currenClass.getNamespace().getOpen(currentFunction().function.getIdentifier());
+            if (open != null) {
+                try {
+                    validateOpenOverload(open, false);
+                } catch (InvalidSignatureOpenOverload invalidSignatureOpenOverload) {
+                    errors.add(invalidSignatureOpenOverload);
+                }
             }
         }
 
@@ -374,24 +384,26 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return null;
     }
 
-    private void checkValidRemoteFunction() throws NonOpenRemoteFunctionDeclaration, InvalidSignatureRemoteFunctionDeclaration {
+    private void validateRemoteFunction() throws NonOpenRemoteFunctionDeclaration, InvalidSignatureOpenOverload {
         //the function was pushed into a different namespace, make sure that was legal
         Namespace remoteNamespace = currentFunction().function.getMemberOf();
         FFunction open = remoteNamespace.getOpen(currentFunction().function.getIdentifier());
         if (open == null)
             throw new NonOpenRemoteFunctionDeclaration(currentFunction().function, "remote does not declare signature as open");
 
+        validateOpenOverload(open, true);
+    }
+
+    private void validateOpenOverload(FFunction open, boolean remote) throws InvalidSignatureOpenOverload {
         List<FTypeVariable> openParameters = open.getParametersList();
         for (Pair<FParameter, FParameter> pair : Utils.zip(open.getSignature().getParameters(), currentFunction().function.getSignature().getParameters())) {
             if (pair.a.getType() == pair.b.getType())
                 continue;
             //noinspection SuspiciousMethodCalls
-            if (pair.a.getType() instanceof FTypeVariable
-                    && openParameters.contains(pair.a.getType())
-                    && pair.b.getType() == currenClass) //TODO NPE when adding remote function from a namespace, but what do I even want to happen in that case?
-                continue;
-            throw new InvalidSignatureRemoteFunctionDeclaration(currentFunction().function, open);
-            //TODO formulate sensible overload requirements and then test those instead
+            if (!(pair.a.getType() instanceof FTypeVariable) || !openParameters.contains(pair.a.getType()))
+                throw new InvalidSignatureOpenOverload(currentFunction().function, open);
+            if (remote && pair.b.getType() != currenClass)
+                throw new InvalidSignatureOpenOverload(currentFunction().function, open);
         }
     }
 

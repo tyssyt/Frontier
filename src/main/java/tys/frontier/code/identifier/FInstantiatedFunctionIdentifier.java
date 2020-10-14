@@ -16,7 +16,7 @@ public class FInstantiatedFunctionIdentifier extends FIdentifier {
 
     private static String getName(FIdentifier baseIdentifier, TypeInstantiation typeInstantiation) {
         StringBuilder sb = new StringBuilder(baseIdentifier.name).append('<');
-        for (FType type : typeInstantiation.getTypeMap().values()) {
+        for (FType type : typeInstantiation.values()) {
             sb.append(type.getIdentifier().name);
         }
         return sb.append('>').toString();

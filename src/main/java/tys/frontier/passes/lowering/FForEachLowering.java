@@ -23,9 +23,11 @@ import tys.frontier.code.statement.loop.FWhile;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
+import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.code.typeInference.IsIterable;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
@@ -58,15 +60,18 @@ public class FForEachLowering extends StatementReplacer {
         return replace(forEach, currentFunction);
     }
 
-    public FStatement replace (FForEach forEach, FFunction function) {
+    public static FStatement replace (FForEach forEach, FFunction function) {
         ForImpl forImpl = forEach.getForImpl();
         if (forImpl instanceof ForByIdx)
             return buildForByIdx((ForByIdx) forImpl, forEach, function);
+        else if (forImpl instanceof TupleFor) {
+            return buildTupleFor((TupleFor) forImpl, function, forEach);
+        }
         else if (forImpl instanceof PrimitiveFor) {
             FExpression container = getOnlyElement(((FFunctionCall) forEach.getContainer()).getArguments(false));
             FType containerType = container.getType();
             if (containerType instanceof FTypeVariable) {
-                if (currentFunction.getParameters().get(containerType.getIdentifier()) == containerType)
+                if (function.getParameters().get(containerType.getIdentifier()) == containerType)
                     //primitive for will be lowered during baking
                     return forEach;
                 else
@@ -75,8 +80,10 @@ public class FForEachLowering extends StatementReplacer {
             FForEach pseudoForEach = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), forEach.getIterators(), forEach.getCounter().orElse(null), container, forEach.getBody());
             return buildPrimitiveFor((PrimitiveFor) forImpl, function, pseudoForEach);
         }
-        else
-            return Utils.NYI("ForImpl: " + forImpl);
+        else if (forImpl instanceof IsIterable)
+            //will be instantiated during baking
+            return forEach;
+        return Utils.NYI("ForImpl: " + forImpl);
     }
 
     private static FStatement buildForByIdx(ForByIdx forImpl, FForEach forEach, FFunction function) {
@@ -270,6 +277,50 @@ public class FForEachLowering extends StatementReplacer {
 
         FIf fIf = FIf.createTrusted(new FLocalVariableExpression(container), FBlock.from(then), null);
         res.add(fIf);
+    }
+
+    //TODO this is mostly a simplified copy paste of buildPrimitiveForNormal
+    private static FStatement buildTupleFor(TupleFor forImpl, FFunction function, FForEach forEach) {
+        List<FStatement> res = new ArrayList<>();
+        //first store the container expression in a local variable, if necessary
+        FLocalVariable container = getContainer(forEach.getContainer(), function, res);
+
+        FTypeVariable elementType = (FTypeVariable) forImpl.getElementType();
+        assert forEach.getIterators().size() == 1 && forEach.getIterators().get(0).getType() == elementType;
+        FLocalVariable iterator = forEach.getIterators().get(0);
+
+        int i = 0;
+        for (FField field : ((FClass) forEach.getContainer().getType()).getInstanceFields().values()) {
+
+            //declare iterator and field
+            FLocalVariable valVar = new FLocalVariable(iterator.getIdentifier(), field.getType());
+            FVarDeclaration valDecl = new FVarDeclaration(valVar);
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(field.getGetter().getSignature(), mutableSingletonList(new FLocalVariableExpression(container)));
+
+            FAssignment decl;
+            Map<FLocalVariable, FLocalVariable> varMap;
+            if (forEach.getCounter().isPresent()) {
+                //declare counter
+                FLocalVariable oldCounter = forEach.getCounter().get();
+                FLocalVariable counterVar = new FLocalVariable(oldCounter.getIdentifier(), oldCounter.getType());
+                FVarDeclaration counter = new FVarDeclaration(counterVar);
+                FLiteralExpression counterVal = new FLiteralExpression(new FIntNLiteral(i));
+                decl = FAssignment.createTrusted(asList(valDecl, counter), asList(fieldGet, counterVal));
+                varMap = ImmutableMap.of(iterator, valVar, oldCounter, counterVar);
+            } else {
+                decl = FAssignment.createTrusted(singletonList(valDecl), singletonList(fieldGet));
+                varMap = ImmutableMap.of(iterator, valVar);
+            }
+
+            //bake the body
+            TypeInstantiation typeInstantiation = TypeInstantiation.create(mutableSingletonMap(elementType, field.getType()));
+            FStatement bakedBody = GenericBaking.bake(forEach.getBody(), typeInstantiation, varMap);
+
+            res.add(FBlock.from(decl, bakedBody));
+            i++;
+        }
+
+        return FBlock.from(res);
     }
 
     private static Signature getIntToString() {

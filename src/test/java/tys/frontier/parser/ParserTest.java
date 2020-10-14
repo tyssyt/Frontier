@@ -163,7 +163,7 @@ public class ParserTest {
     @Test
     public void parseInvalidSignatureRemoteFunctionDeclaration() throws Exception {
         SyntaxError e = parseSyntaxError("InvalidSignatureRemoteFunctionDeclaration.front");
-        assertEquals(InvalidSignatureRemoteFunctionDeclaration.class, e.getClass());
+        assertEquals(InvalidSignatureOpenOverload.class, e.getClass());
     }
     @Test
     public void parseMissingReturn() throws Exception {

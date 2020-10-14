@@ -3,8 +3,10 @@ package tys.frontier.code.type;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
+import tys.frontier.code.function.DummyFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
@@ -18,19 +20,14 @@ import tys.frontier.util.Triple;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.google.common.collect.Iterables.getOnlyElement;
+import java.util.*;
 
 public class FunctionResolver {
 
     public static class Result {
         public Signature signature;
         public ArgMapping argMapping;
-        public Multimap<FTypeVariable, TypeConstraint> constraints;
+        public ListMultimap<FTypeVariable, TypeConstraint> constraints;
         public int casts;
         public long costs;
 
@@ -45,6 +42,8 @@ public class FunctionResolver {
     private FType returnType;
     private DefaultNamespace namespace;
     private boolean lhsResolve;
+    private boolean needsReResolve = false;
+    private Set<FTypeVariable> typeVariablesThatAreCastToParametersOfOpenBaseCase;
 
     private Result bestResult;
 
@@ -62,7 +61,9 @@ public class FunctionResolver {
     }
 
     private Result resolve() throws FunctionNotFound { //TODO for all candidates, store the reason for rejection and use them to generate a better error message
-        for (Signature s : namespace.getFunctions(lhsResolve).get(identifier)) {
+        FFunction open = namespace.getOpen(identifier);
+
+        for (final Signature s : namespace.getFunctions(lhsResolve).get(identifier)) {
             try {
                 Result result = new Result();
                 //pack/unpack tuples, map keyword Args and use default parameters
@@ -97,12 +98,19 @@ public class FunctionResolver {
                 //recompute casts TODO this needs adapted once we allow generic functions to be instantiated with tuples
                 result.argMapping.computeCasts(argMappingAndArgumentTypes.b, Utils.typesFromExpressionList(result.signature.getParameters()));
 
+                if (s.getFunction() == open)
+                    specialLogicOpen(result, triple.c);
+
                 updateCost(result);
             } catch (IncompatibleTypes | UnfulfillableConstraints | TooManyArguments | NotEnoughArguments ignored) {}
         }
 
         if (bestResult == null)
             throw new FunctionNotFound(identifier, this.positionalArgs, this.keywordArgs);
+
+        if (typeVariablesThatAreCastToParametersOfOpenBaseCase != null)
+            removeConstraintsOpenBaseCase();
+
         return bestResult;
     }
 
@@ -113,7 +121,7 @@ public class FunctionResolver {
         Map<FTypeVariable, FType> typeVariableMap = new HashMap<>();
         ListMultimap<FTypeVariable, TypeConstraint> newConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
 
-        for (Map.Entry<FTypeVariable, FType> pair : baseInstantiation.getTypeMap().entrySet()) {
+        for (Map.Entry<FTypeVariable, FType> pair : baseInstantiation.entries()) {
             FTypeVariable key = pair.getKey();
             FTypeVariable v = (FTypeVariable) pair.getValue();
 
@@ -132,44 +140,36 @@ public class FunctionResolver {
             bestResult = newResult;
             return;
         }
-        if ((!bestResult.constraints.isEmpty() || !newResult.constraints.isEmpty()) && !bestResult.constraints.equals(newResult.constraints)) {
-            Multimap<FTypeVariable, TypeConstraint> computedConstraints = MultimapBuilder.hashKeys().arrayListValues(1).build();
-            if (bestResult.constraints.keySet().equals(newResult.constraints.keySet())) {
+        if ((!bestResult.constraints.isEmpty() || !newResult.constraints.isEmpty())) {
+            if (!bestResult.constraints.keySet().equals(newResult.constraints.keySet())) {
+                Utils.NYI("ambiguous function call with constraints");
+            }
 
-                for (Map.Entry<FTypeVariable, Collection<TypeConstraint>> entry : bestResult.constraints.asMap().entrySet()) {
-                    FTypeVariable typeVariable = entry.getKey();
-                    Collection<TypeConstraint> bestConstraints = entry.getValue();
-                    Collection<TypeConstraint> newConstraints = newResult.constraints.get(typeVariable);
+            ListMultimap<FTypeVariable, TypeConstraint> computedConstraints = MultimapBuilder.hashKeys().arrayListValues().build();
 
-                    if (bestConstraints.size() != 1 || newConstraints.size() != 1
-                            || !(getOnlyElement(bestConstraints) instanceof ImplicitCastable || getOnlyElement(bestConstraints) instanceof HasRemoteCall)
-                            || !(getOnlyElement(newConstraints)  instanceof ImplicitCastable || getOnlyElement(newConstraints)  instanceof HasRemoteCall)
-                    ) {
-                        Utils.NYI("ambiguous function call with constraints");
-                        return;
-                    }
+            //check constraints, add HasRemoteCall where necessary
+            for (Map.Entry<FTypeVariable, List<TypeConstraint>> entry : Multimaps.asMap(bestResult.constraints).entrySet()) {
+                FTypeVariable typeVariable = entry.getKey();
+                List<TypeConstraint> bestConstraints = entry.getValue();
+                List<TypeConstraint> newConstraints = newResult.constraints.get(typeVariable);
 
-                    computedConstraints.put(typeVariable, new HasRemoteCall(null, identifier, positionalArgs, keywordArgs, lhsResolve, namespace));
-
-                    //return some dummy function
-                    FType returnType;
-                    if (this.returnType != null)
-                        returnType = this.returnType;
-                    else if (bestResult.signature.getType() == newResult.signature.getType())
-                        returnType = newResult.signature.getType();
-                    else
-                        returnType = TypeVariableNamespace.ReturnTypeOf.create(namespace.nextReturnTypeIdentifier(), false); //TODO no idea what to set fixed to
-
-                    FFunction dummyFunction = TypeVariableNamespace.createDummyFunction(namespace, identifier, positionalArgs, keywordArgs, returnType);
-                    bestResult.signature = lhsResolve ? dummyFunction.getLhsSignature() : dummyFunction.getSignature();
-
+                if (bestConstraints.equals(newConstraints)) {
+                    computedConstraints.putAll(typeVariable, bestConstraints);
+                    continue;
                 }
-                bestResult.constraints = computedConstraints;
+
+                needsReResolve = true;
+                computedConstraints.put(typeVariable, new HasRemoteCall(null, identifier, positionalArgs, keywordArgs, lhsResolve, namespace));
+            }
+            bestResult.constraints = computedConstraints;
+
+            if (needsReResolve) {
+                createDummyResult(newResult);
                 return;
             }
-            Utils.NYI("ambiguous function call with constraints");
         }
 
+        assert !needsReResolve;
         if (newResult.casts < bestResult.casts || (newResult.casts == bestResult.casts && newResult.costs < bestResult.costs)) {
             bestResult = newResult;
             return;
@@ -177,5 +177,55 @@ public class FunctionResolver {
         if (newResult.casts == bestResult.casts && newResult.costs == bestResult.costs) {
             bestResult = null; //not obvious which function to call %TODO a far more descriptive error message then FNF
         }
+    }
+
+    private void createDummyResult(Result newResult) {
+        //return some dummy function
+        Signature signature = bestResult.signature;
+        if (signature.getFunction() instanceof DummyFunction && signature.getFunction() instanceof TypeVariableNamespace.ReturnTypeOf)
+            return; //already a Dummy function with most general return type
+
+        FType returnType;
+        if (this.returnType != null)
+            returnType = this.returnType;
+        else if (signature.getType() == newResult.signature.getType())
+            returnType = signature.getType();
+        else
+            returnType = new TypeVariableNamespace.ReturnTypeOf(namespace.nextReturnTypeIdentifier(), false, positionalArgs, keywordArgs, lhsResolve);
+
+        if (signature.getFunction() instanceof DummyFunction && signature.getType() == returnType)
+            return;
+
+        FFunction dummyFunction = TypeVariableNamespace.createDummyFunction(namespace, identifier, positionalArgs, keywordArgs, returnType);
+        bestResult.signature = lhsResolve ? dummyFunction.getLhsSignature() : dummyFunction.getSignature();
+    }
+
+    private void specialLogicOpen(Result result, TypeInstantiation baseInstantiation) {
+        typeVariablesThatAreCastToParametersOfOpenBaseCase = new HashSet<>();
+        for (Map.Entry<FTypeVariable, List<TypeConstraint>> entry : Multimaps.asMap(result.constraints).entrySet()) {
+            FTypeVariable typeVariable = entry.getKey();
+            List<TypeConstraint> constraints = entry.getValue();
+
+            if (constraints.size() == 1 && checkTypeConstraintIsFunctionParameter(constraints.get(0), baseInstantiation))
+                typeVariablesThatAreCastToParametersOfOpenBaseCase.add(typeVariable);
+        }
+    }
+
+    private static boolean checkTypeConstraintIsFunctionParameter(TypeConstraint typeConstraint, TypeInstantiation baseInstantiation) {
+        if (!(typeConstraint instanceof ImplicitCastable))
+            return false;
+        ImplicitCastable constraint = (ImplicitCastable) typeConstraint;
+
+        if (!(constraint.getTarget() instanceof FTypeVariable))
+            return false;
+        FTypeVariable typeVariable = (FTypeVariable) constraint.getTarget();
+
+        return baseInstantiation.values().contains(typeVariable);
+    }
+
+    private void removeConstraintsOpenBaseCase() {
+        assert needsReResolve || typeVariablesThatAreCastToParametersOfOpenBaseCase.isEmpty();
+        for (FTypeVariable typeVariable : typeVariablesThatAreCastToParametersOfOpenBaseCase)
+            bestResult.constraints.removeAll(typeVariable);
     }
 }

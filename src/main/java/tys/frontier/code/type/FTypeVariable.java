@@ -3,7 +3,6 @@ package tys.frontier.code.type;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.namespace.TypeVariableNamespace;
-import tys.frontier.code.statement.loop.forImpl.FTypeVariableForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
@@ -13,7 +12,6 @@ public class FTypeVariable implements FType {
 
     private FIdentifier identifier;
     private TypeConstraints constraints;
-    private FTypeVariableForImpl forImpl = new FTypeVariableForImpl(this);
     private TypeVariableNamespace namespace;
 
     public static FTypeVariable create(FIdentifier identifier, boolean fixed) {
@@ -48,6 +46,11 @@ public class FTypeVariable implements FType {
 
     public boolean isFixed() {
         return constraints.isFixed();
+    }
+
+    @Override
+    public ForImpl getForImpl() {
+        return constraints.getForImpl();
     }
 
     public void setConstraints(TypeConstraints constraints) {
@@ -86,13 +89,6 @@ public class FTypeVariable implements FType {
     @Override
     public Namespace getNamespace() {
         return namespace;
-    }
-
-    @Override
-    public ForImpl getForImpl() {
-        if (isResolved())
-            return getResolved().getForImpl();
-        return forImpl;
     }
 
     public FTypeVariable copy() {

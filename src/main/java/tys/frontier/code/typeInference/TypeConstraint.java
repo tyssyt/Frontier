@@ -22,6 +22,14 @@ public abstract class TypeConstraint {
         this.origin = origin;
     }
 
+    /* TODO
+        When I copy TypeConstraints, I need to create copies of all constraints that are Type Variables.
+        However this copied set of constraints needs to be consistent in itself, i.e. so copying non tree shaped constraint sets is difficult
+        This error originally appeared for IsIterable constraints, where non tree shapes are impossible.
+        Correct handling of this atm is near impossible, the next iteration of the constraint system should be build with this in mind.
+     */
+    public abstract TypeConstraint copy();
+
     @Override
     abstract public int hashCode();
     @Override

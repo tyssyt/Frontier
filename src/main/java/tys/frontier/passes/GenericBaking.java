@@ -17,6 +17,7 @@ import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.code.typeInference.IsIterable;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.util.Pair;
@@ -195,14 +196,15 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public void enterForEach(FForEach forEach) {
         ForImpl forImpl = forEach.getForImpl();
-        if (forImpl instanceof PrimitiveFor) {
+        if (forImpl instanceof PrimitiveFor || forImpl instanceof IsIterable) {
+            //TODO for tuples & "normal" objects, we re-bake the body multiple times in the exit, so in theory the standard visit between enter and exit could be skipped
             //this code would need to be done always, but other cases may only appear in NO_ORIGINAL mode
             for (FLocalVariable old : forEach.getIterators()) {
-                FLocalVariable iterator = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's a type var
+                FLocalVariable iterator = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
                 varMap.put(old, iterator);
             }
             forEach.getCounter().ifPresent(old -> {
-                FLocalVariable counter = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's a type var
+                FLocalVariable counter = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
                 varMap.put(old, counter);
             });
         }
@@ -224,6 +226,13 @@ public class GenericBaking implements FClassVisitor {
             FExpression actualContainer = getOnlyElement(((FFunctionCall) container).getArguments(false));
             FForEach pseudoForEach = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, actualContainer, FBlock.from(body));
             return FForEachLowering.buildPrimitiveFor((PrimitiveFor) forImpl, currentFunction, pseudoForEach);
+        } else if (forImpl instanceof IsIterable) {
+            //instantiate the forEach
+            ArrayList<FLocalVariable> iterators = Utils.map(forEach.getIterators(), it -> varMap.get(it));
+            FLocalVariable counter = forEach.getCounter().map(c -> varMap.get(c)).orElse(null);
+            FForEach res = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, container, FBlock.from(body));
+            //lower it
+            return FForEachLowering.replace(res, currentFunction);
         }
 
         assert variableMode == NO_ORIGINAL;

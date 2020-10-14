@@ -22,7 +22,7 @@ public class HasSelfCall extends HasCall {
 
     @Override
     FunctionResolver.Result resolve(TypeInstantiation typeInstantiation) throws FunctionNotFound {
-        assert typeInstantiation.getTypeMap().containsKey(in);
+        assert typeInstantiation.contains(in);
         return typeInstantiation.getType(in).getNamespace().softResolveFunction(getIdentifier(), getPositionalArgs(), getKeywordArgs(), null, isLhsResolve());
     }
 }
