@@ -118,7 +118,7 @@ public class Delegates {
         DefaultNamespace namespace = to.getNamespace();
         FBaseFunction res = new FunctionBuilder(toDelegate.getIdentifier(), namespace).setVisibility(to.getVisibility())
                 .setParams(builder.build()).setReturnType(signature.getType()).setAssignees(signature.getAssignees())
-                .setParameters(toDelegate.getParameters()).build();
+                .setParameters(new HashMap<>(toDelegate.getParameters())).build();
         namespace.addFunction(res);
         return res;
     }

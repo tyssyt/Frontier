@@ -1,5 +1,5 @@
-import IO;
 import Stringer;
+import IO;
 import Type;
 
 

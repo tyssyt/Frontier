@@ -29,7 +29,7 @@ public class FOptional extends FPredefinedClass {
         this.baseType = baseType;
         OptionalNamespace namespace = new OptionalNamespace(this);
         setNamespace(namespace);
-        addDefaultFunctions();
+        //addDefaultFunctions(); TODO should only be added once for "base class"
         namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
                 .setVisibility(getVisibility()).setPredefined(true).setParams(this).setReturnType(FBool.INSTANCE).build());
     }

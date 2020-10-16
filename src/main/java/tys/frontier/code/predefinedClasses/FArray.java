@@ -48,7 +48,7 @@ public class FArray extends FPredefinedClass {
         this.baseType = baseType;
         DefaultNamespace namespace = getNamespace();
 
-        addDefaultFunctions();
+        //addDefaultFunctions(); TODO should only be added once for "base class"
         //TODO add container equals, and prolly do something to equality once that is done
         size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final

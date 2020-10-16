@@ -21,7 +21,7 @@ public class CArray extends FPredefinedClass {
     private CArray(FType baseType) {
         super(new CArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;
-        addDefaultFunctions();
+        //addDefaultFunctions(); TODO should only be added once for "base class"
     }
 
     public static CArray getArrayFrom(FType baseType) {
