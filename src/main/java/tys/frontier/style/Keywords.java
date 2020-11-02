@@ -1,13 +1,7 @@
 package tys.frontier.style;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
-import org.json.JSONException;
-import org.json.JSONObject;
 import tys.frontier.parser.antlr.FrontierParser;
-
-import java.util.Map;
 
 public class Keywords {
 
@@ -55,19 +49,4 @@ public class Keywords {
             .build();
 
     private Keywords(){}
-
-    public static BiMap<String, Integer> fromStyleFile (JSONObject keywords) {
-        BiMap<String, Integer> res = HashBiMap.create(DEFAULT_KEYWORDS.size());
-        for (Map.Entry<String, Integer> keywordAndToken : DEFAULT_KEYWORDS.entrySet()) {
-            String newKeyword;
-            try {
-                //see if the style redefines the keyword
-                newKeyword = keywords.getString(keywordAndToken.getKey());
-            } catch (JSONException e) {
-                newKeyword = keywordAndToken.getKey();
-            }
-            res.put(newKeyword, keywordAndToken.getValue());
-        }
-        return res;
-    }
 }
