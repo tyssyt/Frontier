@@ -2,6 +2,7 @@ package tys.frontier.code.statement;
 
 import com.google.common.base.Joiner;
 import tys.frontier.code.FLocalVariable;
+import tys.frontier.parser.location.Position;
 
 import java.util.List;
 
@@ -11,18 +12,18 @@ public class FLambdaBlock extends FBlock {
 
     private List<FLocalVariable> variables;
 
-    private FLambdaBlock(List<FStatement> statements, List<FLocalVariable> variables) {
-        super(statements);
+    private FLambdaBlock(Position position, List<FStatement> statements, List<FLocalVariable> variables) {
+        super(position, statements);
         assert !variables.isEmpty();
         this.variables = variables;
     }
 
-    public static FLambdaBlock from(List<FLocalVariable> variables, FStatement... statements) {
-        return new FLambdaBlock(asList(statements), variables);
+    public static FLambdaBlock from(Position position, List<FLocalVariable> variables, FStatement... statements) {
+        return new FLambdaBlock(position, asList(statements), variables);
     }
 
-    public static FLambdaBlock from(List<FStatement> statements, List<FLocalVariable> variables) {
-        return new FLambdaBlock(statements, variables);
+    public static FLambdaBlock from(Position position, List<FStatement> statements, List<FLocalVariable> variables) {
+        return new FLambdaBlock(position, statements, variables);
     }
 
     public List<FLocalVariable> getVariables() {

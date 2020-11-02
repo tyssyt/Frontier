@@ -6,29 +6,31 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DynamicFunctionCall implements FExpression {
+public class DynamicFunctionCall extends FExpression {
     private FExpression function;
     private List<FExpression> arguments;
 
-    private DynamicFunctionCall(FExpression function, List<FExpression> arguments) throws IncompatibleTypes {
+    private DynamicFunctionCall(Position position, FExpression function, List<FExpression> arguments) throws IncompatibleTypes {
+        super(position);
         this.function = function;
         this.arguments = arguments;
         checkTypes();
     }
 
-    public static DynamicFunctionCall create(FExpression function, List<FExpression> arguments) throws IncompatibleTypes {
-        return new DynamicFunctionCall(function, arguments);
+    public static DynamicFunctionCall create(Position position, FExpression function, List<FExpression> arguments) throws IncompatibleTypes {
+        return new DynamicFunctionCall(position, function, arguments);
     }
 
-    public static DynamicFunctionCall createTrusted(FExpression function, List<FExpression> arguments) {
+    public static DynamicFunctionCall createTrusted(Position position, FExpression function, List<FExpression> arguments) {
         try {
-            return create(function, arguments);
+            return create(position, function, arguments);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
@@ -84,10 +86,5 @@ public class DynamicFunctionCall implements FExpression {
     public StringBuilder toString(StringBuilder sb) {
         function.toString(sb).append('(');
         return Joiner.on(',').appendTo(sb, arguments).append(')');
-    }
-
-    @Override
-    public String toString() {
-        return tS();
     }
 }

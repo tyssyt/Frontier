@@ -53,7 +53,7 @@ public class MainTest {
     private String doMain(String fileName, String input, String... args) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
 
-        Main.main(FileUtils.pathToResource(prefix + fileName + ".front").toString(), tmpFolder, new ArrayList<>(), false);
+        Main.main(FileUtils.pathToResource(prefix + fileName + ".front").toString(), tmpFolder, new ArrayList<>(), false, false);
 
         //we need to redirect the output to a file, because Java can't handle storing large outputs, and we can peek it
         ImmutableList<String> processCall = ImmutableList.<String>builder().add(tmpFolder + ".exe").add(args).build();

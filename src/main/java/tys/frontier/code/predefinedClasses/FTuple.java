@@ -5,14 +5,12 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.Typed;
-import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTupleIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.NameGenerator;
-import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -31,7 +29,6 @@ public class FTuple extends FPredefinedClass {
     public static final FTuple VOID = existing.computeIfAbsent(Collections.emptyList(), FTuple::new);
 
     private List<FType> types;
-    private Pair<FFunction, FFunction> access;
 
     private FTuple(List<FType> types) {
         super(new FTupleIdentifier(types));
@@ -41,8 +38,9 @@ public class FTuple extends FPredefinedClass {
         NameGenerator names = new NameGenerator("", "");
 
         //add fields and getters
+        //TODO @PositionForGeneratedCode
         for (FType fieldType : types) {
-            FField field = new FField(new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false, false);
+            FField field = new FField(null, new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false, false);
             addFieldTrusted(field); //TODO make final
         }
         //remove setter TODO no longer needed when field final
@@ -97,14 +95,11 @@ public class FTuple extends FPredefinedClass {
                 flattened.add(type);
         }
 
-        switch (flattened.size()) {
-            case 0:
-                return VOID;
-            case 1:
-                return Iterables.getOnlyElement(flattened);
-            default:
-                return existing.computeIfAbsent(flattened, FTuple::new);
-        }
+        return switch (flattened.size()) {
+            case 0  -> VOID;
+            case 1  -> Iterables.getOnlyElement(flattened);
+            default -> existing.computeIfAbsent(flattened, FTuple::new);
+        };
     }
 
     public static FType fromExpressionList (List<? extends Typed> exps) {

@@ -14,6 +14,7 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
@@ -23,16 +24,16 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
 
     private ImplicitTypeCast typeCast;
 
-    private FImplicitCast(FExpression castedExpression, ImplicitTypeCast typeCast) {
-        super(castedExpression);
+    private FImplicitCast(Position position, FExpression castedExpression, ImplicitTypeCast typeCast) {
+        super(position, castedExpression);
         this.typeCast = typeCast;
     }
 
-    public static FExpression create(FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
+    public static FExpression create(Position position, FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
         ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
         if (castedExpression instanceof FImplicitCast)
             castedExpression = ((FImplicitCast) castedExpression).getCastedExpression();
-        FExpression res = create(targetType, castedExpression, variance, constraints);
+        FExpression res = create(position, targetType, castedExpression, variance, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
                 throw new IncompatibleTypes(targetType, castedExpression.getType());
@@ -40,34 +41,34 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         return res;
     }
 
-    public static FExpression create(FType targetType, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+    public static FExpression create(Position position, FType targetType, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
         FType baseType = castedExpression.getType();
         if (baseType == targetType)
             return castedExpression;
         if (castedExpression instanceof FLiteralExpression) {
             FLiteral literal = ((FLiteralExpression) castedExpression).getLiteral();
             if (literal == FNull.UNTYPED && FOptional.canBeTreatedAsOptional(targetType)) {
-                return new FLiteralExpression(new FNull(targetType));
+                return new FLiteralExpression(position, new FNull(targetType));
             }
         }
-        FImplicitCast res = new FImplicitCast(castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
+        FImplicitCast res = new FImplicitCast(position, castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
         for (TypeConstraint constraint : constraints.values()) {
             constraint.setOrigin(res);
         }
         return res;
     }
 
-    public static FExpression createTrusted(FType type, FExpression castedExpression, Variance variance) {
+    public static FExpression createTrusted(Position position, FType type, FExpression castedExpression, Variance variance) {
         try {
-            return create(type, castedExpression, variance);
+            return create(position, type, castedExpression, variance);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
-    public static FExpression createTrusted(FType type, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public static FExpression createTrusted(Position position, FType type, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
         try {
-            return create(type, castedExpression, variance, constraints);
+            return create(position, type, castedExpression, variance, constraints);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }

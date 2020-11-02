@@ -60,7 +60,8 @@ public enum BinaryOperator implements Operator {
         FIdentifier p2Id = new FIdentifier("P2");
         FIdentifier rId = new FIdentifier("R");
 
-        binOpNamespace =  new DefaultNamespace(new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, true);
+        //TODO @PositionForGeneratedCode
+        binOpNamespace =  new DefaultNamespace(null, new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, true);
         for (BinaryOperator binaryOperator : parserTokenMap.values()) {
             //add open function to binOp namespace
             FTypeVariable p1 = FTypeVariable.create(p1Id, true);
@@ -97,12 +98,10 @@ public enum BinaryOperator implements Operator {
 
     @Override
     public boolean isUserDefinable() {
-        switch (this) {
-            case EQUALS_ID: case NOT_EQUALS_ID:
-                return false;
-            default:
-                return true;
-        }
+        return switch (this) {
+            case EQUALS_ID, NOT_EQUALS_ID -> false;
+            default -> true;
+        };
     }
 
     public static DefaultNamespace sGetNamespace() {

@@ -8,6 +8,7 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.parser.location.Location;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -45,6 +46,11 @@ public class FieldAccessor implements FFunction {
                 new FieldAccessor(field, parameters, null, field.getType()), //getter
                 new FieldAccessor(field, parameters, assignees, FTuple.VOID) //setter
         );
+    }
+
+    @Override
+    public Location getLocation() {
+        return new Location(field.getMemberOf().getNamespace().getLocation().getFile(), field.getPosition());
     }
 
     public FField getField() {

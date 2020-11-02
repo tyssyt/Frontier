@@ -11,6 +11,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
@@ -26,6 +27,7 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     private FVisibilityModifier visibility;
     private boolean _native;
     private FClass fClass; //optional
+    private Location location;
 
     private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
     private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
@@ -35,15 +37,16 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
     private NameGenerator returnTypeNames;
 
-    public DefaultNamespace(FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
+    public DefaultNamespace(Location location, FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
+        this.location = location;
         this.identifier = identifier;
         this.visibility = visibility;
         this._native = _native;
         this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + "ret.", "");
     }
 
-    public DefaultNamespace(FClass fClass) {
-        this(fClass.getIdentifier(), fClass.getVisibility(), fClass.isNative() || fClass.isPredefined());
+    public DefaultNamespace(Location location, FClass fClass) {
+        this(location, fClass.getIdentifier(), fClass.getVisibility(), fClass.isNative() || fClass.isPredefined());
         this.fClass = fClass;
     }
 
@@ -65,6 +68,10 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     @Override
     public FClass getType() {
         return fClass;
+    }
+
+    public Location getLocation() {
+        return location;
     }
 
     public boolean isEmpty() {

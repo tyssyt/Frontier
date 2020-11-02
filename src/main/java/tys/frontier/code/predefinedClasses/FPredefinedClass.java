@@ -13,8 +13,9 @@ import tys.frontier.util.Utils;
 
 public abstract class FPredefinedClass extends FBaseClass {
 
+    //TODO @PositionForGeneratedCode
     public FPredefinedClass(FIdentifier identifier) {
-        super(identifier, FVisibilityModifier.EXPORT, false);
+        super(null, identifier, FVisibilityModifier.EXPORT, false);
     }
 
     @Override

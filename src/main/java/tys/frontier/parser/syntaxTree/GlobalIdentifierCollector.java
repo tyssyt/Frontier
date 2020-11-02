@@ -19,6 +19,8 @@ import tys.frontier.parser.Delegates;
 import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.NativeWithBody;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
@@ -195,7 +197,8 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             boolean natiwe = ctx.NATIVE() != null;
             boolean open = ctx.OPEN() != null;
 
-            FFunction res = builder.setMemberOf(namespace).setNative(natiwe).setParams(parameters).build();
+            Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
+            FFunction res = builder.setLocation(location).setMemberOf(namespace).setNative(natiwe).setParams(parameters).build();
             treeData.functions.put(ctx, res);
 
             if (natiwe && hasBody)
@@ -241,7 +244,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         try {
             FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveNamespace);
-            FField res = new FField(identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
+            FField res = new FField(Position.fromCtx(ctx), identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
             currentClass.addField(res);
             treeData.fields.put(ctx, res);
 

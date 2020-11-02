@@ -5,7 +5,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
@@ -48,6 +48,7 @@ public class FFloat32 extends FPredefinedClass {
 
         builder.setPredefined(false);
 
+        //TODO @PositionForGeneratedCode
         {
             FType returnType = FTuple.from(FBool.INSTANCE, FIntN._32, FIntN._32); //TODO how about int 24 & 7?
             FBaseFunction splitRepresentation = builder.setIdentifier(SPLIT_REPRESENTATION).setReturnType(returnType).build();
@@ -55,29 +56,29 @@ public class FFloat32 extends FPredefinedClass {
 
             FLocalVariable bits = new FLocalVariable(new FIdentifier("bits"), FIntN._32);
             FParameter firstParam = splitRepresentation.getSignature().getParameters().get(0);
-            List<FExpression> arguments = mutableSingletonList(new FLocalVariableExpression(firstParam));
-            FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.createTrusted(rawBits.getSignature(), arguments));
+            List<FExpression> arguments = mutableSingletonList(new FVariableExpression(null, firstParam));
+            FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.createTrusted(null, rawBits.getSignature(), arguments));
 
             //sign: bits < 0
             Signature less = BinaryOperator.LESS.getFunctionTrusted(FIntN._32, FIntN._32);
-            arguments = Arrays.asList(new FLocalVariableExpression(bits), new FLiteralExpression(new FIntNLiteral(0)));
-            FExpression sign = FFunctionCall.createTrusted(less, arguments);
+            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0)));
+            FExpression sign = FFunctionCall.createTrusted(null, less, arguments);
 
             //exponent: (bits >> 23) & 0xFF
             Signature uShiftR = FIntN._32.getUShiftR().getSignature();
             Signature aAnd = BinaryOperator.AAND.getFunctionTrusted(FIntN._32, FIntN._32);
 
-            arguments = Arrays.asList(new FLocalVariableExpression(bits), new FLiteralExpression(new FIntNLiteral(23)));
-            FFunctionCall expShift = FFunctionCall.createTrusted(uShiftR, arguments);
-            arguments = Arrays.asList(expShift, new FLiteralExpression(new FIntNLiteral(0xFF)));
-            FExpression exponent = FFunctionCall.createTrusted(aAnd, arguments);
+            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(23)));
+            FFunctionCall expShift = FFunctionCall.createTrusted(null, uShiftR, arguments);
+            arguments = Arrays.asList(expShift, new FLiteralExpression(null, new FIntNLiteral(0xFF)));
+            FExpression exponent = FFunctionCall.createTrusted(null, aAnd, arguments);
 
             //mantissa: bits & 0x7FFFFF
-            arguments = Arrays.asList(new FLocalVariableExpression(bits), new FLiteralExpression(new FIntNLiteral(0x7FFFFF)));
-            FExpression mantissa = FFunctionCall.createTrusted(aAnd, arguments);
+            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0x7FFFFF)));
+            FExpression mantissa = FFunctionCall.createTrusted(null, aAnd, arguments);
 
-            FReturn _return = FReturn.createTrusted(List.of(sign, exponent, mantissa), splitRepresentation);
-            splitRepresentation.setBody(FBlock.from(bitsDecl, _return));
+            FReturn _return = FReturn.createTrusted(null, List.of(sign, exponent, mantissa), splitRepresentation);
+            splitRepresentation.setBody(FBlock.from(null, bitsDecl, _return));
         }
     }
 }

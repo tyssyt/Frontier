@@ -3,6 +3,7 @@ package tys.frontier.code.statement;
 import com.google.common.collect.Iterables;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -12,27 +13,28 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 
-public class FBlock implements FStatement, List<FStatement> {
+public class FBlock extends FStatement implements List<FStatement> {
 
     private List<FStatement> statements;
 
-    public static FBlock from() {
-        return new FBlock(Collections.emptyList());
+    public static FBlock from(Position position) {
+        return new FBlock(position, Collections.emptyList());
     }
 
     public static FBlock from(FStatement statement) {
-        return new FBlock(Collections.singletonList(statement));
+        return new FBlock(statement.getPosition(), Collections.singletonList(statement));
     }
 
-    public static FBlock from(FStatement... statements) {
-        return new FBlock(asList(statements));
+    public static FBlock from(Position position, FStatement... statements) {
+        return new FBlock(position, asList(statements));
     }
 
-    public static FBlock from(List<FStatement> statements) {
-        return new FBlock(statements);
+    public static FBlock from(Position position, List<FStatement> statements) {
+        return new FBlock(position, statements);
     }
 
-    protected FBlock(List<FStatement> statements) {
+    protected FBlock(Position position, List<FStatement> statements) {
+        super(position);
         assert statements.isEmpty() || statements.stream().limit(statements.size()-1).noneMatch( s -> s.redirectsControlFlow().isPresent());
         this.statements = statements;
     }
@@ -81,10 +83,6 @@ public class FBlock implements FStatement, List<FStatement> {
         for (FStatement statement : statements)
             statement.toString(sb).append('\n');
         return sb.append('}');
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 
     //start of delegated methods

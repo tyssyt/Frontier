@@ -5,6 +5,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
@@ -21,19 +22,19 @@ public class FExplicitCast extends FCast {
     private CastType castType;
     private FType type;
 
-    private FExplicitCast(FType type, FExpression castedExpression) throws IncompatibleTypes {
-        super(castedExpression);
+    private FExplicitCast(Position position, FType type, FExpression castedExpression) throws IncompatibleTypes {
+        super(position, castedExpression);
         this.type = type;
         castType = getCastType(getType(), getCastedExpression().getType());
     }
 
-    public static FExplicitCast create(FType type, FExpression castedExpression) throws IncompatibleTypes {
-        return new FExplicitCast(type, castedExpression);
+    public static FExplicitCast create(Position position, FType type, FExpression castedExpression) throws IncompatibleTypes {
+        return new FExplicitCast(position, type, castedExpression);
     }
 
-    public static FExplicitCast createTrusted(FType type, FExpression castedExpression) {
+    public static FExplicitCast createTrusted(Position position, FType type, FExpression castedExpression) {
         try {
-            return create(type, castedExpression);
+            return create(position, type, castedExpression);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
@@ -66,20 +67,13 @@ public class FExplicitCast extends FCast {
 
     @Override
     public boolean isNoOpCast() {
-        switch (castType) {
-            case INTEGER_DEMOTION:
-                return false;
-            case FLOAT_DEMOTION:
-                return false;
-            case FLOAT_TO_INT:
-                return false;
-            case INT_TO_FLOAT:
-                return false;
-            case REMOVE_OPTIONAL:
-                return getType() != FBool.INSTANCE;
-            default:
-                return Utils.cantHappen();
-        }
+        return switch (castType) {
+            case INTEGER_DEMOTION -> false;
+            case FLOAT_DEMOTION   -> false;
+            case FLOAT_TO_INT     -> false;
+            case INT_TO_FLOAT     -> false;
+            case REMOVE_OPTIONAL  -> getType() != FBool.INSTANCE;
+        };
     }
 
     @Override

@@ -6,6 +6,7 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
 import tys.frontier.parser.syntaxErrors.TooManyArguments;
@@ -20,13 +21,14 @@ import java.util.Optional;
 
 import static tys.frontier.util.Utils.mutableSingletonList;
 
-public class FReturn  implements FStatement {
+public class FReturn extends FStatement {
 
     private List<FExpression> expressions;
     private ArgMapping argMapping;
     private FFunction function;
 
-    private FReturn(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
+    private FReturn(Position position, List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
+        super(position);
         this.expressions = expressions;
         this.function = function;
         this.argMapping = ArgMapping.createCasted(
@@ -34,18 +36,18 @@ public class FReturn  implements FStatement {
                 function.getType() == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(function.getType()));
     }
 
-    public static FReturn create(List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
-        return new FReturn(expressions, function);
+    public static FReturn create(Position position, List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
+        return new FReturn(position, expressions, function);
     }
-    public static FReturn createTrusted(List<FExpression> expressions, FFunction function) {
+    public static FReturn createTrusted(Position position, List<FExpression> expressions, FFunction function) {
         try {
-            return create(expressions, function);
+            return create(position, expressions, function);
         } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints e) {
             return Utils.cantHappen();
         }
     }
-    public static FReturn createTrusted(FExpression expression, FFunction function) {
-        return createTrusted(mutableSingletonList(expression), function);
+    public static FReturn createTrusted(Position position, FExpression expression, FFunction function) {
+        return createTrusted(position, mutableSingletonList(expression), function);
     }
 
     public List<FExpression> getExpressions() {

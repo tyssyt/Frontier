@@ -4,14 +4,16 @@ import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 
 import java.util.Optional;
 
-public class FContinue implements FStatement {
+public class FContinue extends FStatement {
 
     private FLoopIdentifier loop;
 
-    public FContinue(FLoopIdentifier loop) {
+    public FContinue(Position position, FLoopIdentifier loop) {
+        super(position);
         this.loop = loop;
     }
 

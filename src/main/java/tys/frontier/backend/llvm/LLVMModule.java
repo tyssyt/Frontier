@@ -235,15 +235,13 @@ public class LLVMModule implements AutoCloseable {
             LLVMTypeRef intType = getLlvmType(type);
             LLVMTypeRef functionType;
             switch (name) {
-                case "llvm.ctlz": case "llvm.cttz":
+                case "llvm.ctlz", "llvm.cttz" ->
                     functionType = LLVMFunctionType(intType, createPointerPointer(intType, LLVMInt1TypeInContext(context)), 2, FALSE);
-                    break;
-                case "llvm.smul.with.overflow": case "llvm.umul.with.overflow":
+                case "llvm.smul.with.overflow", "llvm.umul.with.overflow" -> {
                     LLVMTypeRef returnType = getLlvmType(FTuple.from(type, FBool.INSTANCE));
                     functionType = LLVMFunctionType(returnType, createPointerPointer(intType, intType), 2, FALSE);
-                    break;
-                default:
-                    functionType = LLVMFunctionType(intType, intType, 1, FALSE);
+                }
+                default -> functionType = LLVMFunctionType(intType, intType, 1, FALSE);
             }
             res = LLVMAddFunction(module, fullName, functionType);
         }
@@ -549,7 +547,7 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
-    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName, List<Include> userLibs) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
+    public void emitToFile(LLVMBackend.OutputFileType fileType, String fileName, List<Include> userLibs, boolean debug) { //TODO basically the first two are simple, the latter will need more options like target machine etc.
         BytePointer error = new BytePointer();
         int errorId = 0;
         switch (fileType) {
@@ -576,7 +574,7 @@ public class LLVMModule implements AutoCloseable {
                     errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
                     if (errorId != 0)
                         break;
-                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, userLibs, target.getTargetTriple());
+                    ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, userLibs, target.getTargetTriple(), debug);
                     Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
                     Process p = linkerCall.inheritIO().start();
                     p.waitFor();

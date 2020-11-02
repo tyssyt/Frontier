@@ -8,7 +8,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
@@ -129,6 +129,7 @@ public class Delegates {
         }
     }
 
+    //TODO @PositionForGeneratedCode
     private void createFunctionBody(Delegate d) {
         for (Pair<FFunction, FFunction> toDoPair : d.functions) {
             FFunction toDo = toDoPair.a;
@@ -136,25 +137,25 @@ public class Delegates {
 
             FFunctionCall fieldGet;
             if (d.field.isInstance()) {
-                FLocalVariableExpression thisExpr = new FLocalVariableExpression(params.get(0));
-                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
+                FVariableExpression thisExpr = new FVariableExpression(null, params.get(0));
+                fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
             } else {
-                fieldGet = FFunctionCall.createTrusted(d.field.getGetter().getSignature(), emptyList());
+                fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), emptyList());
             }
 
             List<FExpression> arguments = new ArrayList<>(params.size());
             arguments.add(fieldGet);
             for (int i = 1; i < params.size(); i++) {
-                arguments.add(new FLocalVariableExpression(params.get(i)));
+                arguments.add(new FVariableExpression(null, params.get(i)));
             }
 
-            FFunctionCall functionCall = FFunctionCall.createTrusted(toDoPair.b.getSignature(), arguments);
+            FFunctionCall functionCall = FFunctionCall.createTrusted(null, toDoPair.b.getSignature(), arguments);
 
             FStatement res;
             if (toDo.getType() == FTuple.VOID)
-                res = new FExpressionStatement(functionCall);
+                res = new FExpressionStatement(null, functionCall);
             else
-                res = FReturn.createTrusted(functionCall, toDo);
+                res = FReturn.createTrusted(null, functionCall, toDo);
 
             toDo.setBody(FBlock.from(res));
         }

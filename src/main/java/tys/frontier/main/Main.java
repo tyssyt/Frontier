@@ -40,6 +40,7 @@ public class Main {
         String output = null;
         List<ModuleRepository> repositories = new ArrayList<>();
         boolean keepTmpDir = false;
+        boolean debug = false;
 
         int i = 0;
         while (i < args.length) {
@@ -50,24 +51,23 @@ public class Main {
             }
 
             switch (arg) {
-                case "-out":
+                case "-out" -> {
                     i++;
                     if (output != null)
                         System.err.println("-out argument given more then once");
                     output = args[i];
-                    break;
-                case "-folderRepository":
+                }
+                case "-folderRepository" -> {
                     i++;
                     Path path = Paths.get(args[i]);
                     repositories.add(new FolderRepository(path, Style.DEFAULT_STYLE)); //TODO find a way to specify style here
-                    break;
-                case "-keepTmpDir":
+                }
+                case "-keepTmpDir" -> {
                     i++;
                     keepTmpDir = Boolean.parseBoolean(args[i]);
-                    break;
-                default:
-                    System.err.println("unrecognized argument: " + arg);
-                    break;
+                }
+                case "-debug" -> debug = true;
+                default -> System.err.println("unrecognized argument: " + arg);
             }
             i++;
         }
@@ -82,10 +82,10 @@ public class Main {
         if (output == null)
             output = input.substring(0, input.lastIndexOf('.'));
 
-        main(input, output, repositories, keepTmpDir);
+        main(input, output, repositories, keepTmpDir, debug);
     }
 
-    public static void main(String input, String output, List<ModuleRepository> repositories, boolean keepTmpDir) throws IOException, SyntaxErrors, SyntaxError {
+    public static void main(String input, String output, List<ModuleRepository> repositories, boolean keepTmpDir, boolean debug) throws IOException, SyntaxErrors, SyntaxError {
         repositories.add(ResourceRepository.INSTANCE);
         //FrontEnd
         State.get().setImportResolver(new ImportResolver(repositories));
@@ -132,7 +132,7 @@ public class Main {
             }
 
             //Backend
-            LLVMBackend.runBackend(module, reachability, output, outputType);
+            LLVMBackend.runBackend(module, reachability, output, outputType, debug);
         } finally {
             if (!keepTmpDir)
                 FileUtils.deleteDir(State.get().getTempDir());

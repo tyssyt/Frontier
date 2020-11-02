@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.namespace.Namespace;
@@ -62,13 +62,11 @@ public final class ParserContextUtils {
     public static FVisibilityModifier getVisibility (FrontierParser.VisibilityModifierContext ctx) {
         if (ctx == null)
             return FVisibilityModifier.NONE;
-        switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
-            case FrontierParser.EXPORT:
-                return FVisibilityModifier.EXPORT;
-            case FrontierParser.PRIVATE:
-                return FVisibilityModifier.PRIVATE;
-        }
-        return null;
+        return switch (((TerminalNode) ctx.children.get(0)).getSymbol().getType()) {
+            case FrontierParser.EXPORT  -> FVisibilityModifier.EXPORT;
+            case FrontierParser.PRIVATE -> FVisibilityModifier.PRIVATE;
+            default -> null;
+        };
     }
 
     public static boolean isStatic (FrontierParser.ModifierContext ctx) {
@@ -96,26 +94,17 @@ public final class ParserContextUtils {
     }
 
     public static FBaseClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
-        switch (((TerminalNode)ctx.children.get(0)).getSymbol().getType()) {
-            case BOOL:
-                return FBool.INSTANCE;
-            case INT:
-                return Utils.NYI("unbounded int type");
-            case CHAR:
-                return FIntN._8;
-            case INT16:
-                return FIntN._16;
-            case INT32:
-                return FIntN._32;
-            case INT64:
-                return FIntN._64;
-            case FLOAT32:
-                return FFloat32.INSTANCE;
-            case FLOAT64:
-                return FFloat64.INSTANCE;
-            default:
-                return Utils.NYI("Frontier type for: " + ((TerminalNode)ctx.children.get(0)).getSymbol().getText());
-        }
+        return switch (((TerminalNode) ctx.children.get(0)).getSymbol().getType()) {
+            case BOOL    -> FBool.INSTANCE;
+            case INT     -> Utils.NYI("unbounded int type");
+            case CHAR    -> FIntN._8;
+            case INT16   -> FIntN._16;
+            case INT32   -> FIntN._32;
+            case INT64   -> FIntN._64;
+            case FLOAT32 -> FFloat32.INSTANCE;
+            case FLOAT64 -> FFloat64.INSTANCE;
+            default      -> Utils.NYI("Frontier type for: " + ((TerminalNode) ctx.children.get(0)).getSymbol().getText());
+        };
     }
 
     public static Namespace getNonPredefined(String id, Function<FIdentifier, Namespace> possibleNamespaces) throws TypeNotFound {
@@ -232,54 +221,45 @@ public final class ParserContextUtils {
 
     public static FLiteral getLiteral (FrontierParser.LiteralContext ctx) { //TODO why do we have res instead of just return (look at once all literals are done)
         ParseTree child = ctx.getChild(0);
-        FLiteral res = null;
         if (child instanceof FrontierParser.BooleanLiteralContext) {
             if (((FrontierParser.BooleanLiteralContext) child).TRUE() != null)
-                res = FBoolLiteral.TRUE;
+                return FBoolLiteral.TRUE;
             else
-                res = FBoolLiteral.FALSE;
+                return FBoolLiteral.FALSE;
         }
-        if (child instanceof TerminalNode) {
-            Token token = ((TerminalNode) child).getSymbol();
-            String text = token.getText();
-            switch (token.getType()) {
-                case FrontierParser.IntegerLiteral:
-                    res = new FIntNLiteral(new BigInteger(text), text);
-                    break;
-                case FrontierParser.NULL:
-                    res = FNull.UNTYPED;
-                    break;
-                case FrontierParser.FloatingPointLiteral:
-                    switch (text.charAt(text.length()-1)) {
-                        case 'f': case 'F':
-                            res = new FFloat32Literal(Float.parseFloat(text), text);
-                            break;
-                        case 'd': case 'D': default:
-                            res = new FFloat64Literal(Double.parseDouble(text), text);
-                            break;
+        assert child instanceof TerminalNode;
+        Token token = ((TerminalNode) child).getSymbol();
+        String text = token.getText();
+        return switch (token.getType()) {
+            case IntegerLiteral       -> new FIntNLiteral(new BigInteger(text), text);
+            case NULL                 -> FNull.UNTYPED;
+            case FloatingPointLiteral ->
+                    switch (text.charAt(text.length() - 1)) {
+                        case 'f', 'F' -> new FFloat32Literal(Float.parseFloat(text), text);
+                        default       -> new FFloat64Literal(Double.parseDouble(text), text);
+                    };
+            case StringLiteral        -> {
+                assert text.charAt(0) == '\"';
+                assert text.charAt(text.length() - 1) == '\"';
+                StringBuilder sb = new StringBuilder();
+                for (int i = 1; i < text.length() - 1; i++) {
+                    char c = text.charAt(i);
+                    if (c == '\\') {
+                        i++;
+                        c = FCharLiteral.escapeLiterals.get(text.charAt(i));
+                        assert c != 0 || text.charAt(i) == '0';
                     }
-                    break;
-                case FrontierParser.StringLiteral:
-                    assert text.charAt(0) == '\"';
-                    assert text.charAt(text.length()-1) == '\"';
-                    StringBuilder sb = new StringBuilder();
-                    for (int i=1; i<text.length()-1; i++) {
-                        char c = text.charAt(i);
-                        if (c == '\\') {
-                            i++;
-                            c = FCharLiteral.escapeLiterals.get(text.charAt(i));
-                            assert c != 0 || text.charAt(i) == '0';
-                        }
-                        sb.append(c);
-                    }
-                    String string = sb.toString();
-                    if (string.length() == 1) {
-                        return new FCharLiteral(string.charAt(0));
-                    }
-                    return new FStringLiteral(sb.toString());
+                    sb.append(c);
+                }
+                String string = sb.toString();
+                if (string.length() == 1) {
+                    yield  new FCharLiteral(string.charAt(0));
+                }
+                yield  new FStringLiteral(sb.toString());
             }
-        }
-        return res;
+
+            default -> Utils.cantHappen();
+        };
     }
 
     public static Set<FParameter> findDefaultValueDependencies(FExpression defaultValue, List<FParameter> parameters) {
@@ -287,7 +267,7 @@ public final class ParserContextUtils {
         defaultValue.accept(new ExpressionVisitor<>() {
             @Override
             @SuppressWarnings("SuspiciousMethodCalls")
-            public Object visitVariable(FLocalVariableExpression expression) {
+            public Object visitVariable(FVariableExpression expression) {
                 if (parameters.contains(expression.getVariable()))
                     defaultValueDependencies.add((FParameter) expression.getVariable());
                 return null;

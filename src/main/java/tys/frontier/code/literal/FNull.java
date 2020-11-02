@@ -10,7 +10,8 @@ import tys.frontier.code.type.FType;
 public class FNull implements FLiteral {
 
     private static final FIdentifier IDENTIFIER = new FIdentifier("!NullType");
-    public static FClass NULL_TYPE = new FBaseClass(IDENTIFIER, FVisibilityModifier.EXPORT, false);
+    //TODO @PositionForGeneratedCode
+    public static FClass NULL_TYPE = new FBaseClass(null, IDENTIFIER, FVisibilityModifier.EXPORT, false);
     public static final FNull UNTYPED = new FNull(NULL_TYPE);
 
     private FType type;

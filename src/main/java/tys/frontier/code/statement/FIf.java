@@ -6,30 +6,32 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.loop.FLoop;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FIf implements FStatement {
+public class FIf extends FStatement {
 
     private FExpression condition;
     private FBlock then;
     private FBlock elze; //Optional
 
-    private FIf(FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
+    private FIf(Position position, FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
+        super(position);
         this.condition = condition;
         this.then = then;
         this.elze = elze;
         checkTypes();
     }
 
-    public static FIf create(FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
-        return new FIf(condition, then, elze);
+    public static FIf create(Position position, FExpression condition, FBlock then, FBlock elze) throws IncompatibleTypes {
+        return new FIf(position, condition, then, elze);
     }
-    public static FIf createTrusted(FExpression condition, FBlock then, FBlock elze) {
+    public static FIf createTrusted(Position position, FExpression condition, FBlock then, FBlock elze) {
         try {
-            return create(condition, then, elze);
+            return create(position, condition, then, elze);
         } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
@@ -51,6 +53,10 @@ public class FIf implements FStatement {
     public void setElse(FBlock _else) {
         assert this.elze == null;
         this.elze = _else;
+    }
+
+    public void cutPositionElif(int lineTo, int columnTo) {
+        position = new Position(position.getLineFrom(), lineTo, position.getColumnFrom(), columnTo);
     }
 
     public Optional<FBlock> getElse() {
@@ -101,9 +107,5 @@ public class FIf implements FStatement {
         then.toString(sb);
         getElse().ifPresent(elze -> elze.toString(sb.append(" else ")));
         return sb;
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

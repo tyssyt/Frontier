@@ -9,7 +9,7 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -33,7 +33,7 @@ public class FConstructor extends FBaseFunction {
     public static final FIdentifier MALLOC_ID = new FIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(IDENTIFIER, fClass.getNamespace(), modifier, false, false, fClass, params, null, emptyMap());
+        super(fClass.getNamespace().getLocation(), IDENTIFIER, fClass.getNamespace(), modifier, false, false, fClass, params, null, emptyMap());
     }
 
     @Override
@@ -68,36 +68,38 @@ public class FConstructor extends FBaseFunction {
         ImmutableList.Builder<FParameter> arguments = ImmutableList.builder();
 
         for (FField field : fClass.getInstanceFields().values()) {
-            assert !field.getAssignment().isPresent();
+            assert field.getAssignment().isEmpty();
             boolean canBeTreatedAsOptional = FOptional.canBeTreatedAsOptional(field.getType());
             FParameter parameter = FParameter.create(field.getIdentifier(), field.getType(), canBeTreatedAsOptional || field.hasAssignment());
             if (!field.hasAssignment() && canBeTreatedAsOptional)
-                parameter.setDefaultValueTrusted(new FLiteralExpression(new FNull(parameter.getType())), emptySet());
+                //TODO @PositionForGeneratedCode
+                parameter.setDefaultValueTrusted(new FLiteralExpression(null, new FNull(parameter.getType())), emptySet());
             arguments.add(parameter);
         }
 
         return arguments.build();
     }
 
+    //TODO @PositionForGeneratedCode
     private void generateBody() {
         DefaultNamespace memberOf = getMemberOf();
         FLocalVariable _this = new FLocalVariable(FIdentifier.THIS, memberOf.getType());
 
-        FFunctionCall functionCall = FFunctionCall.createTrusted(Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
+        FFunctionCall functionCall = FFunctionCall.createTrusted(null, Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
         FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);
 
         List<FExpression> fields = new ArrayList<>(getSignature().getParameters().size());
         List<FExpression> params = new ArrayList<>(getSignature().getParameters().size());
         for (FParameter param : getSignature().getParameters()) {
-            FExpression thisExpr = new FLocalVariableExpression(_this);
+            FExpression thisExpr = new FVariableExpression(null, _this);
             FField field = memberOf.getType().getInstanceFields().get(param.getIdentifier());
-            fields.add(FFunctionCall.createTrusted(field.getSetter().getLhsSignature(), mutableSingletonList(thisExpr)));
-            params.add(new FLocalVariableExpression(param));
+            fields.add(FFunctionCall.createTrusted(null, field.getSetter().getLhsSignature(), mutableSingletonList(thisExpr)));
+            params.add(new FVariableExpression(null, param));
         }
-        FAssignment fieldAssign = FAssignment.createTrusted(fields, params);
+        FAssignment fieldAssign = FAssignment.createTrusted(null, fields, params);
 
-        FReturn _return = FReturn.createTrusted(new FLocalVariableExpression(_this), this);
+        FReturn _return = FReturn.createTrusted(null, new FVariableExpression(null, _this), this);
 
-        setBody(FBlock.from(thisDecl, fieldAssign, _return));
+        setBody(FBlock.from(null, thisDecl, fieldAssign, _return));
     }
 }

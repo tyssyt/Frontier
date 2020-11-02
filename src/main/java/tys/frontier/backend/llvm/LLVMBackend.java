@@ -31,7 +31,7 @@ public class LLVMBackend implements Backend {
 
     //TODO see if LTO is anything worth investing time into
 
-    public static void runBackend(FrontierModule fModule, Reachability reachability, String out, OutputFileType fileType) {
+    public static void runBackend(FrontierModule fModule, Reachability reachability, String out, OutputFileType fileType, boolean debug) {
         Collection<DefaultNamespace> namespaces;
         List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {
@@ -47,14 +47,14 @@ public class LLVMBackend implements Backend {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
-                module.emitToFile(fileType, out, emptyList());
+                module.emitToFile(fileType, out, emptyList(), debug);
                 return;
             }
             System.out.println("generated Module: " + module.emitToString());
             module.verify();
             //module.optimize(3); //TODO see the BreaksOptimizer test for why we need to disable optimization
             //System.out.println("optimized Module: " + module.emitToString());
-            module.emitToFile(fileType, out, allModules.stream().flatMap(m -> m.getNativeIncludes().stream()).collect(toList()));
+            module.emitToFile(fileType, out, allModules.stream().flatMap(m -> m.getNativeIncludes().stream()).collect(toList()), debug);
         }
     }
 

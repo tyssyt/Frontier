@@ -8,21 +8,23 @@ import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
-public class FOptElse implements FExpression {
+public class FOptElse extends FExpression {
 
     private FExpression optional;
     private FExpression elze;
 
-    public FOptElse(FExpression optional, FExpression elze) throws IncompatibleTypes {
+    private FOptElse(Position position, FExpression optional, FExpression elze) throws IncompatibleTypes {
+        super(position);
         this.optional = optional;
         this.elze = elze;
         checkTypes();
     }
 
-    public static FOptElse create(FExpression optional, FExpression elze) throws IncompatibleTypes {
-        return new FOptElse(optional, elze);
+    public static FOptElse create(Position position, FExpression optional, FExpression elze) throws IncompatibleTypes {
+        return new FOptElse(position, optional, elze);
     }
 
     private void checkTypes() throws IncompatibleTypes { //TODO the inner type of the optional could be allowed to implicitly cast to type of else I guess?
@@ -68,10 +70,5 @@ public class FOptElse implements FExpression {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         return sb.append(optional).append(" : ").append(elze);
-    }
-
-    @Override
-    public String toString() {
-        return tS();
     }
 }

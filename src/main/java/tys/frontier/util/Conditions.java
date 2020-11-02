@@ -48,18 +48,20 @@ public class Conditions {
                 && ((FFunctionCall) atom).getFunction().getMemberOf() instanceof FOptional;
     }
 
+    //TODO @PositionForGeneratedCode, but here it's not even generated and I might have a Position if I try
     public static FExpression and(FExpression atom1, FExpression atom2) {
         assert atom1.getType() == FBool.INSTANCE && atom2.getType() == FBool.INSTANCE;
-        return FFunctionCall.createTrusted(AND, asList(atom1, atom2));
+        return FFunctionCall.createTrusted(null, AND, asList(atom1, atom2));
     }
 
     public static FExpression and (FExpression... atoms) {
         return and(asList(atoms));
     }
 
+    //TODO @PositionForGeneratedCode
     public static FExpression and(List<FExpression> atoms) {
         if (atoms.isEmpty())
-            return new FLiteralExpression(FBoolLiteral.TRUE);
+            return new FLiteralExpression(null, FBoolLiteral.TRUE);
 
         Iterator<FExpression> it = atoms.iterator();
         FExpression res = it.next();

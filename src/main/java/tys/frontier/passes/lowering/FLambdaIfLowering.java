@@ -3,7 +3,6 @@ package tys.frontier.passes.lowering;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FCacheExpression;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
@@ -33,11 +32,13 @@ public class FLambdaIfLowering extends StatementReplacer {
         return replace(fIf);
     }
 
+    //TODO @PositionForGeneratedCode
     public FStatement replace (FIf fIf) {
         if (!(fIf.getThen() instanceof FLambdaBlock))
             return fIf;
 
-        List<FLocalVariable> variables = ((FLambdaBlock) fIf.getThen()).getVariables();
+        FLambdaBlock then = (FLambdaBlock) fIf.getThen();
+        List<FLocalVariable> variables = then.getVariables();
 
         Iterator<FLocalVariable> varIt = variables.iterator();
         List<FExpression> newAtoms = new ArrayList<>();
@@ -46,8 +47,8 @@ public class FLambdaIfLowering extends StatementReplacer {
             if (Conditions.isOptionalExistAtom(atom)) {
                 FExpression castedExpression = ((FImplicitCast) atom).getCastedExpression();
                 if (!(castedExpression instanceof FVariableExpression)) {
-                    FCacheExpression cache = FCacheExpression.create(generateCacheName(varIt.next().getIdentifier()), castedExpression);
-                    castedCacheVars.add(FExplicitCast.createTrusted(((FOptional) cache.getType()).getBaseType(), new FLocalVariableExpression(cache.getVariable())));
+                    FCacheExpression cache = FCacheExpression.create(castedExpression.getPosition(), generateCacheName(varIt.next().getIdentifier()), castedExpression);
+                    castedCacheVars.add(FExplicitCast.createTrusted(null, ((FOptional) cache.getType()).getBaseType(), new FVariableExpression(null, cache.getVariable())));
                     newAtoms.add(cache);
                     continue;
                 }
@@ -60,14 +61,14 @@ public class FLambdaIfLowering extends StatementReplacer {
         //build cacheVar to var assignment
         List<FExpression> varDecls = new ArrayList<>(variables.size());
         for (FLocalVariable variable : variables)
-            varDecls.add(new FVarDeclaration(variable));
-        FAssignment assignment = FAssignment.createTrusted(varDecls, castedCacheVars);
+            varDecls.add(new FVarDeclaration(null, variable));
+        FAssignment assignment = FAssignment.createTrusted(null, varDecls, castedCacheVars);
 
-        List<FStatement> newThen = new ArrayList<>(fIf.getThen().size() + 1);
+        List<FStatement> newThen = new ArrayList<>(then.size() + 1);
         newThen.add(assignment);
-        newThen.addAll(fIf.getThen());
+        newThen.addAll(then);
 
-        return FIf.createTrusted(Conditions.and(newAtoms), FBlock.from(newThen), fIf.getElse().orElse(null));
+        return FIf.createTrusted(fIf.getPosition(), Conditions.and(newAtoms), FBlock.from(then.getPosition(), newThen), fIf.getElse().orElse(null));
     }
 
     private static String generateCacheName(FIdentifier identifier) {

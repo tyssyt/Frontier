@@ -13,6 +13,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 import tys.frontier.util.Utils;
@@ -22,20 +23,21 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-public class FFunctionCall implements FExpression {
+public class FFunctionCall extends FExpression {
     private Signature signature;
     private List<FExpression> arguments;
     private BitSet defaultArgs;
     private ArgMapping argMapping;
 
-    private FFunctionCall(Signature signature, List<FExpression> arguments, BitSet defaultArgs, ArgMapping argMapping) {
+    private FFunctionCall(Position position, Signature signature, List<FExpression> arguments, BitSet defaultArgs, ArgMapping argMapping) {
+        super(position);
         this.signature = signature;
         this.arguments = arguments;
         this.defaultArgs = defaultArgs;
         this.argMapping = argMapping;
     }
 
-    public static FFunctionCall create(Signature signature, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
+    public static FFunctionCall create(Position position, Signature signature, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, ArgMapping argMapping) {
         List<FExpression> args = new ArrayList<>(positionalArgs);
         BitSet defaultArgs = new BitSet(signature.getParameters().size());
         ImmutableList<FParameter> parameters = signature.getParameters();
@@ -48,22 +50,22 @@ public class FFunctionCall implements FExpression {
             } else
                 args.addAll(arg); //adds null for default args
         }
-        return new FFunctionCall(signature, args, defaultArgs, argMapping);
+        return new FFunctionCall(position, signature, args, defaultArgs, argMapping);
     }
 
-    public static FFunctionCall createUnpreparedTrusted(Signature signature, List<FExpression> arguments, List<FType> paramTypes, BitSet defaultArgs) {
+    public static FFunctionCall createUnpreparedTrusted(Position position, Signature signature, List<FExpression> arguments, List<FType> paramTypes, BitSet defaultArgs) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(paramTypes, Utils.typesFromExpressionList(signature.getParameters()));
-            return new FFunctionCall(signature, arguments, defaultArgs, argMapping);
+            return new FFunctionCall(position, signature, arguments, defaultArgs, argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
     }
 
-    public static FFunctionCall createTrusted(Signature signature, List<FExpression> arguments) {
+    public static FFunctionCall createTrusted(Position position, Signature signature, List<FExpression> arguments) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(Utils.typesFromExpressionList(arguments), Utils.typesFromExpressionList(signature.getParameters()));
-            return new FFunctionCall(signature, arguments, new BitSet(arguments.size()), argMapping);
+            return new FFunctionCall(position, signature, arguments, new BitSet(arguments.size()), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints error) {
             return Utils.cantHappen();
         }
@@ -168,9 +170,5 @@ public class FFunctionCall implements FExpression {
         sb.append(signature.getFunction().getMemberOf().getIdentifier());
         sb.append('.').append(signature.getFunction().getIdentifier()).append('(');
         return Joiner.on(',').appendTo(sb, arguments).append(')');
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

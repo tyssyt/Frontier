@@ -12,6 +12,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
@@ -39,14 +40,14 @@ public class FBaseClass extends FClass {
     private ForImpl forImpl;
 
 
-    public FBaseClass(FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
+    public FBaseClass(Location location, FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
         this.identifier = identifier;
         this.visibility = visibility;
         this._native = _native;
         this.parametersList = ImmutableList.of();
         this.parameterVariance = Collections.emptyMap();
         this.instantiations = Collections.emptyMap();
-        this.namespace = new DefaultNamespace(this);
+        this.namespace = new DefaultNamespace(location, this);
     }
 
     protected void addDefaultFunctions() {

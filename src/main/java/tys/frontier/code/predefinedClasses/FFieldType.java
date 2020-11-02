@@ -20,20 +20,21 @@ public class FFieldType extends FBaseClass {
     public static final FField type;
     public static final FField memberOf;
 
+    //TODO @PositionForGeneratedCode, I already have the pseudo file
     static {
         //field name
         {
-            name = new FField(new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            name = new FField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(name); //TODO make final
         }
         //field type
         {
-            type = new FField(new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            type = new FField(null, new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(type); //TODO make final
         }
         //field memberOf
         {
-            memberOf = new FField(new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            memberOf = new FField(null, new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(memberOf); //TODO make final
         }
 
@@ -42,7 +43,7 @@ public class FFieldType extends FBaseClass {
 
 
     private FFieldType() {
-        super(IDENTIFIER, FVisibilityModifier.EXPORT, false);
+        super(null, IDENTIFIER, FVisibilityModifier.EXPORT, false);
     }
 
     @Override

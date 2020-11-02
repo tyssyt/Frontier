@@ -3,14 +3,16 @@ package tys.frontier.code.statement;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 
 import java.util.Optional;
 
-public class FExpressionStatement implements FStatement {
+public class FExpressionStatement extends FStatement {
 
     private FExpression expression;
 
-    public FExpressionStatement(FExpression expression) {
+    public FExpressionStatement(Position position, FExpression expression) {
+        super(position);
         this.expression = expression;
     }
 
@@ -37,9 +39,5 @@ public class FExpressionStatement implements FStatement {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         return expression.toString(sb).append(';');
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

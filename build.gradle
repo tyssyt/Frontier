@@ -3,7 +3,7 @@ version '0.11'
 apply plugin: 'java'
 apply plugin: 'antlr'
 
-sourceCompatibility = 1.9
+sourceCompatibility = 14
 compileJava.options.encoding = 'UTF-8'
 
 repositories {

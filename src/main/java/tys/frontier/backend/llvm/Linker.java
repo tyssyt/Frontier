@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 
 public class Linker { //TODO clean up seperators
 
-    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<Include> userLibs, String targetTriple) {
+    public static ProcessBuilder buildCall(String inputFile, String outputFile, List<Include> userLibs, String targetTriple, boolean debug) {
         List<String> inputFiles = new ArrayList<>();
         List<String> weirdExcludeThingies = new ArrayList<>();
         inputFiles.add(inputFile);
@@ -31,7 +31,7 @@ public class Linker { //TODO clean up seperators
         }
 
         if (OS.isWindows()) {
-            return buildCallWindows(inputFiles, outputFile, weirdExcludeThingies, targetTriple);
+            return buildCallWindows(inputFiles, outputFile, weirdExcludeThingies, targetTriple, debug);
         } else {
             return buildCallClang(inputFile, outputFile); //TODO linux linker call
         }
@@ -42,7 +42,7 @@ public class Linker { //TODO clean up seperators
         return new ProcessBuilder(asList(command)); //TODO maybe this can actually be called from the clang api?
     }
 
-    public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, List<String> weirdExcludeThingies, String targetTriple) {
+    public static ProcessBuilder buildCallWindows(List<String> inputFiles, String outputFile, List<String> weirdExcludeThingies, String targetTriple, boolean debug) {
         String linker;
         String libDir;
         if (JarUtils.isRunningInJar()) {
@@ -74,6 +74,8 @@ public class Linker { //TODO clean up seperators
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         builder.add(linker).add("-nologo").add("-defaultlib:libcmt").add("-out:" + outputFile);
         builder.add("-libpath:" + libDir);
+        if (debug)
+            builder.add("-debug");
         builder.addAll(inputFiles);
         builder.add("-nodefaultlib:OLDNAMES.lib");
         for (String weirdExcludeThingy : weirdExcludeThingies)
@@ -83,18 +85,13 @@ public class Linker { //TODO clean up seperators
 
     private static String getArch(String targetTriple) { //TODO if we ever do a class for TT, move this there
         String llvmArch = targetTriple.substring(0, targetTriple.indexOf('-'));
-        switch (llvmArch) {
-            case "x86":
-                return "x86";
-            case "x86_64":
-                return "x64";
-            case "arm":
-                return "arm";
-            case "aarch64":
-                return "arm64";
-            default:
-                return Utils.handleError("unknown Architecture: " + llvmArch);
-        }
+        return switch (llvmArch) {
+            case "x86" -> "x86";
+            case "x86_64" -> "x64";
+            case "arm" -> "arm";
+            case "aarch64" -> "arm64";
+            default -> Utils.handleError("unknown Architecture: " + llvmArch);
+        };
     }
 
     private static void copyLinkerFromJar(File targetFolder) throws IOException {

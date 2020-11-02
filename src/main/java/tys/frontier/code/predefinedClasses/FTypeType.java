@@ -15,6 +15,7 @@ import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.passes.analysis.reachability.Reachability;
 
+//TODO @PositionForGeneratedCode, I already have the pseudo file
 public class FTypeType extends FBaseClass {
 
     public static final FIdentifier IDENTIFIER = new FIdentifier("Type");
@@ -40,20 +41,20 @@ public class FTypeType extends FBaseClass {
 
         //field name
         {
-            name = new FField(new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            name = new FField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(name); //TODO make final
         }
 
         //field fields
         {
-            fields = new FField(new FIdentifier("fields"), FArray.getArrayFrom(FFieldType.INSTANCE), INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            fields = new FField(null, new FIdentifier("fields"), FArray.getArrayFrom(FFieldType.INSTANCE), INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(fields); //TODO make final
         }
 
         //static field allTypes
         {
             FArray typeTypeArray = FArray.getArrayFrom(INSTANCE);
-            allTypes = new FField(allTypes_ID, typeTypeArray, INSTANCE, FVisibilityModifier.EXPORT, true, false);
+            allTypes = new FField(null, allTypes_ID, typeTypeArray, INSTANCE, FVisibilityModifier.EXPORT, true, false);
             INSTANCE.addFieldTrusted(allTypes); //TODO make final
         }
 
@@ -62,7 +63,7 @@ public class FTypeType extends FBaseClass {
             FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
             typeOf = new FunctionBuilder(typeof_ID, namespace)
                     .setParams(t).setReturnType(FTypeType.INSTANCE).setParameters(t).build();
-            typeOf.setBody(FBlock.from(FReturn.createTrusted(new FNamespaceExpression(t.getNamespace()), typeOf)));
+            typeOf.setBody(FBlock.from(FReturn.createTrusted(null, new FNamespaceExpression(null, t.getNamespace()), typeOf)));
             namespace.addFunctionTrusted(typeOf);
         }
 
@@ -71,7 +72,7 @@ public class FTypeType extends FBaseClass {
             FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
 
             //Dummy return Type that has nothing but a forEach Impl TODO change when we have a simpler mechanism to return an iterable
-            FBaseClass dummy = new FBaseClass(new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, false);
+            FBaseClass dummy = new FBaseClass(null, new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, false);
             dummy.setForImpl(new PrimitiveFor());
             fieldsOf = new FunctionBuilder(fieldsOf_ID, namespace)
                     .setPredefined(true).setParams(t).setReturnType(dummy).setParameters(t).build();
@@ -81,7 +82,7 @@ public class FTypeType extends FBaseClass {
 
 
     private FTypeType() {
-        super(IDENTIFIER, FVisibilityModifier.EXPORT, false);
+        super(null, IDENTIFIER, FVisibilityModifier.EXPORT, false);
     }
 
     @Override

@@ -5,12 +5,14 @@ import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 
-public class FNamespaceExpression implements FExpression {
+public class FNamespaceExpression extends FExpression {
 
     private Namespace namespace;
 
-    public FNamespaceExpression(Namespace namespace) {
+    public FNamespaceExpression(Position position, Namespace namespace) {
+        super(position);
         this.namespace = namespace;
     }
 
@@ -36,10 +38,5 @@ public class FNamespaceExpression implements FExpression {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         return sb.append(namespace.getIdentifier().name);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
     }
 }

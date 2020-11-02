@@ -4,14 +4,16 @@ import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 
 import java.util.Optional;
 
-public class FBreak implements FStatement {
+public class FBreak extends FStatement {
 
     private FLoopIdentifier loop;
 
-    public FBreak(FLoopIdentifier loop) {
+    public FBreak(Position position, FLoopIdentifier loop) {
+        super(position);
         this.loop = loop;
     }
 

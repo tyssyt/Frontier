@@ -5,13 +5,15 @@ import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.Utils;
 
-public class FFunctionAddress implements FExpression {
+public class FFunctionAddress extends FExpression {
 
     private FFunction function;
 
-    public FFunctionAddress(FFunction function) {
+    public FFunctionAddress(Position position, FFunction function) {
+        super(position);
         this.function = function;
     }
 
@@ -38,10 +40,5 @@ public class FFunctionAddress implements FExpression {
     public StringBuilder toString(StringBuilder sb) { //TODO print types instead of identifiers of params
         sb.append(function.getIdentifier()).append('(');
         return Utils.joinIdentifiers(sb, function.getSignature().getParameters(), ",").append(")*");
-    }
-
-    @Override
-    public String toString() {
-        return tS();
     }
 }

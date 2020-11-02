@@ -41,7 +41,7 @@ public class FInstantiatedClass extends FForwardingClass {
         assert instantiatedParameters.size() == baseClass.getParametersList().size();
         newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
         this.instantiatedParameters = instantiatedParameters;
-        this.newNamespace = new DefaultNamespace(this);
+        this.newNamespace = new DefaultNamespace(baseClass.getNamespace().getLocation(), this);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FInstantiatedClass extends FForwardingClass {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add fields
         for (FField baseField : proxy.getFields()) {
-            FField instantiatedField = new FField(baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
+            FField instantiatedField = new FField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
                     this, baseField.getVisibility(), !baseField.isInstance(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
             baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());

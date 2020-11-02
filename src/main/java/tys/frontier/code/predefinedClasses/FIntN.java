@@ -41,17 +41,18 @@ public class FIntN extends FPredefinedClass {
     private int n;
     private FFunction uShiftR;
 
+    //TODO @PositionForGeneratedCode
     private FIntN(int n) {
         super(new FIntIdentifier(n));
         assert n>=4;
         this.n = n;
         addPredefinedFunctionsForArithType();
         addPredefinedFunctionsForIntType();
-        FField max = new FField(MAX, this, this, FVisibilityModifier.EXPORT, true, true);
-        max.setAssignmentTrusted(new FLiteralExpression(new FIntNLiteral(maxValue(), this, "" + maxValue())));
+        FField max = new FField(null, MAX, this, this, FVisibilityModifier.EXPORT, true, true);
+        max.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(maxValue(), this, "" + maxValue())));
         addFieldTrusted(max);
-        FField min = new FField(MIN, this, this, FVisibilityModifier.EXPORT, true, true);
-        min.setAssignmentTrusted(new FLiteralExpression(new FIntNLiteral(minValue(), this, "" + minValue())));
+        FField min = new FField(null, MIN, this, this, FVisibilityModifier.EXPORT, true, true);
+        min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this, "" + minValue())));
         addFieldTrusted(min);
     }
 

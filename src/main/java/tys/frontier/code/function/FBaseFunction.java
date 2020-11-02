@@ -12,6 +12,7 @@ import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.parser.location.Location;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
 
@@ -25,6 +26,7 @@ public class FBaseFunction implements FFunction {
     private boolean natiwe;
     protected boolean predefined;
     private FBlock body;
+    private Location location;
 
     private Signature signature;
     private Signature lhsSignature;
@@ -34,7 +36,8 @@ public class FBaseFunction implements FFunction {
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
 
-    protected FBaseFunction(FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, boolean predefined, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+    protected FBaseFunction(Location location, FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, boolean predefined, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+        this.location = location;
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
@@ -115,6 +118,11 @@ public class FBaseFunction implements FFunction {
                 && memberOf instanceof DefaultNamespace
                 && ((DefaultNamespace) memberOf).getVisibility() == FVisibilityModifier.EXPORT
                 && signature.isMain();
+    }
+
+    @Override
+    public Location getLocation() {
+        return location;
     }
 
     private NameGenerator freshVariableNames = new NameGenerator("?", "");

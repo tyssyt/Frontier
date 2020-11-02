@@ -8,6 +8,7 @@ import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
 import tys.frontier.parser.syntaxErrors.TooManyArguments;
@@ -22,13 +23,14 @@ import java.util.Optional;
 import static java.util.Collections.singletonList;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
-public class FAssignment implements FStatement {
+public class FAssignment extends FStatement {
 
     private List<FExpression> lhsExpressions;
     private List<FExpression> values;
     private ArgMapping argMapping;
 
-    public FAssignment(List<FExpression> lhsExpressions,  List<FExpression> values, ArgMapping argMapping) {
+    private FAssignment(Position position, List<FExpression> lhsExpressions, List<FExpression> values, ArgMapping argMapping) {
+        super(position);
         this.lhsExpressions = lhsExpressions;
         this.values = values;
         this.argMapping = argMapping;
@@ -39,7 +41,7 @@ public class FAssignment implements FStatement {
         }
     }
 
-    public static FAssignment create(List<FExpression> lhsExpressions, List<FExpression> values) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
+    public static FAssignment create(Position position, List<FExpression> lhsExpressions, List<FExpression> values) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
         List<FType> target = new ArrayList<>();
         for (FExpression e : lhsExpressions) {
             if (e instanceof FVariableExpression)
@@ -50,21 +52,22 @@ public class FAssignment implements FStatement {
                 Utils.cantHappen();
         }
         ArgMapping argMap = ArgMapping.createCasted(Utils.typesFromExpressionList(values), target);
-        return new FAssignment(lhsExpressions, values, argMap);
+        return new FAssignment(position, lhsExpressions, values, argMap);
     }
 
-    public static FAssignment createTrusted(List<FExpression> lhsExpressions, List<FExpression> values) {
+    public static FAssignment createTrusted(Position position, List<FExpression> lhsExpressions, List<FExpression> values) {
         try {
-            return create(lhsExpressions, values);
+            return create(position, lhsExpressions, values);
         } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
 
+    //TODO @PositionForGeneratedCode
     public static FAssignment createDecl(FLocalVariable variable, FExpression value) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(singletonList(value.getType()), singletonList(variable.getType()));
-            return new FAssignment(singletonList(new FVarDeclaration(variable)), mutableSingletonList(value), argMapping);
+            return new FAssignment(null, singletonList(new FVarDeclaration(null, variable)), mutableSingletonList(value), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }
@@ -110,9 +113,5 @@ public class FAssignment implements FStatement {
         sb.append(" = ");
         sb.append(Joiner.on(", ").join(values));
         return sb.append(';');
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

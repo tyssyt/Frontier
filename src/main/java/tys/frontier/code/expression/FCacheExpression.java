@@ -1,25 +1,26 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FVariable;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 
-public class FCacheExpression implements FExpression {
+public class FCacheExpression extends FExpression {
 
     private FLocalVariable variable;
     private FExpression expression;
 
-    private FCacheExpression(FLocalVariable variable, FExpression expression) {
+    private FCacheExpression(Position position, FLocalVariable variable, FExpression expression) {
+        super(position);
         assert variable.getType() == expression.getType();
         this.variable = variable;
         this.expression = expression;
     }
 
-    public static FCacheExpression create(String name, FExpression expression) {
-        return new FCacheExpression(new FLocalVariable(new FIdentifier(name), expression.getType()), expression);
+    public static FCacheExpression create(Position position, String name, FExpression expression) {
+        return new FCacheExpression(position, new FLocalVariable(new FIdentifier(name), expression.getType()), expression);
     }
 
     public FLocalVariable getVariable() {
@@ -50,9 +51,5 @@ public class FCacheExpression implements FExpression {
     public StringBuilder toString(StringBuilder sb) {
         sb.append(variable).append(":=");
         return expression.toString(sb);
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

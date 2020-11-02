@@ -10,6 +10,7 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.location.Location;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.List;
@@ -49,6 +50,8 @@ public interface FFunction extends IdentifierNameable, HasVisibility, Typed, Con
     boolean isPredefined();
 
     boolean isMain();
+
+    Location getLocation();
 
     FLocalVariable getFreshVariable(FType type);
 

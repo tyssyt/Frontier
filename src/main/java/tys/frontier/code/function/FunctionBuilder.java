@@ -7,6 +7,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
+import tys.frontier.parser.location.Location;
 import tys.frontier.util.Utils;
 
 import java.util.Map;
@@ -17,6 +18,7 @@ import static tys.frontier.code.FVisibilityModifier.EXPORT;
 import static tys.frontier.code.predefinedClasses.FTuple.VOID;
 
 public class FunctionBuilder {
+    private Location location = null; //TODO @PositionForGeneratedCode
     private FIdentifier identifier;
     private Namespace memberOf;
     private FVisibilityModifier modifier = EXPORT;
@@ -47,6 +49,11 @@ public class FunctionBuilder {
 
     public FunctionBuilder setMemberOf(Namespace memberOf) {
         this.memberOf = memberOf;
+        return this;
+    }
+
+    public FunctionBuilder setLocation(Location location) {
+        this.location = location;
         return this;
     }
 
@@ -110,6 +117,6 @@ public class FunctionBuilder {
     }
 
     public FBaseFunction build() {
-        return new FBaseFunction(identifier, memberOf, modifier, natiwe, predefined, returnType, params, assignees, parameters);
+        return new FBaseFunction(location, identifier, memberOf, modifier, natiwe, predefined, returnType, params, assignees, parameters);
     }
 }

@@ -13,6 +13,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 
 import java.util.ArrayList;
@@ -23,8 +24,8 @@ public class OptionalNamespace extends DefaultNamespace {
     private Namespace baseNamespace;
     private BiMap<FFunction, FFunction> shimMap = HashBiMap.create();
 
-    public OptionalNamespace(FOptional optional) {
-        super(optional);
+    public OptionalNamespace(Location location, FOptional optional) {
+        super(location, optional);
         baseNamespace = optional.getBaseType().getNamespace();
     }
 
@@ -71,6 +72,6 @@ public class OptionalNamespace extends DefaultNamespace {
             b.addAll(params.subList(1, params.size()));
             params = b.build();
         }
-        return builder.setParams(params).build();
+        return builder.setLocation(original.getLocation()).setParams(params).build();
     }
 }

@@ -152,40 +152,40 @@ public class GenericBaking implements FClassVisitor {
     //Statements
     @Override
     public FStatement exitBlock(FBlock block, List<FStatement> fStatements) {
-        return FBlock.from(fStatements);
+        return FBlock.from(block.getPosition(), fStatements);
     }
 
     @Override
     public FStatement exitExpressionStatement(FExpressionStatement statement, FExpression fExpression) {
-        return new FExpressionStatement(fExpression);
+        return new FExpressionStatement(statement.getPosition(), fExpression);
     }
 
     @Override
     public FStatement exitIf(FIf fIf, FExpression cond, FStatement then, Optional<FStatement> elze) {
-        return FIf.createTrusted(cond, (FBlock) then, (FBlock) elze.orElse(null));
+        return FIf.createTrusted(fIf.getPosition(), cond, (FBlock) then, (FBlock) elze.orElse(null));
     }
 
     @Override
     public FStatement exitReturn(FReturn fReturn, List<FExpression> values) {
         if (variableMode == USE_ORIGINAL || variableMode == FALLBACK_ORIGINAL)
-            return FReturn.createTrusted(values, fReturn.getFunction());
+            return FReturn.createTrusted(fReturn.getPosition(), values, fReturn.getFunction());
 
         List<FExpression> returnExps = new ArrayList<>();
         List<FStatement> voidStatements = new ArrayList<>();
         for (FExpression value : values) {
             if (value.getType() == FTuple.VOID)
-                voidStatements.add(new FExpressionStatement(value));
+                voidStatements.add(new FExpressionStatement(value.getPosition(), value));
             else
                 returnExps.add(value);
         }
 
-        voidStatements.add(FReturn.createTrusted(returnExps, currentFunction));
-        return FBlock.from(voidStatements);
+        voidStatements.add(FReturn.createTrusted(fReturn.getPosition(), returnExps, currentFunction));
+        return FBlock.from(fReturn.getPosition(), voidStatements);
     }
 
     @Override
     public FStatement exitVarAssignment(FAssignment assignment, List<FExpression> lhsExpressions, List<FExpression> values) {
-        return FAssignment.createTrusted(lhsExpressions, values);
+        return FAssignment.createTrusted(assignment.getPosition(), lhsExpressions, values);
     }
 
     @Override
@@ -214,7 +214,7 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public FStatement exitWhile(FWhile fWhile, FExpression cond, FStatement body) {
-        return FWhile.createTrusted(fWhile.getNestedDepth(), loopMap.get(fWhile.getIdentifier()), cond, (FBlock) body);
+        return FWhile.createTrusted(fWhile.getPosition(), fWhile.getNestedDepth(), loopMap.get(fWhile.getIdentifier()), cond, (FBlock) body);
     }
 
     @Override
@@ -224,13 +224,13 @@ public class GenericBaking implements FClassVisitor {
             ArrayList<FLocalVariable> iterators = Utils.map(forEach.getIterators(), it -> varMap.get(it));
             FLocalVariable counter = forEach.getCounter().map(c -> varMap.get(c)).orElse(null);
             FExpression actualContainer = getOnlyElement(((FFunctionCall) container).getArguments(false));
-            FForEach pseudoForEach = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, actualContainer, FBlock.from(body));
+            FForEach pseudoForEach = FForEach.create(forEach.getPosition(), forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, actualContainer, FBlock.from(body));
             return FForEachLowering.buildPrimitiveFor((PrimitiveFor) forImpl, currentFunction, pseudoForEach);
         } else if (forImpl instanceof IsIterable) {
             //instantiate the forEach
             ArrayList<FLocalVariable> iterators = Utils.map(forEach.getIterators(), it -> varMap.get(it));
             FLocalVariable counter = forEach.getCounter().map(c -> varMap.get(c)).orElse(null);
-            FForEach res = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, container, FBlock.from(body));
+            FForEach res = FForEach.create(forEach.getPosition(), forEach.getNestedDepth(), forEach.getIdentifier(), iterators, counter, container, FBlock.from(body));
             //lower it
             return FForEachLowering.replace(res, currentFunction);
         }
@@ -248,22 +248,22 @@ public class GenericBaking implements FClassVisitor {
             varMap.put(old, counter);
         }
 
-        return FForEach.create(forEach.getNestedDepth(), loopMap.get(forEach.getIdentifier()), iterators, counter, container, (FBlock) body);
+        return FForEach.create(forEach.getPosition(), forEach.getNestedDepth(), loopMap.get(forEach.getIdentifier()), iterators, counter, container, (FBlock) body);
     }
 
     @Override
     public FStatement visitBreak(FBreak fBreak) {
-        return new FBreak(loopMap.get(fBreak.getLoop()));
+        return new FBreak(fBreak.getPosition(), loopMap.get(fBreak.getLoop()));
     }
 
     @Override
     public FStatement visitContinue(FContinue fContinue) {
-        return new FContinue(loopMap.get(fContinue.getLoop()));
+        return new FContinue(fContinue.getPosition(), loopMap.get(fContinue.getLoop()));
     }
 
     @Override
     public FExpression exitBrackets(FBracketsExpression brackets, FExpression inner) {
-        return new FBracketsExpression(inner);
+        return new FBracketsExpression(brackets.getPosition(), inner);
     }
 
     @Override
@@ -290,12 +290,12 @@ public class GenericBaking implements FClassVisitor {
         }
 
         signature = Utils.findFunctionInstantiation(signature, paramTypes, ImmutableListMultimap.of(), typeInstantiation);
-        return FFunctionCall.createUnpreparedTrusted(signature, params, paramTypes, defaultArgs);
+        return FFunctionCall.createUnpreparedTrusted(functionCall.getPosition(), signature, params, paramTypes, defaultArgs);
     }
 
     @Override
     public FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> params) {
-        return DynamicFunctionCall.createTrusted(function, params);
+        return DynamicFunctionCall.createTrusted(functionCall.getPosition(), function, params);
     }
 
     @Override
@@ -307,42 +307,38 @@ public class GenericBaking implements FClassVisitor {
     public FExpression exitExplicitCast(FExplicitCast explicitCast, FExpression castedExpression) {
         FType targetType = typeInstantiation.getType(explicitCast.getType());
         if (targetType != castedExpression.getType())
-            return FExplicitCast.createTrusted(targetType, castedExpression);
+            return FExplicitCast.createTrusted(explicitCast.getPosition(), targetType, castedExpression);
         else
             return castedExpression;
     }
 
     @Override
     public FExpression visitLiteral(FLiteralExpression expression) {
-        return new FLiteralExpression(expression.getLiteral().copy());
+        return new FLiteralExpression(expression.getPosition(), expression.getLiteral().copy());
     }
 
     @Override
-    public FExpression visitVariable(FLocalVariableExpression expression) { //TODO decl
+    public FExpression visitVariable(FVariableExpression expression) { //TODO decl
         if (expression instanceof FVarDeclaration) {
             FLocalVariable old = expression.getVariable();
             switch (variableMode) {
                 case USE_ORIGINAL:
-                    return new FVarDeclaration(old);
+                    return new FVarDeclaration(expression.getPosition(), old);
                 case FALLBACK_ORIGINAL: case NO_ORIGINAL:
                     FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
                     varMap.put(old, _new);
-                    return new FVarDeclaration(_new);
+                    return new FVarDeclaration(expression.getPosition(), _new);
                 default:
                     return Utils.cantHappen();
             }
         }
 
-        switch (variableMode) { //in theory, the fallback_original call works in both other cases as well, but may hide errors
-            case USE_ORIGINAL:
-                return new FLocalVariableExpression(expression.getVariable());
-            case FALLBACK_ORIGINAL:
-                return new FLocalVariableExpression(varMap.getOrDefault(expression.getVariable(), expression.getVariable()));
-            case NO_ORIGINAL:
-                return new FLocalVariableExpression(varMap.get(expression.getVariable()));
-            default:
-                return Utils.cantHappen();
-        }
+        //in theory, the fallback_original call works in both other cases as well, but may hide errors
+        return switch (variableMode) {
+            case USE_ORIGINAL      -> new FVariableExpression(expression.getPosition(), expression.getVariable());
+            case NO_ORIGINAL       -> new FVariableExpression(expression.getPosition(), varMap.get(expression.getVariable()));
+            case FALLBACK_ORIGINAL -> new FVariableExpression(expression.getPosition(), varMap.getOrDefault(expression.getVariable(), expression.getVariable()));
+        };
     }
 
     @Override
@@ -351,7 +347,7 @@ public class GenericBaking implements FClassVisitor {
         if (type == null)
             return expression;
         else
-            return new FNamespaceExpression(typeInstantiation.getType(type).getNamespace());
+            return new FNamespaceExpression(expression.getPosition(), typeInstantiation.getType(type).getNamespace());
     }
 
     @Override
@@ -359,6 +355,6 @@ public class GenericBaking implements FClassVisitor {
         Signature old = address.getFunction().getSignature();
         List<FType> argumentTypes = typesFromExpressionList(old.getParameters(), typeInstantiation::getType);
         Signature _new = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
-        return new FFunctionAddress(_new.getFunction());
+        return new FFunctionAddress(address.getPosition(), _new.getFunction());
     }
 }

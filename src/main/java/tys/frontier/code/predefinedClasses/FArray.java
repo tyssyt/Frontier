@@ -7,7 +7,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
@@ -43,6 +43,7 @@ public class FArray extends FPredefinedClass {
         return false; //TODO remove once arrays use generics
     }
 
+    //TODO @PositionForGeneratedCode
     private FArray(FType baseType) {
         super(new FArrayIdentifier(baseType.getIdentifier()));
         this.baseType = baseType;
@@ -50,7 +51,7 @@ public class FArray extends FPredefinedClass {
 
         //addDefaultFunctions(); TODO should only be added once for "base class"
         //TODO add container equals, and prolly do something to equality once that is done
-        size = new FField(SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
+        size = new FField(null, SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
         addFieldTrusted(size); //TODO make final
         namespace.getFunctions(true).get(size.getIdentifier()).clear(); //remove setter TODO no longer needed when field is final
         access = Access.createPredefined(this, FIntN._32, baseType);
@@ -70,9 +71,9 @@ public class FArray extends FPredefinedClass {
                 FParameter.create(new FIdentifier("targetOffset"), FIntN._32, true),
                 FParameter.create(new FIdentifier("length"), FIntN._32, true)
         );
-        params.get(2).setDefaultValueTrusted(new FLiteralExpression(new FIntNLiteral(0)), emptySet());
-        params.get(3).setDefaultValueTrusted(new FLiteralExpression(new FIntNLiteral(0)), emptySet());
-        FFunctionCall sourceSize = FFunctionCall.createTrusted(size.getGetter().getSignature(), mutableSingletonList(new FLocalVariableExpression(params.get(0))));
+        params.get(2).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());
+        params.get(3).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());
+        FFunctionCall sourceSize = FFunctionCall.createTrusted(null, size.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, params.get(0))));
         params.get(4).setDefaultValueTrusted(sourceSize, Set.of(params.get(0)));
         namespace.addFunctionTrusted(builder.setParams(params).setReturnType(FTuple.VOID).build());
 

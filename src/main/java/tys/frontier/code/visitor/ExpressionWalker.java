@@ -48,7 +48,7 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
-    default Expression visitVariable(FLocalVariableExpression expression) {
+    default Expression visitVariable(FVariableExpression expression) {
         return null;
     }
 

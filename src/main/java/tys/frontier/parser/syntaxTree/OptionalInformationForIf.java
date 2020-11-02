@@ -2,7 +2,7 @@ package tys.frontier.parser.syntaxTree;
 
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FLocalVariableExpression;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FIdentifier;
@@ -33,8 +33,8 @@ public class OptionalInformationForIf {
         for (FExpression atom : Conditions.splitOnAnd(condition)) {
             if (Conditions.isOptionalExistAtom(atom)) {
                 FExpression opt = ((FImplicitCast) atom).getCastedExpression();
-                if (opt instanceof FLocalVariableExpression)
-                    promotableVars.add(((FLocalVariableExpression) opt).getVariable());
+                if (opt instanceof FVariableExpression)
+                    promotableVars.add(((FVariableExpression) opt).getVariable());
                 else
                     lambdaValues.add(opt);
             }
@@ -50,18 +50,19 @@ public class OptionalInformationForIf {
         return lambdaValues;
     }
 
+    //TODO @PositionForGeneratedCode
     public FAssignment createPromotions(Map<FIdentifier, FLocalVariable> variableScope) {
         List<FExpression> lhs = new ArrayList<>(promotableVars.size());
-        List<FExpression> promote = new ArrayList<>(lhs.size());
+        List<FExpression> promote = new ArrayList<>(promotableVars.size());
         for (FLocalVariable promoteable : promotableVars) {
             assert promoteable.getType() instanceof FOptional;
             FOptional opt = (FOptional) promoteable.getType();
             FLocalVariable promotedVar = new FLocalVariable(promoteable.getIdentifier(), opt.getBaseType());
-            lhs.add(new FVarDeclaration(promotedVar));
-            promote.add(FExplicitCast.createTrusted(opt.getBaseType(), new FLocalVariableExpression(promoteable)));
+            lhs.add(new FVarDeclaration(null, promotedVar));
+            promote.add(FExplicitCast.createTrusted(null, opt.getBaseType(), new FVariableExpression(null, promoteable)));
             variableScope.put(promotedVar.getIdentifier(), promotedVar); //this should override the non promoted declaration
         }
-        return FAssignment.createTrusted(lhs, promote);
+        return FAssignment.createTrusted(null, lhs, promote);
     }
 
     public List<FType> getPromotedLambdaValueTypes() {

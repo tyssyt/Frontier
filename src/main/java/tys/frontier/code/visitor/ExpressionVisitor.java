@@ -34,7 +34,7 @@ public interface ExpressionVisitor<Expression>  {
     default Expression visitLiteral(FLiteralExpression expression) {
         return null;
     }
-    default Expression visitVariable(FLocalVariableExpression expression) {
+    default Expression visitVariable(FVariableExpression expression) {
         return null;
     }
     default Expression visitNamespaceExpression(FNamespaceExpression expression) {

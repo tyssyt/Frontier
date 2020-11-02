@@ -13,6 +13,8 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.parser.syntaxTree.GlobalIdentifierCollector;
 import tys.frontier.parser.syntaxTree.ParserContextUtils;
@@ -71,7 +73,7 @@ public class Parser {
         for (ParsedFile file : module.getFiles()) {
             for (FrontierParser.ClassDeclarationContext ctx : file.getTreeData().root.classDeclaration()) {
                 try {
-                    FClass _class = createClass(ctx);
+                    FClass _class = createClass(file.getFilePath(), ctx);
                     DefaultNamespace old = file.resolveNamespace(_class.getIdentifier());
                     if (old != null)
                         throw new IdentifierCollision(_class, old);
@@ -82,7 +84,7 @@ public class Parser {
             }
             for (FrontierParser.NamespaceDeclarationContext ctx : file.getTreeData().root.namespaceDeclaration()) {
                 try {
-                    DefaultNamespace namespace = createNamespace(ctx);
+                    DefaultNamespace namespace = createNamespace(file.getFilePath(), ctx);
                     DefaultNamespace old = file.resolveNamespace(namespace.getIdentifier());
                     if (old != null)
                         throw new IdentifierCollision(namespace, old);
@@ -138,12 +140,12 @@ public class Parser {
             classesToPrepare.add(toRegister);
     }
 
-    public static FClass createClass(FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
+    public static FClass createClass(Path file, FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         boolean _native = ctx.NATIVE() != null;
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        FClass res =  new FBaseClass(identifier, visibilityModifier, _native);
+        FClass res =  new FBaseClass(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, _native);
         if (c != null) {
             Pair<List<FTypeVariable>, List<Variance>> typeParameters = ParserContextUtils.getTypeParameters(c);
             res.setParameters(typeParameters.a, typeParameters.b);
@@ -151,10 +153,10 @@ public class Parser {
         return res;
     }
 
-    public static DefaultNamespace createNamespace(FrontierParser.NamespaceDeclarationContext ctx) {
+    public static DefaultNamespace createNamespace(Path file, FrontierParser.NamespaceDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-        return new DefaultNamespace(identifier, visibilityModifier, false);
+        return new DefaultNamespace(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, false);
     }
 
 }

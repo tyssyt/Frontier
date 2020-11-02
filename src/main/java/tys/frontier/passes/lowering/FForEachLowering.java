@@ -45,6 +45,7 @@ import static java.util.Collections.singletonList;
 import static tys.frontier.util.Utils.mutableSingletonList;
 import static tys.frontier.util.Utils.mutableSingletonMap;
 
+//TODO @PositionForGeneratedCode, see how debugging feels and whether we want to have the increment lines got to the head of the loop etc
 public class FForEachLowering extends StatementReplacer {
 
     private static FForEachLowering INSTANCE = new FForEachLowering();
@@ -77,7 +78,7 @@ public class FForEachLowering extends StatementReplacer {
                 else
                     return Utils.NYI("primitive for on non-baked TypeVariable");
             }
-            FForEach pseudoForEach = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), forEach.getIterators(), forEach.getCounter().orElse(null), container, forEach.getBody());
+            FForEach pseudoForEach = FForEach.create(forEach.getPosition(), forEach.getNestedDepth(), forEach.getIdentifier(), forEach.getIterators(), forEach.getCounter().orElse(null), container, forEach.getBody());
             return buildPrimitiveFor((PrimitiveFor) forImpl, function, pseudoForEach);
         }
         else if (forImpl instanceof IsIterable)
@@ -91,11 +92,11 @@ public class FForEachLowering extends StatementReplacer {
         //first store the container expression in a local variable, if necessary
         FLocalVariable container = getContainer(forEach.getContainer(), function, res);
         buildForByIdx(
-                c -> FFunctionCall.createTrusted(forImpl.getGetSize().getSignature(), mutableSingletonList(c)),
-                (c, i) -> mutableSingletonList(FFunctionCall.createTrusted(forImpl.getGetElement().getSignature(), asList(c, i))),
+                c -> FFunctionCall.createTrusted(null, forImpl.getGetSize().getSignature(), mutableSingletonList(c)),
+                (c, i) -> mutableSingletonList(FFunctionCall.createTrusted(null, forImpl.getGetElement().getSignature(), asList(c, i))),
                 forEach, function, container, res
         );
-        return FBlock.from(res);
+        return FBlock.from(forEach.getPosition(), res);
     }
 
     private static void buildForByIdx(Function<FExpression,FExpression> getSize, BiFunction<FExpression, FExpression,
@@ -103,19 +104,19 @@ public class FForEachLowering extends StatementReplacer {
         //store the size in a local variable
         FLocalVariable size = function.getFreshVariable(FIntN._32);
         {
-            FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
+            FVariableExpression containerAccess = new FVariableExpression(null, container);
             res.add(FAssignment.createDecl(size, getSize.apply(containerAccess)));
         }
 
         //declare counter
         FLocalVariable counter = forEach.getCounter().orElse(function.getFreshVariable(FIntN._32));
-        res.add(FAssignment.createDecl(counter, new FLiteralExpression(new FIntNLiteral(0))));
+        res.add(FAssignment.createDecl(counter, new FLiteralExpression(null, new FIntNLiteral(0))));
 
         //condition
         FExpression condition;
         {
             Signature less = BinaryOperator.LESS.getFunctionTrusted(FIntN._32, FIntN._32);
-            condition = FFunctionCall.createTrusted(less, asList(new FLocalVariableExpression(counter), new FLocalVariableExpression(size)));
+            condition = FFunctionCall.createTrusted(null, less, asList(new FVariableExpression(null, counter), new FVariableExpression(null, size)));
         }
 
         //as first statement of loop accessing the array and storing the result in the iterator var
@@ -123,30 +124,30 @@ public class FForEachLowering extends StatementReplacer {
         {
             List<FExpression> decls = new ArrayList<>(forEach.getIterators().size());
             for (FLocalVariable it : forEach.getIterators()) {
-                decls.add(new FVarDeclaration(it));
+                decls.add(new FVarDeclaration(null, it));
             }
-            FLocalVariableExpression containerAccess = new FLocalVariableExpression(container);
-            FLocalVariableExpression counterAccess = new FLocalVariableExpression(counter);
-            itDecl = FAssignment.createTrusted(decls, getElement.apply(containerAccess, counterAccess));
+            FVariableExpression containerAccess = new FVariableExpression(null, container);
+            FVariableExpression counterAccess = new FVariableExpression(null, counter);
+            itDecl = FAssignment.createTrusted(null, decls, getElement.apply(containerAccess, counterAccess));
         }
 
         //increment
         FStatement increment;
         {
-            FLocalVariableExpression rhsCounterExp = new FLocalVariableExpression(counter);
-            FLiteralExpression one = new FLiteralExpression(new FIntNLiteral(1));
+            FVariableExpression rhsCounterExp = new FVariableExpression(null, counter);
+            FLiteralExpression one = new FLiteralExpression(null, new FIntNLiteral(1));
             Signature plus = BinaryOperator.PLUS.getFunctionTrusted(counter.getType(), one.getType());
-            FFunctionCall plusCall = FFunctionCall.createTrusted(plus, asList(rhsCounterExp, one));
+            FFunctionCall plusCall = FFunctionCall.createTrusted(null, plus, asList(rhsCounterExp, one));
 
-            FLocalVariableExpression lhsCounterExp = new FLocalVariableExpression(counter);
-            increment = FAssignment.createTrusted(singletonList(lhsCounterExp), mutableSingletonList(plusCall));
+            FVariableExpression lhsCounterExp = new FVariableExpression(null, counter);
+            increment = FAssignment.createTrusted(null, singletonList(lhsCounterExp), mutableSingletonList(plusCall));
         }
 
         //Loop Body
-        FBlock loopBody = FBlock.from(itDecl, forEach.getBody(), increment);
+        FBlock loopBody = FBlock.from(forEach.getBody().getPosition(), itDecl, forEach.getBody(), increment);
 
         //While Loop
-        FWhile fWhile = FWhile.createTrusted(forEach.getNestedDepth(), forEach.getIdentifier(), condition, loopBody);
+        FWhile fWhile = FWhile.createTrusted(forEach.getPosition(), forEach.getNestedDepth(), forEach.getIdentifier(), condition, loopBody);
         forEach.getIdentifier().setLoop(fWhile);
         res.add(fWhile);
     }
@@ -160,7 +161,7 @@ public class FForEachLowering extends StatementReplacer {
 
         buildPrimitiveFor(forImpl, function, forEach, container, res);
 
-        return FBlock.from(res);
+        return FBlock.from(forEach.getPosition(), res);
     }
 
     private static void buildPrimitiveFor(PrimitiveFor forImpl, FFunction function, FForEach forEach, FLocalVariable container, List<FStatement> res) {
@@ -187,16 +188,16 @@ public class FForEachLowering extends StatementReplacer {
 
             //declare iterator and field
             FLocalVariable valVar = new FLocalVariable(iterators.get(0).getIdentifier(), field.getType());
-            FVarDeclaration valDecl = new FVarDeclaration(valVar);
-            FFunctionCall fieldGet = FFunctionCall.createTrusted(field.getGetter().getSignature(), mutableSingletonList(new FLocalVariableExpression(container)));
+            FVarDeclaration valDecl = new FVarDeclaration(null, valVar);
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
 
             FLocalVariable fieldVar = new FLocalVariable(iterators.get(1).getIdentifier(), FFieldType.INSTANCE);
-            FVarDeclaration fieldVarDecl = new FVarDeclaration(fieldVar);
+            FVarDeclaration fieldVarDecl = new FVarDeclaration(null, fieldVar);
 
-            FNamespaceExpression typeInfo = new FNamespaceExpression(forEach.getContainer().getType().getNamespace());
-            FFunctionCall getFields = FFunctionCall.createTrusted(FTypeType.fields.getGetter().getSignature(), mutableSingletonList(typeInfo));
-            FLiteralExpression idx = new FLiteralExpression(new FIntNLiteral(i));
-            FFunctionCall fieldInfo = FFunctionCall.createTrusted(fieldInfoGet.getSignature(), asList(getFields, idx));
+            FNamespaceExpression typeInfo = new FNamespaceExpression(null, forEach.getContainer().getType().getNamespace());
+            FFunctionCall getFields = FFunctionCall.createTrusted(null, FTypeType.fields.getGetter().getSignature(), mutableSingletonList(typeInfo));
+            FLiteralExpression idx = new FLiteralExpression(null, new FIntNLiteral(i));
+            FFunctionCall fieldInfo = FFunctionCall.createTrusted(null, fieldInfoGet.getSignature(), asList(getFields, idx));
 
             FAssignment decl;
             Map<FLocalVariable, FLocalVariable> varMap;
@@ -204,12 +205,12 @@ public class FForEachLowering extends StatementReplacer {
                 //declare counter
                 FLocalVariable oldCounter = forEach.getCounter().get();
                 FLocalVariable counterVar = new FLocalVariable(oldCounter.getIdentifier(), oldCounter.getType());
-                FVarDeclaration counter = new FVarDeclaration(counterVar);
-                FLiteralExpression counterVal = new FLiteralExpression(new FIntNLiteral(i));
-                decl = FAssignment.createTrusted(asList(valDecl, fieldVarDecl, counter), asList(fieldGet, fieldInfo, counterVal));
+                FVarDeclaration counter = new FVarDeclaration(null, counterVar);
+                FLiteralExpression counterVal = new FLiteralExpression(null, new FIntNLiteral(i));
+                decl = FAssignment.createTrusted(null, asList(valDecl, fieldVarDecl, counter), asList(fieldGet, fieldInfo, counterVal));
                 varMap = ImmutableMap.of(iterators.get(0), valVar, iterators.get(1), fieldVar, oldCounter, counterVar);
             } else {
-                decl = FAssignment.createTrusted(asList(valDecl, fieldVarDecl), asList(fieldGet, fieldInfo));
+                decl = FAssignment.createTrusted(null, asList(valDecl, fieldVarDecl), asList(fieldGet, fieldInfo));
                 varMap = ImmutableMap.of(iterators.get(0), valVar, iterators.get(1), fieldVar);
             }
 
@@ -217,7 +218,7 @@ public class FForEachLowering extends StatementReplacer {
             TypeInstantiation typeInstantiation = TypeInstantiation.create(mutableSingletonMap(elementType, field.getType()));
             FStatement bakedBody = GenericBaking.bake(forEach.getBody(), typeInstantiation, varMap);
 
-            res.add(FBlock.from(decl, bakedBody));
+            res.add(FBlock.from(forEach.getBody().getPosition(), decl, bakedBody));
 
             i++;
         }
@@ -239,18 +240,18 @@ public class FForEachLowering extends StatementReplacer {
         TypeInstantiation typeInstantiation = TypeInstantiation.create(mutableSingletonMap(elementType, containerType.getBaseType()));
         FStatement bakedBody = GenericBaking.bake(forEach.getBody(), typeInstantiation, emptyMap());
 
-        FForEach proxy = FForEach.create(forEach.getNestedDepth(), forEach.getIdentifier(), iterators,
+        FForEach proxy = FForEach.create(forEach.getPosition(), forEach.getNestedDepth(), forEach.getIdentifier(), iterators,
                 forEach.getCounter().orElse(null), forEach.getContainer(), FBlock.from(bakedBody));
 
         //hurray for readable code, I am sorry
         buildForByIdx(
-                c -> FFunctionCall.createTrusted(containerType.getSize().getGetter().getSignature(), mutableSingletonList(c)),
+                c -> FFunctionCall.createTrusted(null, containerType.getSize().getGetter().getSignature(), mutableSingletonList(c)),
                 (c, i) -> asList(
-                        FFunctionCall.createTrusted(containerType.getArrayGet().getSignature(), asList(c, i)),
-                        FFunctionCall.createTrusted(FFieldType.INSTANCE.getConstructor().getSignature(), asList(
-                                FFunctionCall.createTrusted(intToString, mutableSingletonList(i)), //TODO
-                                new FNamespaceExpression(containerType.getNamespace()),
-                                new FNamespaceExpression(containerType.getNamespace())
+                        FFunctionCall.createTrusted(null, containerType.getArrayGet().getSignature(), asList(c, i)),
+                        FFunctionCall.createTrusted(null, FFieldType.INSTANCE.getConstructor().getSignature(), asList(
+                                FFunctionCall.createTrusted(null, intToString, mutableSingletonList(i)), //TODO
+                                new FNamespaceExpression(null, containerType.getNamespace()),
+                                new FNamespaceExpression(null, containerType.getNamespace())
                         ))
                 ),
                 proxy, function, container, res
@@ -266,7 +267,7 @@ public class FForEachLowering extends StatementReplacer {
 
         //make optional concrete
         FOptional containerType = (FOptional) container.getType();
-        FExplicitCast containerPromote = FExplicitCast.createTrusted(containerType.getBaseType(), new FLocalVariableExpression(container));
+        FExplicitCast containerPromote = FExplicitCast.createTrusted(null, containerType.getBaseType(), new FVariableExpression(null, container));
         FLocalVariable promotedContainer = new FLocalVariable(container.getIdentifier(), containerType.getBaseType());
         FAssignment decl = FAssignment.createDecl(promotedContainer, containerPromote);
 
@@ -275,7 +276,7 @@ public class FForEachLowering extends StatementReplacer {
         then.add(decl);
         buildPrimitiveFor(forImpl, function, forEach, promotedContainer, then);
 
-        FIf fIf = FIf.createTrusted(new FLocalVariableExpression(container), FBlock.from(then), null);
+        FIf fIf = FIf.createTrusted(forEach.getPosition(), new FVariableExpression(forEach.getContainer().getPosition(), container), FBlock.from(forEach.getPosition(), then), null);
         res.add(fIf);
     }
 
@@ -294,8 +295,8 @@ public class FForEachLowering extends StatementReplacer {
 
             //declare iterator and field
             FLocalVariable valVar = new FLocalVariable(iterator.getIdentifier(), field.getType());
-            FVarDeclaration valDecl = new FVarDeclaration(valVar);
-            FFunctionCall fieldGet = FFunctionCall.createTrusted(field.getGetter().getSignature(), mutableSingletonList(new FLocalVariableExpression(container)));
+            FVarDeclaration valDecl = new FVarDeclaration(null, valVar);
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
 
             FAssignment decl;
             Map<FLocalVariable, FLocalVariable> varMap;
@@ -303,12 +304,12 @@ public class FForEachLowering extends StatementReplacer {
                 //declare counter
                 FLocalVariable oldCounter = forEach.getCounter().get();
                 FLocalVariable counterVar = new FLocalVariable(oldCounter.getIdentifier(), oldCounter.getType());
-                FVarDeclaration counter = new FVarDeclaration(counterVar);
-                FLiteralExpression counterVal = new FLiteralExpression(new FIntNLiteral(i));
-                decl = FAssignment.createTrusted(asList(valDecl, counter), asList(fieldGet, counterVal));
+                FVarDeclaration counter = new FVarDeclaration(null, counterVar);
+                FLiteralExpression counterVal = new FLiteralExpression(null, new FIntNLiteral(i));
+                decl = FAssignment.createTrusted(null, asList(valDecl, counter), asList(fieldGet, counterVal));
                 varMap = ImmutableMap.of(iterator, valVar, oldCounter, counterVar);
             } else {
-                decl = FAssignment.createTrusted(singletonList(valDecl), singletonList(fieldGet));
+                decl = FAssignment.createTrusted(null, singletonList(valDecl), singletonList(fieldGet));
                 varMap = ImmutableMap.of(iterator, valVar);
             }
 
@@ -316,11 +317,11 @@ public class FForEachLowering extends StatementReplacer {
             TypeInstantiation typeInstantiation = TypeInstantiation.create(mutableSingletonMap(elementType, field.getType()));
             FStatement bakedBody = GenericBaking.bake(forEach.getBody(), typeInstantiation, varMap);
 
-            res.add(FBlock.from(decl, bakedBody));
+            res.add(FBlock.from(forEach.getBody().getPosition(), decl, bakedBody));
             i++;
         }
 
-        return FBlock.from(res);
+        return FBlock.from(forEach.getPosition(), res);
     }
 
     private static Signature getIntToString() {
@@ -343,8 +344,8 @@ public class FForEachLowering extends StatementReplacer {
     }
 
     private static FLocalVariable getContainer(FExpression containerExpression, FFunction function, List<FStatement> res) {
-        if (containerExpression instanceof FLocalVariableExpression) {
-            return ((FLocalVariableExpression) containerExpression).getVariable();
+        if (containerExpression instanceof FVariableExpression) {
+            return ((FVariableExpression) containerExpression).getVariable();
         } else {
             FLocalVariable container = function.getFreshVariable(containerExpression.getType());
             res.add(FAssignment.createDecl(container, containerExpression));

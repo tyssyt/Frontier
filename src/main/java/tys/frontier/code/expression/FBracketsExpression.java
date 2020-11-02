@@ -3,12 +3,14 @@ package tys.frontier.code.expression;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 
-public class FBracketsExpression implements FExpression {
+public class FBracketsExpression extends FExpression {
 
     private FExpression inner;
 
-    public FBracketsExpression(FExpression inner) {
+    public FBracketsExpression(Position position, FExpression inner) {
+        super(position);
         this.inner = inner;
     }
 
@@ -36,9 +38,5 @@ public class FBracketsExpression implements FExpression {
     public StringBuilder toString(StringBuilder sb) {
         sb.append('(');
         return inner.toString(sb).append(')');
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

@@ -39,7 +39,7 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
-    default FExpression visitVariable(FLocalVariableExpression expression) {
+    default FExpression visitVariable(FVariableExpression expression) {
         return expression;
     }
 

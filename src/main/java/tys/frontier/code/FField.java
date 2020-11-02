@@ -6,6 +6,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ClassVisitor;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
@@ -19,14 +20,16 @@ public class FField extends FVariable implements HasVisibility, StringBuilderToS
     private boolean statik;
     private boolean hasAssignment;
     private FExpression assignment;
+    private Position position;
 
     private FieldAccessor getter;
     private FieldAccessor setter;
 
     private FLocalVariable _this; //TODO this is needed for instance fields but will likely no longer be necessary if we do attributes
 
-    public FField(FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
+    public FField(Position position, FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
         super(identifier, type);
+        this.position = position;
         this.memberOf = memberOf;
         this.visibility = visibility;
         this.statik = statik;
@@ -65,6 +68,10 @@ public class FField extends FVariable implements HasVisibility, StringBuilderToS
 
     public boolean hasAssignment() {
         return hasAssignment;
+    }
+
+    public Position getPosition() {
+        return position;
     }
 
     public void setAssignment(FExpression assignment) throws IncompatibleTypes {

@@ -6,6 +6,7 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.Utils;
 
 import java.util.List;
@@ -17,15 +18,15 @@ public class FForEach extends FLoop {
     private FLocalVariable counter;
     private FExpression container;
 
-    private FForEach(int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
-        super(nestedDepth, identifier, body);
+    private FForEach(Position position, int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
+        super(position, nestedDepth, identifier, body);
         this.iterators = iterators;
         this.counter = counter;
         this.container = container;
     }
 
-    public static FForEach create(int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
-        return new FForEach(nestedDepth, identifier, iterators, counter, container, body);
+    public static FForEach create(Position position, int nestedDepth, FLoopIdentifier identifier, List<FLocalVariable> iterators, FLocalVariable counter, FExpression container, FBlock body) {
+        return new FForEach(position, nestedDepth, identifier, iterators, counter, container, body);
     }
 
     public List<FLocalVariable> getIterators() {
@@ -61,9 +62,5 @@ public class FForEach extends FLoop {
         Utils.joinIdentifiers(sb, iterators, ", ").append(" : ");
         container.toString(sb).append(") ");
         return getBody().toString(sb);
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

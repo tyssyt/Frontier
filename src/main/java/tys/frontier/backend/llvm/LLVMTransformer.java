@@ -450,14 +450,11 @@ class LLVMTransformer implements
                 type == FTuple.VOID ? emptyList() : singletonList(type),
                 fReturn.getArgMapping());
 
-        switch (values.size()) {
-            case 0:
-                return LLVMBuildRetVoid(builder);
-            case 1:
-                return LLVMBuildRet(builder, getOnlyElement(values));
-            default:
-                return LLVMBuildAggregateRet(builder, createPointerPointer(values), values.size());
-        }
+        return switch (values.size()) {
+            case 0  -> LLVMBuildRetVoid(builder);
+            case 1  -> LLVMBuildRet(builder, getOnlyElement(values));
+            default -> LLVMBuildAggregateRet(builder, createPointerPointer(values), values.size());
+        };
     }
 
     @Override
@@ -472,7 +469,7 @@ class LLVMTransformer implements
             if (lhsExpression instanceof FVariableExpression) {
                 FVariableExpression variable = (FVariableExpression) lhsExpression;
                 if (variable instanceof FVarDeclaration)
-                    createEntryBlockAlloca(((FVarDeclaration) variable).getVariable());
+                    createEntryBlockAlloca(variable.getVariable());
                 LLVMBuildStore(builder, values.get(i), variable.accept(this));
                 i++;
             } else if (lhsExpression instanceof FFunctionCall) {
@@ -791,14 +788,11 @@ class LLVMTransformer implements
 
     public LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
         LLVMValueRef address = arrayGep(args.get(0), args.get(1));
-        switch (args.size()) {
-            case 2:
-                return LLVMBuildLoad(builder, address, "load_array");
-            case 3:
-                return LLVMBuildStore(builder, args.get(2), address);
-            default:
-                return Utils.cantHappen();
-        }
+        return switch (args.size()) {
+            case 2 -> LLVMBuildLoad(builder, address, "load_array");
+            case 3 -> LLVMBuildStore(builder, args.get(2), address);
+            default -> Utils.cantHappen();
+        };
     }
 
     private LLVMValueRef buildArrayMalloc(LLVMTypeRef arrayType, LLVMValueRef sizeRef) {
@@ -1008,20 +1002,16 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitVariable(FLocalVariableExpression expression) {
+    public LLVMValueRef visitVariable(FVariableExpression expression) {
         LLVMValueRef address = localVars.get(expression.getVariable());
         if (address == null) {
             assert tempVars.containsKey(expression.getVariable());
             return tempVars.get(expression.getVariable());
         }
-        switch (expression.getAccessType()) {
-            case LOAD:
-                return LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
-            case STORE:
-                return address;
-            default:
-                return Utils.cantHappen();
-        }
+        return switch (expression.getAccessType()) {
+            case LOAD -> LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
+            case STORE -> address;
+        };
     }
 
     @Override

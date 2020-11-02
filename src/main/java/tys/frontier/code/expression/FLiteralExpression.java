@@ -4,12 +4,14 @@ import tys.frontier.code.literal.FLiteral;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
+import tys.frontier.parser.location.Position;
 
-public class FLiteralExpression implements FExpression {
+public class FLiteralExpression extends FExpression {
 
     private FLiteral literal;
 
-    public FLiteralExpression(FLiteral literal) {
+    public FLiteralExpression(Position position, FLiteral literal) {
+        super(position);
         this.literal = literal;
     }
 
@@ -35,9 +37,5 @@ public class FLiteralExpression implements FExpression {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         return sb.append(literal);
-    }
-    @Override
-    public String toString() {
-        return tS();
     }
 }

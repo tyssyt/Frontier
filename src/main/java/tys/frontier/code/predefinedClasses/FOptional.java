@@ -6,10 +6,12 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FOptionalIdentifier;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
+import tys.frontier.parser.location.Location;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,10 @@ public class FOptional extends FPredefinedClass {
         assert !(baseType instanceof FOptional);
         assert baseType != FTuple.VOID;
         this.baseType = baseType;
-        OptionalNamespace namespace = new OptionalNamespace(this);
+        Location location = null;
+        if (baseType.getNamespace() instanceof DefaultNamespace)
+            location = ((DefaultNamespace) baseType.getNamespace()).getLocation();
+        OptionalNamespace namespace = new OptionalNamespace(location, this);
         setNamespace(namespace);
         //addDefaultFunctions(); TODO should only be added once for "base class"
         namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
