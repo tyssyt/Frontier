@@ -77,7 +77,8 @@ export static main () {
     IO.printLine("\nfilter fizz:");
     printMat(matrix);
 
-    matrix = buildMat();    forEach(matrix, \inner -> filter(inner, filterLambda));
+    matrix = buildMat();
+    forEach(matrix, \inner -> filter(inner, filterLambda));
     forEach(matrix, \inner -> filter(inner, \e -> filterLambda(e)));
     IO.printLine("\nfilter fizz2:");
     printMat(matrix);

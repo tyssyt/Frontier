@@ -3,7 +3,6 @@ package tys.frontier.util;
 import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import tys.frontier.code.FField;
-import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.function.*;
@@ -297,40 +296,6 @@ public final class Utils {
         for (T t : iterable)
             if (t != null)
                 res++;
-        return res;
-    }
-
-    public static Map<FFunction, String> computeUniqueFunctionNames(ListMultimap<FIdentifier, Signature> functions) {
-        Map<FFunction, String> res = new HashMap<>();
-        for (List<Signature> list : Multimaps.asMap(functions).values()) {
-            String name = list.get(0).getFunction().getIdentifier().name;
-
-            if (list.size() == 1) {
-                res.put(list.get(0).getFunction(), name);
-                continue;
-            }
-
-            //TODO when multithreading is used we might need to copy the list first before sorting to avoid race conditions while sorting
-            Signature[] array = list.toArray(new Signature[0]);
-            Arrays.sort(array, (s1, s2) -> {
-                ImmutableList<FParameter> p1 = s1.getParameters();
-                ImmutableList<FParameter> p2 = s2.getParameters();
-                int c = p1.size() - p2.size();
-                if (c != 0)
-                    return c;
-                for (int i=0; i<p1.size(); i++) {
-                    String id1 = p1.get(i).getType().getIdentifier().name;
-                    String id2 = p2.get(i).getType().getIdentifier().name;
-                    c = id1.compareTo(id2);
-                    if (c != 0)
-                        return c;
-                }
-                return 0;
-            });
-            for (int i=0; i<array.length; i++) {
-                res.put(array[i].getFunction(), name + "#" + i);
-            }
-        }
         return res;
     }
 

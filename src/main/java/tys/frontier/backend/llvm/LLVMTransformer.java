@@ -383,11 +383,10 @@ class LLVMTransformer implements
         if (function.getType() == FTuple.VOID && !function.getBody().get().redirectsControlFlow().isPresent())
             LLVMBuildRetVoid(builder);
         localVars.clear();
-        /*
+
         if (LLVMVerifyFunction(res, 1) == TRUE) {
             LLVMViewFunctionCFG(res);
         }
-        */
         return res;
     }
 

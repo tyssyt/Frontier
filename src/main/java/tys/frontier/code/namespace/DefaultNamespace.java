@@ -1,7 +1,10 @@
 package tys.frontier.code.namespace;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.HasVisibility;
 import tys.frontier.code.function.FFunction;
@@ -146,6 +149,40 @@ public class DefaultNamespace implements Namespace, HasVisibility {
 
         if (fClass != null)
             fClass.removeUnreachable(reachable);
+    }
+
+    public Map<FFunction, String> computeUniqueFunctionNames() {
+        Map<FFunction, String> res = new HashMap<>();
+        for (List<Signature> list : Multimaps.asMap(rhsFunctions).values()) {
+            String name = list.get(0).getFunction().getIdentifier().name;
+
+            if (list.size() == 1) {
+                res.put(list.get(0).getFunction(), name);
+                continue;
+            }
+
+            //TODO when multithreading is used we might need to copy the list first before sorting to avoid race conditions while sorting
+            Signature[] array = list.toArray(new Signature[0]);
+            Arrays.sort(array, (s1, s2) -> {
+                ImmutableList<FParameter> p1 = s1.getParameters();
+                ImmutableList<FParameter> p2 = s2.getParameters();
+                int c = p1.size() - p2.size();
+                if (c != 0)
+                    return c;
+                for (int i=0; i<p1.size(); i++) {
+                    String id1 = p1.get(i).getType().getIdentifier().name;
+                    String id2 = p2.get(i).getType().getIdentifier().name;
+                    c = id1.compareTo(id2);
+                    if (c != 0)
+                        return c;
+                }
+                return 0;
+            });
+            for (int i=0; i<array.length; i++) {
+                res.put(array[i].getFunction(), name + "#" + i);
+            }
+        }
+        return res;
     }
 
     public <N,C,Fi,Fu,S,E> N accept(ClassVisitor<N, C, Fi, Fu, S, E> visitor) {

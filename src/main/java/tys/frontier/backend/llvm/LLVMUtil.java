@@ -6,7 +6,6 @@ import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
-import tys.frontier.util.Utils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,7 +60,7 @@ public class LLVMUtil {
             return function.getIdentifier().name;
         String uniqueName = uniqueFunctionNameCache.get(function);
         if (uniqueName == null) {
-            Map<FFunction, String> newNames = Utils.computeUniqueFunctionNames(((DefaultNamespace) function.getMemberOf()).getFunctions(false));
+            Map<FFunction, String> newNames = ((DefaultNamespace) function.getMemberOf()).computeUniqueFunctionNames();
             uniqueFunctionNameCache.putAll(newNames);
             uniqueName = newNames.get(function);
         }
