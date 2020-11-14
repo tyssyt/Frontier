@@ -21,6 +21,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
+import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class LLVMModule implements AutoCloseable {
     private boolean ownsContext;
     private LLVMContextRef context;
     private LLVMModuleRef module;
+    private boolean debug;
     private Map<FType, LLVMTypeRef> llvmTypes = new HashMap<>();
     private Map<FClass, LLVMValueRef> typeInfo = new HashMap<>();
     private Map<String, LLVMValueRef> constantStrings = new HashMap<>();
@@ -74,14 +76,15 @@ public class LLVMModule implements AutoCloseable {
     private List<FField> todoFieldInitilizers = new ArrayList<>();
     private List<FFunction> todoFunctionBodies = new ArrayList<>();
 
-    public LLVMModule(String name) {
-        this(name, LLVMGetGlobalContext(), false);
+    public LLVMModule(String name, boolean debug) {
+        this(name, LLVMGetGlobalContext(), false, debug);
     }
 
-    public LLVMModule(String name, LLVMContextRef context, boolean ownsContext) {
+    public LLVMModule(String name, LLVMContextRef context, boolean ownsContext, boolean debug) {
         this.context = context;
         this.module = LLVMModuleCreateWithNameInContext(name, context);
         this.ownsContext = ownsContext;
+        this.debug = debug;
         byteType = LLVMInt8TypeInContext(context);
         bytePointer = LLVMPointerType(byteType, 0);
         bytePointerPointer = LLVMPointerType(bytePointer, 0);
@@ -100,7 +103,7 @@ public class LLVMModule implements AutoCloseable {
 
     private LLVMValueRef initConstEmptyArray() {
         LLVMTypeRef intType = getLlvmType(FIntN._32);
-        LLVMTypeRef arrayType = LLVMArrayType(LLVMPointerType(LLVMVoidType(), 0), 0);
+        LLVMTypeRef arrayType = LLVMArrayType(bytePointer, 0);
         LLVMTypeRef type = LLVMStructTypeInContext(context, createPointerPointer(intType, arrayType), 2, FALSE);
 
         LLVMValueRef res = LLVMAddGlobal(module, type, "emptyArray");
@@ -126,7 +129,11 @@ public class LLVMModule implements AutoCloseable {
     }
 
     LLVMBuilderRef createBuilder() {
-        return LLVMCreateBuilderInContext(this.context);
+        return LLVMCreateBuilderInContext(context);
+    }
+
+    LLVMDIBuilderRef createDebugInfoBuilder() {
+        return LLVMCreateDIBuilderDisallowUnresolved(module);
     }
 
     LLVMTypeRef getLlvmType (FType fClass) { //TODO needs sync for multithreading
@@ -367,7 +374,7 @@ public class LLVMModule implements AutoCloseable {
             LLVMStructSetBody(LLVMGetElementType(getLlvmType(fClass)), createPointerPointer(subtypes), subtypes.size(), FALSE);
         }
 
-        try (LLVMTransformer trans = new LLVMTransformer(this)) {
+        try (LLVMTransformer trans = new LLVMTransformer(this, entryPoint, debug)) {
             for (FField field : todoFieldInitilizers) {
                 trans.visitField(field);
             }
@@ -383,15 +390,16 @@ public class LLVMModule implements AutoCloseable {
     }
 
     private void generateMain(LLVMTransformer trans, Collection<DefaultNamespace> namespaces, FFunction entryPoint) {
-        //TODO if isWindows
-        for (DefaultNamespace namespace : namespaces) {
-            if (namespace.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
-                FClass fClass = namespace.getType();
-                FField hInstance = fClass.getStaticFields().get(new FIdentifier("hInstance"));
-                FField nCmdShow = fClass.getStaticFields().get(new FIdentifier("nCmdShow"));
-                if (hInstance != null || nCmdShow != null) {
-                    trans.generateWinMain(entryPoint, hInstance, nCmdShow);
-                    return;
+        if (OS.isWindows()) {
+            for (DefaultNamespace namespace : namespaces) {
+                if (namespace.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
+                    FClass fClass = namespace.getType();
+                    FField hInstance = fClass.getStaticFields().get(new FIdentifier("hInstance"));
+                    FField nCmdShow = fClass.getStaticFields().get(new FIdentifier("nCmdShow"));
+                    if (hInstance != null || nCmdShow != null) {
+                        trans.generateWinMain(entryPoint, hInstance, nCmdShow);
+                        return;
+                    }
                 }
             }
         }

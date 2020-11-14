@@ -4,10 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.LLVMBasicBlockRef;
-import org.bytedeco.llvm.LLVM.LLVMBuilderRef;
-import org.bytedeco.llvm.LLVM.LLVMTypeRef;
-import org.bytedeco.llvm.LLVM.LLVMValueRef;
+import org.bytedeco.llvm.LLVM.*;
 import org.bytedeco.llvm.global.LLVM;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
@@ -30,7 +27,10 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassWalker;
+import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.NameGenerator;
+import tys.frontier.util.OS;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
@@ -40,7 +40,6 @@ import java.util.*;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.bytedeco.llvm.global.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
 import static tys.frontier.code.function.operator.BinaryOperator.*;
@@ -96,6 +95,7 @@ class LLVMTransformer implements
     private LLVMModule module;
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
+    private LLVMDIBuilderRef diBuilder; //null when debug is disabled
     private Map<FLocalVariable, LLVMValueRef> localVars = new HashMap<>();
     private Map<FLocalVariable, LLVMValueRef> tempVars = new HashMap<>(); //TODO this is a bit of a hack to avoid creating vars in function calls
     private Map<FLoop, Pair<LLVMBasicBlockRef, LLVMBasicBlockRef>> loopJumpPoints = new HashMap<>();
@@ -105,12 +105,25 @@ class LLVMTransformer implements
     private LLVMValueRef sfInit;
     private LLVMValueRef cStringToFString;
 
+    private LLVMMetadataRef debugScope;
 
-    public LLVMTransformer(LLVMModule module) {
+
+    public LLVMTransformer(LLVMModule module, FFunction entryPoint, boolean debug) {
         this.module = module;
         this.builder = module.createBuilder();
         this.entryBlockAllocaBuilder = module.createBuilder();
         indexType = module.getLlvmType(FIntN._32);
+
+        if (debug) {
+            this.diBuilder = module.createDebugInfoBuilder();
+            LLVMMetadataRef fileScope = createFileScope(entryPoint.getLocation());
+            LLVMDIBuilderCreateCompileUnit(diBuilder, LLVMDWARFSourceLanguageC, fileScope, "me :)", 5, FALSE, "", 0, 0, "", 0, LLVMDWARFEmissionFull, 0, TRUE, FALSE);
+            if (OS.isWindows()) {
+                //TODO no idea what the behaviour does
+                LLVMAddModuleFlag(module.getModule(), LLVMModuleFlagBehaviorWarning, "CodeView", 8, LLVMValueAsMetadata(indexLiteral(1)));
+                LLVMAddModuleFlag(module.getModule(), LLVMModuleFlagBehaviorWarning, "Debug Info Version", 18, LLVMValueAsMetadata(indexLiteral(3)));
+            }
+        }
 
         sfInit = LLVMAddFunction(module.getModule(), "sf.init", LLVMFunctionType(module.getLlvmType(FTuple.VOID), (PointerPointer<LLVMTypeRef>) null, 0, FALSE));
         LLVMAppendBasicBlock(sfInit, "entry");
@@ -119,6 +132,10 @@ class LLVMTransformer implements
 
     @Override
     public void close() {
+        if (diBuilder != null) {
+            LLVMDIBuilderFinalize(diBuilder);
+            LLVMDisposeDIBuilder(diBuilder);
+        }
         LLVMDisposeBuilder(builder);
         LLVMDisposeBuilder(entryBlockAllocaBuilder);
     }
@@ -136,6 +153,7 @@ class LLVMTransformer implements
     }
 
     public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
+        setDebugLocation(null);
         LLVMTypeRef ptr = LLVMPointerType(LLVMStructType((PointerPointer<LLVMTypeRef>) null, 0, FALSE), 0);
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(
                 ptr,
@@ -146,6 +164,7 @@ class LLVMTransformer implements
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 4, FALSE);
 
         LLVMValueRef function = LLVMAddFunction(module.getModule(), "WinMain", functionType);
+        createFunctionDebugInfo(entryPoint, function);
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
         LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
@@ -180,12 +199,14 @@ class LLVMTransformer implements
     }
 
     public void generateMain(FFunction entryPoint) {
+        setDebugLocation(null);
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(indexType,
                 LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
         );
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 2, FALSE);
 
         LLVMValueRef function = LLVMAddFunction(module.getModule(), "main", functionType);
+        createFunctionDebugInfo(entryPoint, function);
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
         LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
@@ -347,6 +368,7 @@ class LLVMTransformer implements
                 LLVMSetInitializer(res, val);
             } else {
                 LLVMSetInitializer(res, LLVMConstNull(module.getLlvmType(field.getType())));
+                setDebugLocation(null);
                 LLVMBuildStore(builder, val, res);
             }
         } else
@@ -360,6 +382,7 @@ class LLVMTransformer implements
         if (res.isNull()) {
             Utils.cantHappen();
         }
+        debugScope = createFunctionDebugInfo(function, res);
 
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(res, "alloca");
         LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
@@ -367,6 +390,7 @@ class LLVMTransformer implements
         LLVMPositionBuilderAtEnd(builder, entryBlock);
 
         //fill in parameters
+        setDebugLocation(null);
         List<FParameter> fParams = function.getSignature().getParameters();
         for (int i=0; i<fParams.size(); i++) {
             LLVMValueRef alloca = createEntryBlockAlloca(fParams.get(i));
@@ -380,13 +404,15 @@ class LLVMTransformer implements
 
         //finish
         LLVMBuildBr(entryBlockAllocaBuilder, entryBlock);
-        if (function.getType() == FTuple.VOID && !function.getBody().get().redirectsControlFlow().isPresent())
+        if (function.getType() == FTuple.VOID && function.getBody().get().redirectsControlFlow().isEmpty())
             LLVMBuildRetVoid(builder);
         localVars.clear();
 
+        /*
         if (LLVMVerifyFunction(res, 1) == TRUE) {
             LLVMViewFunctionCFG(res);
         }
+         */
         return res;
     }
 
@@ -408,7 +434,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitIf(FIf fIf) {
         boolean hasElse = fIf.getElse().isPresent();
-        boolean hasContinue = !fIf.redirectsControlFlow().isPresent();
+        boolean hasContinue = fIf.redirectsControlFlow().isEmpty();
 
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef ifBlock = LLVMAppendBasicBlock(currentFunction, "if");
@@ -416,6 +442,7 @@ class LLVMTransformer implements
         LLVMBasicBlockRef elseBlock = hasElse ? LLVMAppendBasicBlock(currentFunction, "else") : null;
         LLVMBasicBlockRef continueBlock = hasContinue ? LLVMAppendBasicBlock(currentFunction, "after_if") : null;
 
+        setDebugLocation(fIf.getPosition());
         LLVMBuildBr(builder, ifBlock);
 
         LLVMPositionBuilderAtEnd(builder, ifBlock);
@@ -424,13 +451,13 @@ class LLVMTransformer implements
 
         LLVMPositionBuilderAtEnd(builder, thenBlock);
         fIf.getThen().accept(this);
-        if (!fIf.getThen().redirectsControlFlow().isPresent())
+        if (fIf.getThen().redirectsControlFlow().isEmpty())
             LLVMBuildBr(builder, continueBlock);
 
         fIf.getElse().ifPresent(elze -> {
             LLVMPositionBuilderAtEnd(builder, elseBlock);
             elze.accept(this);
-            if (!elze.redirectsControlFlow().isPresent())
+            if (elze.redirectsControlFlow().isEmpty())
                 LLVMBuildBr(builder, continueBlock);
         });
 
@@ -444,10 +471,8 @@ class LLVMTransformer implements
         List<LLVMValueRef> values = new ArrayList<>(fReturn.getExpressions().size());
         for (FExpression arg : fReturn.getExpressions())
             values.add(arg.accept(this));
-        FType type = fReturn.getFunction().getType();
-        values = prepareArgs(values,
-                type == FTuple.VOID ? emptyList() : singletonList(type),
-                fReturn.getArgMapping());
+        setDebugLocation(fReturn.getPosition());
+        values = prepareArgs(values, fReturn.getArgMapping());
 
         return switch (values.size()) {
             case 0  -> LLVMBuildRetVoid(builder);
@@ -461,7 +486,8 @@ class LLVMTransformer implements
         List<LLVMValueRef> values = new ArrayList<>();
         for (FExpression arg : assignment.getValues())
             values.add(arg.accept(this));
-        values = prepareArgs(values, Utils.typesFromExpressionList(assignment.getLhsExpressions()), assignment.getArgMapping());
+        setDebugLocation(assignment.getPosition()); //TODO maybe thats awkward and should be null instead?
+        values = prepareArgs(values, assignment.getArgMapping());
 
         int i = 0;
         for (FExpression lhsExpression : assignment.getLhsExpressions()) {
@@ -469,6 +495,7 @@ class LLVMTransformer implements
                 FVariableExpression variable = (FVariableExpression) lhsExpression;
                 if (variable instanceof FVarDeclaration)
                     createEntryBlockAlloca(variable.getVariable());
+                setDebugLocation(variable.getPosition());
                 LLVMBuildStore(builder, values.get(i), variable.accept(this));
                 i++;
             } else if (lhsExpression instanceof FFunctionCall) {
@@ -492,6 +519,7 @@ class LLVMTransformer implements
         LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "after_while");
         loopJumpPoints.put(fWhile, new Pair<>(condBlock, afterBlock));
 
+        setDebugLocation(fWhile.getPosition());
         LLVMBuildBr(builder, condBlock);
 
         LLVMPositionBuilderAtEnd(builder, condBlock);
@@ -500,7 +528,7 @@ class LLVMTransformer implements
 
         LLVMPositionBuilderAtEnd(builder, bodyBlock);
         fWhile.getBody().accept(this);
-        if (!fWhile.getBody().redirectsControlFlow().isPresent())
+        if (fWhile.getBody().redirectsControlFlow().isEmpty())
             LLVMBuildBr(builder, condBlock);
 
         LLVMPositionBuilderAtEnd(builder, afterBlock);
@@ -515,6 +543,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitBreak(FBreak fBreak) {
         LLVMBasicBlockRef target = loopJumpPoints.get(fBreak.getLoop().getLoop()).b;
+        setDebugLocation(fBreak.getPosition());
         LLVMValueRef res = LLVMBuildBr(builder, target);
         LLVMPositionBuilderAtEnd(builder, target);
         return res;
@@ -523,6 +552,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitContinue(FContinue fContinue) {
         LLVMBasicBlockRef target = loopJumpPoints.get(fContinue.getLoop().getLoop()).a;
+        setDebugLocation(fContinue.getPosition());
         LLVMValueRef res = LLVMBuildBr(builder, target);
         LLVMPositionBuilderAtEnd(builder, target);
         return res;
@@ -536,6 +566,7 @@ class LLVMTransformer implements
     @Override
     public LLVMValueRef visitImplicitCast(FImplicitCast implicitCast) {
         LLVMValueRef toCast = implicitCast.getCastedExpression().accept(this);
+        setDebugLocation(implicitCast.getPosition());
         return visitImplicitTypeCast(toCast, implicitCast.getTypeCast());
     }
 
@@ -544,8 +575,9 @@ class LLVMTransformer implements
         if (cast.isNoOpCast()) {
             if (LLVMTypeOf(base).equals(targetType))
                 return base;
-            else
+            else {
                 return LLVMBuildBitCast(builder, base, targetType, "noOpCast");
+            }
         }
 
         if (cast instanceof TypeVariableCast)
@@ -605,6 +637,7 @@ class LLVMTransformer implements
     public LLVMValueRef visitExplicitCast(FExplicitCast explicitCast) {
         LLVMValueRef toCast = explicitCast.getCastedExpression().accept(this);
         LLVMTypeRef targetType = module.getLlvmType(explicitCast.getType());
+        setDebugLocation(explicitCast.getPosition());
         switch (explicitCast.getCastType()) {
             case INTEGER_DEMOTION:
                 return LLVMBuildTrunc(builder, toCast, targetType, "cast_int_dem");
@@ -626,15 +659,17 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitOptElse(FOptElse optElse) {
+    public LLVMValueRef visitOptElse(FOptElse optElse) { //TODO pretty sure we only want to execute the else branch if not exist, atm we always do!
         LLVMValueRef optional = optElse.getOptional().accept(this);
 
+        setDebugLocation(optElse.getPosition());
         LLVMValueRef cond = LLVMBuildICmp(builder, LLVMIntNE, optional, getNull(optElse.getOptional().getType()), "checkNull");
         LLVMValueRef then;
         if (optElse.getType() == FBool.INSTANCE) //TODO this is copy paste from explicit cast
             then = LLVMBuildTrunc(builder, optional, module.getLlvmType(FBool.INSTANCE), "bool!");
         else
             then = optional;
+        setDebugLocation(null); //TODO would not be necessary without the bug above
         LLVMValueRef elze = optElse.getElse().accept(this);
         return LLVMBuildSelect(builder, cond, then, elze, "ifExpr");
     }
@@ -643,14 +678,14 @@ class LLVMTransformer implements
     public LLVMValueRef visitCache(FCacheExpression cache) {
         LLVMValueRef res = cache.getExpression().accept(this);
         LLVMValueRef alloca = createEntryBlockAlloca(cache.getVariable());
+        setDebugLocation(cache.getPosition());
         LLVMBuildStore(builder, res, alloca);
         return res;
     }
 
-    private LLVMValueRef predefinedUnary(FFunctionCall functionCall, List<LLVMValueRef> args) {
+    private LLVMValueRef predefinedUnary(FFunctionCall functionCall, LLVMValueRef arg) {
         FFunction function = functionCall.getFunction();
         FIdentifier id = function.getIdentifier();
-        LLVMValueRef arg = getOnlyElement(args);
         if (id.equals(UnaryOperator.NOT.identifier))
             return LLVMBuildNot(builder, arg, "not");
         else if (id.equals(UnaryOperator.NEG.identifier))
@@ -688,12 +723,9 @@ class LLVMTransformer implements
         return Utils.NYI("predefined unary Float operation: " + id);
     }
 
-    private LLVMValueRef predefinedBinary(FFunctionCall functionCall, List<LLVMValueRef> args) {
-        assert args.size() == 2;
+    private LLVMValueRef predefinedBinary(FFunctionCall functionCall, LLVMValueRef left, LLVMValueRef right) {
         FFunction function = functionCall.getFunction();
         FIdentifier id = function.getIdentifier();
-        LLVMValueRef left = args.get(0);
-        LLVMValueRef right = args.get(1);
 
         if (id.equals(BinaryOperator.AND.identifier))
             return shortCircuitLogic(left, right, true);
@@ -785,7 +817,7 @@ class LLVMTransformer implements
         return Utils.NYI(function.headerToString() + " in the backend");
     }
 
-    public LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
+    private LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
         LLVMValueRef address = arrayGep(args.get(0), args.get(1));
         return switch (args.size()) {
             case 2 -> LLVMBuildLoad(builder, address, "load_array");
@@ -861,9 +893,9 @@ class LLVMTransformer implements
             assert args.isEmpty();
             return LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(functionCall.getType())), "malloc_" + functionCall.getType().getIdentifier());
         } else if (args.size() == 1) {
-            return predefinedUnary(functionCall, args);
+            return predefinedUnary(functionCall, args.get(0));
         } else if (args.size() == 2) {
-            return predefinedBinary(functionCall, args);
+            return predefinedBinary(functionCall, args.get(0), args.get(1));
         } else {
             return Utils.cantHappen();
         }
@@ -929,7 +961,8 @@ class LLVMTransformer implements
         for (FParameter p : parameters)
             tempVars.remove(p);
 
-        List<LLVMValueRef> args = prepareArgs(Lists.newArrayList(unpreparedArgs), Utils.typesFromExpressionList(parameters), functionCall.getArgMapping());
+        setDebugLocation(functionCall.getPosition());
+        List<LLVMValueRef> args = prepareArgs(Lists.newArrayList(unpreparedArgs), functionCall.getArgMapping());
         args.addAll(additionalArgs);
 
         FFunction function = functionCall.getFunction();
@@ -939,7 +972,7 @@ class LLVMTransformer implements
         return buildCall(function, args);
     }
 
-    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, List<FType> target, ArgMapping argMapping) { //TODO prolly store the info we get via target in argMapping
+    private List<LLVMValueRef> prepareArgs(List<LLVMValueRef> args, ArgMapping argMapping) {
         //unpack
         List<LLVMValueRef> unpacked = argMapping.unpackBase(args, this::unpackTuple);
 
@@ -971,6 +1004,7 @@ class LLVMTransformer implements
         for (FExpression arg : functionCall.getArguments())
             args.add(arg.accept(this));
         String instructionName = functionCall.getType() == FTuple.VOID ? "" : "callTmp";
+        setDebugLocation(functionCall.getPosition());
         return LLVMBuildCall(builder, function, createPointerPointer(args), args.size(), instructionName);
     }
 
@@ -988,6 +1022,7 @@ class LLVMTransformer implements
             return LLVMConstInt(type, ((FCharLiteral) literal).value, TRUE);
         } else if (literal instanceof FStringLiteral) {
             LLVMValueRef res = module.constantString(((FStringLiteral) literal).value);
+            setDebugLocation(expression.getPosition());
             return LLVMBuildBitCast(builder, res, type, ""); //cast to get rid of the explicit length in the array type to make LLVM happy
         } else if (literal instanceof  FBoolLiteral) {
             return LLVMConstInt(type, ((FBoolLiteral) literal).value ? TRUE : FALSE, FALSE);
@@ -1008,7 +1043,10 @@ class LLVMTransformer implements
             return tempVars.get(expression.getVariable());
         }
         return switch (expression.getAccessType()) {
-            case LOAD -> LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
+            case LOAD -> {
+                setDebugLocation(expression.getPosition());
+                yield LLVMBuildLoad(builder, address, expression.getVariable().getIdentifier().name);
+            }
             case STORE -> address;
         };
     }
@@ -1071,7 +1109,7 @@ class LLVMTransformer implements
     }
 
 
-    LLVMValueRef getNull(FType fOptional) { //note: this function would belong into module if it weren't for tuples
+    private LLVMValueRef getNull(FType fOptional) { //note: this function would belong into module if it weren't for tuples
         if (fOptional instanceof FTuple) {
             List<FType> fTypes = ((FTuple) fOptional).getTypes();
             List<LLVMValueRef> llvmTypes = new ArrayList<>(fTypes.size());
@@ -1095,4 +1133,35 @@ class LLVMTransformer implements
             return LLVMConstPointerNull(module.getLlvmType(base));
         }
     }
+
+    private LLVMMetadataRef createFunctionDebugInfo(FFunction function, LLVMValueRef llvmFunction) {
+        if (diBuilder == null || function.getLocation() == null)
+            return null;
+        LLVMMetadataRef fileScope = createFileScope(function.getLocation());
+        String name = function.getIdentifier().name;
+        LLVMMetadataRef functionType = LLVMDIBuilderCreateSubroutineType(diBuilder, fileScope, (PointerPointer) null, 0, 0);
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        LLVMMetadataRef functionMetadata = LLVMDIBuilderCreateFunction(diBuilder, fileScope, name, name.length(), "", 0, fileScope, function.getLocation().getPoint().getLineFrom(), functionType, TRUE, TRUE, function.getBody().get().getPosition().getLineFrom(), 0, FALSE);
+        LLVMSetSubprogram(llvmFunction, functionMetadata);
+        return functionMetadata;
+    }
+
+    private LLVMMetadataRef createFileScope(Location location) {
+        String directory = location.getFile().getRoot().toString();
+        String fileName = location.getFile().toString().substring(directory.length());
+        return LLVMDIBuilderCreateFile(diBuilder, fileName, fileName.length(), directory, directory.length());
+    }
+
+    private void setDebugLocation(Position position) {
+        if (diBuilder == null || debugScope == null)
+            return;
+
+        if (position != null ) {
+            LLVMMetadataRef llvmMetadataRef = LLVMDIBuilderCreateDebugLocation(module.getContext(), position.getLineFrom(), position.getColumnFrom(), debugScope, null);
+            LLVMSetCurrentDebugLocation2(builder, llvmMetadataRef);
+        } else {
+            LLVMSetCurrentDebugLocation2(builder, null);
+        }
+    }
+
 }

@@ -23,7 +23,8 @@ public class FrontierModule implements Module {
     private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
     private List<ParsedFile> files;
 
-    public ParsedFile getEntryPoint() {
+    @Deprecated
+    public ParsedFile getEntryPoint() { //TODO I *should* be able to remove this
         return entryPoint;
     }
 

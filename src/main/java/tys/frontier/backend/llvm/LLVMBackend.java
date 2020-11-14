@@ -41,9 +41,8 @@ public class LLVMBackend implements Backend {
         } else {
             namespaces = reachability.getReachableNamespaces().keySet();
         }
-        //TODO a pass that creates init function from all field initializers and appends it to constructors
-        //TODO optimization oppertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), namespaces, fModule.findMain())) {
+        //TODO optimization opertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
+        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), namespaces, fModule.findMain(), debug)) {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
@@ -58,8 +57,8 @@ public class LLVMBackend implements Backend {
         }
     }
 
-    public static LLVMModule createModule(String name, Collection<DefaultNamespace> namespaces, FFunction entryPoint) {
-        LLVMModule res = new LLVMModule(name);
+    public static LLVMModule createModule(String name, Collection<DefaultNamespace> namespaces, FFunction entryPoint, boolean debug) {
+        LLVMModule res = new LLVMModule(name, debug);
         res.parseTypes(namespaces);
         res.parseClassMembers(namespaces);
         res.fillInBodies(namespaces, entryPoint);
