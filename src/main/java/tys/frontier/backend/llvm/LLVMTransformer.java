@@ -659,8 +659,14 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitOptElse(FOptElse optElse) { //TODO pretty sure we only want to execute the else branch if not exist, atm we always do!
+    public LLVMValueRef visitOptElse(FOptElse optElse) {
+        //TODO similar to ShortCircuitLogic
         LLVMValueRef optional = optElse.getOptional().accept(this);
+
+        LLVMValueRef currentFunction = getCurrentFunction();
+        LLVMBasicBlockRef startBlock = LLVMGetInsertBlock(builder);
+        LLVMBasicBlockRef elseBlock = LLVMAppendBasicBlock(currentFunction, "optElse");
+        LLVMBasicBlockRef afterBlock = LLVMAppendBasicBlock(currentFunction, "optElseAfter");
 
         setDebugLocation(optElse.getPosition());
         LLVMValueRef cond = LLVMBuildICmp(builder, LLVMIntNE, optional, getNull(optElse.getOptional().getType()), "checkNull");
@@ -669,9 +675,19 @@ class LLVMTransformer implements
             then = LLVMBuildTrunc(builder, optional, module.getLlvmType(FBool.INSTANCE), "bool!");
         else
             then = optional;
-        setDebugLocation(null); //TODO would not be necessary without the bug above
+        LLVMBuildCondBr(builder, cond, afterBlock, elseBlock);
+
+        LLVMPositionBuilderAtEnd(builder, elseBlock);
         LLVMValueRef elze = optElse.getElse().accept(this);
-        return LLVMBuildSelect(builder, cond, then, elze, "ifExpr");
+        setDebugLocation(null);
+        LLVMBuildBr(builder, afterBlock);
+        elseBlock = LLVMGetInsertBlock(builder);
+
+        LLVMPositionBuilderAtEnd(builder, afterBlock);
+        LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(optElse.getType()), "optElse_logic");
+        LLVMAddIncoming(phi, then, startBlock, 1);
+        LLVMAddIncoming(phi, elze, elseBlock, 1);
+        return phi;
     }
 
     @Override
@@ -727,11 +743,6 @@ class LLVMTransformer implements
         FFunction function = functionCall.getFunction();
         FIdentifier id = function.getIdentifier();
 
-        if (id.equals(BinaryOperator.AND.identifier))
-            return shortCircuitLogic(left, right, true);
-        else if (id.equals(BinaryOperator.OR.identifier))
-            return shortCircuitLogic(left, right, false);
-
         FType type = function.getSignature().getParameters().get(0).getType();
         assert function.getSignature().getParameters().get(1).getType() == type;
         if (type instanceof FIntN || type == FBool.INSTANCE) {
@@ -774,7 +785,11 @@ class LLVMTransformer implements
         return Utils.NYI("predifined binary Int operation: " + id);
     }
 
-    private LLVMValueRef shortCircuitLogic(LLVMValueRef first, LLVMValueRef second, boolean isAnd) {
+    private LLVMValueRef shortCircuitLogic(List<? extends FExpression> arguments, boolean isAnd) {
+        assert arguments.size() == 2;
+        LLVMValueRef first = arguments.get(0).accept(this);
+
+        //TODO similar to OptElse
         LLVMValueRef currentFunction = getCurrentFunction();
         LLVMBasicBlockRef startBlock = LLVMGetInsertBlock(builder);
         LLVMBasicBlockRef otherBlock = LLVMAppendBasicBlock(currentFunction, "other");
@@ -786,9 +801,12 @@ class LLVMTransformer implements
             LLVMBuildCondBr(builder, first, afterBlock, otherBlock);
 
         LLVMPositionBuilderAtEnd(builder, otherBlock);
+        LLVMValueRef second = arguments.get(1).accept(this);
         LLVMBuildBr(builder, afterBlock);
+        otherBlock = LLVMGetInsertBlock(builder);
 
         LLVMPositionBuilderAtEnd(builder, afterBlock);
+        setDebugLocation(null);
         LLVMValueRef phi = LLVMBuildPhi(builder, module.getLlvmType(FBool.INSTANCE), "ss_logic");
         LLVMAddIncoming(phi, first, startBlock, 1);
         LLVMAddIncoming(phi, second, otherBlock, 1);
@@ -931,12 +949,25 @@ class LLVMTransformer implements
     }
 
     public LLVMValueRef visitFunctionCall(FFunctionCall functionCall, Collection<LLVMValueRef> additionalArgs) {
+        FFunction function = functionCall.getFunction();
         ImmutableList<FParameter> parameters = functionCall.getSignature().getParameters();
         boolean hasPacking = functionCall.getArgMapping().hasPacking();
         assert !hasPacking || parameters.stream()
                 .map(FParameter::getDefaultValueDependencies)
                 .allMatch(dep -> dep == null || dep.isEmpty())
                 : "can't handle function calls with packing and dependent default args yet, sorry"; //TODO
+
+        //check for short circuit predefined bool ('&&', '||'), because args are parsed differently there
+        if (function.isPredefined() && function.getSignature().getParameters().size() == 2) {
+            FIdentifier id = function.getIdentifier();
+            if (id.equals(BinaryOperator.AND.identifier)) {
+                assert !hasPacking && additionalArgs.isEmpty();
+                return shortCircuitLogic(functionCall.getArguments(true), true);
+            } else if (id.equals(BinaryOperator.OR.identifier)) {
+                assert !hasPacking && additionalArgs.isEmpty();
+                return shortCircuitLogic(functionCall.getArguments(true), false);
+            }
+        }
 
         List<? extends FExpression> arguments = functionCall.getArguments(true);
         LLVMValueRef[] unpreparedArgs = new LLVMValueRef[arguments.size()];
@@ -965,7 +996,6 @@ class LLVMTransformer implements
         List<LLVMValueRef> args = prepareArgs(Lists.newArrayList(unpreparedArgs), functionCall.getArgMapping());
         args.addAll(additionalArgs);
 
-        FFunction function = functionCall.getFunction();
         if (function.isPredefined())
             return predefinedFunctionCall(functionCall, args);
 
