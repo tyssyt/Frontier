@@ -250,7 +250,7 @@ public class ParserTest {
     @Test
     public void parseUnfulfillableConstraintFixed() throws Exception {
         SyntaxError e = parseSyntaxError("UnfulfillableConstraintFixed.front");
-        assertEquals(IncompatibleTypes.class, e.getClass());
+        assertEquals(FunctionNotFound.class, e.getClass());
     }
     @Test
     public void parseUnfulfillableConstraint() throws Exception {

@@ -32,7 +32,7 @@ public class TypeConstraints {
     }
 
     public static TypeConstraints create() {
-        return new TypeConstraints(new ArrayList<>());
+        return new TypeConstraints( new ArrayList<>());
     }
 
     public TypeConstraints copy() {
@@ -57,6 +57,10 @@ public class TypeConstraints {
 
     public void setFixed() {
         this.fixed = true;
+    }
+
+    public List<FTypeVariable> getEquivalenceGroup() {
+        return equivalenceGroup;
     }
 
     public ForImpl getForImpl() {
@@ -95,10 +99,10 @@ public class TypeConstraints {
         assert this.resolvedAs == other.resolvedAs; //there might be cases where this doesn't hold, wait for examples
 
         //update variables
+        this.equivalenceGroup.addAll(other.equivalenceGroup);
         for (FTypeVariable otherVar : other.equivalenceGroup) {
             otherVar.setConstraints(this);
         }
-        this.equivalenceGroup.addAll(other.equivalenceGroup);
 
         //force error in case there are somehow reference to other left (and have some fun with Java & asserts ;)
         assert (other.equivalenceGroup = null) == null;

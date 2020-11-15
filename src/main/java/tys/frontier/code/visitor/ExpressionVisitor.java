@@ -1,7 +1,6 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 
 import java.util.List;
@@ -13,7 +12,6 @@ public interface ExpressionVisitor<Expression>  {
     default boolean enterFunctionCall(FFunctionCall functionCall) {return true;} //boolean visitDefaults
     default void enterDynamicFunctionCall(DynamicFunctionCall functionCall) {}
     default void enterImplicitCast(FImplicitCast implicitCast) {}
-    default void enterExplicitCast(FExplicitCast explicitCast) {}
     default void enterOptElse(FOptElse optElse) {}
     default void enterCache(FCacheExpression cache) {}
 
@@ -26,7 +24,6 @@ public interface ExpressionVisitor<Expression>  {
     }
     default Expression exitDynamicFunctionCall(DynamicFunctionCall functionCall, Expression function, List<Expression> params) {return null;}
     default Expression exitImplicitCast(FImplicitCast implicitCast, Expression castedExpression) {return null;}
-    default Expression exitExplicitCast(FExplicitCast explicitCast, Expression castedExpression) {return null;}
     default Expression exitOptElse(FOptElse optElse, Expression optional, Expression elze) {return null;}
     default Expression exitCache(FCacheExpression cache, Expression expression) {return null;}
 

@@ -35,12 +35,20 @@ public class FFloat32 extends FFloat {
     private FFloat32 () {
         super(FIdentifier.FLOAT32);
         addPredefinedFunctionsForArithType();
+    }
 
+    @Override
+    public int getBits() {
+        return 32;
+    }
+    
+    @SuppressWarnings("SameParameterValue")
+    void addIntFunctions(FIntN int32, FIntN int64) { //needed to avoid cyclic class loader dependencies
         DefaultNamespace namespace = this.getNamespace();
-
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
-        FBaseFunction rawBits = builder.setIdentifier(RAW_BITS).setReturnType(FIntN._32).build();
+        FBaseFunction rawBits = builder.setIdentifier(RAW_BITS).setReturnType(int32).build();
         namespace.addFunctionTrusted(rawBits);
+
         builder.setReturnType(this);
         namespace.addFunctionTrusted(builder.setIdentifier(LOG).build());
         namespace.addFunctionTrusted(builder.setIdentifier(LOG10).build());
@@ -49,27 +57,30 @@ public class FFloat32 extends FFloat {
         namespace.addFunctionTrusted(builder.setIdentifier(FLOOR).build());
         namespace.addFunctionTrusted(builder.setIdentifier(TRUNC).build());
 
+        namespace.addFunctionTrusted(builder.setIdentifier(TO_INT32).setReturnType(int32).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(TO_INT64).setReturnType(int64).build());
+
         builder.setPredefined(false);
 
         //TODO @PositionForGeneratedCode
         {
-            FType returnType = FTuple.from(FBool.INSTANCE, FIntN._32, FIntN._32); //TODO how about int 24 & 7?
+            FType returnType = FTuple.from(FBool.INSTANCE, int32, int32); //TODO how about int 24 & 7?
             FBaseFunction splitRepresentation = builder.setIdentifier(SPLIT_REPRESENTATION).setReturnType(returnType).build();
             namespace.addFunctionTrusted(splitRepresentation);
 
-            FLocalVariable bits = new FLocalVariable(new FIdentifier("bits"), FIntN._32);
+            FLocalVariable bits = new FLocalVariable(new FIdentifier("bits"), int32);
             FParameter firstParam = splitRepresentation.getSignature().getParameters().get(0);
             List<FExpression> arguments = mutableSingletonList(new FVariableExpression(null, firstParam));
             FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.createTrusted(null, rawBits.getSignature(), arguments));
 
             //sign: bits < 0
-            Signature less = BinaryOperator.LESS.getFunctionTrusted(FIntN._32, FIntN._32);
+            Signature less = BinaryOperator.LESS.getFunctionTrusted(int32, int32);
             arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0)));
             FExpression sign = FFunctionCall.createTrusted(null, less, arguments);
 
             //exponent: (bits >> 23) & 0xFF
-            Signature uShiftR = FIntN._32.getUShiftR().getSignature();
-            Signature aAnd = BinaryOperator.AAND.getFunctionTrusted(FIntN._32, FIntN._32);
+            Signature uShiftR = int32.getUShiftR().getSignature();
+            Signature aAnd = BinaryOperator.AAND.getFunctionTrusted(int32, int32);
 
             arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(23)));
             FFunctionCall expShift = FFunctionCall.createTrusted(null, uShiftR, arguments);
@@ -83,10 +94,5 @@ public class FFloat32 extends FFloat {
             FReturn _return = FReturn.createTrusted(null, List.of(sign, exponent, mantissa), splitRepresentation);
             splitRepresentation.setBody(FBlock.from(null, bitsDecl, _return));
         }
-    }
-
-    @Override
-    public int getBits() {
-        return 32;
     }
 }

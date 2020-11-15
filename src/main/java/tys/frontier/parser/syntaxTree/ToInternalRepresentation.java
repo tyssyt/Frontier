@@ -8,7 +8,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
@@ -853,26 +852,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public FExplicitCast visitCast(FrontierParser.CastContext ctx) {
+    public FFunctionCall visitCast(FrontierParser.CastContext ctx) {
         FExpression castedExpression = visitExpression(ctx.expression());
-        FType type;
-        if (ctx.EXMARK() != null) {
-            if (!(castedExpression.getType() instanceof FOptional)) { //TODO this should be changed to FOptional.canBeTreatedAsOptional, but I need to decide on the semantics of using ! on optional tuples
-                errors.add(new NonOptionalExMark(castedExpression));
-                throw new Failed();
-            }
-            type = ((FOptional) castedExpression.getType()).getBaseType();
-        } else {
-            try {
-                type = ParserContextUtils.getType(ctx.typeType(), this::findNamespaceNoThrow);
-            } catch (SyntaxError e) {
-                errors.add(e);
-                throw new Failed();
-            }
+        if (!(castedExpression.getType() instanceof FOptional)) { //TODO this should be changed to FOptional.canBeTreatedAsOptional, but I need to decide on the semantics of using ! on optional tuples
+            errors.add(new NonOptionalExMark(castedExpression));
+            throw new Failed();
         }
+
         try {
-            return FExplicitCast.create(Position.fromCtx(ctx), type, castedExpression);
-        } catch (IncompatibleTypes incompatibleTypes) {
+            return functionCall(Position.fromCtx(ctx), castedExpression.getType().getNamespace(), FOptional.EXMARK, mutableSingletonList(castedExpression), ImmutableListMultimap.of(), false);
+        } catch (FunctionNotFound | AccessForbidden incompatibleTypes) {
             errors.add(incompatibleTypes);
             throw new Failed();
         }

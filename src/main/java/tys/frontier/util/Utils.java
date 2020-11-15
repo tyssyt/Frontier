@@ -187,6 +187,7 @@ public final class Utils {
         if (oldNamespace != newNamespace) {
             //TODO oh god pls make arrys, optionals and function types use generics!
             if (oldType instanceof FArray) {
+                assert newType instanceof FArray;
                 if (function.isConstructor()) {
                     return ((FArray) newType).getConstructor().getSignature();
                 } else if (function.getIdentifier().equals(Access.ID)) {
@@ -204,6 +205,11 @@ public final class Utils {
                     return Utils.cantHappen();
                 }
             } else if (oldType instanceof FOptional) {
+                assert newType instanceof FOptional;
+                if (identifier.equals(FOptional.EXMARK)) {
+                    FFunction inst = ((FOptional) newType).getExmark();
+                    return signature.isLhs() ? inst.getLhsSignature() : inst.getSignature();
+                }
                 return Utils.NYI("instantiation lookup for optionals"); //TODO
             } else if (oldType instanceof FFunctionType) {
                 return Utils.cantHappen(); //for now function types have no callable functions

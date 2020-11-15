@@ -2,8 +2,8 @@ package tys.frontier.parser.syntaxTree;
 
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FVariableExpression;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -16,6 +16,8 @@ import tys.frontier.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class OptionalInformationForIf {
 
@@ -59,7 +61,7 @@ public class OptionalInformationForIf {
             FOptional opt = (FOptional) promoteable.getType();
             FLocalVariable promotedVar = new FLocalVariable(promoteable.getIdentifier(), opt.getBaseType());
             lhs.add(new FVarDeclaration(null, promotedVar));
-            promote.add(FExplicitCast.createTrusted(null, opt.getBaseType(), new FVariableExpression(null, promoteable)));
+            promote.add(FFunctionCall.createTrusted(null, opt.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, promoteable))));
             variableScope.put(promotedVar.getIdentifier(), promotedVar); //this should override the non promoted declaration
         }
         return FAssignment.createTrusted(null, lhs, promote);

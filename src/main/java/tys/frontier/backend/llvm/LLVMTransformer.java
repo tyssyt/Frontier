@@ -162,7 +162,6 @@ class LLVMTransformer implements
     }
 
     public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
-        setDebugLocation(entryPoint.getLocation().getPoint());
         LLVMTypeRef ptr = LLVMPointerType(LLVMStructType((PointerPointer<LLVMTypeRef>) null, 0, FALSE), 0);
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(
                 ptr,
@@ -173,7 +172,8 @@ class LLVMTransformer implements
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 4, FALSE);
 
         LLVMValueRef function = LLVMAddFunction(module.getModule(), "WinMain", functionType);
-        createFunctionDebugInfo(entryPoint, function);
+        debugScope = createFunctionDebugInfo(entryPoint, function);
+        setDebugLocation(entryPoint.getLocation().getPoint());
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
         LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
@@ -208,14 +208,14 @@ class LLVMTransformer implements
     }
 
     public void generateMain(FFunction entryPoint) {
-        setDebugLocation(entryPoint.getLocation().getPoint());
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(indexType,
                 LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
         );
         LLVMTypeRef functionType = LLVMFunctionType(indexType, argTypes, 2, FALSE);
 
         LLVMValueRef function = LLVMAddFunction(module.getModule(), "main", functionType);
-        createFunctionDebugInfo(entryPoint, function);
+        debugScope = createFunctionDebugInfo(entryPoint, function);
+        setDebugLocation(entryPoint.getLocation().getPoint());
         LLVMBasicBlockRef allocaBlock = LLVMAppendBasicBlock(function, "alloca");
         LLVMPositionBuilderAtEnd(entryBlockAllocaBuilder, allocaBlock);
         LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(function, "entry");
@@ -643,31 +643,6 @@ class LLVMTransformer implements
     }
 
     @Override
-    public LLVMValueRef visitExplicitCast(FExplicitCast explicitCast) {
-        LLVMValueRef toCast = explicitCast.getCastedExpression().accept(this);
-        LLVMTypeRef targetType = module.getLlvmType(explicitCast.getType());
-        setDebugLocation(explicitCast.getPosition());
-        switch (explicitCast.getCastType()) {
-            case INTEGER_DEMOTION:
-                return LLVMBuildTrunc(builder, toCast, targetType, "cast_int_dem");
-            case FLOAT_DEMOTION:
-                return LLVMBuildFPTrunc(builder, toCast, targetType, "cast_float_dem");
-            case FLOAT_TO_INT:
-                return LLVMBuildFPToSI(builder, toCast, targetType, "cast_float_int");
-            case INT_TO_FLOAT:
-                return LLVMBuildSIToFP(builder, toCast, targetType, "cast_int_float");
-            case REMOVE_OPTIONAL:
-                //TODO when we have some sort of runtime errors, check before casting and throw errors (and then see if we can avoid checking next)
-                //return LLVMBuildICmp(builder, LLVMIntEQ, toCast, module.getNull((FOptional) explicitCast.getCastedExpression().getType()), "check_NPE");
-                if (explicitCast.getType() == FBool.INSTANCE)
-                    return LLVMBuildTrunc(builder, toCast, targetType, "bool!");
-                return toCast;
-            default:
-                return Utils.cantHappen();
-        }
-    }
-
-    @Override
     public LLVMValueRef visitOptElse(FOptElse optElse) {
         //TODO similar to ShortCircuitLogic
         LLVMValueRef optional = optElse.getOptional().accept(this);
@@ -728,7 +703,17 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedUnaryInt(FIdentifier id, FIntN type, LLVMValueRef arg) {
-        if (id.equals(FIntN.COUNT_LEADING_ZEROS)) {
+        if (id.equals(FPredefinedClass.TO_CHAR)) {
+            return LLVMBuildTrunc(builder, arg, module.getLlvmType(FIntN._8), "cast_int_dem");
+        } else if (id.equals(FPredefinedClass.TO_INT32)) {
+            return LLVMBuildTrunc(builder, arg, module.getLlvmType(FIntN._32), "cast_int_dem");
+        } else if (id.equals(FPredefinedClass.TO_INT64)) {
+            return LLVMBuildTrunc(builder, arg, module.getLlvmType(FIntN._64), "cast_int_dem");
+        } else if (id.equals(FPredefinedClass.TO_FLOAT32)) {
+            return LLVMBuildSIToFP(builder, arg, module.getLlvmType(FFloat32.INSTANCE), "cast_int_float");
+        } else if (id.equals(FPredefinedClass.TO_FLOAT64)) {
+            return LLVMBuildSIToFP(builder, arg, module.getLlvmType(FFloat64.INSTANCE), "cast_int_float");
+        } else if (id.equals(FIntN.COUNT_LEADING_ZEROS)) {
             LLVMValueRef function = module.getIntIntrinsicFunction("llvm.ctlz", type);
             PointerPointer<LLVMValueRef> args = createPointerPointer(arg, boolLiteral(false));
             return LLVMBuildCall(builder, function , args, 2, "countLeadingZeros");
@@ -742,7 +727,13 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef predefinedUnaryFloat(FIdentifier id, FFloat type, LLVMValueRef arg) {
-        if (id.equals(FFloat.RAW_BITS)) {
+        if (id.equals(FPredefinedClass.TO_FLOAT32)) {
+            return LLVMBuildFPTrunc(builder, arg, module.getLlvmType(FFloat32.INSTANCE), "cast_float_dem");
+        } else if (id.equals(FPredefinedClass.TO_INT32)) {
+            return LLVMBuildFPToSI(builder, arg, module.getLlvmType(FIntN._32), "cast_float_int");
+        } else if (id.equals(FPredefinedClass.TO_INT64)) {
+            return LLVMBuildFPToSI(builder, arg, module.getLlvmType(FIntN._64), "cast_float_int");
+        } else if (id.equals(FFloat.RAW_BITS)) {
             return LLVMBuildBitCast(builder, arg, module.getLlvmType(FIntN.getIntN(type.getBits())), "rawFloatBits");
         }
 
@@ -876,8 +867,18 @@ class LLVMTransformer implements
         OptionalNamespace optionalNamespace = (OptionalNamespace) function.getMemberOf();
         FOptional optional = optionalNamespace.getType();
 
-        if (functionCall.getFunction().getIdentifier().equals(UnaryOperator.NOT.identifier)) {
+        FIdentifier identifier = functionCall.getFunction().getIdentifier();
+        if (identifier.equals(UnaryOperator.NOT.identifier)) {
+            assert args.size() == 1;
             return LLVMBuildICmp(builder, LLVMIntEQ, args.get(0), getNull(optional), "eq");
+        } else if (identifier.equals(FOptional.EXMARK)) {
+            assert args.size() == 1;
+            //TODO when we have some sort of runtime errors, check before casting and throw errors (and then see if we can avoid checking next)
+            //return LLVMBuildICmp(builder, LLVMIntEQ, toCast, module.getNull((FOptional) explicitCast.getCastedExpression().getType()), "check_NPE");
+            if (function.getType() == FBool.INSTANCE)
+                return LLVMBuildTrunc(builder, args.get(0), module.getLlvmType(FBool.INSTANCE), "bool!");
+            else
+                return args.get(0);
         }
 
         FFunction toCall = optionalNamespace.getShimMap().inverse().get(function);

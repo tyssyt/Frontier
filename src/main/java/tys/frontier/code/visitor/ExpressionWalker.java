@@ -1,7 +1,6 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 
 public interface ExpressionWalker<Expression> {
@@ -27,10 +26,6 @@ public interface ExpressionWalker<Expression> {
 
     default Expression visitImplicitCast(FImplicitCast implicitCast) {
         return implicitCast.getCastedExpression().accept(this);
-    }
-
-    default Expression visitExplicitCast(FExplicitCast explicitCast) {
-        return explicitCast.getCastedExpression().accept(this);
     }
 
     default Expression visitOptElse(FOptElse optElse) {

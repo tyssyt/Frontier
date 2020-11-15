@@ -13,7 +13,6 @@ import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FInstantiatedFunction;
 import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.function.Signature;
-import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.predefinedClasses.*;
@@ -161,7 +160,7 @@ public class Reachability {
                 continue;
 
             res.addFunction(cur);
-            if (cur.getMemberOf() instanceof OptionalNamespace && !cur.getIdentifier().equals(UnaryOperator.NOT.identifier)) { //TODO if we ever switch to optional handling in front end, this is no longer needed
+            if (cur.getMemberOf() instanceof OptionalNamespace && !FOptional.isOriginalOptionalIdentifier(cur.getIdentifier())) { //TODO if we ever switch to optional handling in front end, this is no longer needed
                 OptionalNamespace memberOf = (OptionalNamespace) cur.getMemberOf();
                 todoFunctions.addFirst(memberOf.getOriginalFunction(cur));
                 continue;

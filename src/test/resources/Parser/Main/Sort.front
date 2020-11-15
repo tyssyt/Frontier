@@ -29,8 +29,8 @@ export class Main:
     static comparator: (Obj,Obj -> bool) = \i, j -> i.i<=j.i;
 
     export static main(args: [[char]]) {
-        size: int32 = (int32) Strings.parseInt(args[1]);
-        iterations: int32 = (int32) Strings.parseInt(args[2]);
+        size: int32 = Strings.parseInt(args[1]).toInt32;
+        iterations: int32 = Strings.parseInt(args[2]).toInt32;
 
         if args.size > 3 {
             random = Random.createRNG(Strings.parseInt(args[3]));
@@ -84,7 +84,7 @@ export class Main:
     }
 
     static rand(max: int32) -> int32 {
-        i := (int32) random.next;
+        i := random.next.toInt32;
         if i < 0 {
             i = -1 * i;
         }

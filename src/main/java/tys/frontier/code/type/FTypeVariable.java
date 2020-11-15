@@ -54,6 +54,8 @@ public class FTypeVariable implements FType {
     }
 
     public void setConstraints(TypeConstraints constraints) {
+        assert constraints.getEquivalenceGroup().contains(this);
+        assert constraints.isFixed() || !this.constraints.isFixed();
         this.constraints = constraints;
     }
 

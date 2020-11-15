@@ -1,7 +1,6 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 
 import java.util.List;
@@ -26,11 +25,6 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     @Override
     default FExpression exitImplicitCast(FImplicitCast implicitCast, FExpression castedExpression) {
         return implicitCast;
-    }
-
-    @Override
-    default FExpression exitExplicitCast(FExplicitCast explicitCast, FExpression castedExpression) {
-        return explicitCast;
     }
 
     @Override

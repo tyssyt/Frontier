@@ -38,6 +38,9 @@ public class FIntN extends FPredefinedClass {
     public static final FIntN _32 = getIntN(32);
     public static final FIntN _64 = getIntN(64);
 
+    static {FFloat32.INSTANCE.addIntFunctions(_32, _64);}
+    static {FFloat64.INSTANCE.addIntFunctions(_32, _64);}
+
     private int n;
     private FFunction uShiftR;
 
@@ -54,6 +57,17 @@ public class FIntN extends FPredefinedClass {
         FField min = new FField(null, MIN, this, this, FVisibilityModifier.EXPORT, true, true);
         min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this, "" + minValue())));
         addFieldTrusted(min);
+
+        DefaultNamespace namespace = this.getNamespace();
+        FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
+        namespace.addFunctionTrusted(builder.setIdentifier(TO_FLOAT32).setReturnType(FFloat32.INSTANCE).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(TO_FLOAT64).setReturnType(FFloat64.INSTANCE).build());
+        if (n > 8)
+            namespace.addFunctionTrusted(builder.setIdentifier(TO_CHAR).setReturnType(FIntN._8).build());
+        if (n > 32)
+            namespace.addFunctionTrusted(builder.setIdentifier(TO_INT32).setReturnType(FIntN._32).build());
+        if (n > 64)
+            namespace.addFunctionTrusted(builder.setIdentifier(TO_INT64).setReturnType(FIntN._64).build());
     }
 
     private void addPredefinedFunctionsForIntType() {

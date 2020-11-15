@@ -3,8 +3,8 @@ package tys.frontier.passes.lowering;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FCacheExpression;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FVariableExpression;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.Module;
@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FLambdaIfLowering extends StatementReplacer {
 
@@ -48,7 +50,7 @@ public class FLambdaIfLowering extends StatementReplacer {
                 FExpression castedExpression = ((FImplicitCast) atom).getCastedExpression();
                 if (!(castedExpression instanceof FVariableExpression)) {
                     FCacheExpression cache = FCacheExpression.create(castedExpression.getPosition(), generateCacheName(varIt.next().getIdentifier()), castedExpression);
-                    castedCacheVars.add(FExplicitCast.createTrusted(null, ((FOptional) cache.getType()).getBaseType(), new FVariableExpression(null, cache.getVariable())));
+                    castedCacheVars.add(FFunctionCall.createTrusted(null, ((FOptional) cache.getType()).getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, cache.getVariable()))));
                     newAtoms.add(cache);
                     continue;
                 }

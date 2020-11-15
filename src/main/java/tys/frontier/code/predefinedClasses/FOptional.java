@@ -3,8 +3,10 @@ package tys.frontier.code.predefinedClasses;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.UnaryOperator;
+import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.OptionalNamespace;
@@ -22,7 +24,10 @@ public class FOptional extends FPredefinedClass {
     //classes do not override equals, so we need to make sure we get the same object every time
     private static ConcurrentMap<FType, FOptional> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
 
+    public static FIdentifier EXMARK = new FIdentifier("_!");
+
     private FType baseType;
+    private FFunction exmark;
 
     private FOptional(FType baseType) {
         super(new FOptionalIdentifier(baseType.getIdentifier()));
@@ -35,12 +40,19 @@ public class FOptional extends FPredefinedClass {
         OptionalNamespace namespace = new OptionalNamespace(location, this);
         setNamespace(namespace);
         //addDefaultFunctions(); TODO should only be added once for "base class"
-        namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
-                .setVisibility(getVisibility()).setPredefined(true).setParams(this).setReturnType(FBool.INSTANCE).build());
+        FunctionBuilder builder = new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
+                .setVisibility(getVisibility()).setPredefined(true).setParams(this);
+        namespace.addFunctionTrusted(builder.setReturnType(FBool.INSTANCE).build());
+        exmark = builder.setIdentifier(EXMARK).setReturnType(baseType).build();
+        namespace.addFunctionTrusted(exmark);
     }
 
     public FType getBaseType() {
         return baseType;
+    }
+
+    public FFunction getExmark() {
+        return exmark;
     }
 
     @Override
@@ -71,6 +83,10 @@ public class FOptional extends FPredefinedClass {
     public static boolean canBeTreatedAsOptional(FType fType) {
         return fType instanceof FOptional ||
                 (fType instanceof FTuple && Iterables.all(((FTuple) fType).getTypes(), FOptional::canBeTreatedAsOptional));
+    }
+
+    public static boolean isOriginalOptionalIdentifier(FIdentifier identifier) {
+        return identifier.equals(UnaryOperator.NOT.identifier) || identifier.equals(EXMARK);
     }
 
     public static FBaseClass from(FType baseClass) {

@@ -12,6 +12,12 @@ import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Utils;
 
 public abstract class FPredefinedClass extends FBaseClass {
+    //TODO in theory, these should be dependent on the keywords in the style
+    public static FIdentifier TO_CHAR = new FIdentifier("toChar");
+    public static FIdentifier TO_INT32 = new FIdentifier("toInt32");
+    public static FIdentifier TO_INT64 = new FIdentifier("toInt64");
+    public static FIdentifier TO_FLOAT32 = new FIdentifier("toFloat32");
+    public static FIdentifier TO_FLOAT64 = new FIdentifier("toFloat64");
 
     //TODO @PositionForGeneratedCode
     public FPredefinedClass(FIdentifier identifier) {

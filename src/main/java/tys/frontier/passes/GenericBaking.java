@@ -7,7 +7,6 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.*;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -301,15 +300,6 @@ public class GenericBaking implements FClassVisitor {
     @Override
     public FExpression exitImplicitCast(FImplicitCast implicitCast, FExpression castedExpression) {
         return castedExpression;
-    }
-
-    @Override
-    public FExpression exitExplicitCast(FExplicitCast explicitCast, FExpression castedExpression) {
-        FType targetType = typeInstantiation.getType(explicitCast.getType());
-        if (targetType != castedExpression.getType())
-            return FExplicitCast.createTrusted(explicitCast.getPosition(), targetType, castedExpression);
-        else
-            return castedExpression;
     }
 
     @Override

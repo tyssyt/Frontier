@@ -7,7 +7,6 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.*;
-import tys.frontier.code.expression.cast.FExplicitCast;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.BinaryOperator;
@@ -267,7 +266,7 @@ public class FForEachLowering extends StatementReplacer {
 
         //make optional concrete
         FOptional containerType = (FOptional) container.getType();
-        FExplicitCast containerPromote = FExplicitCast.createTrusted(null, containerType.getBaseType(), new FVariableExpression(null, container));
+        FFunctionCall containerPromote = FFunctionCall.createTrusted(null, containerType.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
         FLocalVariable promotedContainer = new FLocalVariable(container.getIdentifier(), containerType.getBaseType());
         FAssignment decl = FAssignment.createDecl(promotedContainer, containerPromote);
 

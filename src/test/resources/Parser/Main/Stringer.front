@@ -30,12 +30,12 @@ export static main() {
     arr[0] = 22;
     arr[1] = -1337;
     arr[2] = 0;
-    obj := new Something<(int32,char,[char]?,Main?)>(i=5,f=(float32)(-3.6),arr=arr, t=5, "a", "tuple", null, q=new SomethingElse(i=1));
+    obj := new Something<(int32,char,[char]?,Main?)>(i=5,f=(-3.6).toFloat32,arr=arr, t=5, "a", "tuple", null, q=new SomethingElse(i=1));
 
     IO.printLine(Stringer.toString(obj));
 
     i : int32 = 1;
-    IO.printLine(Stringer.format("% + % = %", i, (float32)(3.14), "cat"));
+    IO.printLine(Stringer.format("% + % = %", i, (3.14).toFloat32, "cat")); //TODO float64
     IO.printLine(Stringer.format("i made a %", "upsiedaisy")); //unintended side effect
     IO.printLine(Stringer.format("i made a %", "upsiedaisy", 0)); //workaround
     IO.printLine(Stringer.format("o7 %%%%", "%", i, i, arr)); //how to print a "%" and more

@@ -288,7 +288,6 @@ ifStatement
 
 expression
     :   LPAREN expression RPAREN                                   #bracketsExpr
-    |   expression EXMARK                                          #cast
     |   expression LBRACK arguments RBRACK                         #arrayAccess
     |   expression DOT IDENTIFIER (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   IDENTIFIER LPAREN arguments? RPAREN                        #internalFunctionCall
@@ -299,7 +298,7 @@ expression
     |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
     |   NEW typeOrTuple (LBRACK expression RBRACK)                 #newArray
     |   (EXMARK|SUB) expression                                    #preUnaryOp
-    |   LPAREN typeType RPAREN expression                          #cast //TODO change syntax because brackets are ambigious
+    |   expression EXMARK                                          #cast
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp
     |   expression (ADD|SUB) expression                            #binaryOp
     |   expression (LE|GE|LT|GT) expression                        #binaryOp

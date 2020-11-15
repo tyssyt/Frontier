@@ -58,7 +58,7 @@ export class Main:
 static verbose: bool = false;
 
 export static main (args: [[char]]) {
-    numberOfPrimesToCompute := (int32) Strings.parseInt(args[1]);
+    numberOfPrimesToCompute := Strings.parseInt(args[1]).toInt32;
     IO.print("computing ");
     IO.printInt(numberOfPrimesToCompute);
     IO.print(" primes!");
