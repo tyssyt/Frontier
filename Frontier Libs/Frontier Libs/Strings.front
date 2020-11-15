@@ -36,7 +36,7 @@ export namespace Strings:
         if !pos {
             l = l * -1;
         }
-        size:int32 = (int32) Native.ceil(Native.log10((float64)l+1.0));
+        size:int32 = (int32)((float64)(l+1)).log10().ceil();
         if (!pos) {
             size = size+1;
         }

@@ -255,6 +255,16 @@ public class LLVMModule implements AutoCloseable {
         return res;
     }
 
+    LLVMValueRef getFloatIntrinsicFunction(String name, FFloat type) {
+        String fullName = name + ".f" + type.getBits();
+        LLVMValueRef res = LLVMGetNamedFunction(module, fullName);
+        if (res == null) {
+            LLVMTypeRef floatType = getLlvmType(type);
+            res = LLVMAddFunction(module, fullName, LLVMFunctionType(floatType, floatType, 1, FALSE));
+        }
+        return res;
+    }
+
     LLVMValueRef getMemcopyInstrinsic() {
         String fullName = "llvm.memcpy.p0i8.p0i8.i32";
         LLVMValueRef res = LLVMGetNamedFunction(module, fullName);

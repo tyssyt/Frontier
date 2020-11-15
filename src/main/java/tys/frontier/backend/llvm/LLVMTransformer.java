@@ -92,6 +92,15 @@ class LLVMTransformer implements
             .put(GREATER_EQUAL.identifier, LLVMRealOGE)
             .build();
 
+    private static final ImmutableMap<FIdentifier, String> floatIntrinsics = ImmutableMap.<FIdentifier, String>builder()
+            .put(FFloat.LOG, "llvm.log")
+            .put(FFloat.LOG10, "llvm.log10")
+            .put(FFloat.LOG2, "llvm.log2")
+            .put(FFloat.CEIL, "llvm.ceil")
+            .put(FFloat.FLOOR, "llvm.floor")
+            .put(FFloat.TRUNC, "llvm.trunc")
+            .build();
+
     private LLVMModule module;
     private LLVMBuilderRef builder;
     private LLVMBuilderRef entryBlockAllocaBuilder;
@@ -153,7 +162,7 @@ class LLVMTransformer implements
     }
 
     public void generateWinMain(FFunction entryPoint, FField hInstance, FField nCmdShow) { //TODO reduce copy paste with generateMain
-        setDebugLocation(null);
+        setDebugLocation(entryPoint.getLocation().getPoint());
         LLVMTypeRef ptr = LLVMPointerType(LLVMStructType((PointerPointer<LLVMTypeRef>) null, 0, FALSE), 0);
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(
                 ptr,
@@ -199,7 +208,7 @@ class LLVMTransformer implements
     }
 
     public void generateMain(FFunction entryPoint) {
-        setDebugLocation(null);
+        setDebugLocation(entryPoint.getLocation().getPoint());
         PointerPointer<LLVMTypeRef> argTypes = createPointerPointer(indexType,
                 LLVMPointerType(LLVMPointerType(module.getLlvmType(FIntN._8), 0), 0)
         );
@@ -713,8 +722,8 @@ class LLVMTransformer implements
         FType type = function.getSignature().getParameters().get(0).getType();
         if (type instanceof FIntN)
             return predefinedUnaryInt(id, (FIntN) type, arg);
-        if (type instanceof FFloat32)
-            return predefinedUnaryFloat(id, (FFloat32) type, arg);
+        if (type instanceof FFloat)
+            return predefinedUnaryFloat(id, (FFloat) type, arg);
         return Utils.NYI("predefined Unary function call to: " + function);
     }
 
@@ -732,9 +741,16 @@ class LLVMTransformer implements
         return Utils.NYI("predefined unary Int/Bool operation: " + id);
     }
 
-    private LLVMValueRef predefinedUnaryFloat(FIdentifier id, FFloat32 type, LLVMValueRef arg) {
-        if (id.equals(FFloat32.RAW_BITS))
-            return LLVMBuildBitCast(builder, arg, module.getLlvmType(FIntN._32), "rawFloatBits");
+    private LLVMValueRef predefinedUnaryFloat(FIdentifier id, FFloat type, LLVMValueRef arg) {
+        if (id.equals(FFloat.RAW_BITS)) {
+            return LLVMBuildBitCast(builder, arg, module.getLlvmType(FIntN.getIntN(type.getBits())), "rawFloatBits");
+        }
+
+        String floatIntrinsicName = floatIntrinsics.get(id);
+        if (floatIntrinsicName != null) {
+            LLVMValueRef function = module.getFloatIntrinsicFunction(floatIntrinsicName, type);
+            return LLVMBuildCall(builder, function, createPointerPointer(arg), 1, floatIntrinsicName);
+        }
 
         return Utils.NYI("predefined unary Float operation: " + id);
     }

@@ -1,22 +1,6 @@
 export namespace Native:
-
     export native putchar(chara: int32);
     export native getchar() -> int32;
-
-    export native log(val: float32) -> float32;
-    export native log(val: float64) -> float64;
-    export native log10(val: float32) -> float32;
-    export native log10(val: float64) -> float64;
-    export native log2(val: float32) -> float32;
-    export native log2(val: float64) -> float64;
-
-    export native ceil(val: float32) -> float32;
-    export native ceil(val: float64) -> float64;
-    export native floor(val: float32) -> float32;
-    export native floor(val: float64) -> float64;
-    export native trunc(val: float32) -> float32;
-    export native trunc(val: float64) -> float64;
-
 
 export native class CFile:
     export native static fopen(filename: native[char], mode: native[char]) -> CFile;

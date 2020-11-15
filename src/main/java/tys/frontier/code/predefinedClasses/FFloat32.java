@@ -23,10 +23,7 @@ import java.util.List;
 
 import static tys.frontier.util.Utils.mutableSingletonList;
 
-public class FFloat32 extends FPredefinedClass {
-
-    public static FIdentifier RAW_BITS = new FIdentifier("asRawBits");
-    public static FIdentifier SPLIT_REPRESENTATION = new FIdentifier("splitRepresentation");
+public class FFloat32 extends FFloat {
 
     public static final FFloat32 INSTANCE = new FFloat32();
 
@@ -41,10 +38,16 @@ public class FFloat32 extends FPredefinedClass {
 
         DefaultNamespace namespace = this.getNamespace();
 
-
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
         FBaseFunction rawBits = builder.setIdentifier(RAW_BITS).setReturnType(FIntN._32).build();
         namespace.addFunctionTrusted(rawBits);
+        builder.setReturnType(this);
+        namespace.addFunctionTrusted(builder.setIdentifier(LOG).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(LOG10).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(LOG2).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(CEIL).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(FLOOR).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(TRUNC).build());
 
         builder.setPredefined(false);
 
@@ -80,5 +83,10 @@ public class FFloat32 extends FPredefinedClass {
             FReturn _return = FReturn.createTrusted(null, List.of(sign, exponent, mantissa), splitRepresentation);
             splitRepresentation.setBody(FBlock.from(null, bitsDecl, _return));
         }
+    }
+
+    @Override
+    public int getBits() {
+        return 32;
     }
 }
