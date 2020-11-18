@@ -1186,7 +1186,7 @@ class LLVMTransformer implements
             return null;
         LLVMMetadataRef fileScope = createFileScope(function.getLocation());
         String name = function.getIdentifier().name;
-        LLVMMetadataRef functionType = LLVMDIBuilderCreateSubroutineType(diBuilder, fileScope, (PointerPointer) null, 0, 0);
+        LLVMMetadataRef functionType = LLVMDIBuilderCreateSubroutineType(diBuilder, fileScope, (PointerPointer<LLVMMetadataRef>) null, 0, 0);
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         LLVMMetadataRef functionMetadata = LLVMDIBuilderCreateFunction(diBuilder, fileScope, name, name.length(), "", 0, fileScope, function.getLocation().getPoint().getLineFrom(), functionType, TRUE, TRUE, function.getBody().get().getPosition().getLineFrom(), 0, FALSE);
         LLVMSetSubprogram(llvmFunction, functionMetadata);
@@ -1194,8 +1194,8 @@ class LLVMTransformer implements
     }
 
     private LLVMMetadataRef createFileScope(Location location) {
-        String directory = location.getFile().getRoot().toString();
-        String fileName = location.getFile().toString().substring(directory.length());
+        String directory = location.getFile().getParent().toString();
+        String fileName = location.getFile().getFileName().toString();
         return LLVMDIBuilderCreateFile(diBuilder, fileName, fileName.length(), directory, directory.length());
     }
 

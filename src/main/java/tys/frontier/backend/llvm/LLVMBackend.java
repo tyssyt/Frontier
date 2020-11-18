@@ -1,17 +1,22 @@
 package tys.frontier.backend.llvm;
 
+import org.bytedeco.llvm.LLVM.LLVMModuleRef;
 import tys.frontier.backend.Backend;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.module.FrontierModule;
+import tys.frontier.code.module.Include;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.passes.analysis.reachability.Reachability;
+import tys.frontier.util.Pair;
 
 import java.util.Collection;
 import java.util.List;
 
+import static com.google.common.io.MoreFiles.getFileExtension;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tys.frontier.util.MyCollectors.partitioningBy;
 
 public class LLVMBackend implements Backend {
 
@@ -51,9 +56,15 @@ public class LLVMBackend implements Backend {
             }
             System.out.println("generated Module: " + module.emitToString());
             module.verify();
+
+            Pair<List<Include>, List<Include>> userLibs = getUserLibs(allModules);
+
+            linkBitcode(module, userLibs.a);
+
             //module.optimize(3); //TODO see the BreaksOptimizer test for why we need to disable optimization
             //System.out.println("optimized Module: " + module.emitToString());
-            module.emitToFile(fileType, out, allModules.stream().flatMap(m -> m.getNativeIncludes().stream()).collect(toList()), debug);
+
+            module.emitToFile(fileType, out, userLibs.b, debug);
         }
     }
 
@@ -64,6 +75,21 @@ public class LLVMBackend implements Backend {
         res.fillInBodies(namespaces, entryPoint);
         res.createMetaData();
         return res;
+    }
+
+    private static Pair<List<Include>, List<Include>> getUserLibs(List<Module> allModules) {
+        return allModules.stream()
+                .flatMap(m -> m.getNativeIncludes().stream())
+                .collect(partitioningBy(include -> getFileExtension(include.path).toLowerCase().equals("bc")));
+    }
+
+    private static void linkBitcode(LLVMModule module, List<Include> bitCodeIncludes) {
+        for (Include include : bitCodeIncludes) {
+            assert !include.out;
+            System.out.println("linking: " + include.path);
+            LLVMModuleRef loadedModule = LLVMUtil.loadModuleFromBitcode(module.getContext(), include.path.toString());
+            module.link(loadedModule);
+        }
     }
 
 }

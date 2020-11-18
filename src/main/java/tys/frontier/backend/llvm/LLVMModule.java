@@ -544,11 +544,12 @@ public class LLVMModule implements AutoCloseable {
         LLVMDisposePassManager(passManager);
     }
 
-    //Debug commands
-
-    public void dump() { //TODO the emitToString kinda makes this irrelevant
-        LLVMDumpModule(module);
+    public void link(LLVMModuleRef other) {
+        if (LLVMLinkModules2(module, other) != 0)
+            Utils.handleError("failed to Link modules");
     }
+
+    //Debug commands
 
     public void viewFunctionControlFlowGraph(FFunction function) {
         LLVMValueRef res = LLVMGetNamedFunction(module, function.getIdentifier().name);
