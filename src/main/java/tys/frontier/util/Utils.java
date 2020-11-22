@@ -28,9 +28,6 @@ import java.util.stream.Stream;
 
 public final class Utils {
 
-    public static final String endl = System.getProperty("line.separator");
-    public static final String filesep = System.getProperty("file.separator");
-
     private Utils() {}
 
 
@@ -310,7 +307,7 @@ public final class Utils {
     }
 
     public static <T,S> Iterator<Pair<T,S>> zip(Iterator<T> it1, Iterator<S> it2) {
-        return new Iterator<Pair<T, S>>() {
+        return new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return it1.hasNext() && it2.hasNext() ;

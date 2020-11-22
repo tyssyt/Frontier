@@ -5,7 +5,7 @@ import tys.frontier.parser.Parser;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
-import tys.frontier.util.Utils;
+import tys.frontier.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +23,7 @@ public class FolderRepository implements ModuleRepository {
 
     @Override
     public Module resolve(String name) throws SyntaxErrors, IOException, SyntaxError {
-        Path resolve = folder.resolve(name + Utils.filesep + name + ".front");
+        Path resolve = folder.resolve(name + FileUtils.filesep + name + ".front");
         if (Files.isRegularFile(resolve))
             return Parser.parse(resolve, getStyle());
         else

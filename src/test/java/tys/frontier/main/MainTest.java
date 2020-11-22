@@ -17,7 +17,6 @@ import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.FileUtils;
-import tys.frontier.util.Utils;
 
 import java.io.File;
 import java.io.FileReader;
@@ -31,7 +30,7 @@ import static org.junit.Assert.*;
 
 public class MainTest {
 
-    private static final String prefix = "Parser" + Utils.filesep + "Main" + Utils.filesep;
+    private static final String prefix = "Parser" + FileUtils.filesep + "Main" + FileUtils.filesep;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -51,7 +50,7 @@ public class MainTest {
     }
 
     private String doMain(String fileName, String input, String... args) throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
-        String tmpFolder = this.folder.newFolder().getPath() + Utils.filesep;
+        String tmpFolder = this.folder.newFolder().getPath() + FileUtils.filesep;
 
         Main.main(FileUtils.pathToResource(prefix + fileName + ".front").toString(), tmpFolder, new ArrayList<>(), false, false);
 
@@ -74,13 +73,13 @@ public class MainTest {
 
     private static String loadOut(String fileName) throws IOException {
         URL url = Resources.getResource(prefix + fileName);
-        return Resources.toString(url, Charsets.UTF_8).replaceAll("\r?\n", Utils.endl);
+        return Resources.toString(url, Charsets.UTF_8).replaceAll("\r?\n", FileUtils.endl);
     }
 
     @Test
     public void mainHelloWorld() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("HelloWorld", null);
-        assertEquals("Hello, World!" + Utils.endl, res);
+        assertEquals("Hello, World!" + FileUtils.endl, res);
     }
     @Test
     public void mainEcho() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
@@ -120,7 +119,7 @@ public class MainTest {
         String res = doMain("HigherOrder", null);
         StringBuilder expected = new StringBuilder();
         for(int i=1; i<=5; i++) {
-            expected.append(i).append(":0123456789101112").append(Utils.endl);
+            expected.append(i).append(":0123456789101112").append(FileUtils.endl);
         }
         expected.append("done");
         assertEquals(expected.toString(), res);
@@ -138,7 +137,7 @@ public class MainTest {
     @Test
     public void mainParams() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("Params", ";");
-        assertEquals("20@#;" + Utils.endl, res);
+        assertEquals("20@#;" + FileUtils.endl, res);
     }
     @Test
     public void mainPackUnpack() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
@@ -158,7 +157,7 @@ public class MainTest {
     @Test
     public void mainInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("Include/Include", null);
-        assertEquals("Hello" + Utils.endl + "There!" + Utils.endl, res);
+        assertEquals("Hello" + FileUtils.endl + "There!" + FileUtils.endl, res);
     }
     @Test
     public void mainNativeInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

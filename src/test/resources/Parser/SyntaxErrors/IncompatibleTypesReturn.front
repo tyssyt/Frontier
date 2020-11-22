@@ -1,4 +1,4 @@
 class A:
     test () -> float64 {
-        return 13;
+        return 13; //TODO should work on next literal rework
     }

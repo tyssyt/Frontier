@@ -10,6 +10,9 @@ import java.nio.file.Paths;
 
 public class FileUtils {
 
+    public static final String endl = System.getProperty("line.separator");
+    public static final String filesep = System.getProperty("file.separator");
+
     private FileUtils() {}
 
     public static boolean deleteDir(File file) {

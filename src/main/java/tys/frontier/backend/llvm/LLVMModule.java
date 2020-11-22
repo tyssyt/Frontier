@@ -21,6 +21,7 @@ import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
+import tys.frontier.util.FileUtils;
 import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
@@ -587,7 +588,7 @@ public class LLVMModule implements AutoCloseable {
                 }
                 break;
             case EXECUTABLE:
-                String tempName = State.get().getTempDir().getPath() + fileName.substring(fileName.lastIndexOf(Utils.filesep)) + "_temp.o";
+                String tempName = State.get().getTempDir().getPath() + fileName.substring(fileName.lastIndexOf(FileUtils.filesep)) + "_temp.o";
                 Log.info(this, "writing temporary object file to: " + tempName);
                 try (Target target = Target.getDefault()) {
                     errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
