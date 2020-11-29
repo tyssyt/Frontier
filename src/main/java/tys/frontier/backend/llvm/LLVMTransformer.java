@@ -1187,8 +1187,9 @@ class LLVMTransformer implements
         LLVMMetadataRef fileScope = createFileScope(function.getLocation());
         String name = function.getIdentifier().name;
         LLVMMetadataRef functionType = LLVMDIBuilderCreateSubroutineType(diBuilder, fileScope, (PointerPointer<LLVMMetadataRef>) null, 0, 0);
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        LLVMMetadataRef functionMetadata = LLVMDIBuilderCreateFunction(diBuilder, fileScope, name, name.length(), "", 0, fileScope, function.getLocation().getPoint().getLineFrom(), functionType, TRUE, TRUE, function.getBody().get().getPosition().getLineFrom(), 0, FALSE);
+        int lineFrom = function.getLocation().getPoint().getLineFrom();
+        int scopeStart = function.isConstructor() ? lineFrom : function.getBody().map(b -> b.getPosition().getLineFrom()).orElse(lineFrom);
+        LLVMMetadataRef functionMetadata = LLVMDIBuilderCreateFunction(diBuilder, fileScope, name, name.length(), "", 0, fileScope, lineFrom, functionType, TRUE, TRUE, scopeStart, 0, FALSE);
         LLVMSetSubprogram(llvmFunction, functionMetadata);
         return functionMetadata;
     }

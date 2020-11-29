@@ -1,5 +1,6 @@
 package tys.frontier.util;
 
+import tys.frontier.code.expression.FBracketsExpression;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
@@ -28,6 +29,8 @@ public class Conditions {
         todo.add(cond);
         while (!todo.isEmpty()) {
             FExpression cur = todo.remove();
+            if (cur instanceof FBracketsExpression)
+                cur = ((FBracketsExpression) cur).getInner();
             if (cur instanceof FFunctionCall && ((FFunctionCall) cur).getFunction().getIdentifier().equals(BinaryOperator.AND.identifier))
                 todo.addAll(((FFunctionCall) cur).getArguments(true));
             else
