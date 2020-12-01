@@ -63,8 +63,8 @@ public class LLVMUtil {
     }
 
     public static String getFunctionName(FFunction function) {
-        if (function.isNative())
-            return function.getIdentifier().name;
+        if (function.getNative() != null)
+            return function.getNative().getValue().orElse(function.getIdentifier().name);
         String uniqueName = uniqueFunctionNameCache.get(function);
         if (uniqueName == null) {
             Map<FFunction, String> newNames = ((DefaultNamespace) function.getMemberOf()).computeUniqueFunctionNames();

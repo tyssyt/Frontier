@@ -22,7 +22,7 @@ public class FunctionBuilder {
     private FIdentifier identifier;
     private Namespace memberOf;
     private FVisibilityModifier modifier = EXPORT;
-    private boolean natiwe = false;
+    private NativeDecl nativeDecl;
     private boolean predefined = false;
     private FType returnType = VOID;
     private ImmutableList<FParameter> params = ImmutableList.of();
@@ -62,8 +62,8 @@ public class FunctionBuilder {
         return this;
     }
 
-    public FunctionBuilder setNative(boolean natiwe) {
-        this.natiwe = natiwe;
+    public FunctionBuilder setNative(NativeDecl nativeDecl) {
+        this.nativeDecl = nativeDecl;
         return this;
     }
 
@@ -117,6 +117,6 @@ public class FunctionBuilder {
     }
 
     public FBaseFunction build() {
-        return new FBaseFunction(location, identifier, memberOf, modifier, natiwe, predefined, returnType, params, assignees, parameters);
+        return new FBaseFunction(location, identifier, memberOf, modifier, nativeDecl, predefined, returnType, params, assignees, parameters);
     }
 }

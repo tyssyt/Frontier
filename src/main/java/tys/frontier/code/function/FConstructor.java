@@ -33,7 +33,7 @@ public class FConstructor extends FBaseFunction {
     public static final FIdentifier MALLOC_ID = new FIdentifier("!malloc");
 
     private FConstructor(FVisibilityModifier modifier, FClass fClass, ImmutableList<FParameter> params) {
-        super(fClass.getNamespace().getLocation(), IDENTIFIER, fClass.getNamespace(), modifier, false, false, fClass, params, null, emptyMap());
+        super(fClass.getNamespace().getLocation(), IDENTIFIER, fClass.getNamespace(), modifier, null, false, fClass, params, null, emptyMap());
     }
 
     @Override

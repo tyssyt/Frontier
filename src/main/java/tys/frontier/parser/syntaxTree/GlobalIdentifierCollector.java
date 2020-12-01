@@ -7,6 +7,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.operator.Operator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -194,17 +195,19 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             }
 
             builder.setVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
-            boolean natiwe = ctx.NATIVE() != null;
+            NativeDecl nativeDecl = ParserContextUtils.getNative(ctx.nativeModifier());
+            if (nativeDecl != null)
+                builder.setNative(nativeDecl);
             boolean open = ctx.OPEN() != null;
 
             Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
-            FFunction res = builder.setLocation(location).setMemberOf(namespace).setNative(natiwe).setParams(parameters).build();
+            FFunction res = builder.setLocation(location).setMemberOf(namespace).setParams(parameters).build();
             treeData.functions.put(ctx, res);
 
-            if (natiwe && hasBody)
+            if (nativeDecl != null && hasBody)
                 throw new NativeWithBody(res);
 
-            if(!open || natiwe || hasBody) //open non native functions without body should not be added
+            if(!open || nativeDecl != null || hasBody) //open non native functions without body should not be added
                 namespace.addFunction(res);
 
             if (open) //mark as open

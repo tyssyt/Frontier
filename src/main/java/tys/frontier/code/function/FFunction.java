@@ -28,7 +28,7 @@ public interface FFunction extends IdentifierNameable, HasVisibility, Typed, Con
     @Override
     FVisibilityModifier getVisibility();
 
-    boolean isNative();
+    NativeDecl getNative();
 
     Signature getSignature();
     Signature getLhsSignature();

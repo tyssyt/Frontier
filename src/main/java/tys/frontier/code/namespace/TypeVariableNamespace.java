@@ -98,7 +98,7 @@ public class TypeVariableNamespace implements Namespace {
         }
         ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
-        DummyFunction f = new DummyFunction(identifier, namespace, FVisibilityModifier.EXPORT, false, returnType, params, null, emptyMap());
+        DummyFunction f = new DummyFunction(identifier, namespace, FVisibilityModifier.EXPORT, null, returnType, params, null, emptyMap());
         if (returnType instanceof ReturnTypeOf)
             ((ReturnTypeOf) returnType).function = f;
 

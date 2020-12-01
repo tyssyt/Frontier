@@ -7,6 +7,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.*;
 import tys.frontier.code.namespace.Namespace;
@@ -71,6 +72,16 @@ public final class ParserContextUtils {
 
     public static boolean isStatic (FrontierParser.ModifierContext ctx) {
         return ctx !=  null;
+    }
+
+    public static NativeDecl getNative (FrontierParser.NativeModifierContext ctx) {
+        if (ctx == null)
+            return null;
+        TerminalNode stringLiteral = ctx.StringLiteral();
+        if (stringLiteral == null)
+            return new NativeDecl(null);
+        else
+            return new NativeDecl(getStringLiteral(stringLiteral.getSymbol()));
     }
 
     public static void handleTypeParameterSpecification(TypeParameterSpecificationContext ctx, Map<FIdentifier, FTypeVariable> params, Function<FIdentifier, Namespace> possibleNamespaces) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, UnfulfillableConstraints, UndeclaredVariable {
@@ -242,27 +253,28 @@ public final class ParserContextUtils {
                         default       -> new FFloat64Literal(Double.parseDouble(text), text);
                     };
             case StringLiteral        -> {
-                assert text.charAt(0) == '\"';
-                assert text.charAt(text.length() - 1) == '\"';
-                StringBuilder sb = new StringBuilder();
-                for (int i = 1; i < text.length() - 1; i++) {
-                    char c = text.charAt(i);
-                    if (c == '\\') {
-                        i++;
-                        c = FCharLiteral.escapeLiterals.get(text.charAt(i));
-                        assert c != 0 || text.charAt(i) == '0';
-                    }
-                    sb.append(c);
-                }
-                String string = sb.toString();
-                if (string.length() == 1) {
-                    yield  new FCharLiteral(string.charAt(0));
-                }
-                yield  new FStringLiteral(sb.toString());
+                String string = getStringLiteral(token);
+                yield string.length() == 1 ? new FCharLiteral(string.charAt(0)) : new FStringLiteral(string);
             }
-
-            default -> Utils.cantHappen();
+            default                   -> Utils.cantHappen();
         };
+    }
+
+    public static String getStringLiteral(Token token) {
+        String text = token.getText();
+        assert text.charAt(0) == '\"';
+        assert text.charAt(text.length() - 1) == '\"';
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i < text.length() - 1; i++) {
+            char c = text.charAt(i);
+            if (c == '\\') {
+                i++;
+                c = FCharLiteral.escapeLiterals.get(text.charAt(i));
+                assert c != 0 || text.charAt(i) == '0';
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     public static Set<FParameter> findDefaultValueDependencies(FExpression defaultValue, List<FParameter> parameters) {

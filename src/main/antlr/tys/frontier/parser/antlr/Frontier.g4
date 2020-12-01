@@ -158,10 +158,14 @@ methodDeclaration
     ;
 
 methodHeader //Tuple-ize
-    :   visibilityModifier? NATIVE? STATIC?
+    :   visibilityModifier? nativeModifier? STATIC?
         ((OPEN | typeType DOT)? IDENTIFIER | OPERATOR operator)
         typeParameters? formalParameters
         (ARROW typeList | BACKARROW typedIdentifiers)? typeParameterSpecification*
+    ;
+
+nativeModifier
+    :   NATIVE (LPAREN StringLiteral RPAREN)?
     ;
 
 operator

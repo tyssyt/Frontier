@@ -11,6 +11,7 @@ import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FNull;
@@ -45,8 +46,8 @@ public class LLVMModule implements AutoCloseable {
             this.type = type;
         }
 
-        static Linkage findLinkage(boolean isNative) {
-            if (isNative)
+        static Linkage findLinkage(NativeDecl nativeDecl) {
+            if (nativeDecl != null)
                 return Linkage.EXTERNAL;
             else
                 return Linkage.PRIVATE;
@@ -314,7 +315,7 @@ public class LLVMModule implements AutoCloseable {
                 FFunction function = signature.getFunction();
                 if (!function.isPredefined()) {
                     addFunctionHeader(function);
-                    if (!function.isNative())
+                    if (function.getNative() == null)
                         todoFunctionBodies.add(function);
                 }
             }
@@ -330,7 +331,7 @@ public class LLVMModule implements AutoCloseable {
                 LLVMTypeRef type = getLlvmType(field.getType());
                 LLVMValueRef global = LLVMAddGlobal(module, type, getStaticFieldName(field));
 
-                setGlobalAttribs(global, Linkage.findLinkage(false), false);
+                setGlobalAttribs(global, Linkage.findLinkage(null), false);
                 todoFieldInitilizers.add(field);
             }
         }
@@ -345,8 +346,10 @@ public class LLVMModule implements AutoCloseable {
     private LLVMValueRef addFunctionHeader(FFunction function) { //TODO find other good attributes to set for function and parameters
         LLVMValueRef res = LLVMAddFunction(module, getFunctionName(function), stupidHackToGetFunctionTypeWithCorrectTupleUnpackingWhyyyyyyyy(function));
         //set global attribs
-        setGlobalAttribs(res, Linkage.findLinkage(function.isNative()), true);
-        //LLVMSetFunctionCallConv(res, CALLING_CONVENTION); TODO this crashes the program, but it should work... , maybe its because of the c links ?
+        setGlobalAttribs(res, Linkage.findLinkage(function.getNative()), true);
+        //if (!function.isNative()) {
+        //    LLVMSetFunctionCallConv(res, CALLING_CONVENTION); //TODO this crashes the program, but it should work... , maybe its because of the c links ?
+        //}
 
         //set names for all arguments, add parameter attributes
         //TODO we can use dereferenceable<i> instead of nonNull, and use dereferenceable_or_null for all others, but we need the type sizes...

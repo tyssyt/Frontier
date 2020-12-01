@@ -197,7 +197,7 @@ public class Reachability {
                 }
             } else {
                 //Function
-                if (cur.isNative()) {
+                if (cur.getNative() != null) {
                     for (FParameter p : cur.getSignature().getParameters())
                         handleType(p.getType(), res);
                     handleType(cur.getType(), res);

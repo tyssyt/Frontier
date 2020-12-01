@@ -23,7 +23,7 @@ public class FBaseFunction implements FFunction {
     private FIdentifier identifier;
     private Namespace memberOf;
     private FVisibilityModifier modifier;
-    private boolean natiwe;
+    private NativeDecl nativeDecl;
     protected boolean predefined;
     private FBlock body;
     private Location location;
@@ -36,12 +36,12 @@ public class FBaseFunction implements FFunction {
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
 
-    protected FBaseFunction(Location location, FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, boolean natiwe, boolean predefined, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
+    protected FBaseFunction(Location location, FIdentifier identifier, Namespace memberOf, FVisibilityModifier modifier, NativeDecl nativeDecl, boolean predefined, FType returnType, ImmutableList<FParameter> params, ImmutableList<FParameter> assignees, Map<FIdentifier, FTypeVariable> parameters) {
         this.location = location;
         this.identifier = identifier;
         this.memberOf = memberOf;
         this.modifier = modifier;
-        this.natiwe = natiwe;
+        this.nativeDecl = nativeDecl;
         this.predefined = predefined;
 
         Pair<Signature, Signature> pair = Signature.createSignatures(this, params, assignees, returnType);
@@ -70,8 +70,8 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public boolean isNative() {
-        return natiwe;
+    public NativeDecl getNative() {
+        return nativeDecl;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class FBaseFunction implements FFunction {
 
     @Override
     public void setBody(FBlock body) {
-        assert !this.natiwe && !this.predefined;
+        assert nativeDecl == null && !this.predefined;
         assert this.body==null;
         this.body = body;
     }

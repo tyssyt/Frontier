@@ -42,8 +42,8 @@ public abstract class ForwardingFunction implements FFunction {
     }
 
     @Override
-    public boolean isNative() {
-        return proxy.isNative();
+    public NativeDecl getNative() {
+        return proxy.getNative();
     }
 
     @Override

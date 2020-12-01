@@ -77,8 +77,8 @@ public class FieldAccessor implements FFunction {
     }
 
     @Override
-    public boolean isNative() {
-        return false;
+    public NativeDecl getNative() {
+        return null;
     }
 
     @Override
