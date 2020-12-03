@@ -34,7 +34,8 @@ public class FField extends FVariable implements HasVisibility, StringBuilderToS
         this.visibility = visibility;
         this.statik = statik;
         this.hasAssignment = hasAssignment;
-        this._this = new FLocalVariable(FIdentifier.THIS, memberOf); //TODO only create when instance?
+        if (!statik)
+            this._this = new FLocalVariable(FIdentifier.THIS, memberOf);
 
         Pair<FieldAccessor, FieldAccessor> accessors = FieldAccessor.createAccessors(this);
         this.getter = accessors.a;

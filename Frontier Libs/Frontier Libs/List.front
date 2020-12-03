@@ -50,8 +50,15 @@ export class List<T>:
         return elements[size];
     }
 
-    export remove(pos: int32) -> T {
-        res:T = elements[pos];
+    export removeUnordered(pos: int32) -> T {
+        res := elements[pos];
+        size = size-1;
+        elements[pos] = elements[size];
+        return res;
+    }
+
+    export removeOrdered(pos: int32) -> T {
+        res := elements[pos];
         lShift(pos);
         size = size-1;
         return res;

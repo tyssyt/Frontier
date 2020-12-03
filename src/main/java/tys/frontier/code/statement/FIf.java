@@ -73,8 +73,8 @@ public class FIf extends FStatement {
                             return e;
                         if (e instanceof FFunction)
                             return t;
-                        FLoop tL = ((FLoop) t);
-                        FLoop eL = ((FLoop) e);
+                        FLoop tL = (FLoop) t;
+                        FLoop eL = (FLoop) e;
                         if (tL.getNestedDepth() < eL.getNestedDepth())
                             return eL;
                         else

@@ -61,7 +61,7 @@ public class LLVMBackend implements Backend {
 
             linkBitcode(module, userLibs.a);
 
-            //module.optimize(3); //TODO see the BreaksOptimizer test for why we need to disable optimization
+            //module.optimize(3); //TODO see the Stringer test for why we need to disable optimization, something wrong with floats, I guess I need to add some flags somewhere
             //System.out.println("optimized Module: " + module.emitToString());
 
             module.emitToFile(fileType, out, userLibs.b, debug);

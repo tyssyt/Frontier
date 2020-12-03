@@ -15,7 +15,7 @@ static filter <F> (l: List<F>, filter: (F->bool)) {
     i:int32 = 0;
     while i < l.size() {
         if filter(l.elements()[i]) {
-            l.remove(i);
+            l.removeOrdered(i);
         } else {
             i = i+1;
         }

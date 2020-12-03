@@ -32,6 +32,7 @@ public class OptionalInformationForIf {
     public static OptionalInformationForIf createFromCondition(FExpression condition) {
         List<FLocalVariable> promotableVars = new ArrayList<>();
         List<FExpression> lambdaValues = new ArrayList<>();
+        //TODO this logic needs to be kept up tp date with the finding in FLambdaIfLowering, deduplicate
         for (FExpression atom : Conditions.splitOnAnd(condition)) {
             if (Conditions.isOptionalExistAtom(atom)) {
                 FExpression opt = ((FImplicitCast) atom).getCastedExpression();

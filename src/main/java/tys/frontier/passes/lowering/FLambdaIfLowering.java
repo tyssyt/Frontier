@@ -45,6 +45,7 @@ public class FLambdaIfLowering extends StatementReplacer {
         Iterator<FLocalVariable> varIt = variables.iterator();
         List<FExpression> newAtoms = new ArrayList<>();
         List<FExpression> castedCacheVars = new ArrayList<>(variables.size());
+        //TODO this logic needs to be kept up tp date with the finding in OptionalInformationForIf, deduplicate
         for (FExpression atom : Conditions.splitOnAnd(fIf.getCondition())) {
             if (Conditions.isOptionalExistAtom(atom)) {
                 FExpression castedExpression = ((FImplicitCast) atom).getCastedExpression();

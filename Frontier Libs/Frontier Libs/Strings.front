@@ -248,6 +248,7 @@ class LookupTables:
 
     static float32ToStringLookupTable : [(int32, int64, int64)] = createFloat32ToStringLookupTable();
 
+    //TODO think very hard about the pattern I see in the numbers below and whether that gives me a decent way to compute them?
     static createFloat32ToStringLookupTable() -> [(int32, int64, int64)] {
         //a bunch of magic numbers, how I came up with them is left as an exercise for the reader
         table := new (int32, int64, int64)[255];

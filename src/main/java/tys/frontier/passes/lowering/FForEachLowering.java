@@ -108,7 +108,7 @@ public class FForEachLowering extends StatementReplacer {
         }
 
         //declare counter
-        FLocalVariable counter = forEach.getCounter().orElse(function.getFreshVariable(FIntN._32));
+        FLocalVariable counter = forEach.getCounter().orElseGet(() -> function.getFreshVariable(FIntN._32));
         res.add(FAssignment.createDecl(counter, new FLiteralExpression(null, new FIntNLiteral(0))));
 
         //condition
