@@ -3,6 +3,7 @@ package tys.frontier.parser;
 import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Include;
 import tys.frontier.parser.syntaxErrors.CyclicInclude;
+import tys.frontier.parser.syntaxErrors.InvalidPath;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.style.Style;
 import tys.frontier.util.Pair;
@@ -15,7 +16,7 @@ import java.util.Queue;
 
 public class ModuleParser {
 
-    public static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
+    public static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude, InvalidPath {
         FrontierModule res = new FrontierModule();
         ParsedFile entryFile = FileParser.runAntlr(entryPoint, style);
         entryFile.setModule(res);

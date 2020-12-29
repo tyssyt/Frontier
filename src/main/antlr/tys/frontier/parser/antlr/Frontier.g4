@@ -77,26 +77,16 @@ file
         EOF
     ;
 
-importStatement //TODO this is an ugly mess, I should just change modes (also can't handle paths that contain spaces etc)
-    :   IMPORT IDENTIFIER SEMI
+importStatement
+    :   IMPORT (StringLiteral | IDENTIFIER) SEMI
     ;
 
 includeStatement
-    :   NATIVE? INCLUDE path OUT? SEMI
-    ;
-
-path
-    :   folder? IDENTIFIER DOT IDENTIFIER   #filePath
-    |   folder STAR STAR? (DOT IDENTIFIER)? #folderPath
-    ;
-
-folder
-    :   (DOT DOT SLASH)+ (IDENTIFIER SLASH)*
-    |   (DOT DOT SLASH)* (IDENTIFIER SLASH)+
+    :   NATIVE? INCLUDE (StringLiteral | IDENTIFIER DOT IDENTIFIER) OUT? SEMI
     ;
 
 classDeclaration
-    :   visibilityModifier? NATIVE? CLASS IDENTIFIER typeParameters? COLON
+    :   visibilityModifier? nativeModifier? CLASS IDENTIFIER typeParameters? COLON
         typeParameterSpecification*
         classDeclaratives
         (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*

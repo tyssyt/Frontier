@@ -7,9 +7,10 @@ import tys.frontier.code.module.Include;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.syntaxErrors.InvalidPath;
+import tys.frontier.parser.syntaxTree.ParserContextUtils;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
 import tys.frontier.util.Pair;
-import tys.frontier.util.Utils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -91,35 +92,45 @@ public class ParsedFile {
         List<FrontierParser.ImportStatementContext> ctxs = treeData.root.importStatement();
         List<String> res = new ArrayList<>(ctxs.size());
         for (FrontierParser.ImportStatementContext ctx : ctxs) {
-            res.add(ctx.IDENTIFIER().getText());
+            res.add(ctx.getChild(1).getText());
         }
         return res;
     }
 
-    public Pair<List<Include>, List<Include>> findIncludes() throws IOException {
+    public Pair<List<Include>, List<Include>> findIncludes() throws IOException, InvalidPath {
         List<FrontierParser.IncludeStatementContext> ctxs = treeData.root.includeStatement();
         List<Include> includes = new ArrayList<>();
         List<Include> nativeIncludes = new ArrayList<>();
         for (FrontierParser.IncludeStatementContext ctx : ctxs) {
             List<Include> res = ctx.NATIVE() != null ? nativeIncludes : includes;
             boolean out = ctx.OUT() != null;
-            FrontierParser.PathContext pathContext = ctx.path();
-            if (pathContext instanceof FrontierParser.FilePathContext) {
-                res.add(new Include(filePath.resolveSibling(pathContext.getText()).normalize(), out));
-            } else if (pathContext instanceof FrontierParser.FolderPathContext) {
-                FrontierParser.FolderPathContext folderPathContext = (FrontierParser.FolderPathContext) pathContext;
 
-                Path folder = filePath.resolveSibling(folderPathContext.folder().getText()).normalize();
-                boolean recursive = folderPathContext.STAR().size() == 2;
-                Iterable<Path> pathIterable = recursive ? fileTraverser().breadthFirst(folder) : listFiles(folder);
-
-                TerminalNode identifierContext = folderPathContext.IDENTIFIER();
-                String fileExtension = identifierContext == null ? null : identifierContext.getText();
-                for (Path path : pathIterable)
-                    if (!isDirectory(path) && (fileExtension == null || fileExtension.equals(getFileExtension(path))))
-                        res.add(new Include(path, out));
+            if (ctx.DOT() != null) {
+                List<TerminalNode> ids = ctx.IDENTIFIER();
+                String path = ids.get(0).getText() + '.' + ids.get(1).getText();
+                res.add(new Include(filePath.resolveSibling(path).normalize(), out));
             } else {
-                return Utils.cantHappen();
+                String path = ParserContextUtils.getStringLiteral(ctx.StringLiteral().getSymbol());
+                int starIndex = path.lastIndexOf('*');
+                if (starIndex < 0) {
+                    res.add(new Include(filePath.resolveSibling(path).normalize(), out));
+                } else {
+                    boolean recursive = path.charAt(starIndex - 1) == '*';
+                    Path folder = filePath.resolveSibling(path.substring(0, recursive ? starIndex-1 : starIndex)).normalize();
+                    Iterable<Path> pathIterable = recursive ? fileTraverser().breadthFirst(folder) : listFiles(folder);
+
+                    String fileExtension;
+                    if (path.length() == starIndex + 1)
+                        fileExtension = null;
+                    else if (path.charAt(starIndex + 1) == '.')
+                        fileExtension = path.substring(starIndex + 2);
+                    else
+                        throw new InvalidPath(path);
+
+                    for (Path p : pathIterable)
+                        if (!isDirectory(p) && (fileExtension == null || fileExtension.equals(getFileExtension(p))))
+                            res.add(new Include(p, out));
+                }
             }
         }
         return new Pair<>(includes, nativeIncludes);

@@ -1,4 +1,4 @@
-include We/need/to/go/Deeper.front;
+include "We/need/to/go/Deeper.front";
 
 export class Main:
 

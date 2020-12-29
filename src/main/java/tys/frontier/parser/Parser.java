@@ -2,6 +2,7 @@ package tys.frontier.parser;
 
 import tys.frontier.State;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
@@ -55,7 +56,7 @@ public class Parser {
         }
     }
 
-    private static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude {
+    private static FrontierModule buildModule(Path entryPoint, Style style) throws IOException, SyntaxErrors, CyclicInclude, InvalidPath {
         return ModuleParser.buildModule(entryPoint, style);
     }
 
