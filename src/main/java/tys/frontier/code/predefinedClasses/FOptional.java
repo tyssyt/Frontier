@@ -2,18 +2,13 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.UnaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FOptionalIdentifier;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.OptionalNamespace;
 import tys.frontier.code.type.FBaseClass;
-import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.parser.location.Location;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,18 +25,16 @@ public class FOptional extends FPredefinedClass {
     private FFunction exmark;
 
     private FOptional(FType baseType) {
-        super(new FOptionalIdentifier(baseType.getIdentifier()));
+        super(baseType.getIdentifier());
         assert !(baseType instanceof FOptional);
         assert baseType != FTuple.VOID;
+
         this.baseType = baseType;
-        Location location = null;
-        if (baseType.getNamespace() instanceof DefaultNamespace)
-            location = ((DefaultNamespace) baseType.getNamespace()).getLocation();
-        OptionalNamespace namespace = new OptionalNamespace(location, this);
+        OptionalNamespace namespace = OptionalNamespace.create(this);
         setNamespace(namespace);
         //addDefaultFunctions(); TODO should only be added once for "base class"
         FunctionBuilder builder = new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
-                .setVisibility(getVisibility()).setPredefined(true).setParams(this);
+                .setVisibility(namespace.getVisibility()).setPredefined(true).setParams(this);
         namespace.addFunctionTrusted(builder.setReturnType(FBool.INSTANCE).build());
         exmark = builder.setIdentifier(EXMARK).setReturnType(baseType).build();
         namespace.addFunctionTrusted(exmark);
@@ -66,13 +59,6 @@ public class FOptional extends FPredefinedClass {
         if (res == Integer.MAX_VALUE) //avoid overflow
             return Integer.MAX_VALUE;
         return res+1;
-    }
-
-    @Override
-    public FVisibilityModifier getVisibility() {
-        if (baseType instanceof FClass)
-            return ((FClass) baseType).getVisibility();
-        return super.getVisibility();
     }
 
     @Override

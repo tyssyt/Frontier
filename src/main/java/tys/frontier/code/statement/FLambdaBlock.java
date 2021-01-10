@@ -1,8 +1,8 @@
 package tys.frontier.code.statement;
 
-import com.google.common.base.Joiner;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.parser.location.Position;
+import tys.frontier.util.Joiners;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class FLambdaBlock extends FBlock {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append("{ \\ ");
-        Joiner.on(", ").appendTo(sb, variables).append(" ->\n");
+        Joiners.ON_COMMA.appendTo(sb, variables).append(" ->\n");
         for (FStatement statement : this)
             statement.toString(sb).append('\n');
         return sb.append('}');

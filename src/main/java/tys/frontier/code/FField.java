@@ -3,44 +3,33 @@ package tys.frontier.code;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.type.FClass;
+import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.util.Pair;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
 
 import java.util.Optional;
 
-public class FField extends FVariable implements HasVisibility, StringBuilderToString {
-    private FClass memberOf;
+public abstract class FField extends FVariable implements StringBuilderToString {
     private FVisibilityModifier visibility;
-    private boolean statik;
     private boolean hasAssignment;
     private FExpression assignment;
     private Position position;
 
-    private FieldAccessor getter;
-    private FieldAccessor setter;
+    protected FieldAccessor getter;
+    protected FieldAccessor setter;
 
-    private FLocalVariable _this; //TODO this is needed for instance fields but will likely no longer be necessary if we do attributes
-
-    public FField(Position position, FIdentifier identifier, FType type, FClass memberOf, FVisibilityModifier visibility, boolean statik, boolean hasAssignment) {
+    public FField(Position position, FIdentifier identifier, FType type, FVisibilityModifier visibility, boolean hasAssignment) {
         super(identifier, type);
         this.position = position;
-        this.memberOf = memberOf;
         this.visibility = visibility;
-        this.statik = statik;
         this.hasAssignment = hasAssignment;
-        if (!statik)
-            this._this = new FLocalVariable(FIdentifier.THIS, memberOf);
-
-        Pair<FieldAccessor, FieldAccessor> accessors = FieldAccessor.createAccessors(this);
-        this.getter = accessors.a;
-        this.setter = accessors.b;
     }
+
+    abstract public DefaultNamespace getNamespace();
 
     public FieldAccessor getGetter() {
         return getter;
@@ -50,21 +39,8 @@ public class FField extends FVariable implements HasVisibility, StringBuilderToS
         return setter;
     }
 
-    @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
-    }
-
-    public boolean isInstance() {
-        return !statik;
-    }
-
-    public FLocalVariable getThis() {
-        return _this;
-    }
-
-    public FClass getMemberOf() {
-        return memberOf;
     }
 
     public boolean hasAssignment() {
@@ -97,16 +73,6 @@ public class FField extends FVariable implements HasVisibility, StringBuilderToS
         return visitor.exitField(this, getAssignment().map(assignment -> assignment.accept(visitor)));
     }
 
-    @Override
-    public StringBuilder toString(StringBuilder sb) {
-        sb.append(visibility).append(' ');
-        if (statik)
-            sb.append("static ");
-        sb.append(super.toString());
-        //noinspection ResultOfMethodCallIgnored
-        getAssignment().ifPresent(a -> a.toString(sb.append(" = ")));
-        return sb.append(";");
-    }
     @Override
     public String toString() {
         return tS();

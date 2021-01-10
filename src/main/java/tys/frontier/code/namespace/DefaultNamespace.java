@@ -1,13 +1,12 @@
 package tys.frontier.code.namespace;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.Multimaps;
+import com.google.common.collect.*;
+import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.HasVisibility;
+import tys.frontier.code.StaticField;
 import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FClass;
@@ -16,6 +15,7 @@ import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.parser.syntaxErrors.IdentifierCollision;
 import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.passes.analysis.reachability.Reachability;
@@ -24,14 +24,15 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-public class DefaultNamespace implements Namespace, HasVisibility {
+public class DefaultNamespace implements Namespace {
 
     private FIdentifier identifier;
     private FVisibilityModifier visibility;
-    private boolean _native;
     private FClass fClass; //optional
     private Location location;
+    private NativeDecl nativeDecl;
 
+    private BiMap<FIdentifier, StaticField> staticFields = HashBiMap.create();
     private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
     private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
     private Map<FIdentifier, FFunction> openFunctions = new HashMap<>();
@@ -40,16 +41,12 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
     private NameGenerator returnTypeNames;
 
-    public DefaultNamespace(Location location, FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
+    public DefaultNamespace(Location location, FIdentifier identifier, FVisibilityModifier visibility, NativeDecl nativeDecl, FClass fClass) {
         this.location = location;
         this.identifier = identifier;
         this.visibility = visibility;
-        this._native = _native;
+        this.nativeDecl = nativeDecl;
         this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + "ret.", "");
-    }
-
-    public DefaultNamespace(Location location, FClass fClass) {
-        this(location, fClass.getIdentifier(), fClass.getVisibility(), fClass.isNative() || fClass.isPredefined());
         this.fClass = fClass;
     }
 
@@ -63,7 +60,6 @@ public class DefaultNamespace implements Namespace, HasVisibility {
         return new FIdentifier(returnTypeNames.next());
     }
 
-    @Override
     public FVisibilityModifier getVisibility() {
         return visibility;
     }
@@ -90,6 +86,10 @@ public class DefaultNamespace implements Namespace, HasVisibility {
         assert old == null;
     }
 
+    public NativeDecl getNative() {
+        return nativeDecl;
+    }
+
     @Override
     public FFunction getOpen(FIdentifier identifier) {
         return openFunctions.get(identifier);
@@ -104,6 +104,26 @@ public class DefaultNamespace implements Namespace, HasVisibility {
         return remoteFunctions;
     }
 
+    public void addField(StaticField field) throws IdentifierCollision, SignatureCollision {
+        FField old = getStaticFields().put(field.getIdentifier(), field);
+        if (old != null) {
+            throw new IdentifierCollision(field, old);
+        }
+        addFunction(field.getGetter());
+        addFunction(field.getSetter());
+    }
+
+    public void addFieldTrusted(StaticField field) {
+        try {
+            addField(field);
+        } catch (IdentifierCollision | SignatureCollision e) {
+            Utils.cantHappen();
+        }
+    }
+
+    public BiMap<FIdentifier, StaticField> getStaticFields() {
+        return staticFields;
+    }
 
     public ListMultimap<FIdentifier, Signature> getFunctions(boolean lhsSignatures) {
         return lhsSignatures ? lhsFunctions : rhsFunctions;
@@ -142,13 +162,15 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     }
 
     public void removeUnreachable(Reachability.ReachableNamespace reachable) {
-        if (!_native) {
-            getFunctions(false).values().removeIf(s -> !reachable.isReachable(s.getFunction()));
-            getFunctions(true).clear(); //not needed after this point
-        }
+        if (nativeDecl != null || (fClass != null && fClass.isPredefined()))
+            return;
+
+        getFunctions(false).values().removeIf(s -> !reachable.isReachable(s.getFunction()));
+        getFunctions(true).clear(); //not needed after this point
+        getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
 
         if (fClass != null)
-            fClass.removeUnreachable(reachable);
+            fClass.getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
     }
 
     public Map<FFunction, String> computeUniqueFunctionNames() {
@@ -188,10 +210,12 @@ public class DefaultNamespace implements Namespace, HasVisibility {
     public <N,C,Fi,Fu,S,E> N accept(ClassVisitor<N, C, Fi, Fu, S, E> visitor) {
         visitor.enterNamespace(this);
         C c = fClass != null ? fClass.accept(visitor) : null;
+        List<Fi> staticFields = new ArrayList<>(this.getStaticFields().size());
+        for (StaticField field : this.getStaticFields().values())
+            staticFields.add(field.accept(visitor));
         List<Fu> functions = new ArrayList<>(this.getFunctions(false).size());
-        for (Signature s : this.getFunctions(false).values()) {
+        for (Signature s : this.getFunctions(false).values())
             functions.add(s.getFunction().accept(visitor));
-        }
-        return visitor.exitNamespace(this, Optional.ofNullable(c), functions);
+        return visitor.exitNamespace(this, Optional.ofNullable(c), staticFields, functions);
     }
 }

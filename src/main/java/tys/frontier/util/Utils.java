@@ -3,6 +3,7 @@ package tys.frontier.util;
 import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import tys.frontier.code.FField;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.function.*;
@@ -55,6 +56,16 @@ public final class Utils {
             i++;
         }
         return in.substring(i);
+    }
+
+    public static String removeTrailingUnderscores(String in) {
+        int i=in.length();
+        while (i>0) {
+            if (in.charAt(i-1) != '_')
+                break;
+            i--;
+        }
+        return in.substring(0, i);
     }
 
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument") //TODO custom implementation
@@ -193,9 +204,12 @@ public final class Utils {
                             return s;
                     }
                     return Utils.cantHappen();
+                } else if (function.getIdentifier().equals(FArray.COPY) || function.getIdentifier().equals(FArray.C_ARRAY)) {
+                    List<Signature> signatures = ((FArray) newType).getNamespace().getFunctions(false).get(function.getIdentifier());
+                    return Iterables.getOnlyElement(signatures);
                 } else if (function instanceof FieldAccessor) {
                     FieldAccessor accessor = (FieldAccessor) function;
-                    assert accessor.getField().isInstance() && accessor.getField().getIdentifier().equals(FArray.SIZE);
+                    assert accessor.getField() instanceof InstanceField && accessor.getField().getIdentifier().equals(FArray.SIZE);
                     FieldAccessor inst = getAccessor((FArray) newType, FArray.SIZE, true, accessor.isGetter());
                     return signature.isLhs() ? inst.getLhsSignature() : inst.getSignature();
                 } else {
@@ -242,7 +256,7 @@ public final class Utils {
     }
 
     public static FieldAccessor getAccessor(FClass in, FIdentifier identifier, boolean isInstance, boolean isGetter) {
-        BiMap<FIdentifier, FField> fields = isInstance ? in.getInstanceFields() : in.getStaticFields();
+        BiMap<FIdentifier, ? extends FField> fields = isInstance ? in.getInstanceFields() : in.getNamespace().getStaticFields();
         FField field = fields.get(identifier);
         return isGetter ? field.getGetter() : field.getSetter();
     }

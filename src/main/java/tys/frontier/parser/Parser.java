@@ -144,9 +144,9 @@ public class Parser {
     public static FClass createClass(Path file, FrontierParser.ClassDeclarationContext ctx) throws TwiceDefinedLocalVariable {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-        boolean _native = ctx.NATIVE() != null;
+        NativeDecl nativeDecl = ParserContextUtils.getNative(ctx.nativeModifier());
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        FClass res =  new FBaseClass(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, _native);
+        FClass res = new FBaseClass(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, nativeDecl);
         if (c != null) {
             Pair<List<FTypeVariable>, List<Variance>> typeParameters = ParserContextUtils.getTypeParameters(c);
             res.setParameters(typeParameters.a, typeParameters.b);
@@ -157,7 +157,7 @@ public class Parser {
     public static DefaultNamespace createNamespace(Path file, FrontierParser.NamespaceDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
-        return new DefaultNamespace(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, false);
+        return new DefaultNamespace(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, null, null);
     }
 
 }

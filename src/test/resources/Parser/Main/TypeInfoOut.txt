@@ -6,26 +6,26 @@
 !Int4
 !Int64
 !Int8
-!Int8[]
-   size : !Int32
 !NullType
 (!Int32 !Int64)
    a : !Int32
    b : !Int64
-(!Int32 !Int64)[]
-   size : !Int32
 ()
 Field
-   name : !Int8[]
+   name : [!Int8]
    type : Type
    memberOf : Type
-Field[]
-   size : !Int32
 List<(!Int32 !Int64)>
-   elements : (!Int32 !Int64)[]
+   elements : [(!Int32 !Int64)]
    size : !Int32
 Type
-   name : !Int8[]
-   fields : Field[]
-Type[]
+   name : [!Int8]
+   fields : [Field]
+[!Int8]
+   size : !Int32
+[(!Int32 !Int64)]
+   size : !Int32
+[Field]
+   size : !Int32
+[Type]
    size : !Int32

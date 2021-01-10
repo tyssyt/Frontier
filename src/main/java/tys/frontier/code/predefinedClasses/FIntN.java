@@ -1,8 +1,8 @@
 package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.StaticField;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
@@ -51,14 +51,15 @@ public class FIntN extends FPredefinedClass {
         this.n = n;
         addPredefinedFunctionsForArithType();
         addPredefinedFunctionsForIntType();
-        FField max = new FField(null, MAX, this, this, FVisibilityModifier.EXPORT, true, true);
-        max.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(maxValue(), this, "" + maxValue())));
-        addFieldTrusted(max);
-        FField min = new FField(null, MIN, this, this, FVisibilityModifier.EXPORT, true, true);
-        min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this, "" + minValue())));
-        addFieldTrusted(min);
 
         DefaultNamespace namespace = this.getNamespace();
+        StaticField max = new StaticField(null, MAX, this, namespace, FVisibilityModifier.EXPORT, true);
+        max.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(maxValue(), this, "" + maxValue())));
+        namespace.addFieldTrusted(max);
+        StaticField min = new StaticField(null, MIN, this, namespace, FVisibilityModifier.EXPORT, true);
+        min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this, "" + minValue())));
+        namespace.addFieldTrusted(min);
+
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
         namespace.addFunctionTrusted(builder.setIdentifier(TO_FLOAT32).setReturnType(FFloat32.INSTANCE).build());
         namespace.addFunctionTrusted(builder.setIdentifier(TO_FLOAT64).setReturnType(FFloat64.INSTANCE).build());

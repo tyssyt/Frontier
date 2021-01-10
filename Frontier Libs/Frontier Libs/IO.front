@@ -7,7 +7,7 @@ export namespace IO:
         Native.putchar(chara);
     }
 
-    export printInt(l: int64) { //TODO once we have better Math this can be cleaned up a lot
+    export printInt(l: int64) {
         print(Strings.intToString(l));
     }
 

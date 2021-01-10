@@ -5,7 +5,7 @@ public class CArrayIdentifier extends FIdentifier {
     public final FIdentifier base;
 
     public CArrayIdentifier(FIdentifier base) {
-        super(base.name + "[c]");
+        super("native[" + base.name + ']');
         this.base = base;
     }
 }

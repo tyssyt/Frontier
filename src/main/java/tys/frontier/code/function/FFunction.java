@@ -1,6 +1,9 @@
 package tys.frontier.code.function;
 
-import tys.frontier.code.*;
+import tys.frontier.code.FLocalVariable;
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.Typed;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.namespace.Namespace;
@@ -17,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public interface FFunction extends IdentifierNameable, HasVisibility, Typed, ControlFlowIDontKnow, StringBuilderToString {
+public interface FFunction extends IdentifierNameable, Typed, ControlFlowIDontKnow, StringBuilderToString {
 
     default boolean isInstance() {
         return getSignature().isInstance();
@@ -25,7 +28,6 @@ public interface FFunction extends IdentifierNameable, HasVisibility, Typed, Con
 
     Namespace getMemberOf();
 
-    @Override
     FVisibilityModifier getVisibility();
 
     NativeDecl getNative();

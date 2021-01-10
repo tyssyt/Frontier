@@ -1,48 +1,6 @@
 import Win32;
 import Strings;
 import Thread;
-import TemporaryHacks;
-
-export class MessageBox:
-
-    //mode TODO make enum
-    static modeOk                  : int32 = 0;
-    static modeOkCancel            : int32 = 1;
-    static modeCancelRetryContinue : int32 = 2;
-    static modeYesNoCancel         : int32 = 3;
-    static modeYesNo               : int32 = 4;
-    static modeRetryCancel         : int32 = 5;
-
-    //icon TODO make enum
-    static iconError    : int32 = 16;
-    static iconQuestion : int32 = 32;
-    static iconWarn     : int32 = 48;
-    static iconInfo     : int32 = 64;
-
-    //TODO consider adding option to choose default button
-    //TODO consider adding modality options
-
-    //return code TODO make enum
-    static okPressed       : int32 = 1;
-    static cancelPressed   : int32 = 2;
-    static abortPressed    : int32 = 3;
-    static retryPressed    : int32 = 4;
-    static ignorePressed   : int32 = 5;
-    static yesPressed      : int32 = 6;
-    static noPressed       : int32 = 7;
-    static tryAgainPressed : int32 = 10;
-    static continuePressed : int32 = 11;
-
-    static show(title: [char], message: [char], mode: int32, icon: int32? = null) -> int32? {
-        rc := Winuser.MessageBoxA(null, Strings.toCString(message), Strings.toCString(title), mode + (icon : 0)); //TODO | operator didn't work, why?
-        if (rc == 0) {
-            return null;
-        } else {
-            return rc;
-        }
-    }
-
-
 
 export class Screen:
 /*
@@ -60,10 +18,10 @@ export class Screen:
             -which I can get from EnumDisplayMonitors again...
 */
     export static width() -> int32 {
-        return Winuser.GetSystemMetrics(0);
+        return Winuser.getSystemMetrics(0);
     }
     export static height() -> int32 {
-        return Winuser.GetSystemMetrics(1);
+        return Winuser.getSystemMetrics(1);
     }
 
 export class Window:
@@ -80,7 +38,7 @@ export class Window:
         return Thread.create(createInThread**);
     }
 
-    private static createInThread(data: Data?) -> int32 {
+    private static createInThread(data: native[char]?) -> int32 {
         title: [char] = "asdasd";
         width:  int32 = Screen.width /2;
         height: int32 = Screen.height /2;
@@ -88,7 +46,7 @@ export class Window:
         y: int32 = Screen.height /4;
 
         className := Strings.toCString("FWindowClass");
-        i := new WndClass(lpszClassName=className).RegisterClassExA();
+        i := new WndClass(lpszClassName=className).register();
         if (i == 0) {
             return 1;
         }
@@ -97,23 +55,23 @@ export class Window:
         //style = WS_OVERLAPPEDWINDOW = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
         // WS_CAPTION includes WS_BORDER
 
-        window := WWindow.CreateWindowExA(lpClassName=className, lpWindowName=Strings.toCString(title), dwStyle=13565952, dwExStyle=512, nWidth=width, nHeight=height, x=x, y=y); //TODO all params
+        window := WWindow.create(lpClassName=className, lpWindowName=Strings.toCString(title), dwStyle=13565952, dwExStyle=512, nWidth=width, nHeight=height, x=x, y=y); //TODO all params
 
         if (!window) {
             return 2;
         }
 
-        window!.ShowWindow();
-        b := window!.UpdateWindow();
+        window!.show();
+        b := window!.update();
         if (!b) {
             //TODO cleanup the semi created window?
             return 3;
         }
 
         msg := new Message();
-        while(msg.GetMessageA()) {
-            msg.TranslateMessage();
-            msg.DispatchMessageA();
+        while(msg.get()) {
+            msg.translate();
+            msg.dispatch();
         }
         return 42;
     }

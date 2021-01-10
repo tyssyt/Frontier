@@ -1,11 +1,10 @@
 package tys.frontier.code.predefinedClasses;
 
-import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.literal.FStringLiteral;
 import tys.frontier.code.type.FBaseClass;
-import tys.frontier.passes.analysis.reachability.Reachability;
 
 public class FFieldType extends FBaseClass {
 
@@ -16,41 +15,37 @@ public class FFieldType extends FBaseClass {
     public static final FFieldType INSTANCE = new FFieldType();
 
     //instance fields
-    public static final FField name;
-    public static final FField type;
-    public static final FField memberOf;
+    public static final InstanceField name;
+    public static final InstanceField type;
+    public static final InstanceField memberOf;
 
     //TODO @PositionForGeneratedCode, I already have the pseudo file
     static {
         //field name
         {
-            name = new FField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            name = new InstanceField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false);
             INSTANCE.addFieldTrusted(name); //TODO make final
         }
         //field type
         {
-            type = new FField(null, new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            type = new InstanceField(null, new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false);
             INSTANCE.addFieldTrusted(type); //TODO make final
         }
         //field memberOf
         {
-            memberOf = new FField(null, new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
+            memberOf = new InstanceField(null, new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false);
             INSTANCE.addFieldTrusted(memberOf); //TODO make final
         }
 
-        INSTANCE.generateConstructor();
+        INSTANCE.generateConstructor(); // primitive for loops over tuples need to generate dynamic Field Info
     }
 
-
     private FFieldType() {
-        super(null, IDENTIFIER, FVisibilityModifier.EXPORT, false);
+        super(null, IDENTIFIER, FVisibilityModifier.EXPORT, null);
     }
 
     @Override
     public boolean canImplicitlyCast() {
         return false;
     }
-
-    @Override
-    public void removeUnreachable(Reachability.ReachableNamespace reachable) {}
 }

@@ -1,21 +1,19 @@
-import TemporaryHacks;
-
 //https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createthread?redirectedfrom=MSDN
 //https://docs.microsoft.com/en-us/windows/win32/procthread/creating-threads
 
 export native class Kernel32:
 
-    export native static QueryPerformanceCounter(performanceCount: LongPtr) -> bool;
+    export native("QueryPerformanceCounter") static getTimestamp(performanceCount: native[int64]) -> bool;
 
 export native class WThread:
 
-    export native static CreateThread (
-        lpThreadAttributes: SecurityAttributes? = null,
+    export native("CreateThread") static create (
+        lpThreadAttributes: SecurityAttributes?,
         dwStackSize: int64, //SIZE_T TODO I believe this only is the case on 64 bit os, check
-        lpStartAddress: (Data? -> int32),
-        lpParameter: Data? = null,
+        lpStartAddress: (native[char]? -> int32),
+        lpParameter: native[char]?,
         dwCreationFlags: int32 = 0,
-        lpThreadId: IntPtr? = null
+        lpThreadId: native[int32]?
     ) -> WThread;
 
 export native class SecurityAttributes:

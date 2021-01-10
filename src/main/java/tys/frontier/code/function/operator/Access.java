@@ -14,6 +14,8 @@ import tys.frontier.util.Pair;
 
 import java.util.Optional;
 
+import static com.google.common.collect.Lists.asList;
+
 public class Access implements Operator {
     public static final FIdentifier ID = new FIdentifier("[]");
     public static final Access INSTANCE = new Access();
@@ -36,9 +38,9 @@ public class Access implements Operator {
         return true;
     }
 
-    public static Pair<FFunction, FFunction> createPredefined(FClass memberOf, FClass key, FType value) {
+    public static Pair<FFunction, FFunction> createPredefined(FClass memberOf, FType value, FClass... keys) {
         FunctionBuilder builder = new FunctionBuilder(ID, memberOf.getNamespace())
-                .setVisibility(memberOf.getVisibility()).setPredefined(true).setParams(memberOf, key).setReturnType(value);
+                .setVisibility(memberOf.getNamespace().getVisibility()).setPredefined(true).setParams(asList(memberOf, keys)).setReturnType(value);
         FBaseFunction getter = builder.build();
 
         ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), value, false));

@@ -34,14 +34,8 @@ public class FieldAccessor implements FFunction {
         this.lhsSignature = signatures.b;
     }
 
-    public static Pair<FieldAccessor, FieldAccessor> createAccessors(FField field) {
-        ImmutableList<FParameter> parameters;
-        if (field.isInstance())
-            parameters = ImmutableList.of(FParameter.create(FIdentifier.THIS, field.getMemberOf(), false));
-        else
-            parameters = ImmutableList.of();
+    public static Pair<FieldAccessor, FieldAccessor> createAccessors(FField field, ImmutableList<FParameter> parameters) {
         ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), field.getType(), false));
-
         return new Pair<>(
                 new FieldAccessor(field, parameters, null, field.getType()), //getter
                 new FieldAccessor(field, parameters, assignees, FTuple.VOID) //setter
@@ -50,7 +44,7 @@ public class FieldAccessor implements FFunction {
 
     @Override
     public Location getLocation() {
-        return new Location(field.getMemberOf().getNamespace().getLocation().getFile(), field.getPosition());
+        return new Location(field.getNamespace().getLocation().getFile(), field.getPosition());
     }
 
     public FField getField() {
@@ -63,12 +57,12 @@ public class FieldAccessor implements FFunction {
 
     @Override
     public boolean isInstance() {
-        return field.isInstance();
+        return field instanceof InstanceField;
     }
 
     @Override
     public DefaultNamespace getMemberOf() {
-        return field.getMemberOf().getNamespace();
+        return field.getNamespace();
     }
 
     @Override

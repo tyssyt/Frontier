@@ -9,6 +9,7 @@ import org.bytedeco.llvm.global.LLVM;
 import tys.frontier.code.FField;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.*;
 import tys.frontier.code.function.FConstructor;
@@ -827,7 +828,7 @@ class LLVMTransformer implements
         if (function.getIdentifier().equals(Access.ID))
             return visitArrayAccess(args);
         if (function.getIdentifier().equals(FArray.C_ARRAY))
-            return arrayGep(args.get(0),indexLiteral(0));
+            return arrayGep(args.get(0), indexLiteral(0));
         if (function.getIdentifier().equals(FArray.COPY)) {
             //TODO bounds check
             LLVMValueRef srcAddress = LLVMBuildBitCast(builder, arrayGep(args.get(0), args.get(2)), module.bytePointer, "src");
@@ -842,11 +843,41 @@ class LLVMTransformer implements
         return Utils.NYI(function.headerToString() + " in the backend");
     }
 
+    private LLVMValueRef predefinedCArray (FFunctionCall functionCall, CArray type, List<LLVMValueRef> args) {
+        FFunction function = functionCall.getFunction();
+        if (function.getIdentifier().equals(Access.ID))
+            return visitCArrayAccess(args);
+        if (function.getIdentifier().equals(CArray.COPY_TO_F_ARRAY)) {
+            assert args.size() == 2;
+            LLVMValueRef target = buildArrayMalloc(module.getLlvmType(FArray.getArrayFrom(type.getBaseType())), args.get(1));
+
+            LLVMValueRef targetAddress = LLVMBuildBitCast(builder, arrayGep(target, indexLiteral(0)), module.bytePointer, "target");
+            LLVMValueRef srcAddress = LLVMBuildBitCast(builder, args.get(0), module.bytePointer, "src");
+            LLVMValueRef bytesToCopyAsPtr = LLVMBuildGEP(builder, LLVMConstNull(LLVMPointerType(module.getLlvmType(type.getBaseType()), 0)), createPointerPointer(args.get(1)), 1, "bytesToCopyPtr");
+            LLVMValueRef bytesToCopy = LLVMBuildPtrToInt(builder, bytesToCopyAsPtr, module.getLlvmType(FIntN._32), "bytesToCopy");
+
+            LLVMBuildCall(builder, module.getMemcopyInstrinsic(), createPointerPointer(targetAddress, srcAddress, bytesToCopy, boolLiteral(false)), 4, "");
+            return target;
+        }
+
+        return Utils.NYI(function.headerToString() + " in the backend");
+    }
+
     private LLVMValueRef visitArrayAccess(List<LLVMValueRef> args) {
         LLVMValueRef address = arrayGep(args.get(0), args.get(1));
         return switch (args.size()) {
             case 2 -> LLVMBuildLoad(builder, address, "load_array");
             case 3 -> LLVMBuildStore(builder, args.get(2), address);
+            default -> Utils.cantHappen();
+        };
+    }
+
+    private LLVMValueRef visitCArrayAccess(List<LLVMValueRef> args) {
+        //TODO check index against size bound
+        LLVMValueRef address = LLVMBuildGEP(builder, args.get(0), createPointerPointer(args.get(1)), 1, "GEP_cArray");
+        return switch (args.size()) {
+            case 3 -> LLVMBuildLoad(builder, address, "load_array");
+            case 4 -> LLVMBuildStore(builder, args.get(3), address);
             default -> Utils.cantHappen();
         };
     }
@@ -919,21 +950,23 @@ class LLVMTransformer implements
             else
                 return visitFieldAccess((FieldAccessor) function, args);
         }
+
         FType type = function.getMemberOf().getType();
-        if (type instanceof FArray) {
+        if (type instanceof FArray)
             return predefinedArray(functionCall, (FArray) type, args);
-        } else if (type instanceof FOptional) {
+        if (type instanceof CArray)
+            return predefinedCArray(functionCall, (CArray) type, args);
+        if (type instanceof FOptional)
             return predefinedOptional(functionCall, args);
-        } else if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
+        if (function.getIdentifier().equals(FConstructor.MALLOC_ID)) {
             assert args.isEmpty();
             return LLVMBuildMalloc(builder, LLVMGetElementType(module.getLlvmType(functionCall.getType())), "malloc_" + functionCall.getType().getIdentifier());
-        } else if (args.size() == 1) {
-            return predefinedUnary(functionCall, args.get(0));
-        } else if (args.size() == 2) {
-            return predefinedBinary(functionCall, args.get(0), args.get(1));
-        } else {
-            return Utils.cantHappen();
         }
+        if (args.size() == 1)
+            return predefinedUnary(functionCall, args.get(0));
+        if (args.size() == 2)
+            return predefinedBinary(functionCall, args.get(0), args.get(1));
+        return Utils.cantHappen();
     }
 
     private LLVMValueRef visitTupleAccess(FieldAccessor fieldAccessor, List<LLVMValueRef> args) {
@@ -949,7 +982,7 @@ class LLVMTransformer implements
     private LLVMValueRef visitFieldAccess(FieldAccessor fieldAccessor, List<LLVMValueRef> args) {
         FField field = fieldAccessor.getField();
         LLVMValueRef address;
-        if (field.isInstance())
+        if (field instanceof InstanceField)
             address = LLVMBuildStructGEP(builder, args.get(0), module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
         else
             address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
@@ -957,7 +990,7 @@ class LLVMTransformer implements
         if (fieldAccessor.isGetter())
             return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
         else
-            return LLVMBuildStore(builder, field.isInstance() ? args.get(1) : args.get(0), address);
+            return LLVMBuildStore(builder, field instanceof InstanceField ? args.get(1) : args.get(0), address);
     }
 
     @Override
@@ -974,19 +1007,47 @@ class LLVMTransformer implements
                 .allMatch(dep -> dep == null || dep.isEmpty())
                 : "can't handle function calls with packing and dependent default args yet, sorry"; //TODO
 
+
+        List<? extends FExpression> arguments = functionCall.getArguments(true);
+
         //check for short circuit predefined bool ('&&', '||'), because args are parsed differently there
         if (function.isPredefined() && function.getSignature().getParameters().size() == 2) {
             FIdentifier id = function.getIdentifier();
             if (id.equals(BinaryOperator.AND.identifier)) {
                 assert !hasPacking && additionalArgs.isEmpty();
-                return shortCircuitLogic(functionCall.getArguments(true), true);
+                return shortCircuitLogic(arguments, true);
             } else if (id.equals(BinaryOperator.OR.identifier)) {
                 assert !hasPacking && additionalArgs.isEmpty();
-                return shortCircuitLogic(functionCall.getArguments(true), false);
+                return shortCircuitLogic(arguments, false);
             }
         }
 
-        List<? extends FExpression> arguments = functionCall.getArguments(true);
+        //check for addressOf
+        if (function.isPredefined() && function.getIdentifier().equals(CArray.OF)) {
+            assert arguments.size() == 1 && additionalArgs.isEmpty();
+            FExpression arg = arguments.get(0);
+            if (arg instanceof FVariableExpression) {
+                FLocalVariable var = ((FVariableExpression) arg).getVariable();
+                LLVMValueRef address = localVars.get(var);
+                if (address == null) {
+                    assert tempVars.containsKey(var);
+                    return Utils.NYI("address of tempVar"); //TODO
+                }
+                return address;
+            } else if (arg instanceof FFunctionCall && ((FFunctionCall) arg).getFunction() instanceof FieldAccessor) {
+                FFunctionCall accessorCall = (FFunctionCall) arg;
+                FField field = ((FieldAccessor) accessorCall.getFunction()).getField();
+                if (field instanceof InstanceField) {
+                    LLVMValueRef obj = accessorCall.getArguments(true).get(0).accept(this);
+                    return LLVMBuildStructGEP(builder, obj, module.getFieldIndex(field), "GEP_" + field.getIdentifier().name);
+                } else
+                    return LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
+            } else {
+                return Utils.handleError("native[].of needs variable or field as arg"); //TODO ideally the frontend should check this, but it's somewhat backend specific stuff so idk...
+            }
+        }
+
+        //assert tempVars.isEmpty(); TODO I think I did and oopsie when I did temp vars
         LLVMValueRef[] unpreparedArgs = new LLVMValueRef[arguments.size()];
         //given arguments
         for (int i = 0; i < arguments.size(); i++) {
@@ -1062,9 +1123,13 @@ class LLVMTransformer implements
         if (literal instanceof FIntNLiteral) {
             return LLVMConstInt(type, ((FIntNLiteral) literal).value.longValue(), TRUE);
         } else if (literal instanceof FFloat32Literal) {
-            return LLVMConstRealOfString(type, ((FFloat32Literal)literal).originalString);
+            //TODO I don't even want to have the f at the end, but oh well what can you do
+            String string = ((FFloat32Literal) literal).originalString;
+            return LLVMConstRealOfString(type, string.endsWith("f") || string.endsWith("F") ? string.substring(0, string.length()-2) : string);
         } else if (literal instanceof FFloat64Literal) {
-            return LLVMConstRealOfString(type, ((FFloat64Literal) literal).originalString);
+            //TODO I don't even want to have the d at the end, but oh well what can you do
+            String string = ((FFloat64Literal) literal).originalString;
+            return LLVMConstRealOfString(type, string.endsWith("d") || string.endsWith("D") ? string.substring(0, string.length()-2) : string);
         } else if (literal instanceof FCharLiteral) {
             return LLVMConstInt(type, ((FCharLiteral) literal).value, TRUE);
         } else if (literal instanceof FStringLiteral) {

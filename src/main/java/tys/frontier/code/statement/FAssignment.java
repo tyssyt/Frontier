@@ -1,6 +1,5 @@
 package tys.frontier.code.statement;
 
-import com.google.common.base.Joiner;
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
@@ -13,6 +12,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
 import tys.frontier.parser.syntaxErrors.TooManyArguments;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Joiners;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
@@ -109,9 +109,7 @@ public class FAssignment extends FStatement {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append(Joiner.on(", ").join(lhsExpressions));
-        sb.append(" = ");
-        sb.append(Joiner.on(", ").join(values));
-        return sb.append(';');
+        Joiners.ON_COMMA.appendTo(sb, lhsExpressions).append(" = ");
+        return Joiners.ON_COMMA.appendTo(sb, values).append(';');
     }
 }

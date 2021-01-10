@@ -9,6 +9,7 @@ import org.bytedeco.llvm.LLVM.LLVMModuleRef;
 import tys.frontier.code.FField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Utils;
 
@@ -54,12 +55,14 @@ public class LLVMUtil {
         return res;
     }
 
-    public static String getClassName(FType clazz) {
+    public static String getClassName(FClass clazz) {
+        if (clazz.getNamespace().getNative() != null)
+            return clazz.getNamespace().getNative().getValue().orElse(clazz.getIdentifier().name);
         return "class." + clazz.getIdentifier().name;
     }
 
     public static String getStaticFieldName(FField field) {
-        return "sf." + field.getMemberOf().getIdentifier().name + '.' + field.getIdentifier().name;
+        return "sf." + field.getNamespace().getIdentifier().name + '.' + field.getIdentifier().name;
     }
 
     public static String getFunctionName(FFunction function) {
@@ -87,7 +90,7 @@ public class LLVMUtil {
     }
 
     public static String getFieldInfoName(FField field) {
-        return "fieldInfo." + field.getMemberOf().getIdentifier().name + '.' + field.getIdentifier().name;
+        return "fieldInfo." + field.getNamespace().getIdentifier().name + '.' + field.getIdentifier().name;
     }
 
     public static LLVMModuleRef loadModuleFromBitcode(LLVMContextRef contextRef, String path) {

@@ -162,7 +162,7 @@ public class MainTest {
     @Test
     public void mainNativeInclude() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
         String res = doMain("NativeInclude", null);
-        assertEquals("42", res);
+        assertEquals("42,69,420,666,1337,PogChamp,Pog", res);
     }
     @Test
     public void mainOperators() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {

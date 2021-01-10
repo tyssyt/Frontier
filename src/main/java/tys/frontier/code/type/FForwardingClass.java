@@ -3,6 +3,7 @@ package tys.frontier.code.type;
 import com.google.common.collect.BiMap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
@@ -33,21 +34,6 @@ public abstract class FForwardingClass extends FClass {
     }
 
     @Override
-    public FIdentifier getIdentifier() {
-        return proxy.getIdentifier();
-    }
-
-    @Override
-    public FVisibilityModifier getVisibility() {
-        return proxy.getVisibility();
-    }
-
-    @Override
-    public boolean isNative() {
-        return proxy.isNative();
-    }
-
-    @Override
     public FVisibilityModifier getConstructorVisibility() {
         return proxy.getConstructorVisibility();
     }
@@ -58,13 +44,8 @@ public abstract class FForwardingClass extends FClass {
     }
 
     @Override
-    public BiMap<FIdentifier, FField> getInstanceFields() {
+    public BiMap<FIdentifier, InstanceField> getInstanceFields() {
         return proxy.getInstanceFields();
-    }
-
-    @Override
-    public BiMap<FIdentifier, FField> getStaticFields() {
-        return proxy.getStaticFields();
     }
 
     @Override

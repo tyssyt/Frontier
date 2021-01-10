@@ -4,6 +4,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import tys.frontier.code.FField;
+import tys.frontier.code.InstanceField;
+import tys.frontier.code.StaticField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
@@ -21,13 +23,11 @@ import java.util.Map;
 
 public class FInstantiatedClass extends FForwardingClass {
 
-    private FInstantiatedClassIdentifier newIdentifier;
     private boolean baked = false;
     private ImmutableList<FType> instantiatedParameters;
     private Map<FFunction, FFunction> baseFunctionMap = new HashMap<>();
 
-    private BiMap<FIdentifier, FField> newInstanceFields = HashBiMap.create();
-    private BiMap<FIdentifier, FField> newStaticFields = HashBiMap.create();
+    private BiMap<FIdentifier, InstanceField> newInstanceFields = HashBiMap.create();
 
     private DefaultNamespace newNamespace;
 
@@ -39,23 +39,25 @@ public class FInstantiatedClass extends FForwardingClass {
         super(baseClass);
         assert !(baseClass instanceof FInstantiatedClass);
         assert instantiatedParameters.size() == baseClass.getParametersList().size();
-        newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
+        FIdentifier newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
         this.instantiatedParameters = instantiatedParameters;
-        this.newNamespace = new DefaultNamespace(baseClass.getNamespace().getLocation(), this);
-    }
-
-    @Override
-    public FIdentifier getIdentifier() {
-        return newIdentifier;
+        DefaultNamespace namespace = baseClass.getNamespace();
+        this.newNamespace = new DefaultNamespace(namespace.getLocation(), newIdentifier, namespace.getVisibility(), namespace.getNative(), this);
     }
 
     public void prepare() {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
-        //add fields
-        for (FField baseField : proxy.getFields()) {
-            FField instantiatedField = new FField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),
-                    this, baseField.getVisibility(), !baseField.isInstance(), baseField.hasAssignment());
+        //add instance fields
+        for (InstanceField baseField : proxy.getInstanceFields().values()) {
+            InstanceField instantiatedField = new InstanceField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),this, baseField.getVisibility(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
+            baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
+            baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());
+        }
+        //add static fields
+        for (StaticField baseField : proxy.getNamespace().getStaticFields().values()) {
+            StaticField instantiatedField = new StaticField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()), newNamespace, baseField.getVisibility(), baseField.hasAssignment());
+            newNamespace.addFieldTrusted(instantiatedField);
             baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
             baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());
         }
@@ -137,13 +139,8 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public BiMap<FIdentifier, FField> getInstanceFields() {
+    public BiMap<FIdentifier, InstanceField> getInstanceFields() {
         return newInstanceFields;
-    }
-
-    @Override
-    public BiMap<FIdentifier, FField> getStaticFields() {
-        return newStaticFields;
     }
 
     @Override

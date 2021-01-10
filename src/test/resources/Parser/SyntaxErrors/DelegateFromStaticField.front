@@ -1,0 +1,2 @@
+class A:
+    delegate * : static t: [float32];

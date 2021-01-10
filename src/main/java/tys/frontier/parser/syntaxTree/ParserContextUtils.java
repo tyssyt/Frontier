@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.identifier.FIdentifier;
@@ -165,7 +166,7 @@ public final class ParserContextUtils {
         FType base;
         if (ctx.NATIVE() != null) {
             base = getType(ctx.typeOrTuple(0), possibleNamespaces);
-            return tys.frontier.code.predefinedClasses.CArray.getArrayFrom(base);
+            return CArray.getArrayFrom(FArray.getArrayFrom(base));
         } else if (ctx.LBRACK() != null) {
             base = getType(ctx.typeOrTuple(0), possibleNamespaces);
             return FArray.getArrayFrom(base);
@@ -223,6 +224,12 @@ public final class ParserContextUtils {
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
         boolean hasDefaultValue = ctx.expression() != null;
         Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleNamespaces);
+        if (!hasDefaultValue && FOptional.canBeTreatedAsOptional(pair.b)) {
+            FParameter res = FParameter.create(pair.a, pair.b, true);
+            //TODO @PositionForGeneratedCode
+            res.setDefaultValueTrusted(new FLiteralExpression(null, new FNull(pair.b)), Set.of());
+            return res;
+        }
         return FParameter.create(pair.a, pair.b, hasDefaultValue);
     }
 

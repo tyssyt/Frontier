@@ -5,7 +5,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.HasVisibility;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.identifier.FIdentifier;
@@ -15,7 +15,6 @@ import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
-import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -23,18 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class FClass implements FType, HasVisibility {
+public abstract class FClass implements FType {
     public abstract void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance);
-
-    public abstract boolean isNative();
 
     public abstract FVisibilityModifier getConstructorVisibility();
 
     public abstract void setConstructorVisibility(FVisibilityModifier constructorVisibility);
 
-    public abstract BiMap<FIdentifier, FField> getInstanceFields();
-
-    public abstract BiMap<FIdentifier, FField> getStaticFields();
+    public abstract BiMap<FIdentifier, InstanceField> getInstanceFields();
 
     public abstract List<? extends FType> getParametersList();
 
@@ -54,6 +49,11 @@ public abstract class FClass implements FType, HasVisibility {
     public abstract DefaultNamespace getNamespace();
 
     @Override
+    public FIdentifier getIdentifier() {
+        return getNamespace().getIdentifier();
+    }
+
+    @Override
     public boolean canImplicitlyCast() {
         if (!getDirectDelegates().isEmpty())
             return true;
@@ -67,7 +67,7 @@ public abstract class FClass implements FType, HasVisibility {
         return false;
     }
 
-    public void addDelegate(FField field) throws DelegateFromTypeVar {
+    public void addDelegate(InstanceField field) throws DelegateFromTypeVar {
         assert field.getMemberOf() == this;
         if (!(field.getType() instanceof FClass))
             throw new DelegateFromTypeVar(field);
@@ -88,27 +88,16 @@ public abstract class FClass implements FType, HasVisibility {
         return null;
     }
 
-    public Iterable<FField> getFields() {
-        return Iterables.concat(getInstanceFields().values(), getStaticFields().values());
-    }
-
-    public void addField(FField field) throws IdentifierCollision, SignatureCollision {
-        if (field.isInstance()) {
-            FField old = getInstanceFields().put(field.getIdentifier(), field);
-            if (old != null) {
-                throw new IdentifierCollision(field, old);
-            }
-        } else {
-            FField old = getStaticFields().put(field.getIdentifier(), field);
-            if (old != null) {
-                throw new IdentifierCollision(field, old);
-            }
+    public void addField(InstanceField field) throws IdentifierCollision, SignatureCollision {
+        FField old = getInstanceFields().put(field.getIdentifier(), field);
+        if (old != null) {
+            throw new IdentifierCollision(field, old);
         }
         getNamespace().addFunction(field.getGetter());
         getNamespace().addFunction(field.getSetter());
     }
 
-    public void addFieldTrusted(FField field) {
+    public void addFieldTrusted(InstanceField field) {
         try {
             addField(field);
         } catch (IdentifierCollision | SignatureCollision collision) {
@@ -132,23 +121,12 @@ public abstract class FClass implements FType, HasVisibility {
         }
     }
 
-    public void removeUnreachable(Reachability.ReachableNamespace reachable) {
-        if (!isNative()) { //don't touch the structure of native classes, they have their layout for a reason
-            getStaticFields().values().removeIf(f -> !reachable.isReachable(f));
-            getInstanceFields().values().removeIf(f -> !reachable.isReachable(f));
-        }
-    }
-
-    public <N, C,Fi,Fu,S,E> C accept(ClassVisitor<N, C, Fi, Fu, S, E> visitor) {
+    public <N,C,Fi,Fu,S,E> C accept(ClassVisitor<N, C, Fi, Fu, S, E> visitor) {
         visitor.enterClass(this);
-        List<Fi> fields = new ArrayList<>(this.getInstanceFields().size() + this.getStaticFields().size());
-        for (FField f : this.getInstanceFields().values()) {
-            fields.add(f.accept(visitor));
-        }
-        for (FField f : this.getStaticFields().values()) {
-            fields.add(f.accept(visitor));
-        }
-        return visitor.exitClass(this, fields);
+        List<Fi> instanceFields = new ArrayList<>(this.getInstanceFields().size());
+        for (FField f : this.getInstanceFields().values())
+            instanceFields.add(f.accept(visitor));
+        return visitor.exitClass(this, instanceFields);
     }
 
     @Override

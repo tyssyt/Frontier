@@ -1,6 +1,5 @@
 package tys.frontier.backend.llvm;
 
-import com.google.common.base.Joiner;
 import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -10,6 +9,7 @@ import org.bytedeco.llvm.LLVM.*;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.Signature;
@@ -23,6 +23,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.logging.Log;
 import tys.frontier.util.FileUtils;
+import tys.frontier.util.Joiners;
 import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
@@ -168,7 +169,7 @@ public class LLVMModule implements AutoCloseable {
             return res;
 
         LLVMTypeRef typeInfoType = LLVMGetElementType(getLlvmType(FTypeType.INSTANCE));
-        res = LLVMAddGlobal(this.module, typeInfoType, getTypeInfoName(type));
+        res = LLVMAddGlobal(this.module, typeInfoType, getTypeInfoName(fClass));
         setGlobalAttribs(res, Linkage.PRIVATE, true);
         LLVMSetGlobalConstant(res, TRUE);
         this.typeInfo.put(fClass, res);
@@ -220,12 +221,12 @@ public class LLVMModule implements AutoCloseable {
         //TODO make sure strings/string wrappers can be unified across modules etc..
         LLVMValueRef res = constantStrings.get(s);
         if (res == null) {
-            res = LLVMAddGlobal(this.module, LLVMGetElementType(arrayType(FStringLiteral.TYPE, s.length())), getConstantStringName(s));
+            res = LLVMAddGlobal(this.module, LLVMGetElementType(arrayType(FStringLiteral.TYPE, s.length()+1)), getConstantStringName(s));
             setGlobalAttribs(res, Linkage.PRIVATE, true);
             LLVMSetGlobalConstant(res, TRUE);
 
             LLVMValueRef size = LLVMConstInt(getLlvmType(FIntN._32), s.length(), FALSE);
-            LLVMValueRef rawString = LLVMConstStringInContext(this.context, s, s.length(), TRUE);
+            LLVMValueRef rawString = LLVMConstStringInContext(this.context, s + '\0', s.length()+1, TRUE);
             LLVMValueRef string = LLVMConstStructInContext(context, new PointerPointer<>(size, rawString), 2, FALSE);
             LLVMSetInitializer(res, string);
             constantStrings.put(s, res);
@@ -295,7 +296,8 @@ public class LLVMModule implements AutoCloseable {
     }
 
     private void parseClass(FType clazz) {
-        LLVMTypeRef baseType = LLVMStructCreateNamed(context, getClassName(clazz));
+        FClass fClass = (FClass) clazz;
+        LLVMTypeRef baseType = LLVMStructCreateNamed(context, getClassName(fClass));
         LLVMTypeRef pointerType = LLVMPointerType(baseType, 0);
         LLVMTypeRef old = llvmTypes.put(clazz, pointerType);
         if (old != null)
@@ -320,10 +322,7 @@ public class LLVMModule implements AutoCloseable {
                 }
             }
 
-            FClass fClass = namespace.getType();
-            if (fClass == null)
-                continue;
-            for (FField field : fClass.getStaticFields().values()) {
+            for (FField field : namespace.getStaticFields().values()) {
                 //TODO see if the initializer is a const and direclty init here instead of the block?
                 //TODO see if something can be done for final?
                 //TODO optimizer flags like we don't care bout the address and readonly
@@ -408,8 +407,8 @@ public class LLVMModule implements AutoCloseable {
             for (DefaultNamespace namespace : namespaces) {
                 if (namespace.getIdentifier().name.equals("WinMainArgs")) { //TODO find a less stupid solution
                     FClass fClass = namespace.getType();
-                    FField hInstance = fClass.getStaticFields().get(new FIdentifier("hInstance"));
-                    FField nCmdShow = fClass.getStaticFields().get(new FIdentifier("nCmdShow"));
+                    FField hInstance = fClass.getNamespace().getStaticFields().get(new FIdentifier("hInstance"));
+                    FField nCmdShow = fClass.getNamespace().getStaticFields().get(new FIdentifier("nCmdShow"));
                     if (hInstance != null || nCmdShow != null) {
                         trans.generateWinMain(entryPoint, hInstance, nCmdShow);
                         return;
@@ -421,7 +420,7 @@ public class LLVMModule implements AutoCloseable {
     }
 
     public void createMetaData() {
-        if (llvmTypes.containsKey(FTypeType.INSTANCE) && FTypeType.INSTANCE.getStaticFields().containsKey(FTypeType.allTypes_ID)) {
+        if (llvmTypes.containsKey(FTypeType.INSTANCE) && FTypeType.INSTANCE.getNamespace().getStaticFields().containsKey(FTypeType.allTypes_ID)) {
             //TODO once code can handle both pointers and direct types, we no longer need to create in "intermediate direct type"
             //create intermediate sf
             List<LLVMValueRef> elements = llvmTypes.keySet().stream()
@@ -490,7 +489,7 @@ public class LLVMModule implements AutoCloseable {
         return LLVMConstBitCast(constEmptyArray, getLlvmType(fArray));
     }
 
-    private LLVMValueRef createFieldInfo(FField field, Queue<FClass> todo) {
+    private LLVMValueRef createFieldInfo(InstanceField field, Queue<FClass> todo) {
         LLVMValueRef name = constantString(field.getIdentifier().name);
         LLVMValueRef castedName = LLVMConstBitCast(name, getLlvmType(FStringLiteral.TYPE));
 
@@ -598,7 +597,7 @@ public class LLVMModule implements AutoCloseable {
                     if (errorId != 0)
                         break;
                     ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, userLibs, target.getTargetTriple(), debug);
-                    Log.info(this, "calling Linker: " + Joiner.on(' ').join(linkerCall.command()));
+                    Log.info(this, "calling Linker: " + Joiners.ON_SPACE.join(linkerCall.command()));
                     Process p = linkerCall.inheritIO().start();
                     p.waitFor();
                 } catch (IOException | InterruptedException e) {

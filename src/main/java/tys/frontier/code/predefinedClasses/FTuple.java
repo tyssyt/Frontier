@@ -2,8 +2,8 @@ package tys.frontier.code.predefinedClasses;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
-import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.Typed;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTupleIdentifier;
@@ -40,7 +40,7 @@ public class FTuple extends FPredefinedClass {
         //add fields and getters
         //TODO @PositionForGeneratedCode
         for (FType fieldType : types) {
-            FField field = new FField(null, new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false, false);
+            InstanceField field = new InstanceField(null, new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false);
             addFieldTrusted(field); //TODO make final
         }
         //remove setter TODO no longer needed when field final

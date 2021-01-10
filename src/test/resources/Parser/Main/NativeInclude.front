@@ -1,11 +1,56 @@
 import IO;
 
 native include NativeInclude.lib;
+native include NativeInclude.bc;
+
+native class LlvmClass:
+    number: int64;
+
 
 export class Main:
 
+static staticInt : int64 = -1;
+
 native static cfuncRetuningInt() -> int32;
+native("CALLME") static llvmFunc(number: int64) -> LlvmClass;
+
+static writeToAddr(ptr: native[int64], val: int64) {
+    ptr[0, 0] = val;
+}
 
 export static main () {
+    //call c
     IO.printInt(cfuncRetuningInt());
+    IO.print(",");
+
+    //call llvm
+    llvm := llvmFunc(69);
+    IO.printInt(llvm.number);
+    IO.print(",");
+
+    //manip addressof instance field
+    writeToAddr(native[int64].of(llvm.number), 420);
+    IO.printInt(llvm.number);
+    IO.print(",");
+
+    //manip addressof static field
+    writeToAddr(native[int64].of(staticInt), 666);
+    IO.printInt(staticInt);
+    IO.print(",");
+
+    //manip addressof local variable
+    i : int64 = -1;
+    writeToAddr(native[int64].of(i), 1337);
+    IO.printInt(i);
+    IO.print(",");
+
+    //manip carray of farray and manip
+    str := new char[8];
+    "PagChomp".copy(str); // can't manipulate constant strings
+    str.c_array[1,str.size], str[5] = str[5], str.c_array[1,str.size];
+    IO.print(str);
+    IO.print(",");
+
+    //CArray to FArray
+    IO.print(str.c_array.copyToFArray(3));
 }

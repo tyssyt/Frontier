@@ -1,12 +1,11 @@
-import TemporaryHacks;
 import Kernel32;
 
 export namespace Timing:
 
     export getTimestamp() -> int64 {
-        ptr := new LongPtr(i=0); //TODO do not create an object, hand over a pointer to an int64 on the stack
-        Kernel32.QueryPerformanceCounter(ptr);
-        return ptr.i;
+        ts : int64 = 0;
+        Kernel32.getTimestamp(native[int64].of(ts));
+        return ts;
      }
 
     export time<I,O>(fun: (I->O), params: I) -> O, int64 { //TODO fix tuple inst for generic functions

@@ -94,7 +94,7 @@ classDeclaration
 
 namespaceDeclaration
     :   visibilityModifier? NAMESPACE IDENTIFIER COLON
-        (methodDeclaration|nativeMethodDeclaration)*
+        (methodDeclaration|nativeMethodDeclaration|fieldDeclaration)*
     ;
 
 

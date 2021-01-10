@@ -10,6 +10,7 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.location.Location;
 import tys.frontier.util.Utils;
 
+import java.util.Collection;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
@@ -83,7 +84,10 @@ public class FunctionBuilder {
         return this;
     }
     public FunctionBuilder setParams(FType... paramTypes) {
-        ImmutableList.Builder<FParameter> builder = ImmutableList.builderWithExpectedSize(paramTypes.length);
+        return setParams(asList(paramTypes));
+    }
+    public FunctionBuilder setParams(Collection<FType> paramTypes) {
+        ImmutableList.Builder<FParameter> builder = ImmutableList.builderWithExpectedSize(paramTypes.size());
         int i = 0;
         for (FType type : paramTypes) {
             builder.add(FParameter.create(IDENTIFIERS[i], type, false));

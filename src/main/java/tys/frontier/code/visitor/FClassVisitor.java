@@ -13,12 +13,12 @@ import java.util.Optional;
 public interface FClassVisitor extends FStatementVisitor, ClassVisitor<DefaultNamespace, FClass, FField, FFunction, FStatement, FExpression> {
 
     @Override
-    default DefaultNamespace exitNamespace(DefaultNamespace namespace, Optional<FClass> _class, List<FFunction> fFunctions) {
+    default DefaultNamespace exitNamespace(DefaultNamespace namespace, Optional<FClass> _class, List<FField> staticFields, List<FFunction> fFunctions) {
         return namespace;
     }
 
     @Override
-    default FClass exitClass(FClass fClass, List<FField> fFields) {
+    default FClass exitClass(FClass fClass, List<FField> instanceFields) {
         return fClass;
     }
 

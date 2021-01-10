@@ -3,10 +3,7 @@ package tys.frontier.code.function.operator;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.FBaseFunction;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.FunctionBuilder;
-import tys.frontier.code.function.Signature;
+import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -61,7 +58,7 @@ public enum BinaryOperator implements Operator {
         FIdentifier rId = new FIdentifier("R");
 
         //TODO @PositionForGeneratedCode
-        binOpNamespace =  new DefaultNamespace(null, new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, true);
+        binOpNamespace = new DefaultNamespace(null, new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, new NativeDecl(null), null);
         for (BinaryOperator binaryOperator : parserTokenMap.values()) {
             //add open function to binOp namespace
             FTypeVariable p1 = FTypeVariable.create(p1Id, true);
@@ -127,7 +124,7 @@ public enum BinaryOperator implements Operator {
 
     public FFunction addPredefined(FClass fClass, FClass ret) throws SignatureCollision {
         FBaseFunction res = new FunctionBuilder(identifier, binOpNamespace)
-                .setVisibility(fClass.getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
+                .setVisibility(fClass.getNamespace().getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
         binOpNamespace.addFunction(res);
         return res;
     }

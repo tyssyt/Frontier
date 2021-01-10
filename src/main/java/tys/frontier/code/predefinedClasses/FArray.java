@@ -5,6 +5,7 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.expression.FVariableExpression;
@@ -36,7 +37,7 @@ public class FArray extends FPredefinedClass {
 
     private FType baseType;
     private Pair<FFunction, FFunction> access;
-    private FField size;
+    private InstanceField size;
 
     @Override
     public boolean canImplicitlyCast() {
@@ -51,17 +52,17 @@ public class FArray extends FPredefinedClass {
 
         //addDefaultFunctions(); TODO should only be added once for "base class"
         //TODO add container equals, and prolly do something to equality once that is done
-        size = new FField(null, SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
+        size = new InstanceField(null, SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false);
         addFieldTrusted(size); //TODO make final
         namespace.getFunctions(true).get(size.getIdentifier()).clear(); //remove setter TODO no longer needed when field is final
-        access = Access.createPredefined(this, FIntN._32, baseType);
+        access = Access.createPredefined(this, baseType, FIntN._32);
         namespace.addFunctionTrusted(access.a);
         namespace.addFunctionTrusted(access.b);
 
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(namespace).setPredefined(true);
 
         builder.setIdentifier(C_ARRAY);
-        namespace.addFunctionTrusted(builder.setParams(this).setReturnType(CArray.getArrayFrom(baseType)).build());
+        namespace.addFunctionTrusted(builder.setParams(this).setReturnType(CArray.getArrayFrom(this)).build());
 
         builder.setIdentifier(COPY);
         ImmutableList<FParameter> params = ImmutableList.of(

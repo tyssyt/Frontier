@@ -6,7 +6,6 @@ import tys.frontier.code.type.FType;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
-import java.util.List;
 import java.util.Set;
 
 public class FParameter extends FLocalVariable {

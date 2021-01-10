@@ -19,8 +19,8 @@ public interface ClassVisitor<Namespace, Class, Field, Function, Statement, Expr
     default void enterFunction(FFunction function) {}
 
     //Bottom Up
-    default Namespace exitNamespace(DefaultNamespace namespace, Optional<Class> _class, List<Function> functions) {return null;}
-    default Class exitClass(FClass fClass, List<Field> fields) {return null;}
+    default Namespace exitNamespace(DefaultNamespace namespace, Optional<Class> _class, List<Field> staticFields, List<Function> functions) {return null;}
+    default Class exitClass(FClass fClass, List<Field> instanceFields) {return null;}
     default Field exitField(FField field, Optional<Expression> assign) {return null;}
     default Function exitFunction(FFunction function, Optional<Statement> body) {return null;}
 }

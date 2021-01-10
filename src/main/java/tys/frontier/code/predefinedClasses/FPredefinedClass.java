@@ -8,7 +8,6 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FBaseClass;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.Utils;
 
 public abstract class FPredefinedClass extends FBaseClass {
@@ -21,11 +20,8 @@ public abstract class FPredefinedClass extends FBaseClass {
 
     //TODO @PositionForGeneratedCode
     public FPredefinedClass(FIdentifier identifier) {
-        super(null, identifier, FVisibilityModifier.EXPORT, false);
+        super(null, identifier, FVisibilityModifier.EXPORT, null);
     }
-
-    @Override
-    public void removeUnreachable(Reachability.ReachableNamespace reachable) {}
 
     @Override
     public boolean isPredefined() {
@@ -35,7 +31,7 @@ public abstract class FPredefinedClass extends FBaseClass {
     protected void addPredefinedFunctionsForArithType() {
         DefaultNamespace namespace = this.getNamespace();
         namespace.addFunctionTrusted(new FunctionBuilder(UnaryOperator.NEG.identifier, namespace)
-                .setVisibility(getVisibility()).setPredefined(true).setParams(this).setReturnType(this).build());
+                .setVisibility(FVisibilityModifier.EXPORT).setPredefined(true).setParams(this).setReturnType(this).build());
 
         try {
             namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, FBool.INSTANCE));

@@ -5,10 +5,12 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FOptionalIdentifier;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
@@ -23,9 +25,18 @@ public class OptionalNamespace extends DefaultNamespace {
     private Namespace baseNamespace;
     private BiMap<FFunction, FFunction> shimMap = HashBiMap.create();
 
-    public OptionalNamespace(Location location, FOptional optional) {
-        super(location, optional);
-        baseNamespace = optional.getBaseType().getNamespace();
+    private OptionalNamespace(Location location, FOptional fOptional, FIdentifier identifier, FVisibilityModifier visibilityModifier, Namespace baseNamespace) {
+        super(location, identifier, visibilityModifier, null, fOptional);
+        this.baseNamespace = baseNamespace;
+    }
+
+    public static OptionalNamespace create(FOptional fOptional) {
+        Namespace baseNamespace = fOptional.getBaseType().getNamespace();
+        FOptionalIdentifier identifier = new FOptionalIdentifier(baseNamespace.getIdentifier());
+        if (baseNamespace instanceof DefaultNamespace)
+            return new OptionalNamespace(((DefaultNamespace) baseNamespace).getLocation(), fOptional, identifier, ((DefaultNamespace) baseNamespace).getVisibility(), baseNamespace);
+        else
+            return new OptionalNamespace(null, fOptional, identifier, FVisibilityModifier.EXPORT, baseNamespace); //TODO what visibility for non Default namespaces?
     }
 
     @Override

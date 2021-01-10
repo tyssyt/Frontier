@@ -1,5 +1,3 @@
-import TemporaryHacks;
-
 native include User32.Lib; //TODO platfrom dependent include, this is x64
 
 export class WinMainArgs:
@@ -7,8 +5,8 @@ export class WinMainArgs:
     export static nCmdShow: int32;
 
 export class Winuser:
-    native static MessageBoxA(hWnd: WWindow? = null, message: native[char], windowTitle: native[char], uType: int32) -> int32;
-    native static GetSystemMetrics(nIndex: int32) -> int32;
+    native("MessageBoxA") static createMessageBox(hWnd: WWindow? = null, message: native[char], windowTitle: native[char], uType: int32) -> int32;
+    native("GetSystemMetrics") static getSystemMetrics(nIndex: int32) -> int32;
 
 export native class WndClass: //WNDCLASSEXA
     export constructors;
@@ -26,7 +24,7 @@ export native class WndClass: //WNDCLASSEXA
     export lpszClassName: native[char]; //LPCSTR
     export hIconSm: Icon? = null; //HICON
 
-    export native RegisterClassExA() -> int32;
+    export native("RegisterClassExA") register() -> int32;
 
     export native static DefWindowProcA(p: WWindow, i: int32, j: int64, k: int64) -> int64;
 
@@ -38,7 +36,7 @@ export native class WWindow: //HWND
     //windows style TODO enum
     //https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
 
-    export native static CreateWindowExA(
+    export native("CreateWindowExA") static create(
         dwExStyle: int32, //DWORD
         lpClassName: native[char], //LPCSTR
         lpWindowName: native[char], //LPCSTR
@@ -50,13 +48,14 @@ export native class WWindow: //HWND
         hWndParent: WWindow? = null, //HWND
         hMenu: Menu? = null, //HMENU
         hInstance: Instance = WinMainArgs.hInstance, //HINSTANCE
-        lpParam: Data? = null //LPVOID
+        lpParam: native[char]? = null //LPVOID
     ) -> WWindow?;
 
-    export native ShowWindow(nCmdShow: int32 = WinMainArgs.nCmdShow) -> bool;
-    export native UpdateWindow() -> bool;
-    export native static GetDC(hWnd: WWindow?) -> DeviceContext?;
-    export native static ReleaseDC(hWnd: WWindow?, hDC: DeviceContext) -> int32;
+    export native("ShowWindow") show(nCmdShow: int32 = WinMainArgs.nCmdShow) -> bool;
+    export native("UpdateWindow") update() -> bool;
+    export native("DestroyWindow") destroy() -> bool;
+    //export native("GetDC") static getDeviceContext(hWnd: WWindow?) -> DeviceContext?;
+    //export native("ReleaseDC") static releaseDeviceContext(hWnd: WWindow?, hDC: DeviceContext) -> int32;
 
 export native class Message:
     export constructors;
@@ -69,14 +68,14 @@ export native class Message:
     pt_x: int32 = 0;
     pt_y: int32 = 0;
 
-native GetMessageA(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0) -> bool;
-native PeekMessageA(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0, wRemoveMsg: int32 = 0) -> bool;
-native TranslateMessage() -> bool;
-native DispatchMessageA() -> bool;
+native("GetMessageA") get(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0) -> bool;
+native("PeekMessageA") peek(hWnd: WWindow? = null, wMsgFilterMin: int32 = 0, wMsgFilterMax: int32 = 0, wRemoveMsg: int32 = 0) -> bool;
+native("TranslateMessage") translate() -> bool;
+native("DispatchMessageA") dispatch() -> bool;
 
-export native class DeviceContext: //HDC
+//export native class DeviceContext: //HDC
 
-    export native DeleteDC() -> bool; //usually you want to ReleaseDC when you did getDC, but it's referenced here: https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-wgldeletecontext
+    //export native DeleteDC() -> bool; //usually you want to ReleaseDC when you did getDC, but it's referenced here: https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-wgldeletecontext
 
 export native class Icon: //HICON
     //TODO

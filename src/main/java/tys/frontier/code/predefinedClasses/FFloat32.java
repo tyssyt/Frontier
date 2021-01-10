@@ -62,8 +62,7 @@ public class FFloat32 extends FFloat {
 
         builder.setPredefined(false);
 
-        //TODO @PositionForGeneratedCode
-        {
+        { //TODO @PositionForGeneratedCode
             FType returnType = FTuple.from(FBool.INSTANCE, int32, int32); //TODO how about int 24 & 7?
             FBaseFunction splitRepresentation = builder.setIdentifier(SPLIT_REPRESENTATION).setReturnType(returnType).build();
             namespace.addFunctionTrusted(splitRepresentation);

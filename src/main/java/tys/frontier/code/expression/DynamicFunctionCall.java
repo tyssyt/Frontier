@@ -1,6 +1,5 @@
 package tys.frontier.code.expression;
 
-import com.google.common.base.Joiner;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
@@ -8,6 +7,7 @@ import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Joiners;
 import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
@@ -85,6 +85,6 @@ public class DynamicFunctionCall extends FExpression {
     @Override
     public StringBuilder toString(StringBuilder sb) {
         function.toString(sb).append('(');
-        return Joiner.on(',').appendTo(sb, arguments).append(')');
+        return Joiners.ON_COMMA_PACKED.appendTo(sb, arguments).append(')');
     }
 }

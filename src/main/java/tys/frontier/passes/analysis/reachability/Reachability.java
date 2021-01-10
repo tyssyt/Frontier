@@ -5,6 +5,7 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionAddress;
@@ -90,7 +91,7 @@ public class Reachability {
                         subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, ((FArray) instantiatedType).getBaseType()), seenFunctions);
 
                     //this also handles tuples, since they have fields
-                    for (FField field : instantiatedType.getFields()) {
+                    for (FField field : instantiatedType.getInstanceFields().values()) {
                         subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
                     }
                 } else if (subSegment.loop.getForImpl() instanceof IsIterable) {
@@ -99,7 +100,7 @@ public class Reachability {
                     if (instantiatedImpl instanceof TupleFor) {
                         assert instantiatedType instanceof FTuple;
                         //same handling as Tuples in PrimitiveFor
-                        for (FField field : instantiatedType.getFields()) {
+                        for (FField field : instantiatedType.getInstanceFields().values()) {
                             subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
                         }
                     } else {
@@ -145,6 +146,7 @@ public class Reachability {
         addNamespace(FFieldType.INSTANCE.getNamespace());
         addFunction(FFieldType.type.getGetter());
         addFunction(FFieldType.name.getGetter());
+        addFunction(FFieldType.memberOf.getGetter());
         addFunction(FFieldType.INSTANCE.getConstructor());
     }
 
@@ -171,7 +173,7 @@ public class Reachability {
                 //field
                 FField field = ((FieldAccessor) cur).getField();
 
-                if (field.getMemberOf().isNative())
+                if (field.getNamespace().getNative() != null)
                     handleType(field.getType(), res);
 
                 if (!field.hasAssignment())
@@ -183,14 +185,13 @@ public class Reachability {
                     continue;
 
                 //TODO when fields work in optionals, we need similar handling of optionals here as for functions below
-                if (field.getMemberOf() instanceof FInstantiatedClass) {//for fields in instantiated classes, we have to visit the base instead because they are not yet baked
-                    FInstantiatedClass instantiatedClass = (FInstantiatedClass) field.getMemberOf();
+                if (field.getNamespace().getType() instanceof FInstantiatedClass) {//for fields in instantiated classes, we have to visit the base instead because they are not yet baked
+                    FInstantiatedClass instantiatedClass = (FInstantiatedClass) field.getNamespace().getType();
                     FField base;
-                    if (field.isInstance()) {
+                    if (field instanceof InstanceField)
                         base = instantiatedClass.getProxy().getInstanceFields().get(field.getIdentifier());
-                    } else {
-                        base = instantiatedClass.getProxy().getStaticFields().get(field.getIdentifier());
-                    }
+                    else
+                        base = instantiatedClass.getProxy().getNamespace().getStaticFields().get(field.getIdentifier());
                     analyseBase(base).handle(instantiatedClass.getTypeInstantiation(), todoFunctions);
                 } else { //normal field
                     field.accept(reachabilityVisitor);

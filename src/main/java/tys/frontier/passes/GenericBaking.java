@@ -2,10 +2,7 @@ package tys.frontier.passes;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import tys.frontier.code.FField;
-import tys.frontier.code.FLocalVariable;
-import tys.frontier.code.FParameter;
-import tys.frontier.code.TypeInstantiation;
+import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.*;
@@ -58,15 +55,13 @@ public class GenericBaking implements FClassVisitor {
     public static void bake (FInstantiatedClass instantiatedClass) {
         GenericBaking visitor = new GenericBaking(instantiatedClass.getTypeInstantiation(), NO_ORIGINAL);
 
-        //field has no instantiated version yet, but it is also much easier to find the corresponding field
-        for (FField field : instantiatedClass.getFields()) {
+        for (FField field : instantiatedClass.getInstanceFields().values()) {
             visitor.currentField = field;
-            FField f;
-            if (field.isInstance())
-                f = instantiatedClass.getProxy().getInstanceFields().get(field.getIdentifier());
-            else
-                f = instantiatedClass.getProxy().getStaticFields().get(field.getIdentifier());
-            f.accept(visitor);
+            instantiatedClass.getProxy().getInstanceFields().get(field.getIdentifier()).accept(visitor);
+        }
+        for (FField field : instantiatedClass.getNamespace().getStaticFields().values()) {
+            visitor.currentField = field;
+            instantiatedClass.getProxy().getNamespace().getStaticFields().get(field.getIdentifier()).accept(visitor);
         }
 
         for (Signature signature : instantiatedClass.getNamespace().getFunctions(false).values()) {
@@ -112,8 +107,10 @@ public class GenericBaking implements FClassVisitor {
 
     @Override
     public void enterField(FField field) {
-        if (field.isInstance())
-            varMap.put(field.getThis(), currentField.getThis());
+        if (field instanceof InstanceField) {
+            assert currentField instanceof InstanceField;
+            varMap.put(((InstanceField) field).getThis(), ((InstanceField) currentField).getThis());
+        }
     }
 
     @Override

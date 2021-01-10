@@ -7,6 +7,8 @@ import com.google.common.collect.MapMaker;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
+import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -17,37 +19,31 @@ import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 public class FBaseClass extends FClass {
 
-    private FIdentifier identifier;
-    private FVisibilityModifier visibility;
-    private boolean _native;
     private FVisibilityModifier constructorVisibility;
     private ImmutableList<FTypeVariable> parametersList;
     private Map<FTypeVariable, Variance> parameterVariance;
     private Map<ImmutableList<FType>, FInstantiatedClass> instantiations;
 
-    private BiMap<FIdentifier, FField> instanceFields = HashBiMap.create();
-    private BiMap<FIdentifier, FField> staticFields = HashBiMap.create();
+    private BiMap<FIdentifier, InstanceField> instanceFields = HashBiMap.create();
     private DefaultNamespace namespace;
 
     private Map<FType, FField> delegates = new HashMap<>();
     private ForImpl forImpl;
 
 
-    public FBaseClass(Location location, FIdentifier identifier, FVisibilityModifier visibility, boolean _native) {
-        this.identifier = identifier;
-        this.visibility = visibility;
-        this._native = _native;
+    public FBaseClass(Location location, FIdentifier identifier, FVisibilityModifier visibility, NativeDecl nativeDecl) {
         this.parametersList = ImmutableList.of();
-        this.parameterVariance = Collections.emptyMap();
-        this.instantiations = Collections.emptyMap();
-        this.namespace = new DefaultNamespace(location, this);
+        this.parameterVariance = emptyMap();
+        this.instantiations = emptyMap();
+        this.namespace = new DefaultNamespace(location, identifier, visibility, nativeDecl, this);
     }
 
     protected void addDefaultFunctions() {
@@ -100,21 +96,6 @@ public class FBaseClass extends FClass {
     }
 
     @Override
-    public FIdentifier getIdentifier() {
-        return identifier;
-    }
-
-    @Override
-    public FVisibilityModifier getVisibility() {
-        return visibility;
-    }
-
-    @Override
-    public boolean isNative() {
-        return _native;
-    }
-
-    @Override
     public FVisibilityModifier getConstructorVisibility() {
         return constructorVisibility;
     }
@@ -125,13 +106,8 @@ public class FBaseClass extends FClass {
     }
 
     @Override
-    public BiMap<FIdentifier, FField> getInstanceFields() {
+    public BiMap<FIdentifier, InstanceField> getInstanceFields() {
         return instanceFields;
-    }
-
-    @Override
-    public BiMap<FIdentifier, FField> getStaticFields() {
-        return staticFields;
     }
 
     @Override

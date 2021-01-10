@@ -1,7 +1,7 @@
 export class List<T>:
     for: operator[]**(List<T>, int32), size**(List<T>);
 
-    export elements: [T] ; //TODO no ouotside access once we have user definable iterators
+    elements: [T];
     export size: int32 = 0; //TODO export getter, private setter
 
     export static create(startSize: int32 = 5) -> List<T> {
@@ -66,7 +66,7 @@ export class List<T>:
 
     export trim() -> [T] {
         res := new T[size];
-        arrayCopy(elements, res, size);
+        elements.copy(res, length=size);
         return res;
     }
 
@@ -77,7 +77,7 @@ export class List<T>:
         }
 
         newElements := new T[newSize];
-        arrayCopy(elements, newElements, elements.size);
+        elements.copy(newElements);
         elements = newElements;
     }
 
@@ -93,14 +93,6 @@ export class List<T>:
         i := end;
         while i<size-1 {
             elements[i] = elements[i+1];
-            i = i+1;
-        }
-    }
-
-    private static arrayCopy(from: [T], to: [T], size: int32) { //TODO replace by arrayCopy... once we have that
-        i:int32 = 0;
-        while i<size {
-            to[i] = from[i];
             i = i+1;
         }
     }

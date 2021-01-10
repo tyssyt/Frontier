@@ -1,6 +1,5 @@
 package tys.frontier.code.expression;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -16,6 +15,7 @@ import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Joiners;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
@@ -169,6 +169,6 @@ public class FFunctionCall extends FExpression {
     public StringBuilder toString(StringBuilder sb) {
         sb.append(signature.getFunction().getMemberOf().getIdentifier());
         sb.append('.').append(signature.getFunction().getIdentifier()).append('(');
-        return Joiner.on(',').appendTo(sb, arguments).append(')');
+        return Joiners.ON_COMMA_PACKED.appendTo(sb, arguments).append(')');
     }
 }

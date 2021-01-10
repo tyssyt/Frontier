@@ -225,8 +225,8 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             functionContextStack.addLast(new FunctionContext(null));
             try {
                 currentFunction().declaredVars.push();
-                if (field.isInstance()) {
-                    FLocalVariable _this = field.getThis();
+                if (field instanceof InstanceField) {
+                    FLocalVariable _this = ((InstanceField) field).getThis();
                     currentFunction().declaredVars.put(_this.getIdentifier(), _this);
                 }
                 FExpression expression = visitExpression(ctx.expression());
@@ -240,13 +240,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                     throw new Failed();
                 }
 
-                field.setAssignment(expression); //TODO field assignments need: check for cyclic dependency, register in class/object initializer etc.
-                if (field.isInstance()) {
+                field.setAssignment(expression);
+                if (field instanceof InstanceField) {
                     ImmutableList<FParameter> parameters = currenClass.getConstructor().getSignature().getParameters();
                     for (FParameter param : parameters)
-                        if (param.getIdentifier().equals(field.getIdentifier())) {
+                        if (param.getIdentifier().equals(field.getIdentifier()))
                             param.setDefaultValue(expression, ParserContextUtils.findDefaultValueDependencies(expression, parameters));
-                        }
                 }
             } catch (Failed f) {
                 //do not allow Failed to propagate any further

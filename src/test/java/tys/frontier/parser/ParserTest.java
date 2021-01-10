@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import tys.frontier.State;
 import tys.frontier.code.FField;
-import tys.frontier.code.function.FFunction;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 import tys.frontier.logging.Log;
@@ -51,7 +50,6 @@ public class ParserTest {
     public void parseAccessForbidden() throws Exception {
         SyntaxError e = parseSyntaxError("AccessForbidden.front");
         assertEquals(AccessForbidden.class, e.getClass());
-        assertTrue(((AccessForbidden) e).accessed instanceof FFunction);
     }
     @Test
     public void parseAccessForbiddenClass() throws Exception {
@@ -95,6 +93,11 @@ public class ParserTest {
     public void parseCyclicInclude() throws Exception {
         SyntaxError e = parseSyntaxError("CyclicInclude.front");
         assertEquals(CyclicInclude.class, e.getClass());
+    }
+    @Test
+    public void parseDelegateFromStaticField() throws Exception {
+        SyntaxError e = parseSyntaxError("DelegateFromStaticField.front");
+        assertEquals(DelegateFromStaticField.class, e.getClass());
     }
     @Test
     public void parseDelegateFromTypeVar() throws Exception {

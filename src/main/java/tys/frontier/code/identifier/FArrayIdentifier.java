@@ -5,7 +5,7 @@ public class FArrayIdentifier extends FIdentifier {
     public final FIdentifier baseClass;
 
     public FArrayIdentifier(FIdentifier baseClass) {
-        super(baseClass.name + "[]");
+        super('[' + baseClass.name + ']');
         this.baseClass = baseClass;
     }
 }

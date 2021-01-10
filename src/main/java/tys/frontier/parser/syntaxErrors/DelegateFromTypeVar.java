@@ -7,7 +7,7 @@ public class DelegateFromTypeVar extends SyntaxError {
     public final FField delegatingField;
 
     public DelegateFromTypeVar(FField delegatingField) {
-        super("Class " + delegatingField.getMemberOf().getIdentifier() + " is delegating to Type Variable " + delegatingField.getIdentifier());
+        super("Field " + delegatingField.getIdentifier() + " is delegating to Type Variable " + delegatingField.getType().getIdentifier());
         this.delegatingField = delegatingField;
     }
 }

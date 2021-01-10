@@ -11,7 +11,7 @@ public class FNull implements FLiteral {
 
     private static final FIdentifier IDENTIFIER = new FIdentifier("!NullType");
     //TODO @PositionForGeneratedCode
-    public static FClass NULL_TYPE = new FBaseClass(null, IDENTIFIER, FVisibilityModifier.EXPORT, false);
+    public static FClass NULL_TYPE = new FBaseClass(null, IDENTIFIER, FVisibilityModifier.EXPORT, null);
     public static final FNull UNTYPED = new FNull(NULL_TYPE);
 
     private FType type;

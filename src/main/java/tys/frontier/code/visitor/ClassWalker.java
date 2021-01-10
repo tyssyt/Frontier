@@ -1,6 +1,7 @@
 package tys.frontier.code.visitor;
 
 import tys.frontier.code.FField;
+import tys.frontier.code.StaticField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.namespace.DefaultNamespace;
@@ -11,13 +12,15 @@ public interface ClassWalker<Namespace, Class, Field, Function, Statement, Expre
     default Namespace visitNamespace(DefaultNamespace namespace) {
         if (namespace.getType() != null)
             visitClass(namespace.getType());
+        for (StaticField field : namespace.getStaticFields().values())
+            visitField(field);
         for (Signature signature : namespace.getFunctions(false).values())
             visitFunction(signature.getFunction());
         return null;
     }
 
     default Class visitClass(FClass fClass) {
-        for (FField field : fClass.getFields())
+        for (FField field : fClass.getInstanceFields().values())
             visitField(field);
         return null;
     }

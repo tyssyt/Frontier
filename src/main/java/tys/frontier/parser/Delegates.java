@@ -3,9 +3,9 @@ package tys.frontier.parser;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FVariableExpression;
@@ -33,7 +33,6 @@ import tys.frontier.util.Pair;
 
 import java.util.*;
 
-import static java.util.Collections.emptyList;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class Delegates {
@@ -41,17 +40,17 @@ public class Delegates {
     private ListMultimap<FType, Delegate> delegateToMap = MultimapBuilder.hashKeys().arrayListValues().build();
 
     private static class Delegate{
-        FField field;
+        InstanceField field;
         Selector<FIdentifier> selector;
         List<Pair<FFunction, FFunction>> functions = new ArrayList<>();
 
-        public Delegate(FField field, Selector<FIdentifier> selector) {
+        public Delegate(InstanceField field, Selector<FIdentifier> selector) {
             this.field = field;
             this.selector = selector;
         }
     }
 
-    public void add(FField field, Selector<FIdentifier> selector) {
+    public void add(InstanceField field, Selector<FIdentifier> selector) {
         Delegate d = new Delegate(field, selector);
         FType to = field.getMemberOf();
         delegateToMap.put(to, d);
@@ -116,7 +115,7 @@ public class Delegates {
         assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 
         DefaultNamespace namespace = to.getNamespace();
-        FBaseFunction res = new FunctionBuilder(toDelegate.getIdentifier(), namespace).setVisibility(to.getVisibility())
+        FBaseFunction res = new FunctionBuilder(toDelegate.getIdentifier(), namespace).setVisibility(to.getNamespace().getVisibility())
                 .setParams(builder.build()).setReturnType(signature.getType()).setAssignees(signature.getAssignees())
                 .setParameters(new HashMap<>(toDelegate.getParameters())).build();
         namespace.addFunction(res);
@@ -135,13 +134,8 @@ public class Delegates {
             FFunction toDo = toDoPair.a;
             ImmutableList<FParameter> params = toDo.getSignature().getParameters();
 
-            FFunctionCall fieldGet;
-            if (d.field.isInstance()) {
-                FVariableExpression thisExpr = new FVariableExpression(null, params.get(0));
-                fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
-            } else {
-                fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), emptyList());
-            }
+            FVariableExpression thisExpr = new FVariableExpression(null, params.get(0));
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
 
             List<FExpression> arguments = new ArrayList<>(params.size());
             arguments.add(fieldGet);

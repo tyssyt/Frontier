@@ -1,6 +1,5 @@
 package tys.frontier.code.statement;
 
-import com.google.common.base.Joiner;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -11,6 +10,7 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
 import tys.frontier.parser.syntaxErrors.TooManyArguments;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Joiners;
 import tys.frontier.util.Utils;
 import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
@@ -83,8 +83,8 @@ public class FReturn extends FStatement {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        sb.append("return");
-        sb.append(Joiner.on(", ").join(expressions));
-        return sb.append(';');
+        if (expressions.isEmpty())
+            return sb.append("return;");
+        return Joiners.ON_COMMA_PACKED.appendTo(sb.append("return "), expressions).append(';');
     }
 }

@@ -2,9 +2,10 @@ package tys.frontier.parser.syntaxTree;
 
 import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.InstanceField;
+import tys.frontier.code.StaticField;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.NativeDecl;
@@ -22,10 +23,7 @@ import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.location.Position;
-import tys.frontier.parser.syntaxErrors.NativeWithBody;
-import tys.frontier.parser.syntaxErrors.SyntaxError;
-import tys.frontier.parser.syntaxErrors.SyntaxErrors;
-import tys.frontier.parser.syntaxErrors.TwiceDefinedLocalVariable;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -243,21 +241,28 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     @Override
     public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
-        boolean statik = ParserContextUtils.isStatic(ctx.modifier());
+        boolean _static = currentClass == null || ParserContextUtils.isStatic(ctx.modifier());
         try {
             FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveNamespace);
-            FField res = new FField(Position.fromCtx(ctx), identifier, type, currentClass, visibilityModifier, statik, ctx.expression() != null);
-            currentClass.addField(res);
-            treeData.fields.put(ctx, res);
+            if (_static) {
+                StaticField res = new StaticField(Position.fromCtx(ctx), identifier, type, currentNamespace, visibilityModifier, ctx.expression() != null);
+                if (ctx.nameSelector() != null)
+                    throw new DelegateFromStaticField(res);
+                currentNamespace.addField(res);
+                treeData.fields.put(ctx, res);
+            } else {
+                InstanceField res = new InstanceField(Position.fromCtx(ctx), identifier, type, currentClass, visibilityModifier, ctx.expression() != null);
+                currentClass.addField(res);
+                treeData.fields.put(ctx, res);
 
-            FrontierParser.NameSelectorContext c = ctx.nameSelector();
-            if (c != null) {
-                if (c.STAR() != null && c.BACKSLASH() == null)
-                    currentClass.addDelegate(res);
-                delegates.add(res, ParserContextUtils.getNameSelector(c));
+                FrontierParser.NameSelectorContext c = ctx.nameSelector();
+                if (c != null) {
+                    if (c.STAR() != null && c.BACKSLASH() == null)
+                        currentClass.addDelegate(res);
+                    delegates.add(res, ParserContextUtils.getNameSelector(c));
+                }
             }
-
         } catch (SyntaxError e) {
             errors.add(e);
         }

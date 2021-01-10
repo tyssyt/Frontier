@@ -216,9 +216,7 @@ export namespace Strings:
             return fString;
         }
         cString := new char[fString.size + 1];
-        for c, i : fString {
-            cString[i] = c; //TODO replace by arrayCopy
-        }
+        fString.copy(cString);
         cString[fString.size] = 0;
         return cString;
     }
