@@ -5,7 +5,6 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.literal.FStringLiteral;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.Pair;
@@ -87,7 +86,7 @@ public class Signature implements Typed {
 
     public boolean isMain() {
         return returnType == FTuple.VOID &&
-                (parameters.isEmpty() || (parameters.size() == 1 && parameters.get(0).getType() == FArray.getArrayFrom(FStringLiteral.TYPE)));
+                (parameters.isEmpty() || (parameters.size() == 1 && parameters.get(0).getType() == FStringLiteral.STRING_ARRAY_TYPE));
     }
 
     public Signature getInstantiation(TypeInstantiation typeInstantiation) {

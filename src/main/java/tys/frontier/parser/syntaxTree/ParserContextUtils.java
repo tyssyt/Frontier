@@ -166,7 +166,7 @@ public final class ParserContextUtils {
         FType base;
         if (ctx.NATIVE() != null) {
             base = getType(ctx.typeOrTuple(0), possibleNamespaces);
-            return CArray.getArrayFrom(FArray.getArrayFrom(base));
+            return CArray.getArrayFrom(base);
         } else if (ctx.LBRACK() != null) {
             base = getType(ctx.typeOrTuple(0), possibleNamespaces);
             return FArray.getArrayFrom(base);

@@ -37,7 +37,7 @@ public class FFieldType extends FBaseClass {
             INSTANCE.addFieldTrusted(memberOf); //TODO make final
         }
 
-        INSTANCE.generateConstructor(); // primitive for loops over tuples need to generate dynamic Field Info
+        INSTANCE.generateConstructor(false); // primitive for loops over tuples need to generate dynamic Field Info
     }
 
     private FFieldType() {

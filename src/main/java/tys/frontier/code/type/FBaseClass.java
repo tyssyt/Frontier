@@ -11,6 +11,7 @@ import tys.frontier.code.InstanceField;
 import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
@@ -111,7 +112,7 @@ public class FBaseClass extends FClass {
     }
 
     @Override
-    public List<? extends FType> getParametersList() {
+    public List<FTypeVariable> getParametersList() {
         return parametersList;
     }
 
@@ -137,11 +138,15 @@ public class FBaseClass extends FClass {
 
         FInstantiatedClass res = instantiations.get(args);
         if (res == null) {
-            res = new FInstantiatedClass(this, args);
+            res = createInstantiatedClass(args);
             instantiations.put(args, res);
             State.get().getCurrentParser().registerInstantiatedClass(res);
         }
         return res;
+    }
+
+    protected FInstantiatedClass createInstantiatedClass(ImmutableList<FType> args) {
+        return new FInstantiatedClass(new FInstantiatedClassIdentifier(getIdentifier(), args), this, args);
     }
 
     @Override

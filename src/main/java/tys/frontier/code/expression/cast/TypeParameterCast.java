@@ -16,7 +16,8 @@ import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
 import java.util.List;
 
-import static tys.frontier.code.typeInference.Variance.*;
+import static tys.frontier.code.typeInference.Variance.Contravariant;
+import static tys.frontier.code.typeInference.Variance.Covariant;
 
 public class TypeParameterCast extends ImplicitTypeCast {
 
@@ -54,18 +55,6 @@ public class TypeParameterCast extends ImplicitTypeCast {
 
         ImplicitTypeCast[] casts = new ImplicitTypeCast[] {
                 ImplicitTypeCast.create(baseType.getBaseType(), targetType.getBaseType(), variance, constraints)
-        };
-
-        return new TypeParameterCast(baseType, targetType, variance, casts);
-    }
-
-    //TODO remove once arrays are generic
-    public static TypeParameterCast createTPC(FArray baseType, FArray targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
-        assert variance == Covariant || variance == Contravariant;
-        assert baseType != targetType;
-
-        ImplicitTypeCast[] casts = new ImplicitTypeCast[] {
-                ImplicitTypeCast.create(baseType.getBaseType(), targetType.getBaseType(), Invariant, constraints) //TODO is invariant right?
         };
 
         return new TypeParameterCast(baseType, targetType, variance, casts);

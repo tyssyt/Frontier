@@ -47,15 +47,12 @@ public class FConstructor extends FBaseFunction {
         return function;
     }
 
-    public static FConstructor create(FVisibilityModifier modifier, FClass fClass) {
+    public static FConstructor create(FVisibilityModifier modifier, FClass fClass, boolean predefined) {
         FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
-        res.generateBody();
-        return res;
-    }
-
-    public static FConstructor createPredefined(FVisibilityModifier modifier, FClass fClass) {
-        FConstructor res = new FConstructor(modifier, fClass, getParameters(fClass));
-        res.predefined = true;
+        if (predefined)
+            res.predefined = true;
+        else
+            res.generateBody();
         return res;
     }
 

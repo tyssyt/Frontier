@@ -109,11 +109,12 @@ public abstract class FClass implements FType {
         return (FConstructor) Iterables.getOnlyElement(getNamespace().getFunctions(false).get(FConstructor.IDENTIFIER)).getFunction();
     }
 
-    public FConstructor generateConstructor() {
+    public FConstructor generateConstructor(boolean predefined) {
         FVisibilityModifier visibility = getConstructorVisibility() == null ? FVisibilityModifier.PRIVATE : getConstructorVisibility();
         try {
-            getNamespace().addFunction(FConstructor.createMalloc(this));
-            FConstructor res = FConstructor.create(visibility, this);
+            if (!predefined)
+                getNamespace().addFunction(FConstructor.createMalloc(this));
+            FConstructor res = FConstructor.create(visibility, this, predefined);
             getNamespace().addFunction(res);
             return res;
         } catch (SignatureCollision signatureCollision) {

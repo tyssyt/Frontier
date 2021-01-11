@@ -9,11 +9,11 @@ import tys.frontier.code.StaticField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
 
@@ -35,11 +35,10 @@ public class FInstantiatedClass extends FForwardingClass {
 
     private ForImpl newForImpl;
 
-    FInstantiatedClass(FClass baseClass, ImmutableList<FType> instantiatedParameters) {
+    protected FInstantiatedClass(FIdentifier newIdentifier, FClass baseClass, ImmutableList<FType> instantiatedParameters) {
         super(baseClass);
         assert !(baseClass instanceof FInstantiatedClass);
         assert instantiatedParameters.size() == baseClass.getParametersList().size();
-        FIdentifier newIdentifier = new FInstantiatedClassIdentifier(baseClass.getIdentifier(), instantiatedParameters);
         this.instantiatedParameters = instantiatedParameters;
         DefaultNamespace namespace = baseClass.getNamespace();
         this.newNamespace = new DefaultNamespace(namespace.getLocation(), newIdentifier, namespace.getVisibility(), namespace.getNative(), this);
@@ -80,8 +79,9 @@ public class FInstantiatedClass extends FForwardingClass {
 
         //constructor
         setConstructorVisibility(proxy.getConstructorVisibility());
-        FConstructor constructor = generateConstructor();
-        baseFunctionMap.put(proxy.getConstructor(), constructor);
+        FConstructor proxyConstructor = proxy.getConstructor();
+        FConstructor constructor = generateConstructor(proxyConstructor.isPredefined());
+        baseFunctionMap.put(proxyConstructor, constructor);
         //TODO do we need to put malloc in the map?
 
         //forImpl
@@ -153,8 +153,14 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     public void bake() {
-        assert !baked;
-        GenericBaking.bake(this);
-        baked = true;
+        if (!baked) {
+            GenericBaking.bake(this);
+            baked = true;
+        }
+    }
+
+    @Override
+    public void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance) {
+        Utils.cantHappen();
     }
 }

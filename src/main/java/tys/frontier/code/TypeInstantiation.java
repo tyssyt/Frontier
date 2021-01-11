@@ -7,7 +7,6 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.namespace.TypeVariableNamespace.IterationElementType;
 import tys.frontier.code.namespace.TypeVariableNamespace.ReturnTypeOf;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -128,10 +127,7 @@ public class TypeInstantiation {
 
     public FType getType(FType original) {
         assert original != null;
-        if (original instanceof FArray) {
-            FArray array = (FArray) original;
-            return FArray.getArrayFrom(getType(array.getBaseType()));
-        } else if (original instanceof FOptional) { //TODO can this be removed when Optionals use TypeVaribles?
+        if (original instanceof FOptional) { //TODO can this be removed when Optionals use TypeVaribles?
                 FOptional optional = (FOptional) original;
                 return FOptional.fromFlatten(getType(optional.getBaseType()));
         } else if (original instanceof FFunctionType) { //TODO can this be removed when Functions use TypeVaribles?

@@ -7,6 +7,7 @@ import tys.frontier.code.type.FClass;
 public class FStringLiteral implements FLiteral { //TODO make sure string literals are immutable
 
     public static final FArray TYPE = FArray.getArrayFrom(FIntN._8);
+    public static final FArray STRING_ARRAY_TYPE = FArray.getArrayFrom(FStringLiteral.TYPE);
 
     public final String value;
 

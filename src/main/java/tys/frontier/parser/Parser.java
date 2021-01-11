@@ -116,7 +116,7 @@ public class Parser {
         for (ParsedFile file : module.getFiles())
             for (DefaultNamespace namespace : file.getNamespaces().values())
                 if (namespace.getType() != null)
-                    namespace.getType().generateConstructor();
+                    namespace.getType().generateConstructor(false);
         delegates.createDelegatedFunctions(classesToPrepare);
         classesToPrepare.forEach(FInstantiatedClass::prepare);
     }

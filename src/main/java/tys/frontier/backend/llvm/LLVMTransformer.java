@@ -241,7 +241,7 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef convertArg(LLVMValueRef function, LLVMValueRef lpCmdLine) { //TODO split lpCmdLine into words
-        LLVMTypeRef fStringType = module.getLlvmType(FArray.getArrayFrom(FStringLiteral.TYPE));
+        LLVMTypeRef fStringType = module.getLlvmType(FStringLiteral.STRING_ARRAY_TYPE);
 
         //TODO this is a alloca copy of arrayMalloc
         LLVMValueRef size = arrayOffsetOf(fStringType, indexLiteral(1));
@@ -262,7 +262,7 @@ class LLVMTransformer implements
     }
 
     private LLVMValueRef convertArgs(LLVMValueRef function, LLVMValueRef argi, LLVMValueRef argv) {
-        LLVMTypeRef fStringType = module.getLlvmType(FArray.getArrayFrom(FStringLiteral.TYPE));
+        LLVMTypeRef fStringType = module.getLlvmType(FStringLiteral.STRING_ARRAY_TYPE);
 
         LLVMBasicBlockRef copyBlock = LLVMAppendBasicBlock(function, "copy");
         LLVMBasicBlockRef copy2Block = LLVMAppendBasicBlock(function, "copy2");

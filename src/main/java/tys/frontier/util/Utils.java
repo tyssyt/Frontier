@@ -3,17 +3,13 @@ package tys.frontier.util;
 import com.google.common.collect.*;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import tys.frontier.code.FField;
-import tys.frontier.code.InstanceField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
 import tys.frontier.code.function.*;
-import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.Namespace;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
@@ -193,29 +189,8 @@ public final class Utils {
         assert !(oldType instanceof FTypeVariable) && !(newType instanceof FTypeVariable);
 
         if (oldNamespace != newNamespace) {
-            //TODO oh god pls make arrys, optionals and function types use generics!
-            if (oldType instanceof FArray) {
-                assert newType instanceof FArray;
-                if (function.isConstructor()) {
-                    return ((FArray) newType).getConstructor().getSignature();
-                } else if (function.getIdentifier().equals(Access.ID)) {
-                    for (Signature s : ((DefaultNamespace) newNamespace).getFunctions(signature.isLhs()).get(Access.ID)) { //TODO not required if assignee functions can't appear on rhs!
-                        if (s.getParameters().size() == signature.getParameters().size())
-                            return s;
-                    }
-                    return Utils.cantHappen();
-                } else if (function.getIdentifier().equals(FArray.COPY) || function.getIdentifier().equals(FArray.C_ARRAY)) {
-                    List<Signature> signatures = ((FArray) newType).getNamespace().getFunctions(false).get(function.getIdentifier());
-                    return Iterables.getOnlyElement(signatures);
-                } else if (function instanceof FieldAccessor) {
-                    FieldAccessor accessor = (FieldAccessor) function;
-                    assert accessor.getField() instanceof InstanceField && accessor.getField().getIdentifier().equals(FArray.SIZE);
-                    FieldAccessor inst = getAccessor((FArray) newType, FArray.SIZE, true, accessor.isGetter());
-                    return signature.isLhs() ? inst.getLhsSignature() : inst.getSignature();
-                } else {
-                    return Utils.cantHappen();
-                }
-            } else if (oldType instanceof FOptional) {
+            //TODO oh god pls make optionals and function types use generics!
+            if (oldType instanceof FOptional) {
                 assert newType instanceof FOptional;
                 if (identifier.equals(FOptional.EXMARK)) {
                     FFunction inst = ((FOptional) newType).getExmark();
@@ -235,6 +210,8 @@ public final class Utils {
                     function = ((ClassInstantiationFunction) function).getProxy();
                 else if (function instanceof FieldAccessor)
                     function = getAccessor((FClass) oldType, (FieldAccessor) function);
+                else if (function.isConstructor())
+                    function = ((FClass) oldType).getConstructor();
                 else
                     return Utils.cantHappen();
             }

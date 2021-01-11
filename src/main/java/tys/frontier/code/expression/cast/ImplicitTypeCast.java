@@ -2,7 +2,6 @@ package tys.frontier.code.expression.cast;
 
 import com.google.common.collect.Multimap;
 import tys.frontier.code.literal.FNull;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -76,8 +75,6 @@ public abstract class ImplicitTypeCast {
             return TypeParameterCast.createTPC((FInstantiatedClass) baseType, (FInstantiatedClass) targetType, variance, constraints); //TODO what if one of them is the base class, I think thats in theory possible
         if (targetType instanceof FOptional && baseType instanceof FOptional)
             return TypeParameterCast.createTPC((FOptional) baseType, (FOptional) targetType, variance, constraints); //TODO optional will be made generic some day
-        if (targetType instanceof FArray && baseType instanceof FArray)
-            return TypeParameterCast.createTPC((FArray) baseType, (FArray) targetType, variance, constraints); //TODO array will be made generic some day
         if (targetType instanceof FFunctionType && baseType instanceof FFunctionType)
             return TypeParameterCast.createTPC((FFunctionType) baseType, (FFunctionType) targetType, variance, constraints); //TODO function types will be made generic some day
         if (targetType instanceof FTuple && baseType instanceof FTuple)
