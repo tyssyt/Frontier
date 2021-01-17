@@ -32,10 +32,10 @@ export static main () {
     IO.printInt(d);
     IO.printLine("");
 
-    arr :[int32] = new int32[5];
+    arr :[int32] = [int32, 5];
     arr[2] = -42;
     arr2 := arr;
-    arr, arr[2], f:int32 = new int32[3], 42, 0; //wait, thats illegal
+    arr, arr[2], f:int32 = [int32, 3], 42, 0; //wait, thats illegal
     IO.printInt(arr[2]);
     IO.printInt(arr2[2]);
     IO.printLine("");

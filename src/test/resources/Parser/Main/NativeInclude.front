@@ -45,7 +45,7 @@ export static main () {
     IO.print(",");
 
     //manip carray of farray and manip
-    str := new char[8];
+    str := [char, 8];
     "PagChomp".copy(str); // can't manipulate constant strings
     str.c_array[1,str.size], str[5] = str[5], str.c_array[1,str.size];
     IO.print(str);

@@ -28,7 +28,7 @@ getOptional(n: bool) -> T? {
 }
 
 getArray(n: int32) -> [T] {
-	res := new T[n];
+	res := [T, n];
 	i:int32= 0;
 	while i<n {
 		res[i] = t;
@@ -78,7 +78,7 @@ static print(str: [char], coord: Coord, i: int64?) {
 
 export static main () {
 
-	gen := new Generic<([char], Coord, int64?)>(t="nice", new Coord(x=6, y=9), null);
+	gen := Generic<([char], Coord, int64?)>(t="nice", Coord(x=6, y=9), null);
 
     { //opt null
         IO.printLine("--Opt null--");
@@ -124,7 +124,7 @@ export static main () {
         print(str, coord, i);
         IO.printLine("");
         
-        gen.t = "another", new Coord(x=13, y=37), 1;
+        gen.t = "another", Coord(x=13, y=37), 1;
         print(gen.t);
         IO.printLine("");
         IO.printLine("");
@@ -133,7 +133,7 @@ export static main () {
     { //Address
         IO.printLine("--Address--");
         f := Generic<([char], [char])>.getArray**;
-        a := f(new Generic<([char], [char])>(t="Beep", "Boop"), 3);
+        a := f(Generic<([char], [char])>(t="Beep", "Boop"), 3);
         s1:, s2: = a[2];
         IO.print(s1);
         IO.print(s2);

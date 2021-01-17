@@ -1117,6 +1117,34 @@ class LLVMTransformer implements
     }
 
     @Override
+    public LLVMValueRef visitArrayLiteral(FArrayLiteral expression) {
+        /*  //TODO for const struct, I could do a easier variant:
+            LLVMTypeRef arrayType = module.arrayType(expression.getType(), expression.getElements().size());
+            LLVMValueRef array = LLVMBuildMalloc(builder, LLVMGetElementType(arrayType), "malloc_ArrayLiteral");
+
+            LLVMTypeRef baseType = module.getLlvmType(expression.getType().getBaseType());
+            LLVMValueRef arr = LLVMConstArray(baseType, createPointerPointer(elements), elements.size());
+            LLVMValueRef sizeLiteral = indexLiteral(expression.getElements().size());
+            LLVMValueRef struct = LLVMStruct(module.getContext(), createPointerPointer(sizeLiteral, arr), 2, FALSE);
+
+            LLVMBuildStore(builder, struct, array);
+        */
+
+        LLVMTypeRef arrayType = module.getLlvmType(expression.getType());
+        LLVMValueRef sizeLiteral = indexLiteral(expression.getElements().size());
+        LLVMValueRef array = buildArrayMalloc(arrayType, sizeLiteral);
+
+        int i = 0; //TODO I could generate code that does pointer increments instead of arrayGep, could be faster...?
+        for (FExpression element : expression.getElements()) {
+            LLVMValueRef e = element.accept(this);
+            LLVMValueRef address = arrayGep(array, indexLiteral(i));
+            LLVMBuildStore(builder, e, address);
+            i++;
+        }
+        return array;
+    }
+
+    @Override
     public LLVMValueRef visitLiteral(FLiteralExpression expression) {
         FLiteral literal = expression.getLiteral();
         LLVMTypeRef type = module.getLlvmType(literal.getType());

@@ -14,7 +14,7 @@ operator + (other: String) -> String {
 }
 
 operator + (other: [char]) -> String {
-    res := new String(string = new char[string.size + other.size]);
+    res := String(string = [char, string.size + other.size]);
     for s, i : string { //TODO change when I have somthing like a zip
         res.string[i] = s;
     }
@@ -45,8 +45,8 @@ size() -> int32 {
 export class Main:
 
 export static main (args: [[char]]) {
-    s1 := new String(string = "Hello");
-    s2 := new String(string = "World!");
+    s1 := String(string = "Hello");
+    s2 := String(string = "World!");
     IO.printLine((s1 + s2).string);
     s3 := s1 + " Sailor";
     IO.printLine(s3.string);

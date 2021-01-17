@@ -22,42 +22,42 @@ export class Main:
 export static main() {
     IO.printInt(0);
     {
-        test := new O<int64>();
+        test := O<int64>();
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
     {
-        test := new O<int64>(t=2);
+        test := O<int64>(t=2);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
     {
-        test := new O<int64?>();
+        test := O<int64?>();
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
     {
-        test := new O<int64?>(t=4);
+        test := O<int64?>(t=4);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
 
     {
-        test := new G<int64>(t=5);
+        test := G<int64>(t=5);
         IO.printInt(test.get());
     }
     {
-        test := new G<int64?>(t=6);
+        test := G<int64?>(t=6);
         if (test.get()) {
             IO.printInt(test.get()!);
         }
     }
     {
-        test := new G<int64?>(t=null); //TODO this null should not be necessary, but in the current state of constructors it is, the ToDo document has a note on this
+        test := G<int64?>(t=null); //TODO this null should not be necessary, but in the current state of constructors it is, the ToDo document has a note on this
         if (test.get()) {
             IO.printInt(test.get()!);
         }

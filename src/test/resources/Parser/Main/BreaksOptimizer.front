@@ -3,7 +3,7 @@ import IO;
 export class Main:
 
     export static main() {
-        arr: [int64] = new int64[1];
+        arr: [int64] = [int64, 1];
         arr[0] = 0;
 
         //breaks

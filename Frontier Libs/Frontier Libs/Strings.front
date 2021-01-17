@@ -28,9 +28,7 @@ export namespace Strings:
 
     export intToString(l: int64) -> [char] {
         if l =*= 0 {
-            res := new char[1]; //TODO make return "0" work.
-            res[0] = "0";
-            return res;
+            return [char: "0"]; //TODO make return "0" work.
         }
         pos:bool = l >= 0;
         if !pos {
@@ -41,7 +39,7 @@ export namespace Strings:
             size = size+1;
         }
 
-        digits:[char] = new char[size];
+        digits:[char] = [char, size];
         i:int32 = 1;
         while i<=size {
             remainder:int64 = l % 10;
@@ -57,7 +55,7 @@ export namespace Strings:
     }
 
     export intToBitString(l: int64) -> [char] {
-        digits:[char] = new char[64];
+        digits:[char] = [char, 64];
         i:int32 = 1;
         while i<=64 {
             remainder:int64 = l % 2;
@@ -81,7 +79,7 @@ export namespace Strings:
         }
 
         size = size + 2;
-        digits:[char] = new char[size];
+        digits:[char] = [char, size];
 
         {
             digit := l.uShiftR(60);
@@ -130,18 +128,15 @@ export namespace Strings:
         }
 
         if i =!= 1 { //we found a non 9 digit before the dot, shorten the result
-            newDigits := new char[i+1];
+            newDigits := [char, i+1];
             digits.copy(newDigits, length=i+1);
             return newDigits, false;
         }
 
-        digit := new char[1];
         if digits[0] =!= 9 {
-            digit[0] = digits[0] + 1;
-            return digit, false;
+            return [char: digits[0] + 1], false;
         } else {
-            digit[0] = "1";
-            return digit, true;
+            return [char: "1"], true; //TODO make return "1", true work
         }
     }
 
@@ -157,9 +152,7 @@ export namespace Strings:
                 if sign {
                     return "-∞";
                 } else {
-                    inf := new char[1]; //TODO make returning char literals in function with return type string work
-                    inf[0] ="∞";
-                    return inf;
+                    return [char: "∞"]; //TODO make returning char literals in function with return type string work
                 }
             } else {
                 return "NaN";
@@ -191,7 +184,7 @@ export namespace Strings:
         //assemble Result
         if sign {
             size: int32 = 2 + decimalsString.size + exponentString.size;
-            res := new char[size];
+            res := [char, size];
             res[0] = "-";
             decimalsString.copy(res, targetOffset=1);
             res[1+decimalsString.size] = "e";
@@ -199,7 +192,7 @@ export namespace Strings:
             return res;
         } else {
             size: int32 = 1 + decimalsString.size + exponentString.size;
-            res := new char[size];
+            res := [char, size];
             decimalsString.copy(res);
             res[decimalsString.size] = "e";
             exponentString.copy(res, targetOffset=1+decimalsString.size);
@@ -215,7 +208,7 @@ export namespace Strings:
         if fString[fString.size - 1] =*= 0 {
             return fString;
         }
-        cString := new char[fString.size + 1];
+        cString := [char, fString.size + 1];
         fString.copy(cString);
         cString[fString.size] = 0;
         return cString;
@@ -249,7 +242,7 @@ class LookupTables:
     //TODO think very hard about the pattern I see in the numbers below and whether that gives me a decent way to compute them?
     static createFloat32ToStringLookupTable() -> [(int32, int64, int64)] {
         //a bunch of magic numbers, how I came up with them is left as an exercise for the reader
-        table := new (int32, int64, int64)[255];
+        table := [(int32, int64, int64), 255];
         table[0] = -38, 161558713389, 16155871338; //denormalised
         table[1] = -38, 161558713389, 16155871338;
         table[2] = -38, 323117426778, 32311742677;

@@ -65,10 +65,8 @@ export namespace Stringer:
         return "a float64"; //TODO
     }
 
-    static toString(c: char) -> [char] { //TODO change once we have array literals
-        res := new char[1];
-        res[0] = c;
-        return res;
+    static toString(c: char) -> [char] {
+        return [:c];
     }
 
     static toString(string: [char]) -> [char] {

@@ -28,6 +28,21 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     }
 
     @Override
+    default FExpression exitOptElse(FOptElse optElse, FExpression optional, FExpression elze) {
+        return optElse;
+    }
+
+    @Override
+    default FExpression exitCache(FCacheExpression cache, FExpression fExpression) {
+        return cache;
+    }
+
+    @Override
+    default FExpression exitArrayLiteral(FArrayLiteral arrayLiteral, List<FExpression> elements) {
+        return arrayLiteral;
+    }
+
+    @Override
     default FExpression visitLiteral(FLiteralExpression expression) {
         return expression;
     }

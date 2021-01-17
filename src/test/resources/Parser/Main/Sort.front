@@ -15,11 +15,11 @@ class Obj:
 
     static create(i: int64) -> Obj {
         UID_COUNTER = UID_COUNTER +1;
-        return new Obj(i=i, uid=UID_COUNTER);
+        return Obj(i=i, uid=UID_COUNTER);
     }
 
     static create(i: int64, uid: int64) -> Obj {
-        return new Obj(i=i, uid=uid);
+        return Obj(i=i, uid=uid);
     }
 
 export class Main:
@@ -69,7 +69,7 @@ export class Main:
     }
 
     static createArray(size: int32) -> [Obj] {
-        res := new Obj[size];
+        res := [Obj, size];
 
         for val, i : res {
             res[i] = Obj.create(random.next);

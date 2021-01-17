@@ -23,11 +23,11 @@ export class Test:
             t.print();
         }
         IO.print(t.print().get() : "null ");
-        t = new Test(c="p");
+        t = Test(c="p");
         IO.print(t.print().get() : "null ");
         t = null;
         IO.print(t.print().get() : "null ");
-        t = new Test(c="q");
+        t = Test(c="q");
         IO.print(t.print().get() : "null ");
         t!.print;
         if t {

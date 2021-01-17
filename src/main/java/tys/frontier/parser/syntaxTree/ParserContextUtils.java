@@ -122,12 +122,27 @@ public final class ParserContextUtils {
         };
     }
 
-    public static Namespace getNonPredefined(String id, Function<FIdentifier, Namespace> possibleNamespaces) throws TypeNotFound {
-        FIdentifier identifier = new FIdentifier(id);
+    public static FType getUserType(FrontierParser.UserTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
+            throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
+        FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         Namespace namespace = possibleNamespaces.apply(identifier);
         if (namespace==null)
             throw new TypeNotFound(identifier);
-        return namespace;
+        FType base = namespace.getType();
+        if (base == null)
+            throw new NamespaceWithoutType(namespace);
+
+        //handle Type Parameters
+        List<FType> parameters = new ArrayList<>();
+        for (TypeOrTupleContext ttc : ctx.typeOrTuple())
+            parameters.add(getType(ttc, possibleNamespaces));
+
+        if (base instanceof FClass)
+            return ((FClass) base).getInstantiation(parameters);
+        else if (parameters.size() != 0)
+            throw new ParameterizedTypeVariable(null); //TODO
+        else
+            return base;
     }
 
     public static FType tupleFromList(TypeListContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
@@ -147,10 +162,11 @@ public final class ParserContextUtils {
 
     public static Namespace getNamespace (TypeTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
-        if (ctx.IDENTIFIER() != null && ctx.typeOrTuple().isEmpty()) {
-            return getNonPredefined(ctx.IDENTIFIER().getText(), possibleNamespaces);
+        try {
+            return getType(ctx, possibleNamespaces).getNamespace();
+        } catch (NamespaceWithoutType e) {
+            return e.namespace;
         }
-        return getType(ctx, possibleNamespaces).getNamespace();
     }
 
     public static FType getType (TypeOrTupleContext ctx, Function<FIdentifier, Namespace> possibleNamespaces) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
@@ -163,47 +179,23 @@ public final class ParserContextUtils {
 
     public static FType getType (TypeTypeContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)
             throws TypeNotFound, ParameterizedTypeVariable, WrongNumberOfTypeArguments {
-        FType base;
-        if (ctx.NATIVE() != null) {
-            base = getType(ctx.typeOrTuple(0), possibleNamespaces);
-            return CArray.getArrayFrom(base);
-        } else if (ctx.LBRACK() != null) {
-            base = getType(ctx.typeOrTuple(0), possibleNamespaces);
-            return FArray.getArrayFrom(base);
-        } else if (ctx.QUESTION() != null) {
-            base = getType(ctx.typeType(), possibleNamespaces);
-            return FOptional.from(base);
-        } else if (ctx.ARROW() != null) {
+        if (ctx.NATIVE() != null)
+            return CArray.getArrayFrom(getType(ctx.typeOrTuple(), possibleNamespaces));
+        else if (ctx.LBRACK() != null)
+            return FArray.getArrayFrom(getType(ctx.typeOrTuple(), possibleNamespaces));
+        else if (ctx.QUESTION() != null)
+            return FOptional.from(getType(ctx.typeType(), possibleNamespaces));
+        else if (ctx.ARROW() != null) {
             List<TypeListContext> typeListContexts = ctx.typeList();
             FType  in = tupleFromList(typeListContexts.get(0), possibleNamespaces);
             FType out = tupleFromList(typeListContexts.get(1), possibleNamespaces);
             return FFunctionType.from(in, out);
-        } else if (ctx.predefinedType() != null) {
-            base = getPredefined(ctx.predefinedType());
-        } else if (ctx.IDENTIFIER() != null) {
-            Namespace nonPredefined = getNonPredefined(ctx.IDENTIFIER().getText(), possibleNamespaces);
-            base = nonPredefined.getType();
-            if (base == null)
-                throw new TypeNotFound(nonPredefined.getIdentifier()); //maybe custom exception is better?
-        } else if (ctx.typeType() != null) {
-            return getType(ctx.typeType(), possibleNamespaces);
-        } else {
-            return Utils.cantHappen();
-        }
-
-        //handle Type Parameters
-        List<TypeOrTupleContext> ttCtxs = ctx.typeOrTuple();
-
-        List<FType> parameters = new ArrayList<>();
-        for (TypeOrTupleContext ttc : ttCtxs)
-            parameters.add(getType(ttc, possibleNamespaces));
-
-        if (base instanceof FClass)
-            return ((FClass) base).getInstantiation(parameters);
-        else if (parameters.size() != 0)
-            throw new ParameterizedTypeVariable(null); //TODO
+        } else if (ctx.predefinedType() != null)
+            return getPredefined(ctx.predefinedType());
+        else if (ctx.userType() != null)
+            return getUserType(ctx.userType(), possibleNamespaces);
         else
-            return base;
+            return Utils.cantHappen();
     }
 
     public static Selector<FIdentifier> getNameSelector(FrontierParser.NameSelectorContext ctx) {

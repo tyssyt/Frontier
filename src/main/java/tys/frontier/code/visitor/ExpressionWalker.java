@@ -18,9 +18,8 @@ public interface ExpressionWalker<Expression> {
 
     default Expression visitDynamicFunctionCall(DynamicFunctionCall functionCall) {
         functionCall.getFunction().accept(this);
-        for (FExpression param : functionCall.getArguments()) {
+        for (FExpression param : functionCall.getArguments())
             param.accept(this);
-        }
         return null;
     }
 
@@ -36,6 +35,12 @@ public interface ExpressionWalker<Expression> {
 
     default Expression visitCache(FCacheExpression cache) {
         cache.getExpression().accept(this);
+        return null;
+    }
+
+    default Expression visitArrayLiteral(FArrayLiteral expression) {
+        for (FExpression element : expression.getElements())
+            element.accept(this);
         return null;
     }
 

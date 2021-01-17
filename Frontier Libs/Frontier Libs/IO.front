@@ -67,7 +67,7 @@ export class File:
     cFile: CFile;
 
     export static fOpen(filename: [char], mode: native[char]) -> File {
-        return new File(cFile = CFile.fopen(Strings.toCString(filename), mode));
+        return File(cFile = CFile.fopen(Strings.toCString(filename), mode));
     }
 
     export write(chara: char) {

@@ -5,7 +5,7 @@ export class List<T>:
     export size: int32 = 0; //TODO export getter, private setter
 
     export static create(startSize: int32 = 5) -> List<T> {
-        res:List<T> = new List<T>(elements = new T[startSize]);
+        res:List<T> = List<T>(elements = [T, startSize]);
         return res;
     }
 
@@ -65,7 +65,7 @@ export class List<T>:
     }
 
     export trim() -> [T] {
-        res := new T[size];
+        res := [T, size];
         elements.copy(res, length=size);
         return res;
     }
@@ -76,7 +76,7 @@ export class List<T>:
             newSize = 10;
         }
 
-        newElements := new T[newSize];
+        newElements := [T, newSize];
         elements.copy(newElements);
         elements = newElements;
     }

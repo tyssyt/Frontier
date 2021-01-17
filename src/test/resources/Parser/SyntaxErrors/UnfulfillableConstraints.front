@@ -5,7 +5,7 @@ class IntList:
 delegate * : l: List<int64>;
 
 static create() -> IntList {
-    return new IntList(l=List<int64>.create());
+    return IntList(l=List<int64>.create());
 }
 
 
@@ -14,7 +14,7 @@ delegate * : i: int32;
 t: T;
 
 static create(t: T, i: int32) -> Generic<T> {
-    return new Generic<T>(i=i ,t=t);
+    return Generic<T>(i=i ,t=t);
 }
 
 doSthUseful<R>(fun: (T, int32 -> R)) -> R {
@@ -29,7 +29,7 @@ class MoreGenerix<U>:
 delegate doSthUseful, getT : baseGeneric: Generic<U>;
 
 static create(baseGeneric: Generic<U>) -> MoreGenerix<U> {
-    return new MoreGenerix<U>(baseGeneric=baseGeneric);
+    return MoreGenerix<U>(baseGeneric=baseGeneric);
 }
 
 export class Outside:

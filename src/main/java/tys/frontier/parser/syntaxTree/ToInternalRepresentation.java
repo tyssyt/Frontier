@@ -52,6 +52,8 @@ import java.util.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static tys.frontier.parser.antlr.FrontierParser.ArrayLiteralContext;
+import static tys.frontier.parser.antlr.FrontierParser.TypeOrTupleContext;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
@@ -1078,19 +1080,21 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     public FExpression visitInternalFunctionCall(FrontierParser.InternalFunctionCallContext ctx) { //TODO this needs far better resolving...
         boolean lhsResolve = useLhsresolve;
         useLhsresolve = false;
-        //first check if we have a variable of function type
         TerminalNode identifierNode = ctx.IDENTIFIER();
         FIdentifier identifier = new FIdentifier(identifierNode.getText());
         Position position = Position.fromCtx(ctx);
         Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
         try {
+            //first check if we have a dynamic call or a constructor call
             FExpression var = findLocal(Position.fromToken(identifierNode.getSymbol()), identifier, lhsResolve);
-            if (var.getType() instanceof FFunctionType) {
+            if (var.getType() instanceof FFunctionType) { //dynamic call
                 if (!arguments.b.isEmpty())
                     throw new DynamicCallWithKeywordArgs(var, arguments.b);
                 return DynamicFunctionCall.create(position, var, arguments.a);
+            } else if (var instanceof FNamespaceExpression && arguments.a.isEmpty()) { //constructor call
+                return functionCall(position, ((FNamespaceExpression) var).getNamespace(), FConstructor.NEW_ID, arguments.a, arguments.b, lhsResolve);
             }
-        } catch (UndeclaredVariable ignored) {
+        } catch (UndeclaredVariable | FunctionNotFound | AccessForbidden ignored) {
         } catch (IncompatibleTypes | DynamicCallWithKeywordArgs e) {
             errors.add(e);
             throw new Failed();
@@ -1116,9 +1120,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FFunctionCall visitNewObject(FrontierParser.NewObjectContext ctx) {
-        Namespace namespace;
+        FType type;
         try {
-            namespace = ParserContextUtils.getNamespace(ctx.typeType(), this::findNamespaceNoThrow);
+            type = ParserContextUtils.getUserType(ctx.userType(), this::findNamespaceNoThrow);
         } catch (SyntaxError e) {
             errors.add(e);
             visitNamedExpressions(ctx.namedExpressions()); //parse param list to find more errors
@@ -1126,7 +1130,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
         ListMultimap<FIdentifier, FExpression> namedArguments = visitNamedExpressions(ctx.namedExpressions());
         try {
-            return functionCall(Position.fromCtx(ctx), namespace, FConstructor.IDENTIFIER, emptyList(), namedArguments, false);
+            return functionCall(Position.fromCtx(ctx), type.getNamespace(), FConstructor.NEW_ID, emptyList(), namedArguments, false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
@@ -1147,9 +1151,32 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         Namespace namespace = FArray.getArrayFrom(baseType).getNamespace();
         try {
-            return functionCall(Position.fromCtx(ctx), namespace, FConstructor.IDENTIFIER, mutableSingletonList(expression), ImmutableListMultimap.of(), false);
+            return functionCall(Position.fromCtx(ctx), namespace, FConstructor.NEW_ID, mutableSingletonList(expression), ImmutableListMultimap.of(), false);
         } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
+            throw new Failed();
+        }
+    }
+
+    @Override
+    public FArrayLiteral visitArrayLiteral(ArrayLiteralContext ctx) {
+        List<FExpression> elements = visitTupleExpression(ctx.tupleExpression());
+
+        FType elementType;
+        TypeOrTupleContext c = ctx.typeOrTuple();
+        try {
+            if (c != null) {
+                elementType = ParserContextUtils.getType(c, this::findNamespaceNoThrow);
+            } else {
+                FTypeVariable typeVariable = FTypeVariable.create(new FIdentifier("elementType"), false);
+                for (FExpression element : elements)
+                    element.typeCheck(typeVariable);
+                elementType = typeVariable.hardResolve();
+            }
+
+            return FArrayLiteral.create(Position.fromCtx(ctx), elementType, elements);
+        } catch (SyntaxError syntaxError) {
+            errors.add(syntaxError);
             throw new Failed();
         }
     }

@@ -14,31 +14,21 @@ public interface ExpressionVisitor<Expression>  {
     default void enterImplicitCast(FImplicitCast implicitCast) {}
     default void enterOptElse(FOptElse optElse) {}
     default void enterCache(FCacheExpression cache) {}
+    default void enterArrayLiteral(FArrayLiteral arrayLiteral) {}
 
     //Bottom Up
-    default Expression exitBrackets(FBracketsExpression brackets, Expression inner) {
-        return null;
-    }
-    default Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params) {
-        return null;
-    }
+    default Expression exitBrackets(FBracketsExpression brackets, Expression inner) {return null;}
+    default Expression exitFunctionCall(FFunctionCall functionCall, List<Expression> params) {return null;}
     default Expression exitDynamicFunctionCall(DynamicFunctionCall functionCall, Expression function, List<Expression> params) {return null;}
     default Expression exitImplicitCast(FImplicitCast implicitCast, Expression castedExpression) {return null;}
     default Expression exitOptElse(FOptElse optElse, Expression optional, Expression elze) {return null;}
     default Expression exitCache(FCacheExpression cache, Expression expression) {return null;}
+    default Expression exitArrayLiteral(FArrayLiteral arrayLiteral, List<Expression> elements) {return null;}
 
     //Leaves
-    default Expression visitLiteral(FLiteralExpression expression) {
-        return null;
-    }
-    default Expression visitVariable(FVariableExpression expression) {
-        return null;
-    }
-    default Expression visitNamespaceExpression(FNamespaceExpression expression) {
-        return null;
-    }
-    default Expression visitFunctionAddress(FFunctionAddress address) {
-        return null;
-    }
+    default Expression visitLiteral(FLiteralExpression expression) {return null;}
+    default Expression visitVariable(FVariableExpression expression) {return null;}
+    default Expression visitNamespaceExpression(FNamespaceExpression expression) {return null;}
+    default Expression visitFunctionAddress(FFunctionAddress address) {return null;}
 
 }

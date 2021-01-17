@@ -1,7 +1,7 @@
 export class Iter:
 
     static count(to: int32) -> Count {
-        return new Count(size=to);
+        return Count(size=to);
     }
 
 

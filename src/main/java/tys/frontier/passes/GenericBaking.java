@@ -248,6 +248,21 @@ public class GenericBaking implements FClassVisitor {
     }
 
     @Override
+    public FOptElse exitOptElse(FOptElse optElse, FExpression optional, FExpression elze) {
+        return FOptElse.createTrusted(optElse.getPosition(), optional, elze);
+    }
+
+    @Override
+    public FCacheExpression exitCache(FCacheExpression cache, FExpression fExpression) {
+        return Utils.NYI("Cache Expression baking"); //TODO
+    }
+
+    @Override
+    public FArrayLiteral exitArrayLiteral(FArrayLiteral arrayLiteral, List<FExpression> elements) {
+        return FArrayLiteral.createTrusted(arrayLiteral.getPosition(), typeInstantiation.getType(arrayLiteral.getType().getBaseType()), elements);
+    }
+
+    @Override
     public FStatement visitBreak(FBreak fBreak) {
         return new FBreak(fBreak.getPosition(), loopMap.get(fBreak.getLoop()));
     }

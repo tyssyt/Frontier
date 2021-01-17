@@ -40,7 +40,6 @@ tokens {
     IN,
     OUT,
     WHERE,
-    NEW,
     THIS,
     NULL,
     BOOL,
@@ -214,8 +213,8 @@ typeType
     |   NATIVE LBRACK  typeOrTuple RBRACK
     |   typeType QUESTION
     |   LPAREN typeList ARROW typeList RPAREN
-    |   predefinedType (LT typeOrTuple (COMMA typeOrTuple)* GT)?
-    |   IDENTIFIER (LT typeOrTuple (COMMA typeOrTuple)* GT)?
+    |   predefinedType
+    |   userType
     ;
 
 typeOrTuple
@@ -227,6 +226,10 @@ typeOrTuple
 typeList
     :   typeType (COMMA typeType)*
     |   LPAREN RPAREN
+    ;
+
+userType
+    :   IDENTIFIER (LT typeOrTuple (COMMA typeOrTuple)* GT)?
     ;
 
 predefinedType
@@ -285,12 +288,13 @@ expression
     |   expression LBRACK arguments RBRACK                         #arrayAccess
     |   expression DOT IDENTIFIER (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   IDENTIFIER LPAREN arguments? RPAREN                        #internalFunctionCall
+    |   userType LPAREN namedExpressions? RPAREN                   #newObject
     |   typeType DOT IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?   #functionAddress
     |   typeType DOT OPERATOR operator STAR STAR (LPAREN typeList RPAREN)? #functionAddress
     |   IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?             #internalFunctionAddress
     |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
-    |   NEW typeType LPAREN namedExpressions? RPAREN               #newObject
-    |   NEW typeOrTuple (LBRACK expression RBRACK)                 #newArray
+    |   LBRACK typeOrTuple COMMA expression RBRACK                 #newArray
+    |   LBRACK typeOrTuple? COLON tupleExpression RBRACK           #arrayLiteral
     |   (EXMARK|SUB) expression                                    #preUnaryOp
     |   expression EXMARK                                          #cast
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp

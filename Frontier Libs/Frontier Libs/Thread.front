@@ -8,5 +8,5 @@ export class Thread:
 
     export static create(fun: (native[char]? -> int32)) -> Thread {
         wThread := WThread.create(lpStartAddress=fun, dwStackSize=0); //TODO stack size?
-        return new Thread(thread=wThread);
+        return Thread(thread=wThread);
     }

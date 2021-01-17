@@ -8,7 +8,7 @@ class Sieb:
     primes: List<int32>;
 
     static create(expectedPrimes: int32 = 50) -> Sieb {
-        res := new Sieb(primes = List<int32>.create(expectedPrimes));
+        res := Sieb(primes = List<int32>.create(expectedPrimes));
         res.primes.add(2);
         return res;
     }

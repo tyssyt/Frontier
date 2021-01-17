@@ -106,7 +106,7 @@ public abstract class FClass implements FType {
     }
 
     public FConstructor getConstructor() {
-        return (FConstructor) Iterables.getOnlyElement(getNamespace().getFunctions(false).get(FConstructor.IDENTIFIER)).getFunction();
+        return (FConstructor) Iterables.getOnlyElement(getNamespace().getFunctions(false).get(FConstructor.NEW_ID)).getFunction();
     }
 
     public FConstructor generateConstructor(boolean predefined) {

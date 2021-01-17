@@ -14,7 +14,7 @@ export class Random:
     static defaultInstance: Random = createRNG(Timing.getTimestamp());
 
     export static createRNG(seed: int64) -> Random {
-        res := new Random(seed = seed, rng_a = seed, rng_b = seed, rng_c = seed);
+        res := Random(seed = seed, rng_a = seed, rng_b = seed, rng_c = seed);
         for i : Iter.count(12) {
             res.next();
         }

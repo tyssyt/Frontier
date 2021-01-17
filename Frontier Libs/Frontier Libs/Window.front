@@ -46,7 +46,7 @@ export class Window:
         y: int32 = Screen.height /4;
 
         className := Strings.toCString("FWindowClass");
-        i := new WndClass(lpszClassName=className).register();
+        i := WndClass(lpszClassName=className).register();
         if (i == 0) {
             return 1;
         }
@@ -68,7 +68,7 @@ export class Window:
             return 3;
         }
 
-        msg := new Message();
+        msg := Message();
         while(msg.get()) {
             msg.translate();
             msg.dispatch();

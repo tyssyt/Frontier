@@ -10,6 +10,7 @@ import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
+import tys.frontier.util.Utils;
 
 public class FOptElse extends FExpression {
 
@@ -25,6 +26,14 @@ public class FOptElse extends FExpression {
 
     public static FOptElse create(Position position, FExpression optional, FExpression elze) throws IncompatibleTypes {
         return new FOptElse(position, optional, elze);
+    }
+
+    public static FOptElse createTrusted(Position position, FExpression optional, FExpression elze)  {
+        try {
+            return create(position, optional, elze);
+        } catch (IncompatibleTypes incompatibleTypes) {
+            return Utils.cantHappen();
+        }
     }
 
     private void checkTypes() throws IncompatibleTypes { //TODO the inner type of the optional could be allowed to implicitly cast to type of else I guess?
