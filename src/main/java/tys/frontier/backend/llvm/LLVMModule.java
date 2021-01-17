@@ -105,6 +105,7 @@ public class LLVMModule implements AutoCloseable {
     }
 
     private LLVMValueRef initConstEmptyArray() {
+        //TODO this seems to complex, isn't it just literally a pointer to a int32 0? Or are there architectures where an empty array consumes memory?
         LLVMTypeRef intType = getLlvmType(FIntN._32);
         LLVMTypeRef arrayType = LLVMArrayType(bytePointer, 0);
         LLVMTypeRef type = LLVMStructTypeInContext(context, createPointerPointer(intType, arrayType), 2, FALSE);

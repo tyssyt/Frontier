@@ -7,6 +7,7 @@ import tys.frontier.code.Typed;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.namespace.Namespace;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.statement.ControlFlowIDontKnow;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FStatement;
@@ -73,7 +74,7 @@ public interface FFunction extends IdentifierNameable, Typed, ControlFlowIDontKn
     }
 
     default String headerToString() {
-        return (getBody().isPresent() ? "" : "abstract ") + getVisibility() + " " +  getType().getIdentifier() + " " + getIdentifier() + " " + getSignature().getParameters();
+        return (getBody().isPresent() ? "" : "abstract ") + getVisibility() + " " + getIdentifier() + " " + getSignature().getParameters() + (getType() == FTuple.VOID ? "" : " -> " +  getType().getIdentifier());
     }
 
     @Override
