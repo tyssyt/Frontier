@@ -5,10 +5,18 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.StaticField;
-import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.NativeDecl;
-import tys.frontier.code.function.Signature;
+import tys.frontier.code.expression.DynamicFunctionCall;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FTuple;
+import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.statement.FExpressionStatement;
+import tys.frontier.code.statement.FReturn;
+import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
@@ -112,6 +120,24 @@ public class DefaultNamespace implements Namespace {
         }
         addFunction(field.getGetter());
         addFunction(field.getSetter());
+
+        if (field.getType() instanceof FFunctionType) { //TODO similar code in FClass
+            FFunctionType functionType = (FFunctionType) field.getType();
+            List<FType> params = FTuple.unpackType(functionType.getIn());
+            FBaseFunction dynamicCall = new FunctionBuilder(field.getIdentifier(), this)
+                    .setParams(params).setReturnType(functionType.getOut())
+                    .setLocation(field.getLocation()).setVisibility(field.getVisibility()).build();
+
+            //TODO @PositionForGeneratedCode
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), List.of());
+            List<FExpression> paramExprs = Utils.map(dynamicCall.getSignature().getParameters(), p -> new FVariableExpression(null, p));
+            DynamicFunctionCall call = DynamicFunctionCall.createTrusted(null, fieldGet, paramExprs);
+            FStatement body = functionType.getOut() == FTuple.VOID ?
+                    new FExpressionStatement(null, call) :
+                    FReturn.createTrusted(null, List.of(call), dynamicCall);
+            dynamicCall.setBody(FBlock.from(null, body));
+            addFunction(dynamicCall);
+        }
     }
 
     public void addFieldTrusted(StaticField field) {

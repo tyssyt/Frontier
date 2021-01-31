@@ -10,7 +10,9 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.location.Location;
 import tys.frontier.util.Utils;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
@@ -30,11 +32,7 @@ public class FunctionBuilder {
     private ImmutableList<FParameter> assignees = null;
     private Map<FIdentifier, FTypeVariable> parameters = emptyMap();
 
-    private static final FIdentifier[] IDENTIFIERS = new FIdentifier[]{
-            new FIdentifier("first"),
-            new FIdentifier("second"),
-            new FIdentifier("third")
-    };
+    private static final List<FIdentifier> IDENTIFIERS = new ArrayList<>();
 
     public FunctionBuilder() {}
 
@@ -90,12 +88,18 @@ public class FunctionBuilder {
         ImmutableList.Builder<FParameter> builder = ImmutableList.builderWithExpectedSize(paramTypes.size());
         int i = 0;
         for (FType type : paramTypes) {
-            builder.add(FParameter.create(null, IDENTIFIERS[i], type, false));
+            builder.add(FParameter.create(null, getIdentifier(i), type, false));
             i++;
         }
         this.params = builder.build();
 
         return this;
+    }
+
+    private static FIdentifier getIdentifier(int i) {
+        if (IDENTIFIERS.size() == i) // identifiers are requested in ascending order, so just adding the next will suffice
+            IDENTIFIERS.add(new FIdentifier("p" + i));
+        return IDENTIFIERS.get(i);
     }
 
     public FunctionBuilder setParams(ImmutableList<FParameter> params) {

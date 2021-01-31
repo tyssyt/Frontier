@@ -3,13 +3,27 @@ package tys.frontier.code.type;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.UnmodifiableIterator;
 import tys.frontier.code.FField;
+import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.InstanceField;
+import tys.frontier.code.expression.DynamicFunctionCall;
+import tys.frontier.code.expression.FExpression;
+import tys.frontier.code.expression.FFunctionCall;
+import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.expression.cast.ImplicitTypeCast;
+import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FConstructor;
+import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.predefinedClasses.FFunctionType;
+import tys.frontier.code.predefinedClasses.FTuple;
+import tys.frontier.code.statement.FBlock;
+import tys.frontier.code.statement.FExpressionStatement;
+import tys.frontier.code.statement.FReturn;
+import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
@@ -95,6 +109,31 @@ public abstract class FClass implements FType {
         }
         getNamespace().addFunction(field.getGetter());
         getNamespace().addFunction(field.getSetter());
+
+        if (field.getType() instanceof FFunctionType) { //TODO similar code in DefaultNamespace
+            FFunctionType functionType = (FFunctionType) field.getType();
+            List<FType> params = new ArrayList<>();
+            params.add(this);
+            params.addAll(FTuple.unpackType(functionType.getIn()));
+            FBaseFunction dynamicCall = new FunctionBuilder(field.getIdentifier(), getNamespace())
+                    .setParams(params).setReturnType(functionType.getOut())
+                    .setLocation(field.getLocation()).setVisibility(field.getVisibility()).build();
+
+            //TODO @PositionForGeneratedCode
+            UnmodifiableIterator<FParameter> it = dynamicCall.getSignature().getParameters().iterator();
+            FVariableExpression thisVar = new FVariableExpression(null, it.next());
+            List<FExpression> paramExprs = new ArrayList<>(dynamicCall.getSignature().getParameters().size() - 1);
+            while (it.hasNext())
+                paramExprs.add(new FVariableExpression(null, it.next()));
+
+            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), List.of(thisVar));
+            DynamicFunctionCall call = DynamicFunctionCall.createTrusted(null, fieldGet, paramExprs);
+            FStatement body = functionType.getOut() == FTuple.VOID ?
+                    new FExpressionStatement(null, call) :
+                    FReturn.createTrusted(null, List.of(call), dynamicCall);
+            dynamicCall.setBody(FBlock.from(null, body));
+            getNamespace().addFunction(dynamicCall);
+        }
     }
 
     public void addFieldTrusted(InstanceField field) {

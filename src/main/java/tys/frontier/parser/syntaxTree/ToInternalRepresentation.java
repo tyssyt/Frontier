@@ -948,11 +948,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         try {
             FExpression object = visitExpression(ctx.expression());
             Pair<List<FExpression>, ListMultimap<FIdentifier, FExpression>> arguments = visitArguments(ctx.arguments());
-            if (object.getType() instanceof FFunctionType) {
-                if (!arguments.b.isEmpty())
-                    throw new DynamicCallWithKeywordArgs(object, arguments.b);
-                return DynamicFunctionCall.create(Position.fromCtx(ctx), object, arguments.a);
-            } else  if (object instanceof FNamespaceExpression) {
+            if (object instanceof FNamespaceExpression) {
                 namespace = ((FNamespaceExpression) object).getNamespace();
             } else {
                 namespace = object.getType().getNamespace();
@@ -962,7 +958,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                     arguments.a.add(0, object);
             }
             return functionCall(Position.fromCtx(ctx), namespace, identifier, arguments.a, arguments.b, lhsResolve);
-        } catch (FunctionNotFound | AccessForbidden | IncompatibleTypes | DynamicCallWithKeywordArgs e) {
+        } catch (FunctionNotFound | AccessForbidden e) {
             errors.add(e);
             throw new Failed();
         }
