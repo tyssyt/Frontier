@@ -217,7 +217,9 @@ public class Reachability {
     private static void handleType(FType type, Reachability reachability) {
         for (FType t : FTuple.unpackType(type))
             if (t instanceof FOptional)
-                reachability.addNamespace(((FClass) ((FOptional) t).getBaseType()).getNamespace());
+                handleType(((FOptional) t).getBaseType(), reachability);
+            else if (t instanceof CArray) //TODO this seems like it should not be here, reachability for native is nasty...
+                handleType(((CArray) t).getBaseType(), reachability);
             else
                 reachability.addNamespace(((FClass) t).getNamespace());
     }
