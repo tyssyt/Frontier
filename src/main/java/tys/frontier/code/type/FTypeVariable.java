@@ -6,6 +6,7 @@ import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 
 public class FTypeVariable implements FType {
@@ -14,14 +15,14 @@ public class FTypeVariable implements FType {
     private TypeConstraints constraints;
     private TypeVariableNamespace namespace;
 
-    public static FTypeVariable create(FIdentifier identifier, boolean fixed) {
-        return new FTypeVariable(identifier, fixed, TypeConstraints.create());
+    public static FTypeVariable create(Location location, FIdentifier identifier, boolean fixed) {
+        return new FTypeVariable(location, identifier, fixed, TypeConstraints.create());
     }
 
-    protected FTypeVariable(FIdentifier identifier, boolean fixed, TypeConstraints constraints) {
+    protected FTypeVariable(Location location, FIdentifier identifier, boolean fixed, TypeConstraints constraints) {
         this.identifier = identifier;
         this.constraints = constraints;
-        this.namespace = new TypeVariableNamespace(this);
+        this.namespace = new TypeVariableNamespace(location, this);
         if (fixed)
             constraints.setFixed();
         constraints.addVar(this);
@@ -94,11 +95,11 @@ public class FTypeVariable implements FType {
     }
 
     public FTypeVariable copy() {
-        return new FTypeVariable(identifier, isFixed(), constraints.copy());
+        return new FTypeVariable(namespace.getLocation(), identifier, isFixed(), constraints.copy());
     }
 
     public FTypeVariable copy(boolean fixed) {
-        return new FTypeVariable(identifier, fixed, constraints.copy());
+        return new FTypeVariable(namespace.getLocation(), identifier, fixed, constraints.copy());
     }
 
     @Override

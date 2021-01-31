@@ -10,7 +10,7 @@ public class DynamicCallWithKeywordArgs extends SyntaxError {
     public final ListMultimap<FIdentifier, FExpression> keywordArguments;
 
     public DynamicCallWithKeywordArgs(FExpression dynamicCall, ListMultimap<FIdentifier, FExpression> keywordArguments) {
-        super("dynamic function call with keyword arguments: " + dynamicCall + ", " + keywordArguments);
+        super(dynamicCall.getPosition(), "dynamic function call with keyword arguments: " + dynamicCall + ", " + keywordArguments);
         this.dynamicCall = dynamicCall;
         this.keywordArguments = keywordArguments;
     }

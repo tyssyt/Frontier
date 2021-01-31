@@ -101,14 +101,14 @@ public class FForEachLowering extends StatementReplacer {
     private static void buildForByIdx(Function<FExpression,FExpression> getSize, BiFunction<FExpression, FExpression,
             List<FExpression>> getElement, FForEach forEach, FFunction function, FLocalVariable container, List<FStatement> res) {
         //store the size in a local variable
-        FLocalVariable size = function.getFreshVariable(FIntN._32);
+        FLocalVariable size = function.getFreshVariable(null, FIntN._32);
         {
             FVariableExpression containerAccess = new FVariableExpression(null, container);
             res.add(FAssignment.createDecl(size, getSize.apply(containerAccess)));
         }
 
         //declare counter
-        FLocalVariable counter = forEach.getCounter().orElseGet(() -> function.getFreshVariable(FIntN._32));
+        FLocalVariable counter = forEach.getCounter().orElseGet(() -> function.getFreshVariable(null, FIntN._32));
         res.add(FAssignment.createDecl(counter, new FLiteralExpression(null, new FIntNLiteral(0))));
 
         //condition
@@ -123,7 +123,7 @@ public class FForEachLowering extends StatementReplacer {
         {
             List<FExpression> decls = new ArrayList<>(forEach.getIterators().size());
             for (FLocalVariable it : forEach.getIterators()) {
-                decls.add(new FVarDeclaration(null, it));
+                decls.add(new FVarDeclaration(it));
             }
             FVariableExpression containerAccess = new FVariableExpression(null, container);
             FVariableExpression counterAccess = new FVariableExpression(null, counter);
@@ -186,12 +186,12 @@ public class FForEachLowering extends StatementReplacer {
         for (FField field : ((FClass) forEach.getContainer().getType()).getInstanceFields().values()) {
 
             //declare iterator and field
-            FLocalVariable valVar = new FLocalVariable(iterators.get(0).getIdentifier(), field.getType());
-            FVarDeclaration valDecl = new FVarDeclaration(null, valVar);
+            FLocalVariable valVar = new FLocalVariable(iterators.get(0).getPosition(), iterators.get(0).getIdentifier(), field.getType());
+            FVarDeclaration valDecl = new FVarDeclaration(valVar);
             FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
 
-            FLocalVariable fieldVar = new FLocalVariable(iterators.get(1).getIdentifier(), FFieldType.INSTANCE);
-            FVarDeclaration fieldVarDecl = new FVarDeclaration(null, fieldVar);
+            FLocalVariable fieldVar = new FLocalVariable(iterators.get(1).getPosition(), iterators.get(1).getIdentifier(), FFieldType.INSTANCE);
+            FVarDeclaration fieldVarDecl = new FVarDeclaration(fieldVar);
 
             FNamespaceExpression typeInfo = new FNamespaceExpression(null, forEach.getContainer().getType().getNamespace());
             FFunctionCall getFields = FFunctionCall.createTrusted(null, FTypeType.fields.getGetter().getSignature(), mutableSingletonList(typeInfo));
@@ -203,8 +203,8 @@ public class FForEachLowering extends StatementReplacer {
             if (forEach.getCounter().isPresent()) {
                 //declare counter
                 FLocalVariable oldCounter = forEach.getCounter().get();
-                FLocalVariable counterVar = new FLocalVariable(oldCounter.getIdentifier(), oldCounter.getType());
-                FVarDeclaration counter = new FVarDeclaration(null, counterVar);
+                FLocalVariable counterVar = new FLocalVariable(oldCounter.getPosition(), oldCounter.getIdentifier(), oldCounter.getType());
+                FVarDeclaration counter = new FVarDeclaration(counterVar);
                 FLiteralExpression counterVal = new FLiteralExpression(null, new FIntNLiteral(i));
                 decl = FAssignment.createTrusted(null, asList(valDecl, fieldVarDecl, counter), asList(fieldGet, fieldInfo, counterVal));
                 varMap = ImmutableMap.of(iterators.get(0), valVar, iterators.get(1), fieldVar, oldCounter, counterVar);
@@ -267,7 +267,7 @@ public class FForEachLowering extends StatementReplacer {
         //make optional concrete
         FOptional containerType = (FOptional) container.getType();
         FFunctionCall containerPromote = FFunctionCall.createTrusted(null, containerType.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
-        FLocalVariable promotedContainer = new FLocalVariable(container.getIdentifier(), containerType.getBaseType());
+        FLocalVariable promotedContainer = new FLocalVariable(container.getPosition(), container.getIdentifier(), containerType.getBaseType());
         FAssignment decl = FAssignment.createDecl(promotedContainer, containerPromote);
 
         //set then
@@ -293,8 +293,8 @@ public class FForEachLowering extends StatementReplacer {
         for (FField field : ((FClass) forEach.getContainer().getType()).getInstanceFields().values()) {
 
             //declare iterator and field
-            FLocalVariable valVar = new FLocalVariable(iterator.getIdentifier(), field.getType());
-            FVarDeclaration valDecl = new FVarDeclaration(null, valVar);
+            FLocalVariable valVar = new FLocalVariable(iterator.getPosition(), iterator.getIdentifier(), field.getType());
+            FVarDeclaration valDecl = new FVarDeclaration(valVar);
             FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, container)));
 
             FAssignment decl;
@@ -302,8 +302,8 @@ public class FForEachLowering extends StatementReplacer {
             if (forEach.getCounter().isPresent()) {
                 //declare counter
                 FLocalVariable oldCounter = forEach.getCounter().get();
-                FLocalVariable counterVar = new FLocalVariable(oldCounter.getIdentifier(), oldCounter.getType());
-                FVarDeclaration counter = new FVarDeclaration(null, counterVar);
+                FLocalVariable counterVar = new FLocalVariable(oldCounter.getPosition(), oldCounter.getIdentifier(), oldCounter.getType());
+                FVarDeclaration counter = new FVarDeclaration(counterVar);
                 FLiteralExpression counterVal = new FLiteralExpression(null, new FIntNLiteral(i));
                 decl = FAssignment.createTrusted(null, asList(valDecl, counter), asList(fieldGet, counterVal));
                 varMap = ImmutableMap.of(iterator, valVar, oldCounter, counterVar);
@@ -346,7 +346,7 @@ public class FForEachLowering extends StatementReplacer {
         if (containerExpression instanceof FVariableExpression) {
             return ((FVariableExpression) containerExpression).getVariable();
         } else {
-            FLocalVariable container = function.getFreshVariable(containerExpression.getType());
+            FLocalVariable container = function.getFreshVariable(containerExpression.getPosition(), containerExpression.getType());
             res.add(FAssignment.createDecl(container, containerExpression));
             return container;
         }

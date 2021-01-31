@@ -120,7 +120,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
                     if (currentClass != null)
                         for (FType classParam : currentClass.getParametersList())
                             if (typeParameters.containsKey(classParam.getIdentifier()))
-                                throw new TwiceDefinedLocalVariable(classParam.getIdentifier());
+                                throw new TwiceDefinedLocalVariable(typeParameters.get(classParam.getIdentifier()).getNamespace().getLocation().getPoint(), classParam.getNamespace().getLocation().getPoint(), classParam.getIdentifier());
                     typeResolver = id -> Optional.ofNullable(typeParameters.get(id)).map(FTypeVariable::getNamespace).orElseGet(() -> resolveNamespace(id));
                     builder.setParameters(typeParameters);
                 } catch (TwiceDefinedLocalVariable twiceDefinedLocalVariable) {
@@ -152,7 +152,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
                 for (FrontierParser.TypedIdentifierContext c : ct.typedIdentifier()) {
                     try {
                         Pair<FIdentifier, FType> pair = ParserContextUtils.getTypedIdentifier(c, typeResolver);
-                        b.add(FParameter.create(pair.a, pair.b, false));
+                        b.add(FParameter.create(Position.fromCtx(c), pair.a, pair.b, false));
                     } catch (SyntaxError e) {
                         errors.add(e);
                     }
@@ -163,7 +163,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         if (currentClass != null && ctx.STATIC() == null) {
-            params.add(FParameter.create(FIdentifier.THIS, currentClass, false));
+            params.add(FParameter.create(Position.fromCtx(ctx), FIdentifier.THIS, currentClass, false));
         }
 
 
@@ -245,14 +245,15 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         try {
             FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveNamespace);
+            Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
             if (_static) {
-                StaticField res = new StaticField(Position.fromCtx(ctx), identifier, type, currentNamespace, visibilityModifier, ctx.expression() != null);
+                StaticField res = new StaticField(location, identifier, type, currentNamespace, visibilityModifier, ctx.expression() != null);
                 if (ctx.nameSelector() != null)
                     throw new DelegateFromStaticField(res);
                 currentNamespace.addField(res);
                 treeData.fields.put(ctx, res);
             } else {
-                InstanceField res = new InstanceField(Position.fromCtx(ctx), identifier, type, currentClass, visibilityModifier, ctx.expression() != null);
+                InstanceField res = new InstanceField(location, identifier, type, currentClass, visibilityModifier, ctx.expression() != null);
                 currentClass.addField(res);
                 treeData.fields.put(ctx, res);
 

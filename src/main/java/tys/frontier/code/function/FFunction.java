@@ -15,6 +15,7 @@ import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.StringBuilderToString;
 
 import java.util.List;
@@ -56,7 +57,7 @@ public interface FFunction extends IdentifierNameable, Typed, ControlFlowIDontKn
 
     Location getLocation();
 
-    FLocalVariable getFreshVariable(FType type);
+    FLocalVariable getFreshVariable(Position position, FType type);
 
     Map<FIdentifier, FTypeVariable> getParameters();
 

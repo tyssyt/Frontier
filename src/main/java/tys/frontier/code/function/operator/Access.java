@@ -43,7 +43,8 @@ public class Access implements Operator {
                 .setVisibility(memberOf.getNamespace().getVisibility()).setPredefined(true).setParams(asList(memberOf, keys)).setReturnType(value);
         FBaseFunction getter = builder.build();
 
-        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), value, false));
+        //TODO @PositionForGeneratedCode
+        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(null, new FIdentifier("value"), value, false));
         FBaseFunction setter = builder.setAssignees(assignees).build();
         return new Pair<>(getter, setter);
     }

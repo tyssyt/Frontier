@@ -110,7 +110,7 @@ public class Delegates {
         //replace first param to match the class delegating to replaceing the class delegating from
         ImmutableList<FParameter> params = signature.getParameters();
         ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
-        builder.add(FParameter.create(params.get(0).getIdentifier(), to, false));
+        builder.add(FParameter.create(params.get(0).getPosition(), params.get(0).getIdentifier(), to, false));
         builder.addAll(params.subList(1, params.size()));
         assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 

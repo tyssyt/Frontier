@@ -67,7 +67,7 @@ public class FAssignment extends FStatement {
     public static FAssignment createDecl(FLocalVariable variable, FExpression value) {
         try {
             ArgMapping argMapping = ArgMapping.createBasic(singletonList(value.getType()), singletonList(variable.getType()));
-            return new FAssignment(null, singletonList(new FVarDeclaration(null, variable)), mutableSingletonList(value), argMapping);
+            return new FAssignment(null, singletonList(new FVarDeclaration(variable)), mutableSingletonList(value), argMapping);
         } catch (IncompatibleTypes | UnfulfillableConstraints incompatibleTypes) {
             return Utils.cantHappen();
         }

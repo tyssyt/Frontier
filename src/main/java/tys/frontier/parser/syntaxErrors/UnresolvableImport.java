@@ -7,7 +7,7 @@ public class UnresolvableImport extends SyntaxError {
     private String moduleName;
 
     public UnresolvableImport(String moduleName, IOException cause) {
-        super(moduleName, cause);
+        super(moduleName);
         this.moduleName = moduleName;
     }
 }

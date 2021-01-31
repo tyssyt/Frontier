@@ -2,11 +2,10 @@ package tys.frontier.code.statement;
 
 import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.expression.FVariableExpression;
-import tys.frontier.parser.location.Position;
 
 public class FVarDeclaration extends FVariableExpression {
-    public FVarDeclaration(Position position, FLocalVariable variable) {
-        super(position, variable);
+    public FVarDeclaration(FLocalVariable variable) {
+        super(variable.getPosition(), variable);
     }
 
     @Override

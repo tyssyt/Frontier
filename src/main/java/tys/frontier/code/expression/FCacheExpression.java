@@ -19,8 +19,8 @@ public class FCacheExpression extends FExpression {
         this.expression = expression;
     }
 
-    public static FCacheExpression create(Position position, String name, FExpression expression) {
-        return new FCacheExpression(position, new FLocalVariable(new FIdentifier(name), expression.getType()), expression);
+    public static FCacheExpression create(String name, FExpression expression) {
+        return new FCacheExpression(expression.getPosition(), new FLocalVariable(expression.getPosition(), new FIdentifier(name), expression.getType()), expression);
     }
 
     public FLocalVariable getVariable() {

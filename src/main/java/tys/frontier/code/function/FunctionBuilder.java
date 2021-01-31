@@ -80,7 +80,7 @@ public class FunctionBuilder {
     }
 
     public FunctionBuilder setParams(FType paramType) {
-        this.params = ImmutableList.of(FParameter.create(FIdentifier.THIS, paramType, false));
+        this.params = ImmutableList.of(FParameter.create(null, FIdentifier.THIS, paramType, false));
         return this;
     }
     public FunctionBuilder setParams(FType... paramTypes) {
@@ -90,7 +90,7 @@ public class FunctionBuilder {
         ImmutableList.Builder<FParameter> builder = ImmutableList.builderWithExpectedSize(paramTypes.size());
         int i = 0;
         for (FType type : paramTypes) {
-            builder.add(FParameter.create(IDENTIFIERS[i], type, false));
+            builder.add(FParameter.create(null, IDENTIFIERS[i], type, false));
             i++;
         }
         this.params = builder.build();

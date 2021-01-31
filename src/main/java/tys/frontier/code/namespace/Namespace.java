@@ -7,6 +7,7 @@ import tys.frontier.code.identifier.IdentifierNameable;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
 
@@ -15,6 +16,8 @@ import java.util.List;
 public interface Namespace extends IdentifierNameable {
 
     FType getType();
+
+    Location getLocation();
 
     FIdentifier nextReturnTypeIdentifier();
 
@@ -27,7 +30,7 @@ public interface Namespace extends IdentifierNameable {
         try {
             TypeConstraint.addAll(res.constraints);
         } catch (UnfulfillableConstraints unfulfillableConstraints) {
-            throw new FunctionNotFound(identifier, positionalArgs, keywordArgs);
+            throw new FunctionNotFound(getLocation().getPoint(), identifier, positionalArgs, keywordArgs);
         }
         return res;
     }

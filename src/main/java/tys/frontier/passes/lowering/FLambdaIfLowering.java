@@ -50,7 +50,7 @@ public class FLambdaIfLowering extends StatementReplacer {
             if (Conditions.isOptionalExistAtom(atom)) {
                 FExpression castedExpression = ((FImplicitCast) atom).getCastedExpression();
                 if (!(castedExpression instanceof FVariableExpression)) {
-                    FCacheExpression cache = FCacheExpression.create(castedExpression.getPosition(), generateCacheName(varIt.next().getIdentifier()), castedExpression);
+                    FCacheExpression cache = FCacheExpression.create(generateCacheName(varIt.next().getIdentifier()), castedExpression);
                     castedCacheVars.add(FFunctionCall.createTrusted(null, ((FOptional) cache.getType()).getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, cache.getVariable()))));
                     newAtoms.add(cache);
                     continue;
@@ -64,7 +64,7 @@ public class FLambdaIfLowering extends StatementReplacer {
         //build cacheVar to var assignment
         List<FExpression> varDecls = new ArrayList<>(variables.size());
         for (FLocalVariable variable : variables)
-            varDecls.add(new FVarDeclaration(null, variable));
+            varDecls.add(new FVarDeclaration(variable));
         FAssignment assignment = FAssignment.createTrusted(null, varDecls, castedCacheVars);
 
         List<FStatement> newThen = new ArrayList<>(then.size() + 1);

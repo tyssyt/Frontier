@@ -52,7 +52,7 @@ public class DynamicFunctionCall extends FExpression {
     private void checkTypes() throws IncompatibleTypes {
         if (!(function.getType() instanceof FFunctionType)) {
             FType argType = FTuple.fromExpressionList(arguments);
-            throw new IncompatibleTypes(FFunctionType.from(argType, FTuple.VOID), function.getType());
+            throw new IncompatibleTypes(getPosition(), FFunctionType.from(argType, FTuple.VOID), function.getType());
         }
 
         FType type = ((FFunctionType) function.getType()).getIn();
@@ -60,7 +60,7 @@ public class DynamicFunctionCall extends FExpression {
 
         if (arguments.size() != params.size()) { //TODO consider default args
             FType argType = FTuple.fromExpressionList(arguments);
-            throw new IncompatibleTypes(FFunctionType.from(argType, FTuple.VOID), function.getType());
+            throw new IncompatibleTypes(getPosition(), FFunctionType.from(argType, FTuple.VOID), function.getType());
         }
         for (int i = 0; i < arguments.size(); i++) {
             arguments.set(i, arguments.get(i).typeCheck(params.get(i)));

@@ -7,6 +7,7 @@ import tys.frontier.code.module.Include;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.InvalidPath;
 import tys.frontier.parser.syntaxTree.ParserContextUtils;
 import tys.frontier.parser.syntaxTree.SyntaxTreeData;
@@ -125,7 +126,7 @@ public class ParsedFile {
                     else if (path.charAt(starIndex + 1) == '.')
                         fileExtension = path.substring(starIndex + 2);
                     else
-                        throw new InvalidPath(path);
+                        throw new InvalidPath(Position.fromCtx(ctx), path);
 
                     for (Path p : pathIterable)
                         if (!isDirectory(p) && (fileExtension == null || fileExtension.equals(getFileExtension(p))))

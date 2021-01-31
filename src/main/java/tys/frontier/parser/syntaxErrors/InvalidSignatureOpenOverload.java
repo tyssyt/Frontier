@@ -8,7 +8,7 @@ public class InvalidSignatureOpenOverload extends SyntaxError {
     public final FFunction openRemote;
 
     public InvalidSignatureOpenOverload(FFunction _function, FFunction openRemote) {
-        super("Invalid remote function declaration: " + _function + ", does not match remote function: " + openRemote);
+        super(_function.getLocation().getPoint(), openRemote.getLocation().getPoint(), "Invalid remote function declaration: " + _function + ", does not match remote function: " + openRemote);
         this._function = _function;
         this.openRemote = openRemote;
     }

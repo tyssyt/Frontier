@@ -9,6 +9,7 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
@@ -35,7 +36,7 @@ public class FieldAccessor implements FFunction {
     }
 
     public static Pair<FieldAccessor, FieldAccessor> createAccessors(FField field, ImmutableList<FParameter> parameters) {
-        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(new FIdentifier("value"), field.getType(), false));
+        ImmutableList<FParameter> assignees = ImmutableList.of(FParameter.create(null, new FIdentifier("value"), field.getType(), false));
         return new Pair<>(
                 new FieldAccessor(field, parameters, null, field.getType()), //getter
                 new FieldAccessor(field, parameters, assignees, FTuple.VOID) //setter
@@ -44,7 +45,7 @@ public class FieldAccessor implements FFunction {
 
     @Override
     public Location getLocation() {
-        return new Location(field.getNamespace().getLocation().getFile(), field.getPosition());
+        return field.getLocation();
     }
 
     public FField getField() {
@@ -121,7 +122,7 @@ public class FieldAccessor implements FFunction {
     }
 
     @Override
-    public FLocalVariable getFreshVariable(FType type) {
+    public FLocalVariable getFreshVariable(Position position, FType type) {
         return Utils.cantHappen();
     }
 

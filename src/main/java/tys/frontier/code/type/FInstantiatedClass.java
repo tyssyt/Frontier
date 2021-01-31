@@ -48,14 +48,14 @@ public class FInstantiatedClass extends FForwardingClass {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add instance fields
         for (InstanceField baseField : proxy.getInstanceFields().values()) {
-            InstanceField instantiatedField = new InstanceField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),this, baseField.getVisibility(), baseField.hasAssignment());
+            InstanceField instantiatedField = new InstanceField(baseField.getLocation(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),this, baseField.getVisibility(), baseField.hasAssignment());
             this.addFieldTrusted(instantiatedField);
             baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
             baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());
         }
         //add static fields
         for (StaticField baseField : proxy.getNamespace().getStaticFields().values()) {
-            StaticField instantiatedField = new StaticField(baseField.getPosition(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()), newNamespace, baseField.getVisibility(), baseField.hasAssignment());
+            StaticField instantiatedField = new StaticField(baseField.getLocation(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()), newNamespace, baseField.getVisibility(), baseField.hasAssignment());
             newNamespace.addFieldTrusted(instantiatedField);
             baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
             baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());

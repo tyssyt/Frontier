@@ -5,15 +5,15 @@ import tys.frontier.code.function.FieldAccessor;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
-import tys.frontier.parser.location.Position;
+import tys.frontier.parser.location.Location;
 import tys.frontier.util.Pair;
 
 public class StaticField extends FField {
 
     private DefaultNamespace memberOf;
 
-    public StaticField(Position position, FIdentifier identifier, FType type, DefaultNamespace memberOf, FVisibilityModifier visibility, boolean hasAssignment) {
-        super(position, identifier, type, visibility, hasAssignment);
+    public StaticField(Location location, FIdentifier identifier, FType type, DefaultNamespace memberOf, FVisibilityModifier visibility, boolean hasAssignment) {
+        super(location, identifier, type, visibility, hasAssignment);
         this.memberOf = memberOf;
         Pair<FieldAccessor, FieldAccessor> accessors = FieldAccessor.createAccessors(this, ImmutableList.of());
         this.getter = accessors.a;

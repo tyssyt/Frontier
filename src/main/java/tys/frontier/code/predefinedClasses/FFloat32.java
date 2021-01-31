@@ -67,7 +67,7 @@ public class FFloat32 extends FFloat {
             FBaseFunction splitRepresentation = builder.setIdentifier(SPLIT_REPRESENTATION).setReturnType(returnType).build();
             namespace.addFunctionTrusted(splitRepresentation);
 
-            FLocalVariable bits = new FLocalVariable(new FIdentifier("bits"), int32);
+            FLocalVariable bits = new FLocalVariable(null, new FIdentifier("bits"), int32);
             FParameter firstParam = splitRepresentation.getSignature().getParameters().get(0);
             List<FExpression> arguments = mutableSingletonList(new FVariableExpression(null, firstParam));
             FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.createTrusted(null, rawBits.getSignature(), arguments));

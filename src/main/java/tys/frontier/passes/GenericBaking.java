@@ -196,11 +196,11 @@ public class GenericBaking implements FClassVisitor {
             //TODO for tuples & "normal" objects, we re-bake the body multiple times in the exit, so in theory the standard visit between enter and exit could be skipped
             //this code would need to be done always, but other cases may only appear in NO_ORIGINAL mode
             for (FLocalVariable old : forEach.getIterators()) {
-                FLocalVariable iterator = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+                FLocalVariable iterator = new FLocalVariable(old.getPosition(), old.getIdentifier(), typeInstantiation.getType(old.getType()));
                 varMap.put(old, iterator);
             }
             forEach.getCounter().ifPresent(old -> {
-                FLocalVariable counter = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+                FLocalVariable counter = new FLocalVariable(old.getPosition(), old.getIdentifier(), typeInstantiation.getType(old.getType()));
                 varMap.put(old, counter);
             });
         }
@@ -234,13 +234,13 @@ public class GenericBaking implements FClassVisitor {
         assert variableMode == NO_ORIGINAL;
         List<FLocalVariable> iterators = new ArrayList<>(forEach.getIterators().size());
         for (FLocalVariable old : forEach.getIterators()) {
-            varMap.put(old, new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType())));
+            varMap.put(old, new FLocalVariable(old.getPosition(), old.getIdentifier(), typeInstantiation.getType(old.getType())));
         }
 
         FLocalVariable counter = null;
         if (forEach.getCounter().isPresent()) {
             FLocalVariable old = forEach.getCounter().get();
-            counter = new FLocalVariable(old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's int32
+            counter = new FLocalVariable(old.getPosition(), old.getIdentifier(), old.getType()); //no need for typeInstantiation, it's int32
             varMap.put(old, counter);
         }
 
@@ -325,11 +325,11 @@ public class GenericBaking implements FClassVisitor {
             FLocalVariable old = expression.getVariable();
             switch (variableMode) {
                 case USE_ORIGINAL:
-                    return new FVarDeclaration(expression.getPosition(), old);
+                    return new FVarDeclaration(old);
                 case FALLBACK_ORIGINAL: case NO_ORIGINAL:
-                    FLocalVariable _new = new FLocalVariable(old.getIdentifier(), typeInstantiation.getType(old.getType()));
+                    FLocalVariable _new = new FLocalVariable(old.getPosition(), old.getIdentifier(), typeInstantiation.getType(old.getType()));
                     varMap.put(old, _new);
-                    return new FVarDeclaration(expression.getPosition(), _new);
+                    return new FVarDeclaration(_new);
                 default:
                     return Utils.cantHappen();
             }

@@ -12,7 +12,7 @@ public class SignatureCollision extends SyntaxError {
     public final Signature b;
 
     public SignatureCollision(Signature a, Signature b) {
-        super("between " + a + " and " + b);
+        super(a.getFunction().getLocation().getPoint(), b.getFunction().getLocation().getPoint(), "between " + a + " and " + b);
         this.a = a;
         this.b = b;
     }

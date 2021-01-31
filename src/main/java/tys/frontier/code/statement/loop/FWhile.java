@@ -47,7 +47,7 @@ public class FWhile extends FLoop {
 
     private void checkTypes() throws IncompatibleTypes {
         if (condition.getType() != FBool.INSTANCE)
-            throw new IncompatibleTypes(FBool.INSTANCE, condition.getType());
+            throw new IncompatibleTypes(getPosition(), FBool.INSTANCE, condition.getType());
     }
 
     @Override

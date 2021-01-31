@@ -6,7 +6,7 @@ import tys.frontier.code.type.FTypeVariable;
 
 public class TupleFor implements ForImpl {
 
-    private FType elementType = FTypeVariable.create(new FIdentifier("!ElementTypeTupleFor"), false);
+    private FType elementType = FTypeVariable.create(null, new FIdentifier("!ElementTypeTupleFor"), false);
 
     @Override
     public FType getElementType() {

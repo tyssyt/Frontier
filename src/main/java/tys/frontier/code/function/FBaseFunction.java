@@ -13,6 +13,7 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.location.Location;
+import tys.frontier.parser.location.Position;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
 
@@ -127,11 +128,11 @@ public class FBaseFunction implements FFunction {
 
     private NameGenerator freshVariableNames = new NameGenerator("?", "");
     @Override
-    public FLocalVariable getFreshVariable(FType type) {
+    public FLocalVariable getFreshVariable(Position position, FType type) {
         String name = freshVariableNames.next();
         FIdentifier identifier = new FIdentifier(name) ;
         //TODO maybe be tryhards and try to find good names? like using the type as prefix?
-        return new FLocalVariable(identifier, type);
+        return new FLocalVariable(position, identifier, type);
     }
 
 

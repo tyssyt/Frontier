@@ -7,7 +7,7 @@ public class DelegateFromStaticField extends SyntaxError {
     public final StaticField delegatingField;
 
     public DelegateFromStaticField(StaticField delegatingField) {
-        super("Field " + delegatingField.getIdentifier() + " is static and delegating");
+        super(delegatingField.getLocation().getPoint(), "Field " + delegatingField.getIdentifier() + " is static and delegating");
         this.delegatingField = delegatingField;
     }
 }

@@ -34,7 +34,7 @@ public class OptionalNamespace extends DefaultNamespace {
         Namespace baseNamespace = fOptional.getBaseType().getNamespace();
         FOptionalIdentifier identifier = new FOptionalIdentifier(baseNamespace.getIdentifier());
         if (baseNamespace instanceof DefaultNamespace)
-            return new OptionalNamespace(((DefaultNamespace) baseNamespace).getLocation(), fOptional, identifier, ((DefaultNamespace) baseNamespace).getVisibility(), baseNamespace);
+            return new OptionalNamespace(baseNamespace.getLocation(), fOptional, identifier, ((DefaultNamespace) baseNamespace).getVisibility(), baseNamespace);
         else
             return new OptionalNamespace(null, fOptional, identifier, FVisibilityModifier.EXPORT, baseNamespace); //TODO what visibility for non Default namespaces?
     }
@@ -78,7 +78,7 @@ public class OptionalNamespace extends DefaultNamespace {
         ImmutableList<FParameter> params = sig.getParameters();
         if (original.isInstance()) {
             ImmutableList.Builder<FParameter> b = ImmutableList.builder();
-            b.add(FParameter.create(params.get(0).getIdentifier(), getType(), false));
+            b.add(FParameter.create(params.get(0).getPosition(), params.get(0).getIdentifier(), getType(), false));
             b.addAll(params.subList(1, params.size()));
             params = b.build();
         }

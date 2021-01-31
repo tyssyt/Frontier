@@ -79,7 +79,8 @@ public class FArray extends FInstantiatedClass {
             For this to happen, the parser needs to be in an early enough stage, such that the "prepare" step of
             instantiated functions is NOT immediately called. (this usually should be the case but is hard to enforce)
          */
-        static final FBaseArray F_INSTANCE = new FBaseArray(FTypeVariable.create(new FIdentifier("baseType"), true));
+        //TODO @PositionForGeneratedCode
+        static final FBaseArray F_INSTANCE = new FBaseArray(FTypeVariable.create(null, new FIdentifier("baseType"), true));
         static final CArray.CBaseArray C_INSTANCE = new CArray.CBaseArray(F_INSTANCE);
 
         private Pair<FFunction, FFunction> access;
@@ -109,12 +110,13 @@ public class FArray extends FInstantiatedClass {
             namespace.addFunctionTrusted(builder.setParams(this).setReturnType(cArray).build());
 
             builder.setIdentifier(COPY);
+            //TODO @PositionForGeneratedCode
             ImmutableList<FParameter> params = ImmutableList.of(
-                    FParameter.create(new FIdentifier("source"), this, false),
-                    FParameter.create(new FIdentifier("target"), this, false),
-                    FParameter.create(new FIdentifier("sourceOffset"), FIntN._32, true),
-                    FParameter.create(new FIdentifier("targetOffset"), FIntN._32, true),
-                    FParameter.create(new FIdentifier("length"), FIntN._32, true)
+                    FParameter.create(null, new FIdentifier("source"), this, false),
+                    FParameter.create(null, new FIdentifier("target"), this, false),
+                    FParameter.create(null, new FIdentifier("sourceOffset"), FIntN._32, true),
+                    FParameter.create(null, new FIdentifier("targetOffset"), FIntN._32, true),
+                    FParameter.create(null, new FIdentifier("length"), FIntN._32, true)
             );
             params.get(2).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());
             params.get(3).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());

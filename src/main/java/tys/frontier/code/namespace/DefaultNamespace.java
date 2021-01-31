@@ -69,6 +69,7 @@ public class DefaultNamespace implements Namespace {
         return fClass;
     }
 
+    @Override
     public Location getLocation() {
         return location;
     }

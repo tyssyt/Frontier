@@ -7,7 +7,7 @@ public class NonAssignableExpression extends SyntaxError {
     public final FExpression expression;
 
     public NonAssignableExpression(FExpression expression) {
-        super(expression + "");
+        super(expression.getPosition(), expression + "");
         this.expression = expression;
     }
 }

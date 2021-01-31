@@ -42,12 +42,12 @@ public class FOptElse extends FExpression {
             FTypeVariable var = (FTypeVariable) optType;
             FClass opt = FOptional.from(elze.getType());
             if (!var.tryAddConstraint(new ImplicitCastable(this, opt, Variance.Invariant)))
-                throw new IncompatibleTypes(var, opt);
+                throw new IncompatibleTypes(getPosition(), var, opt);
             return;
         }
 
         if (!FOptional.canBeTreatedAsOptional(optType)) {
-            throw new IncompatibleTypes(optType, FOptional.from(optType));
+            throw new IncompatibleTypes(getPosition(), optType, FOptional.from(optType));
         }
         elze = elze.typeCheck(optType instanceof FOptional ? ((FOptional) optType).getBaseType() : optType);
     }

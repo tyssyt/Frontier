@@ -9,7 +9,7 @@ import tys.frontier.code.type.FTypeVariable;
 public class PrimitiveFor implements ForImpl {
 
     private FType elementType = FTuple.from(
-            FTypeVariable.create(new FIdentifier("!ElementTypePrimitiveFor"), true),
+            FTypeVariable.create(null, new FIdentifier("!ElementTypePrimitiveFor"), true),
             FFieldType.INSTANCE);
 
     @Override

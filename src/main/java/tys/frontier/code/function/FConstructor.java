@@ -61,15 +61,15 @@ public class FConstructor extends FBaseFunction {
         return true;
     }
 
+    //TODO @PositionForGeneratedCode
     private static ImmutableList<FParameter> getParameters(FClass fClass) {
         ImmutableList.Builder<FParameter> arguments = ImmutableList.builder();
 
         for (FField field : fClass.getInstanceFields().values()) {
             assert field.getAssignment().isEmpty();
             boolean canBeTreatedAsOptional = FOptional.canBeTreatedAsOptional(field.getType());
-            FParameter parameter = FParameter.create(field.getIdentifier(), field.getType(), canBeTreatedAsOptional || field.hasAssignment());
+            FParameter parameter = FParameter.create(null, field.getIdentifier(), field.getType(), canBeTreatedAsOptional || field.hasAssignment());
             if (!field.hasAssignment() && canBeTreatedAsOptional)
-                //TODO @PositionForGeneratedCode
                 parameter.setDefaultValueTrusted(new FLiteralExpression(null, new FNull(parameter.getType())), emptySet());
             arguments.add(parameter);
         }
@@ -80,7 +80,7 @@ public class FConstructor extends FBaseFunction {
     //TODO @PositionForGeneratedCode
     private void generateBody() {
         DefaultNamespace memberOf = getMemberOf();
-        FLocalVariable _this = new FLocalVariable(FIdentifier.THIS, memberOf.getType());
+        FLocalVariable _this = new FLocalVariable(null, FIdentifier.THIS, memberOf.getType());
 
         FFunctionCall functionCall = FFunctionCall.createTrusted(null, Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
         FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);

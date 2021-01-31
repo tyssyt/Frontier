@@ -36,7 +36,7 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         FExpression res = create(position, targetType, castedExpression, variance, constraints);
         for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
-                throw new IncompatibleTypes(targetType, castedExpression.getType());
+                throw new IncompatibleTypes(position, targetType, castedExpression.getType());
         }
         return res;
     }

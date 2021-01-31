@@ -60,8 +60,8 @@ public class OptionalInformationForIf {
         for (FLocalVariable promoteable : promotableVars) {
             assert promoteable.getType() instanceof FOptional;
             FOptional opt = (FOptional) promoteable.getType();
-            FLocalVariable promotedVar = new FLocalVariable(promoteable.getIdentifier(), opt.getBaseType());
-            lhs.add(new FVarDeclaration(null, promotedVar));
+            FLocalVariable promotedVar = new FLocalVariable(promoteable.getPosition(), promoteable.getIdentifier(), opt.getBaseType());
+            lhs.add(new FVarDeclaration(promotedVar));
             promote.add(FFunctionCall.createTrusted(null, opt.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, promoteable))));
             variableScope.put(promotedVar.getIdentifier(), promotedVar); //this should override the non promoted declaration
         }

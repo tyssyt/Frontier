@@ -3,6 +3,7 @@ package tys.frontier.code;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.type.FType;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
 
@@ -14,13 +15,13 @@ public class FParameter extends FLocalVariable {
     private FExpression defaultValue;
     private Set<FParameter> defaultValueDependencies;
 
-    private FParameter(FIdentifier identifier, FType type, boolean hasDefaultValue) {
-        super(identifier, type);
+    private FParameter(Position position, FIdentifier identifier, FType type, boolean hasDefaultValue) {
+        super(position, identifier, type);
         this.hasDefaultValue = hasDefaultValue;
     }
 
-    public static FParameter create(FIdentifier identifier, FType type, boolean hasDefaultValue) {
-        return new FParameter(identifier, type, hasDefaultValue);
+    public static FParameter create(Position position, FIdentifier identifier, FType type, boolean hasDefaultValue) {
+        return new FParameter(position, identifier, type, hasDefaultValue);
     }
 
     public int getIndex() {

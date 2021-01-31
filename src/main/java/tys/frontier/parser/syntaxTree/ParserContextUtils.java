@@ -23,6 +23,7 @@ import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
+import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
@@ -41,14 +42,15 @@ public final class ParserContextUtils {
         List<TypeParamerContext> nodes = ctx.typeParamer();
         List<FTypeVariable> vars = new ArrayList<>(nodes.size());
         List<Variance> variances = new ArrayList<>(nodes.size());
-        Set<FIdentifier> seem = new HashSet<>();
+        Map<FIdentifier, TypeParamerContext> seen = new HashMap<>();
         for (TypeParamerContext c : nodes) {
             FIdentifier id = new FIdentifier(c.IDENTIFIER().getText());
-            if (!seem.add(id))
-                throw new TwiceDefinedLocalVariable(id);
+            TypeParamerContext old = seen.put(id, c);
+            if (old != null)
+                throw new TwiceDefinedLocalVariable(Position.fromCtx(c), Position.fromCtx(old), id);
 
             boolean fixed = c.STAR() == null;
-            vars.add(FTypeVariable.create(id, fixed));
+            vars.add(FTypeVariable.create(null, id, fixed)); //TODO get file from somewhere
             Variance variance;
             if(c.IN() != null)
                 variance = Variance.Contravariant;
@@ -89,7 +91,7 @@ public final class ParserContextUtils {
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         FTypeVariable typeVariable = params.get(identifier);
         if (typeVariable == null)
-            throw new UndeclaredVariable(identifier);
+            throw new UndeclaredVariable(Position.fromCtx(ctx), identifier);
 
         TypeConstraints constraints = TypeConstraints.create();
         constraints.getEquivalenceGroup().add(typeVariable);
@@ -127,10 +129,10 @@ public final class ParserContextUtils {
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         Namespace namespace = possibleNamespaces.apply(identifier);
         if (namespace==null)
-            throw new TypeNotFound(identifier);
+            throw new TypeNotFound(Position.fromCtx(ctx), identifier);
         FType base = namespace.getType();
         if (base == null)
-            throw new NamespaceWithoutType(namespace);
+            throw new NamespaceWithoutType(Position.fromCtx(ctx), namespace);
 
         //handle Type Parameters
         List<FType> parameters = new ArrayList<>();
@@ -140,7 +142,7 @@ public final class ParserContextUtils {
         if (base instanceof FClass)
             return ((FClass) base).getInstantiation(parameters);
         else if (parameters.size() != 0)
-            throw new ParameterizedTypeVariable(null); //TODO
+            throw new ParameterizedTypeVariable((FTypeVariable) base);
         else
             return base;
     }
@@ -217,12 +219,12 @@ public final class ParserContextUtils {
         boolean hasDefaultValue = ctx.expression() != null;
         Pair<FIdentifier, FType> pair = getTypedIdentifier(ctx.typedIdentifier(), possibleNamespaces);
         if (!hasDefaultValue && FOptional.canBeTreatedAsOptional(pair.b)) {
-            FParameter res = FParameter.create(pair.a, pair.b, true);
+            FParameter res = FParameter.create(Position.fromCtx(ctx), pair.a, pair.b, true);
             //TODO @PositionForGeneratedCode
             res.setDefaultValueTrusted(new FLiteralExpression(null, new FNull(pair.b)), Set.of());
             return res;
         }
-        return FParameter.create(pair.a, pair.b, hasDefaultValue);
+        return FParameter.create(Position.fromCtx(ctx), pair.a, pair.b, hasDefaultValue);
     }
 
     public static Pair<FIdentifier, FType> getTypedIdentifier (FrontierParser.TypedIdentifierContext ctx, Function<FIdentifier, Namespace> possibleNamespaces)

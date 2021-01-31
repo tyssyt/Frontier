@@ -28,7 +28,7 @@ public class WithInstantiatedSignature extends ForwardingFunction {
     }
 
     private FParameter createParam(FParameter old) {
-        return FParameter.create(old.getIdentifier(), instantiation.getType(old.getType()), old.hasDefaultValue());
+        return FParameter.create(old.getPosition(), old.getIdentifier(), instantiation.getType(old.getType()), old.hasDefaultValue());
     }
 
     @Override

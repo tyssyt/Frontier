@@ -67,7 +67,7 @@ public class Position {
 
     @Override
     public String toString() {
-        return "Point{" +
+        return "Position{" +
                 "lineFrom=" + lineFrom +
                 ", lineTo=" + lineTo +
                 ", columnFrom=" + columnFrom +

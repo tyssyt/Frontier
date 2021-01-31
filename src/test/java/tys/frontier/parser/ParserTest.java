@@ -6,7 +6,6 @@ import org.junit.Test;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.code.type.FClass;
 import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
 import tys.frontier.logging.StdOutLogger;
@@ -71,7 +70,7 @@ public class ParserTest {
         SyntaxError e = parseSyntaxError("ClassIdentifierCollision.front");
         assertEquals(IdentifierCollision.class, e.getClass());
         IdentifierCollision c = ((IdentifierCollision) e);
-        assertTrue(c.a instanceof FClass);
+        assertTrue(c.a instanceof DefaultNamespace);
         assertTrue(c.b instanceof DefaultNamespace);
     }
     @Test

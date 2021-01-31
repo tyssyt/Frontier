@@ -16,6 +16,7 @@ import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.HasSelfCall;
 import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
@@ -31,7 +32,10 @@ public class TypeVariableNamespace implements Namespace {
     private FTypeVariable typeVariable;
     private NameGenerator returnTypeNames;
 
-    public TypeVariableNamespace(FTypeVariable typeVariable) {
+    private Location location;
+
+    public TypeVariableNamespace(Location location, FTypeVariable typeVariable) {
+        this.location = location;
         this.typeVariable = typeVariable;
         this.returnTypeNames = new NameGenerator("?" + getIdentifier().name + ".ret.", "");
     }
@@ -44,6 +48,11 @@ public class TypeVariableNamespace implements Namespace {
     @Override
     public FTypeVariable getType() {
         return typeVariable;
+    }
+
+    @Override
+    public Location getLocation() {
+        return location;
     }
 
     @Override
@@ -91,10 +100,10 @@ public class TypeVariableNamespace implements Namespace {
         ImmutableList.Builder<FParameter> paramsBuilder = ImmutableList.builder();
         for (FType arg : positionalArgs) {
             FIdentifier id = new FIdentifier(paramNames.next());
-            paramsBuilder.add(FParameter.create(id, arg, false));
+            paramsBuilder.add(FParameter.create(null, id, arg, false));
         }
         for (Map.Entry<FIdentifier, List<FType>> entry : Multimaps.asMap(keywordArgs).entrySet()) {
-            paramsBuilder.add(FParameter.create(entry.getKey(), FTuple.from(entry.getValue()), false));
+            paramsBuilder.add(FParameter.create(null, entry.getKey(), FTuple.from(entry.getValue()), false));
         }
         ImmutableList<FParameter> params = paramsBuilder.build();
         //TODO what should the visibility be? I'm not sure if we check visibility when baking, so this might cause problems
@@ -125,7 +134,7 @@ public class TypeVariableNamespace implements Namespace {
         private boolean lhsResolve;
 
         public ReturnTypeOf(FIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, boolean lhsResolve) {
-            super(identifier, fixed, TypeConstraints.create());
+            super(null, identifier, fixed, TypeConstraints.create()); //TODO is there anything reasonable I can use as location?
             this.positionalArgs = positionalArgs;
             this.keywordArgs = keywordArgs;
             this.lhsResolve = lhsResolve;
@@ -157,7 +166,7 @@ public class TypeVariableNamespace implements Namespace {
         private FTypeVariable base;
 
         public IterationElementType(FTypeVariable base, boolean fixed) {
-            super(new FIdentifier("?" + base.getIdentifier().name + ".iter"), fixed, TypeConstraints.create());
+            super(null, new FIdentifier("?" + base.getIdentifier().name + ".iter"), fixed, TypeConstraints.create());
             this.base = base;
         }
 

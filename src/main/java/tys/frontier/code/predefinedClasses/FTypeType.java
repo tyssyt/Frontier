@@ -35,6 +35,7 @@ public class FTypeType extends FBaseClass {
     public static final InstanceField name;
     public static final InstanceField fields;
 
+    //TODO @PositionForGeneratedCode
     static {
         DefaultNamespace namespace = INSTANCE.getNamespace();
 
@@ -59,7 +60,7 @@ public class FTypeType extends FBaseClass {
 
         //function typeOf
         {
-            FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
+            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"), true);
             typeOf = new FunctionBuilder(typeof_ID, namespace)
                     .setParams(t).setReturnType(FTypeType.INSTANCE).setParameters(t).build();
             typeOf.setBody(FBlock.from(FReturn.createTrusted(null, new FNamespaceExpression(null, t.getNamespace()), typeOf)));
@@ -68,7 +69,7 @@ public class FTypeType extends FBaseClass {
 
         //function fieldsOf
         {
-            FTypeVariable t = FTypeVariable.create(new FIdentifier("T"), true);
+            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"), true);
 
             //Dummy return Type that has nothing but a forEach Impl TODO change when we have a simpler mechanism to return an iterable
             FBaseClass dummy = new FBaseClass(null, new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, null);

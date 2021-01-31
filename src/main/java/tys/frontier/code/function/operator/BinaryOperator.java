@@ -61,9 +61,9 @@ public enum BinaryOperator implements Operator {
         binOpNamespace = new DefaultNamespace(null, new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, new NativeDecl(null), null);
         for (BinaryOperator binaryOperator : parserTokenMap.values()) {
             //add open function to binOp namespace
-            FTypeVariable p1 = FTypeVariable.create(p1Id, true);
-            FTypeVariable p2 = FTypeVariable.create(p2Id, true);
-            FTypeVariable r = FTypeVariable.create(rId, true);
+            FTypeVariable p1 = FTypeVariable.create(null, p1Id, true);
+            FTypeVariable p2 = FTypeVariable.create(null, p2Id, true);
+            FTypeVariable r = FTypeVariable.create(null, rId, true);
 
             FBaseFunction function = new FunctionBuilder(binaryOperator.identifier, binOpNamespace)
                     .setParams(p1, p2).setReturnType(r).setParameters(p1, p2, r).build();

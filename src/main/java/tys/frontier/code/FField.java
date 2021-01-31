@@ -6,7 +6,7 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ClassVisitor;
-import tys.frontier.parser.location.Position;
+import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.StringBuilderToString;
 import tys.frontier.util.Utils;
@@ -17,19 +17,23 @@ public abstract class FField extends FVariable implements StringBuilderToString 
     private FVisibilityModifier visibility;
     private boolean hasAssignment;
     private FExpression assignment;
-    private Position position;
+    private Location location;
 
     protected FieldAccessor getter;
     protected FieldAccessor setter;
 
-    public FField(Position position, FIdentifier identifier, FType type, FVisibilityModifier visibility, boolean hasAssignment) {
+    public FField(Location location, FIdentifier identifier, FType type, FVisibilityModifier visibility, boolean hasAssignment) {
         super(identifier, type);
-        this.position = position;
+        this.location = location;
         this.visibility = visibility;
         this.hasAssignment = hasAssignment;
     }
 
     abstract public DefaultNamespace getNamespace();
+
+    public Location getLocation() {
+        return location;
+    }
 
     public FieldAccessor getGetter() {
         return getter;
@@ -45,10 +49,6 @@ public abstract class FField extends FVariable implements StringBuilderToString 
 
     public boolean hasAssignment() {
         return hasAssignment;
-    }
-
-    public Position getPosition() {
-        return position;
     }
 
     public void setAssignment(FExpression assignment) throws IncompatibleTypes {

@@ -105,7 +105,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return functionContextStack.getLast();
     }
 
-    private Namespace findNamespace(FIdentifier identifier, boolean searchLocal) throws TypeNotFound {
+    private Namespace findNamespace(Position position, FIdentifier identifier, boolean searchLocal) throws TypeNotFound {
         //check type parameters of current function
         if (!functionContextStack.isEmpty() && currentFunction().function != null) {
             FType res = currentFunction().function.getParameters().get(identifier);
@@ -132,15 +132,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 } else
                     return Utils.NYI("resolving to a Type that is stored in a field of Type Type");
             } catch (UndeclaredVariable undeclaredVariable) {
-                throw new TypeNotFound(identifier);
+                throw new TypeNotFound(position, identifier);
             }
         }
-        throw new TypeNotFound(identifier);
+        throw new TypeNotFound(position, identifier);
     }
 
     private Namespace findNamespaceNoThrow(FIdentifier identifier) {
         try {
-            return findNamespace(identifier, true);
+            return findNamespace(null, identifier, true);
         } catch (TypeNotFound ignored) {
             return null;
         }
@@ -189,12 +189,12 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             FExpression exp1 = visitExpression(ctx.expression(0));
             exp1 = exp1.typeCheck(FFunctionType.from(
                     FTuple.from(currenClass, FIntN._32),
-                    FTypeVariable.create(new FIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
+                    FTypeVariable.create(null, new FIdentifier("ElementType"), false))); //identifier doesn't matter, just picked one that existed...
             exp1 = instantiateFunctionAddresses(exp1);
             if (exp1 instanceof FImplicitCast)
                 exp1 = ((FImplicitCast) exp1).getCastedExpression();
             if (!(exp1 instanceof FFunctionAddress))
-                throw new InvalidForDeclaration("for declaration needs Lambda or Function Address", exp1);
+                throw new InvalidForDeclaration(Position.fromCtx(ctx), "for declaration needs Lambda or Function Address", exp1);
             FFunction getElement = ((FFunctionAddress) exp1).getFunction();
 
             FExpression exp2 = visitExpression(ctx.expression(1));
@@ -203,7 +203,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             if (exp2 instanceof FImplicitCast)
                 exp2 = ((FImplicitCast) exp2).getCastedExpression();
             if (!(exp2 instanceof FFunctionAddress))
-                throw new InvalidForDeclaration("for declaration needs Lambda or Function Address", exp1);
+                throw new InvalidForDeclaration(Position.fromCtx(ctx), "for declaration needs Lambda or Function Address", exp1);
             FFunction getSize = ((FFunctionAddress) exp2).getFunction();
 
             ForByIdx forImpl = new ForByIdx(getElement, getSize);
@@ -262,15 +262,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return field;
     }
 
-    private void checkAccessForbidden(FFunction fFunction) throws AccessForbidden {
+    private void checkAccessForbidden(Position position, FFunction fFunction) throws AccessForbidden {
         if (currentNamespace != fFunction.getMemberOf() && fFunction.getVisibility() == FVisibilityModifier.PRIVATE) {
-            throw new AccessForbidden(fFunction);
+            throw new AccessForbidden(position, fFunction);
         }
     }
 
     private FExpression findLocal(Position position, FIdentifier identifier, boolean lhsResolve) throws UndeclaredVariable {
         try {
-            return new FVariableExpression(position, findLocalVar(identifier));
+            return new FVariableExpression(position, findLocalVar(position, identifier));
         } catch (UndeclaredVariable ignored) {}
         try {
             return functionCall(position, currentNamespace, identifier, singletonList(getThisExpr(null)), ImmutableListMultimap.of(), lhsResolve);
@@ -283,15 +283,15 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             return Utils.cantHappen();
         } catch (FunctionNotFound ignored) {}
         try {
-            return new FNamespaceExpression(position, findNamespace(identifier, false));
+            return new FNamespaceExpression(position, findNamespace(position, identifier, false));
         } catch (TypeNotFound ignored) {}
-        throw new UndeclaredVariable(identifier);
+        throw new UndeclaredVariable(position, identifier);
     }
 
-    private FLocalVariable findLocalVar(FIdentifier identifier) throws UndeclaredVariable {
+    private FLocalVariable findLocalVar(Position position, FIdentifier identifier) throws UndeclaredVariable {
         FLocalVariable var = currentFunction().declaredVars.get(identifier);
         if (var == null) {
-            throw new UndeclaredVariable(identifier);
+            throw new UndeclaredVariable(position, identifier);
         }
         return var;
     }
@@ -381,7 +381,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         Namespace remoteNamespace = currentFunction().function.getMemberOf();
         FFunction open = remoteNamespace.getOpen(currentFunction().function.getIdentifier());
         if (open == null)
-            throw new NonOpenRemoteFunctionDeclaration(currentFunction().function, "remote does not declare signature as open");
+            throw new NonOpenRemoteFunctionDeclaration(currentFunction().function, remoteNamespace, "remote does not declare signature as open");
 
         validateOpenOverload(open, true);
     }
@@ -478,7 +478,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         List<FrontierParser.AssignLhsContext> contexts = ctx.assignLhss().assignLhs();
 
         if (contexts.size() > types.size()) {
-            errors.add(new NotEnoughArguments("Not enough arguments in assignment", null)); //TODO can't get I type because we didn't parse it yet
+            errors.add(new NotEnoughArguments(Position.fromCtx(ctx), "Not enough arguments in assignment", null)); //TODO can't get I type because we didn't parse it yet
             throw new Failed();
         }
 
@@ -523,8 +523,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
         boolean failed = false;
 
+        Position pos = Position.fromCtx(ctx);
         if (currentFunction().declaredVars.contains(identifier)) {
-            errors.add(new TwiceDefinedLocalVariable(identifier));
+            errors.add(new TwiceDefinedLocalVariable(pos, currentFunction().declaredVars.get(identifier).getPosition(), identifier));
             failed = true;
         }
 
@@ -539,20 +540,20 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
 
         if (type == FNull.NULL_TYPE) { //type inference failed TODO better error message in case of null fail
-            errors.add(new UntypedVariable(identifier));
+            errors.add(new UntypedVariable(pos, identifier));
             failed = true;
         }
 
         if (failed)
             throw new Failed();
 
-        FLocalVariable var = new FLocalVariable(identifier, type);
+        FLocalVariable var = new FLocalVariable(pos, identifier, type);
         if (var.getType() == FTypeType.INSTANCE) {
-            FTypeVariable typeVar = FTypeVariable.create(identifier, true);
+            FTypeVariable typeVar = FTypeVariable.create(new Location(currentFunction().function.getLocation().getFile(), pos), identifier, true);
             typeVariableMap.put(var, typeVar);
         }
         currentFunction().declaredVars.put(identifier, var);
-        return new FVarDeclaration(Position.fromCtx(ctx), var);
+        return new FVarDeclaration(var);
     }
 
     @Override
@@ -675,10 +676,11 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             FExpression container = visitExpression(ctx.expression());
             List<FIdentifier> ids = new ArrayList<>();
             boolean failed = false;
+            Position pos = Position.fromCtx(ctx);
             for (TerminalNode node : ctx.IDENTIFIER()) {
                 FIdentifier id = new FIdentifier(node.getText());
                 if (currentFunction().declaredVars.contains(id)) {
-                    errors.add(new TwiceDefinedLocalVariable(id));
+                    errors.add(new TwiceDefinedLocalVariable(pos, currentFunction().declaredVars.get(id).getPosition(), id));
                     failed = true;
                 }
                 ids.add(id);
@@ -691,7 +693,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             List<FType> types = FTuple.unpackType(forImpl.getElementType());
 
             if (ids.size() < types.size() || ids.size() > types.size()+1) {
-                errors.add(new WrongNumberOfIdentifiersInFor(ids, types));
+                errors.add(new WrongNumberOfIdentifiersInFor(pos, ids, types));
                 failed = true;
             }
 
@@ -700,18 +702,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
             List<FLocalVariable> vars = new ArrayList<>(ids.size());
             for (Pair<FIdentifier, FType> pair : Utils.zip(ids, types)) {
-                FLocalVariable var = new FLocalVariable(pair.a, pair.b);
+                FLocalVariable var = new FLocalVariable(pos, pair.a, pair.b);
                 vars.add(var);
                 currentFunction().declaredVars.put(var.getIdentifier(), var);
             }
 
             FLocalVariable counter = null;
             if (ids.size() == types.size()+1) {
-                counter = new FLocalVariable(ids.get(ids.size()-1), FIntN._32); //TODO int32 vs int64 (arrays need int32, custom data types might need int64 or more)
+                counter = new FLocalVariable(pos, ids.get(ids.size()-1), FIntN._32); //TODO int32 vs int64 (arrays need int32, custom data types might need int64 or more)
                 currentFunction().declaredVars.put(counter.getIdentifier(), counter);
             }
 
-            FForEach res = FForEach.create(Position.fromCtx(ctx), currentFunction().loops.size(), identifier, vars, counter, container, null);
+            FForEach res = FForEach.create(pos, currentFunction().loops.size(), identifier, vars, counter, container, null);
             res = (FForEach) instantiateFunctionAddresses(res);
             res.setBody(visitBlock(ctx.block()));
             return res;
@@ -725,20 +727,22 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
 
     @Override
     public FBreak visitBreakStatement(FrontierParser.BreakStatementContext ctx) {
+        Position pos = Position.fromCtx(ctx);
         if (currentFunction().loops.isEmpty()) {
-            errors.add(new StatementOutsideLoop());
+            errors.add(new StatementOutsideLoop(pos));
             throw new Failed();
         }
-        return new FBreak(Position.fromCtx(ctx), currentFunction().loops.peek());
+        return new FBreak(pos, currentFunction().loops.peek());
     }
 
     @Override
     public FContinue visitContinueStatement(FrontierParser.ContinueStatementContext ctx) {
+        Position pos = Position.fromCtx(ctx);
         if (currentFunction().loops.isEmpty()) {
-            errors.add(new StatementOutsideLoop());
+            errors.add(new StatementOutsideLoop(pos));
             throw new Failed();
         }
-        return new FContinue(Position.fromCtx(ctx), currentFunction().loops.peek());
+        return new FContinue(pos, currentFunction().loops.peek());
     }
 
 
@@ -753,7 +757,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     private FVariableExpression getThisExpr(Position position) throws UndeclaredVariable {
-        return new FVariableExpression(position, findLocalVar(FIdentifier.THIS));
+        return new FVariableExpression(position, findLocalVar(position, FIdentifier.THIS));
     }
 
     @Override
@@ -927,10 +931,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return res;
     }
 
-    private FFunctionCall functionCall (Position position, Namespace clazz, FIdentifier identifier, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, boolean lhsResolve)
+    private FFunctionCall functionCall(Position position, Namespace clazz, FIdentifier identifier, List<FExpression> positionalArgs, ListMultimap<FIdentifier, FExpression> keywordArgs, boolean lhsResolve)
             throws FunctionNotFound, AccessForbidden {
         FunctionResolver.Result res = clazz.hardResolveFunction(identifier, Utils.typesFromExpressionList(positionalArgs), Utils.typesFromExpressionMap(keywordArgs), null, lhsResolve);
-        checkAccessForbidden(res.getFunction());
+        checkAccessForbidden(position, res.getFunction());
         return FFunctionCall.create(position, res.signature, positionalArgs, keywordArgs, res.argMapping);
     }
 
@@ -982,9 +986,9 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             errors.add(syntaxError);
             throw new Failed();
         }
-        FTypeVariable returnType = FTypeVariable.create(new FIdentifier("ReturnOf" + id.name), false);
-        parameters.put(returnType.getIdentifier(), returnType);
         Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
+        FTypeVariable returnType = FTypeVariable.create(location, new FIdentifier("ReturnOf" + id.name), false);
+        parameters.put(returnType.getIdentifier(), returnType);
         FLambda res = FLambda.create(location, id, currentNamespace, returnType, params, parameters);
         currentNamespace.addFunctionTrusted(res);
 
@@ -1040,15 +1044,16 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         if (idContext != null) {
             FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
             FType type;
+            Position pos = Position.fromCtx(ctx);
             if (typeTypeContext != null) {
                 type = ParserContextUtils.getType(typeTypeContext, this::findNamespaceNoThrow);
             } else {
-                type = FTypeVariable.create(new FIdentifier("TypeOf" + new FIdentifier(idContext.getText()).name), false);
+                type = FTypeVariable.create(new Location(currentNamespace.getLocation().getFile(), pos), new FIdentifier("TypeOf" + new FIdentifier(idContext.getText()).name), false);
                 parameters.put(type.getIdentifier(), (FTypeVariable) type);
             }
-            return FParameter.create(new FIdentifier(idContext.getText()), type, false);
+            return FParameter.create(pos, new FIdentifier(idContext.getText()), type, false);
         } else { //Underscore
-            return FParameter.create(UnnamedIdentifier.get(), FTuple.VOID, false);
+            return FParameter.create(Position.fromCtx(ctx), UnnamedIdentifier.get(), FTuple.VOID, false);
         }
     }
 
@@ -1056,7 +1061,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         List<FLocalVariable> res = new ArrayList<>();
         List<FrontierParser.LambdaParamContext> lambdaParamContexts = ctx.lambdaParam();
         if (lambdaParamContexts.size() != expectedTypes.size())
-            throw new WrongNumberOfIdentifiersInFor(null, expectedTypes); //TODO not really the right error, but I stopped caring...
+            throw new WrongNumberOfIdentifiersInFor(Position.fromCtx(ctx), null, expectedTypes); //TODO not really the right error, but I stopped caring...
 
         for (Pair<FrontierParser.LambdaParamContext, FType> pair : Utils.zip(lambdaParamContexts, expectedTypes))
             visitLambdaParam(pair.a, pair.b).ifPresent(res::add);
@@ -1071,7 +1076,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 if (type != ParserContextUtils.getType(typeTypeContext, this::findNamespaceNoThrow))
                     throw new IncompatibleTypes(ParserContextUtils.getType(typeTypeContext, this::findNamespaceNoThrow), type);
             }
-            return Optional.of(new FLocalVariable(new FIdentifier(idContext.getText()), type));
+            return Optional.of(new FLocalVariable(Position.fromCtx(ctx), new FIdentifier(idContext.getText()), type));
         } else //Underscore
             return Optional.empty();
     }
@@ -1168,7 +1173,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             if (c != null) {
                 elementType = ParserContextUtils.getType(c, this::findNamespaceNoThrow);
             } else {
-                FTypeVariable typeVariable = FTypeVariable.create(new FIdentifier("elementType"), false);
+                FTypeVariable typeVariable = FTypeVariable.create(null, new FIdentifier("elementType"), false);
                 for (FExpression element : elements)
                     element.typeCheck(typeVariable);
                 elementType = typeVariable.hardResolve();
@@ -1215,9 +1220,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 identifier = operator.getIdentifier();
                 namespace = operator.getNamespace().orElse(currentNamespace);
             }
-            FFunction function = getFunction(namespace, identifier, params);
+            Position pos = Position.fromCtx(ctx);
+            FFunction function = getFunction(pos, namespace, identifier, params);
             function = sthsthFunctionAddress(function);
-            return new FFunctionAddress(Position.fromCtx(ctx), function);
+            return new FFunctionAddress(pos, function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
@@ -1238,9 +1244,10 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 if (operator.getNamespace().isPresent())
                     namespace = operator.getNamespace().get();
             }
-            FFunction function = getFunction(namespace, identifier, params);
+            Position pos = Position.fromCtx(ctx);
+            FFunction function = getFunction(pos, namespace, identifier, params);
             function = sthsthFunctionAddress(function);
-            return new FFunctionAddress(Position.fromCtx(ctx), function);
+            return new FFunctionAddress(pos, function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
@@ -1248,25 +1255,25 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     //TODO check why this is different/more complex then functionCall (should functionCall call this?, comment why not)
-    private FFunction getFunction(Namespace namespace, FIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
+    private FFunction getFunction(Position position, Namespace namespace, FIdentifier identifier, List<FType> params) throws FunctionNotFound, AccessForbidden {
         if (!(namespace instanceof DefaultNamespace))
-            throw new FunctionNotFound(identifier, params, ImmutableListMultimap.of());
+            throw new FunctionNotFound(position, identifier, params, ImmutableListMultimap.of());
         if (params == null) {
             Collection<Signature> fun = ((DefaultNamespace) namespace).getFunctions(false).get(identifier);  //TODO lhsResolve
             if (fun.size() != 1)
-                throw new FunctionNotFound(identifier, emptyList(), ImmutableListMultimap.of());
+                throw new FunctionNotFound(position, identifier, emptyList(), ImmutableListMultimap.of());
             return fun.iterator().next().getFunction();
         } else {
             try {
                 FFunction f = namespace.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
-                checkAccessForbidden(f);
+                checkAccessForbidden(position, f);
                 return f;
             } catch (FunctionNotFound fnf) {
                 if (currenClass == null)
                     throw fnf;
                 params.add(0, currenClass); //static failed, try instance
                 FFunction f = namespace.hardResolveFunction(identifier, params, ImmutableListMultimap.of(), null, false).getFunction();  //TODO lhsResolve
-                checkAccessForbidden(f);
+                checkAccessForbidden(position, f);
                 return f;
             }
         }

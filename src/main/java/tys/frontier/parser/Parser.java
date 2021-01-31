@@ -77,7 +77,7 @@ public class Parser {
                     FClass _class = createClass(file.getFilePath(), ctx);
                     DefaultNamespace old = file.resolveNamespace(_class.getIdentifier());
                     if (old != null)
-                        throw new IdentifierCollision(_class, old);
+                        throw new IdentifierCollision(_class.getNamespace(), old);
                     file.addNamespace(_class.getNamespace(), ctx);
                 } catch (TwiceDefinedLocalVariable | IdentifierCollision e) {
                     syntaxErrors.add(e);
