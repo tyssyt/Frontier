@@ -1,6 +1,7 @@
 package tys.frontier.code.expression;
 
 import tys.frontier.code.predefinedClasses.FArray;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -11,6 +12,8 @@ import tys.frontier.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static tys.frontier.util.Utils.typesFromExpressionList;
 
 public class FArrayLiteral extends FExpression {
 
@@ -45,9 +48,26 @@ public class FArrayLiteral extends FExpression {
         return elements;
     }
 
+    public int getSize() {
+        return elements.size() / FTuple.arity(type.getBaseType());
+    }
+
     private void checkTypes(FType elementType) throws IncompatibleTypes {
-        for (int i = 0; i < elements.size(); i++)
-            elements.set(i, elements.get(i).typeCheck(elementType));
+        List<FType> fTypes = FTuple.unpackType(elementType);
+
+        int typeIdx = 0;
+        for (int i = 0; i < elements.size(); i++) {
+            elements.set(i, elements.get(i).typeCheck(fTypes.get(typeIdx)));
+            typeIdx = (typeIdx + 1) % fTypes.size();
+        }
+
+        if (elements.size() % fTypes.size() != 0) {
+            int sIdx = elements.size() - (elements.size() % fTypes.size());
+            Position p1 = elements.get(sIdx).getPosition();
+            Position p2 = elements.get(elements.size()-1).getPosition();
+            Position pos = new Position(p1.getLineFrom(), p2.getLineTo(), p1.getColumnFrom(), p2.getColumnTo());
+            throw new IncompatibleTypes(pos, elementType, FTuple.from(typesFromExpressionList(elements.subList(sIdx, elements.size()))));
+        }
     }
 
     @Override

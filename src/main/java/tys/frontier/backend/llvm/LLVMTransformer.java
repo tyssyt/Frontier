@@ -1133,8 +1133,22 @@ class LLVMTransformer implements
         */
 
         LLVMTypeRef arrayType = module.getLlvmType(expression.getType());
-        LLVMValueRef sizeLiteral = indexLiteral(expression.getElements().size());
+        LLVMValueRef sizeLiteral = indexLiteral(expression.getSize());
         LLVMValueRef array = buildArrayMalloc(arrayType, sizeLiteral);
+
+        //TODO I could merge the two branches, not sure
+        FType baseType = expression.getType().getBaseType();
+        if (baseType instanceof FTuple) {
+            int i = 0; //TODO I could generate code that does pointer increments instead of arrayGep, could be faster...?
+            for (List<FExpression> tupleElements : Lists.partition(expression.getElements(), FTuple.arity(baseType))) {
+                LLVMValueRef tuple = packTuple(Utils.map(tupleElements, e -> e.accept(this)));
+                LLVMValueRef address = arrayGep(array, indexLiteral(i));
+                LLVMBuildStore(builder, tuple, address);
+                i++;
+            }
+            return array;
+        }
+
 
         int i = 0; //TODO I could generate code that does pointer increments instead of arrayGep, could be faster...?
         for (FExpression element : expression.getElements()) {
