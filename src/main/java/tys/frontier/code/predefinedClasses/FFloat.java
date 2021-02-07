@@ -10,6 +10,8 @@ public abstract class FFloat extends FPredefinedClass {
     public static FIdentifier CEIL = new FIdentifier("ceil");
     public static FIdentifier FLOOR = new FIdentifier("floor");
     public static FIdentifier TRUNC = new FIdentifier("trunc");
+    public static FIdentifier SIN = new FIdentifier("sin");
+    public static FIdentifier COS = new FIdentifier("cos");
     public static FIdentifier RAW_BITS = new FIdentifier("asRawBits");
     public static FIdentifier SPLIT_REPRESENTATION = new FIdentifier("splitRepresentation");
 

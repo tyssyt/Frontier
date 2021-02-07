@@ -100,6 +100,8 @@ class LLVMTransformer implements
             .put(FFloat.CEIL, "llvm.ceil")
             .put(FFloat.FLOOR, "llvm.floor")
             .put(FFloat.TRUNC, "llvm.trunc")
+            .put(FFloat.SIN, "llvm.sin")
+            .put(FFloat.COS, "llvm.cos")
             .build();
 
     private LLVMModule module;

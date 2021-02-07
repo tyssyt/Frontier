@@ -38,6 +38,8 @@ public class FFloat64 extends FFloat {
         namespace.addFunctionTrusted(builder.setIdentifier(CEIL).build());
         namespace.addFunctionTrusted(builder.setIdentifier(FLOOR).build());
         namespace.addFunctionTrusted(builder.setIdentifier(TRUNC).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(SIN).build());
+        namespace.addFunctionTrusted(builder.setIdentifier(COS).build());
 
         namespace.addFunctionTrusted(builder.setIdentifier(TO_INT32).setReturnType(int32).build());
         namespace.addFunctionTrusted(builder.setIdentifier(TO_INT64).setReturnType(int64).build());
