@@ -57,6 +57,14 @@ export namespace Stringer:
         return "null";
     }
 
+    static toString(b: bool) -> [char] {
+        if b {
+            return "true";
+        } else {
+            return "false";
+        }
+    }
+
     static toString(i: int64) -> [char] {
         return Strings.intToString(i);
     }

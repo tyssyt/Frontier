@@ -256,7 +256,7 @@ lamdaBlock
 statement
     :   block                                                                               #blockStatement
     |   ifStatement                                                                         #ifStatement_
-    |   FOR  IDENTIFIER (COMMA IDENTIFIER)* COLON expression block                      #foreachStatement
+    |   FOR IDENTIFIER (COMMA IDENTIFIER)* COLON expression block                           #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
     |   RETURN tupleExpression? SEMI                                                        #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
@@ -294,7 +294,7 @@ expression
     |   IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?             #internalFunctionAddress
     |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
     |   LBRACK typeOrTuple COMMA expression RBRACK                 #newArray
-    |   LBRACK typeOrTuple? COLON tupleExpression RBRACK           #arrayLiteral
+    |   LBRACK typeOrTuple? COLON tupleExpression COMMA? RBRACK    #arrayLiteral
     |   (EXMARK|SUB) expression                                    #preUnaryOp
     |   expression EXMARK                                          #cast
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp
