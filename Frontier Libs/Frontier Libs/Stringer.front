@@ -21,6 +21,10 @@ export namespace Stringer:
                 }
             }
         }
+        while i < string.size {
+            stringBuilder.add(string[i]);
+            i = i+1;
+        }
         return stringBuilder.trim();
     }
 
