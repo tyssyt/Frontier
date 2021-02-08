@@ -23,7 +23,7 @@ public class TypeConversion extends ImplicitTypeCast {
         INTEGER_PROMOTION(0, 1),
         FLOAT_PROMOTION(32, 0),
         TO_OPTIONAL(32, 0),
-        OPTIONAL_TO_BOOL(32, 0), //this is a special case and should never be done as an inner cast
+        OPTIONAL_TO_BOOL(3200, 0), //this is a special case and should never be done as an inner cast
         DELEGATE(32, 0);
 
         public final int baseCost;
