@@ -162,12 +162,12 @@ export namespace Strings:
         return res;
     }
 
-    //TODO figure out to what precision we can reasonably round, also figure out if the magic number table is still precise at that precision
+
     export float32ToString(f: float32, decimals: int32 = 4) -> [char] {
         if f == 0f {
             return [char: "0"]; //TODO make return "0" work.
         }
-        //decimals = decimals.clamp(0, ???); TODO
+        decimals = decimals.clamp(0, 16); //TODO figure out to what precision we can reasonably round, also figure out if the magic number table is still precise at that precision
 
         sign:, exponent:, mantissa: = f.splitRepresentation();
 

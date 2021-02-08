@@ -19,16 +19,14 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FIntN extends FPredefinedClass {
 
-    public static final FIdentifier MAX = new FIdentifier("max");
-    public static final FIdentifier MIN = new FIdentifier("min");
 
-    public static FIdentifier SHIFT_L = new FIdentifier("shiftL");
-    public static FIdentifier U_SHIFT_R = new FIdentifier("uShiftR");
-    public static FIdentifier S_SHIFT_R = new FIdentifier("sShiftR");
-    public static FIdentifier S_MUL_OVERFLOW = new FIdentifier("signedMultiplicationWithOverflow");
-    public static FIdentifier U_MUL_OVERFLOW = new FIdentifier("unsignedMultiplicationWithOverflow");
-    public static FIdentifier COUNT_LEADING_ZEROS = new FIdentifier("countLeadingZeros");
-    public static FIdentifier COUNT_TRAILING_ZEROS = new FIdentifier("countTrailingZeros");
+    public static final FIdentifier SHIFT_L = new FIdentifier("shiftL");
+    public static final FIdentifier U_SHIFT_R = new FIdentifier("uShiftR");
+    public static final FIdentifier S_SHIFT_R = new FIdentifier("sShiftR");
+    public static final FIdentifier S_MUL_OVERFLOW = new FIdentifier("signedMultiplicationWithOverflow");
+    public static final FIdentifier U_MUL_OVERFLOW = new FIdentifier("unsignedMultiplicationWithOverflow");
+    public static final FIdentifier COUNT_LEADING_ZEROS = new FIdentifier("countLeadingZeros");
+    public static final FIdentifier COUNT_TRAILING_ZEROS = new FIdentifier("countTrailingZeros");
 
     //classes do not override equals, so we need to make sure we get the same object every time
     private static final ConcurrentMap<Integer, FIntN> existing = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
