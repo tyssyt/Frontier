@@ -19,7 +19,7 @@ import static com.google.common.collect.Lists.asList;
 public class Access implements Operator {
     public static final FIdentifier ID = new FIdentifier("[]");
     public static final Access INSTANCE = new Access();
-    public static final String PARSER_TOKEN = Operator.getParserToken(FrontierLexer.Array);
+    public static final String PARSER_TOKEN = Operator.getParserToken(FrontierLexer.ARRAY);
 
     private Access() {}
 

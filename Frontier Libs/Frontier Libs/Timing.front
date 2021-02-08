@@ -4,7 +4,7 @@ export namespace Timing:
 
     export getTimestamp() -> int64 {
         ts : int64 = 0;
-        Kernel32.getTimestamp(native[int64].of(ts));
+        Kernel32.getTimestamp(native[].of(ts));
         return ts;
      }
 

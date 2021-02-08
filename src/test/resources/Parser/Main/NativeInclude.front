@@ -29,18 +29,18 @@ export static main () {
     IO.print(",");
 
     //manip addressof instance field
-    writeToAddr(native[int64].of(llvm.number), 420);
+    writeToAddr(native[].of(llvm.number), 420);
     IO.printInt(llvm.number);
     IO.print(",");
 
     //manip addressof static field
-    writeToAddr(native[int64].of(staticInt), 666);
+    writeToAddr(native[].of(staticInt), 666);
     IO.printInt(staticInt);
     IO.print(",");
 
     //manip addressof local variable
     i : int64 = -1;
-    writeToAddr(native[int64].of(i), 1337);
+    writeToAddr(native[].of(i), 1337);
     IO.printInt(i);
     IO.print(",");
 

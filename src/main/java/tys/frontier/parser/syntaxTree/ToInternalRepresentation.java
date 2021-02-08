@@ -49,6 +49,7 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -1273,6 +1274,14 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 return f;
             }
         }
+    }
+
+    @Override
+    public Object visitAddressOf(FrontierParser.AddressOfContext ctx) {
+        List<FExpression> arguments = visitTupleExpression(ctx.tupleExpression());
+        FType baseType = FTuple.from(Utils.typesFromExpressionList(arguments));
+        Signature of = getOnlyElement(CArray.getArrayFrom(baseType).getNamespace().getFunctions(false).get(CArray.OF));
+        return FFunctionCall.createTrusted(Position.fromCtx(ctx), of, arguments);
     }
 
     //literals

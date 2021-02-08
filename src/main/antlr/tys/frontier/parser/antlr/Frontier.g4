@@ -177,7 +177,7 @@ operator
     |   XOR
     |   AND
     |   OR
-    |   Array
+    |   ARRAY
     ;
 
 fieldDeclaration
@@ -310,6 +310,7 @@ expression
     |   literal                                                    #literalExpr
     |   IDENTIFIER                                                 #variableExpr
     |   typeType                                                   #typeTypeExpr
+    |   NATIVE ARRAY DOT IDENTIFIER LPAREN tupleExpression RPAREN #addressOf //TODO if we can ever have non instantiated static functions in generic classes, this is no longer necessary
     ;
 
 arguments
@@ -406,7 +407,7 @@ SUB             : '-';
 STAR            : '*';
 MOD             : '%';
 
-Array           : '[]';
+ARRAY           : '[]';
 
 //Datatypes---------------------------------------------------------------------
 
