@@ -1,0 +1,43 @@
+import IO;
+import Strings;
+
+export class Main:
+
+export static main() {
+    IO.printLine(Strings.float32ToString(10000000000000f));
+    IO.printLine(Strings.float32ToString(1000000000000f));
+    IO.printLine(Strings.float32ToString(100000000000f));
+    IO.printLine(Strings.float32ToString(10000000000f));
+    IO.printLine(Strings.float32ToString(1000000000f));
+    IO.printLine(Strings.float32ToString(900000000f));
+    IO.printLine(Strings.float32ToString(80000000f));
+    IO.printLine(Strings.float32ToString(7000000f));
+    IO.printLine(Strings.float32ToString(600000f));
+    IO.printLine(Strings.float32ToString(50000f));
+    IO.printLine(Strings.float32ToString(4000f));
+    IO.printLine(Strings.float32ToString(300f));
+    IO.printLine(Strings.float32ToString(20f));
+    IO.printLine(Strings.float32ToString(1f));
+    IO.printLine(Strings.float32ToString(0f));
+    IO.printLine(Strings.float32ToString(0.1f));
+    IO.printLine(Strings.float32ToString(0.01f));
+    IO.printLine(Strings.float32ToString(0.002f));
+    IO.printLine(Strings.float32ToString(0.0003f));
+    IO.printLine(Strings.float32ToString(0.00004f));
+    IO.printLine(Strings.float32ToString(0.000005f));
+    IO.printLine(Strings.float32ToString(0.0000006f));
+    IO.printLine(Strings.float32ToString(0.00000007f));
+    IO.printLine(Strings.float32ToString(0.000000008f));
+    IO.printLine(Strings.float32ToString(0.0000000009f));
+    IO.printLine(Strings.float32ToString(0.00000000001f));
+    IO.printLine(Strings.float32ToString(0.000000000001f));
+
+    IO.printLine(Strings.float32ToString(20.18f));
+    IO.printLine(Strings.float32ToString(-20.18f));
+    IO.printLine(Strings.float32ToString(-0.000000099999f));
+    IO.printLine(Strings.float32ToString(-0.0000000999999f));
+
+    IO.printLine(Strings.float32ToString(float32.NAN));
+    IO.printLine(Strings.float32ToString(float32.POSITIVE_INFINITY));
+    IO.printLine(Strings.float32ToString(float32.NEGATIVE_INFINITY));
+}

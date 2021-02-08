@@ -191,4 +191,9 @@ public class MainTest {
         String res = doMain("Stringer", null);
         assertEquals(loadOut("StringerOut.txt"), res);
     }
+    @Test
+    public void mainFloats() throws IOException, InterruptedException, SyntaxErrors, SyntaxError {
+        String res = doMain("Floats", null);
+        assertEquals(loadOut("FloatsOut.txt"), res);
+    }
 }

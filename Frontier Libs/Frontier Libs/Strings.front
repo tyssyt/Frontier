@@ -55,13 +55,17 @@ export namespace Strings:
     }
 
     export intToBitString(l: int64) -> [char] {
-        digits:[char] = [char, 64];
+        digits:[char] = [char, 71];
         i:int32 = 1;
-        while i<=64 {
+        while i<=71 {
             remainder:int64 = l % 2;
-            digits[64-i] = intToChar(remainder.toInt32);
+            digits[71-i] = intToChar(remainder.toInt32);
             l = l.uShiftR(1);
             i = i+1;
+            if i == 8 || i == 17 || i == 26 || i == 35 || i == 44 || i == 53 || i == 62 {
+                digits[71-i] = " ";
+                i = i+1;
+            }
         }
         return digits;
     }
@@ -71,7 +75,7 @@ export namespace Strings:
      * Returns the number in front of the dot followed by the dot followed by digits
      * Prints at most 'digits' many decimal digits
      */
-    static fractionToString(l: int64, maxDigits: int32) -> [char], bool {
+    fractionToString(l: int64, maxDigits: int32) -> [char], bool {
         size: int32 =  60 - l.countTrailingZeros().toInt32;
         rounding := size > maxDigits;
         if rounding {
@@ -88,7 +92,7 @@ export namespace Strings:
         digits[1] = ".";
 
         i:int32 = 2;
-        while i < size {
+        while i < size { //TODO I can abort the loop early if l == 0
             //clear top 4 bits
             l = l & 1152921504606846975; //0b1111 << 60 TODO bin literals?
 
@@ -110,7 +114,7 @@ export namespace Strings:
         //don't shift in top 4, just check it the remaining number is bigger then 0.5
 
         if l <= 576460752303423488 { // 1 << 59 TODO
-            return digits, false; //rounding down means no change to the digits
+            return removeTrailingZeros(digits), false; //rounding down means no change to the digits
         }
 
         //we need to round up, go through digits back to front as long as there are 9s, increase the first non 9 encountered
@@ -133,16 +137,36 @@ export namespace Strings:
             return newDigits, false;
         }
 
-        if digits[0] =!= 9 {
+        if digits[0] =!= "9" {
             return [char: digits[0] + 1], false;
         } else {
             return [char: "1"], true; //TODO make return "1", true work
         }
     }
 
-    //TODO for small exponents, print the full number instead of scientific notation
+    removeTrailingZeros(digits: [char]) -> [char] { //TODO avoid extra array
+        i : int32 = digits.size-1;
+        while i >= 0 && digits[i] == "0" {
+            i = i-1;
+        }
+        if digits[i] == "." {
+            i = i-1;
+        }
+
+        if i == digits.size-1 {
+            return digits;
+        }
+
+        res := [char, i+1];
+        digits.copy(res, length = i+1);
+        return res;
+    }
+
     //TODO figure out to what precision we can reasonably round, also figure out if the magic number table is still precise at that precision
     export float32ToString(f: float32, decimals: int32 = 4) -> [char] {
+        if f == 0f {
+            return [char: "0"]; //TODO make return "0" work.
+        }
         //decimals = decimals.clamp(0, ???); TODO
 
         sign:, exponent:, mantissa: = f.splitRepresentation();
@@ -150,9 +174,9 @@ export namespace Strings:
         if exponent == 255 { //special floats
             if mantissa == 0 {
                 if sign {
-                    return "-∞";
+                    return "-inf";
                 } else {
-                    return [char: "∞"]; //TODO make returning char literals in function with return type string work
+                    return "inf"; //TODO return "∞"
                 }
             } else {
                 return "NaN";
@@ -161,6 +185,37 @@ export namespace Strings:
 
         if exponent =!= 0 { // if not denormalised, the 24th bit is implicitly assumed to be 1
             mantissa = mantissa + 8388608; // 1 << 23 implicit 24th bit TODO
+        }
+
+        //when possible, do not use scientific notation
+        unbiasedExponent := exponent -127;
+        if unbiasedExponent < 23 && unbiasedExponent > -23 {
+            if unbiasedExponent >= 0 { //TODO optimization do the exp = 0 case separately?
+                integer := mantissa.uShiftR(23-unbiasedExponent);
+                if sign {
+                    integer = integer * -1;
+                }
+                integerString := intToString(integer);
+
+                expectedSize : int32 = decimals + 3;
+                if integerString.size >= expectedSize {
+                    return integerString;
+                }
+
+                decimalsString:, overflow: = fractionToString(int64.shiftL(mantissa, 37+unbiasedExponent) & 1152921504606846975, expectedSize - integerString.size); //0b1111 << 60 TODO bin literals?
+                if decimalsString.size <= 2 { //TODO can I make this check and decs and save time on fractionToString?
+                    return integerString;
+                };
+
+                //assemble Result
+                res := [char, integerString.size + decimalsString.size -1];
+                integerString.copy(res);
+                decimalsString.copy(res, sourceOffset=1, targetOffset=integerString.size, length=decimalsString.size-1);
+                return res;
+            } else {
+                decimalsString:, overflow: = fractionToString(int64.shiftL(mantissa, 37+unbiasedExponent) & 1152921504606846975, 8); //0b1111 << 60 TODO bin literals?
+                return decimalsString;
+            }
         }
 
         //lookup decimal exponent and mantissa factors
