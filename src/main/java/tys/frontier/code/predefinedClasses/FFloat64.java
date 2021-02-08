@@ -1,8 +1,12 @@
 package tys.frontier.code.predefinedClasses;
 
+import tys.frontier.code.FVisibilityModifier;
+import tys.frontier.code.StaticField;
+import tys.frontier.code.expression.FLiteralExpression;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.literal.FFloat64Literal;
 import tys.frontier.code.namespace.DefaultNamespace;
 
 public class FFloat64 extends FFloat {
@@ -27,6 +31,21 @@ public class FFloat64 extends FFloat {
     @SuppressWarnings("SameParameterValue")
     void addIntFunctions(FIntN int32, FIntN int64) { //needed to avoid cyclic class loader dependencies
         DefaultNamespace namespace = this.getNamespace();
+
+        {
+            StaticField nan = new StaticField(null, NAN, this, namespace, FVisibilityModifier.EXPORT, true);
+            nan.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NaN, NAN.name)));
+            namespace.addFieldTrusted(nan);
+
+            StaticField infPos = new StaticField(null, INF_POS, this, namespace, FVisibilityModifier.EXPORT, true);
+            infPos.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.POSITIVE_INFINITY, INF_POS.name)));
+            namespace.addFieldTrusted(infPos);
+
+            StaticField infNeg = new StaticField(null, INF_NEG, this, namespace, FVisibilityModifier.EXPORT, true);
+            infNeg.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NEGATIVE_INFINITY, INF_NEG.name)));
+            namespace.addFieldTrusted(infNeg);
+        }
+
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
         FBaseFunction rawBits = builder.setIdentifier(RAW_BITS).setReturnType(int32).build();
         namespace.addFunctionTrusted(rawBits);

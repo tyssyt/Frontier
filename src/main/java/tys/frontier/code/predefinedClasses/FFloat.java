@@ -15,6 +15,10 @@ public abstract class FFloat extends FPredefinedClass {
     public static FIdentifier RAW_BITS = new FIdentifier("asRawBits");
     public static FIdentifier SPLIT_REPRESENTATION = new FIdentifier("splitRepresentation");
 
+    public static FIdentifier NAN = new FIdentifier("NAN");
+    public static FIdentifier INF_POS = new FIdentifier("POSITIVE_INFINITY");
+    public static FIdentifier INF_NEG = new FIdentifier("NEGATIVE_INFINITY");
+
     protected FFloat(FIdentifier identifier) {
         super(identifier);
     }

@@ -1167,13 +1167,9 @@ class LLVMTransformer implements
         if (literal instanceof FIntNLiteral) {
             return LLVMConstInt(type, ((FIntNLiteral) literal).value.longValue(), TRUE);
         } else if (literal instanceof FFloat32Literal) {
-            //TODO I don't even want to have the f at the end, but oh well what can you do
-            String string = ((FFloat32Literal) literal).originalString;
-            return LLVMConstRealOfString(type, string.endsWith("f") || string.endsWith("F") ? string.substring(0, string.length()-1) : string);
+            return LLVMConstReal(type, ((FFloat32Literal) literal).value);
         } else if (literal instanceof FFloat64Literal) {
-            //TODO I don't even want to have the d at the end, but oh well what can you do
-            String string = ((FFloat64Literal) literal).originalString;
-            return LLVMConstRealOfString(type, string.endsWith("d") || string.endsWith("D") ? string.substring(0, string.length()-1) : string);
+            return LLVMConstReal(type, ((FFloat64Literal) literal).value);
         } else if (literal instanceof FCharLiteral) {
             return LLVMConstInt(type, ((FCharLiteral) literal).value, TRUE);
         } else if (literal instanceof FStringLiteral) {
