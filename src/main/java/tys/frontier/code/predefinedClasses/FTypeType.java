@@ -83,6 +83,7 @@ public class FTypeType extends FBaseClass {
 
     private FTypeType() {
         super(null, IDENTIFIER, FVisibilityModifier.EXPORT, null);
+        addDefaultFunctions();
     }
 
     @Override

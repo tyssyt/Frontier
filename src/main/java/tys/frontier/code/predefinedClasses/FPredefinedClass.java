@@ -46,6 +46,7 @@ public abstract class FPredefinedClass extends FBaseClass {
     }
 
     protected void addPredefinedFunctionsForArithType() {
+        addDefaultFunctions();
         DefaultNamespace namespace = this.getNamespace();
         FunctionBuilder builder = new FunctionBuilder(UnaryOperator.NEG.identifier, namespace).setReturnType(this)
                 .setVisibility(FVisibilityModifier.EXPORT);
@@ -55,8 +56,6 @@ public abstract class FPredefinedClass extends FBaseClass {
         try {
             namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, FBool.INSTANCE));
             namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, FBool.INSTANCE));
             namespace.addRemoteFunction(BinaryOperator.LESS.addPredefined(this, FBool.INSTANCE));
             namespace.addRemoteFunction(BinaryOperator.LESS_EQUAL.addPredefined(this, FBool.INSTANCE));
             namespace.addRemoteFunction(BinaryOperator.GREATER.addPredefined(this, FBool.INSTANCE));

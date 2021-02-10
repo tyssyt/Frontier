@@ -48,6 +48,7 @@ public class CArray extends FInstantiatedClass {
 
         CBaseArray(FArray.FBaseArray fArray) {
             super(new CArrayIdentifier(fArray.getBase().getIdentifier()));
+            addDefaultFunctions();
             FTypeVariable baseType = fArray.getBase();
             setParameters(List.of(baseType), List.of(Variance.Invariant));
 

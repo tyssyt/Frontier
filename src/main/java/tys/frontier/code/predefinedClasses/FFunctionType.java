@@ -25,6 +25,7 @@ public class FFunctionType extends FPredefinedClass {
 
     private FFunctionType(FType in, FType out) {
         super(new FFunctionTypeIdentifier(in, out));
+        addDefaultFunctions();
         this.in = in;
         this.out = out;
     }

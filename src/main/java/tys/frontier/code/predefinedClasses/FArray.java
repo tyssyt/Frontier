@@ -88,6 +88,7 @@ public class FArray extends FInstantiatedClass {
         //TODO @PositionForGeneratedCode
         FBaseArray(FTypeVariable baseType) {
             super(new FArrayIdentifier(baseType.getIdentifier()));
+            addDefaultFunctions();
             setParameters(List.of(baseType), List.of(Variance.Invariant));
         }
 

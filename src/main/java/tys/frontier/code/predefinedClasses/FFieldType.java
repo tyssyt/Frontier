@@ -42,6 +42,7 @@ public class FFieldType extends FBaseClass {
 
     private FFieldType() {
         super(null, IDENTIFIER, FVisibilityModifier.EXPORT, null);
+        addDefaultFunctions();
     }
 
     @Override

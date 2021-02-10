@@ -763,9 +763,17 @@ class LLVMTransformer implements
                 return LLVMBuildBinOp(builder, arith, left, right, "arith_" + id.name);
             else
                 return LLVMBuildFCmp(builder, cmpFOpMap.get(id), left, right, "cmp_" + id.name);
-        } else {
-            return Utils.cantHappen();
+        } else if (id.equals(EQUALS_ID.identifier) || id.equals(NOT_EQUALS_ID.identifier)) {
+            assert LLVMGetTypeKind(LLVMTypeOf(left)) == LLVMPointerTypeKind;
+            assert LLVMGetTypeKind(LLVMTypeOf(right)) == LLVMPointerTypeKind;
+
+            LLVMTypeRef int64 = module.getLlvmType(FIntN._64); //TODO should propably already be a constant somewhere?
+            LLVMValueRef lint = LLVMBuildPtrToInt(builder, left, int64, "ptrEq_l");
+            LLVMValueRef rint = LLVMBuildPtrToInt(builder, right, int64, "ptrEq_r");
+            int op = id.equals(EQUALS_ID.identifier) ? LLVMIntEQ : LLVMIntNE;
+            return LLVMBuildICmp(builder, op, lint, rint, "cmp_" + id.name);
         }
+        return Utils.NYI("predefined function " + function);
     }
 
     private LLVMValueRef predefinedBinaryInt(FIdentifier id, FType type, LLVMValueRef left, LLVMValueRef right) {

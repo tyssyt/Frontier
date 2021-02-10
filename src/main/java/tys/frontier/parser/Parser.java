@@ -146,7 +146,8 @@ public class Parser {
         FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
         NativeDecl nativeDecl = ParserContextUtils.getNative(ctx.nativeModifier());
         FrontierParser.TypeParametersContext c = ctx.typeParameters();
-        FClass res = new FBaseClass(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, nativeDecl);
+        FBaseClass res = new FBaseClass(new Location(file, Position.fromCtx(ctx)), identifier, visibilityModifier, nativeDecl);
+        res.addDefaultFunctions();
         if (c != null) {
             Pair<List<FTypeVariable>, List<Variance>> typeParameters = ParserContextUtils.getTypeParameters(c);
             res.setParameters(typeParameters.a, typeParameters.b);

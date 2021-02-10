@@ -13,6 +13,7 @@ import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedClassIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
+import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.location.Location;
@@ -47,10 +48,10 @@ public class FBaseClass extends FClass {
         this.namespace = new DefaultNamespace(location, identifier, visibility, nativeDecl, this);
     }
 
-    protected void addDefaultFunctions() {
+    public void addDefaultFunctions() {
         try {
-            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, this));
+            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, FBool.INSTANCE));
+            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, FBool.INSTANCE));
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }
