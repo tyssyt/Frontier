@@ -259,6 +259,20 @@ export namespace Strings:
         return withZeroTerminator(fString).c_array();
     }
 
+    //TODO override operator ==
+    export equal(one: native[char], two: native[char]) -> bool {
+        i : int32 = 0;
+        while true {
+            if one[i,i] =!= two[i,i] {
+                return false;
+            } else if one[i,i] == 0 {
+                return true;
+            }
+            i = i+1;
+        }
+        return false; //TODO unreachable, but atm the parser does not comprehend this fix!
+    }
+
     export withZeroTerminator(fString: [char]) -> [char] { //TODO should assert that fString does not contain 0
         if fString[fString.size - 1] =*= 0 {
             return fString;

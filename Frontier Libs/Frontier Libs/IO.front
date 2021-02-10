@@ -24,6 +24,38 @@ export namespace IO:
         print("\n");
     }
 
+    export print(s: native[char]) {
+        i : int32 = 0;
+        while true {
+            if s[i, i] == 0 {
+                break;
+            }
+            IO.print(s[i,i]);
+            i = i+1;
+        }
+    }
+
+    export printLine(s: native[char]) {
+        print(s);
+        print("\n");
+    }
+
+    export printWide(s: native[char]) {  //TODO actually handle wide chars
+        i : int32 = 0;
+        while true {
+            if s[i, i] == 0 {
+                break;
+            }
+            IO.print(s[i,i]);
+            i = i+2;
+        }
+    }
+
+    export printLineWide(s: native[char]) {
+        printWide(s);
+        print("\n");
+    }
+
     export getChar() -> char {
         return Native.getchar().toChar;
     }

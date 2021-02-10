@@ -305,7 +305,7 @@ class LLVMTransformer implements
         return res;
     }
 
-    private LLVMValueRef createCStringToFString() {
+    private LLVMValueRef createCStringToFString() { //TODO move to Strings Library? or define a predefine stub in there?
         LLVMTypeRef charType = LLVMInt8TypeInContext(module.getContext());
         LLVMTypeRef cStringType = LLVMPointerType(charType, 0);
         LLVMTypeRef fStringType = module.getLlvmType(FStringLiteral.TYPE);
