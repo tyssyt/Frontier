@@ -25,10 +25,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.parser.syntaxErrors.CyclicDelegate;
-import tys.frontier.parser.syntaxErrors.SignatureCollision;
-import tys.frontier.parser.syntaxErrors.SyntaxError;
-import tys.frontier.parser.syntaxErrors.SyntaxErrors;
+import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 
 import java.util.*;
@@ -68,8 +65,14 @@ public class Delegates {
                     FType from = d.field.getType();
                     if (toDo.contains(from))
                         continue classLoop; //dependency found, wait
-                    if (from instanceof FInstantiatedClass && classesToPrepare.remove(from))
-                        ((FInstantiatedClass) from).prepare();
+                    if (from instanceof FInstantiatedClass && classesToPrepare.remove(from)) {
+                        try {
+                            ((FInstantiatedClass) from).prepare();
+                        } catch (NonEmbeddableType nonEmbeddableType) {
+                            errors.add(nonEmbeddableType);
+                            throw SyntaxErrors.create(errors);
+                        }
+                    }
                 }
                 for (Delegate d : delegateToMap.get(cur)) {
                     createDelegatedFunctions(d, errors);

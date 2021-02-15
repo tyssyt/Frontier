@@ -242,18 +242,21 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
     public Object visitFieldDeclaration(FrontierParser.FieldDeclarationContext ctx) {
         FVisibilityModifier visibilityModifier = ParserContextUtils.getVisibility(ctx.visibilityModifier());
         boolean _static = currentClass == null || ParserContextUtils.isStatic(ctx.modifier());
+        boolean embedded = ctx.EMBED() != null;
         try {
             FIdentifier identifier = new FIdentifier(ctx.IDENTIFIER().getText());
             FType type = ParserContextUtils.getType(ctx.typeType(), this::resolveNamespace);
             Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
             if (_static) {
+                if (embedded)
+                    Utils.NYI("embed on static field at" + Position.fromCtx(ctx));
                 StaticField res = new StaticField(location, identifier, type, currentNamespace, visibilityModifier, ctx.expression() != null);
                 if (ctx.nameSelector() != null)
                     throw new DelegateFromStaticField(res);
                 currentNamespace.addField(res);
                 treeData.fields.put(ctx, res);
             } else {
-                InstanceField res = new InstanceField(location, identifier, type, currentClass, visibilityModifier, ctx.expression() != null);
+                InstanceField res = InstanceField.create(location, identifier, type, currentClass, visibilityModifier, ctx.expression() != null, embedded);
                 currentClass.addField(res);
                 treeData.fields.put(ctx, res);
 

@@ -51,7 +51,7 @@ public abstract class FClass implements FType {
 
     public abstract Variance getParameterVariance(int i);
 
-    public abstract FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments;
+    public abstract FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments, NonEmbeddableType;
 
     public abstract Map<FType, FField> getDirectDelegates();
 

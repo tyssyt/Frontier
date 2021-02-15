@@ -381,8 +381,13 @@ public class LLVMModule implements AutoCloseable {
         for (FClass fClass : todoClassBodies) {
             List<LLVMTypeRef> subtypes = new ArrayList<>();
             int index = 0;
-            for (FField field : fClass.getInstanceFields().values()) {
-                subtypes.add(getLlvmType(field.getType()));
+            for (InstanceField field : fClass.getInstanceFields().values()) {
+                LLVMTypeRef llvmType = getLlvmType(field.getType());
+                //TODO if we have it, this can become field.isEmbedded && !field.getType().isDefaultEmbedded
+                if (field.isEmbedded() && LLVMGetTypeKind(llvmType) == LLVMPointerTypeKind) {
+                    llvmType = LLVMGetElementType(llvmType);
+                }
+                subtypes.add(llvmType);
                 fieldIndices.put(field, index++);
             }
             LLVMStructSetBody(LLVMGetElementType(getLlvmType(fClass)), createPointerPointer(subtypes), subtypes.size(), FALSE);

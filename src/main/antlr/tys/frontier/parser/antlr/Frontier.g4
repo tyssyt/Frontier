@@ -36,6 +36,7 @@ tokens {
     NATIVE,
     OPEN,
     OPERATOR,
+    EMBED,
     DELEGATE,
     IN,
     OUT,
@@ -181,7 +182,7 @@ operator
     ;
 
 fieldDeclaration
-    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? IDENTIFIER COLON typeType (ASSIGN expression)? SEMI //TODO change to match local var declaration
+    :   (DELEGATE nameSelector COLON)? visibilityModifier? modifier? EMBED? IDENTIFIER COLON typeType (ASSIGN expression)? SEMI
     ;
 
 formalParameters
@@ -210,7 +211,7 @@ nameSelector
 
 typeType
     :   LBRACK typeOrTuple RBRACK
-    |   NATIVE LBRACK  typeOrTuple RBRACK
+    |   NATIVE LBRACK typeOrTuple RBRACK
     |   typeType QUESTION
     |   LPAREN typeList ARROW typeList RPAREN
     |   predefinedType

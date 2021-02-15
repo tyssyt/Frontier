@@ -41,13 +41,13 @@ public class FTypeType extends FBaseClass {
 
         //field name
         {
-            name = new InstanceField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false);
+            name = InstanceField.createTrusted(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(name); //TODO make final
         }
 
         //field fields
         {
-            fields = new InstanceField(null, new FIdentifier("fields"), FArray.getArrayFrom(FFieldType.INSTANCE), INSTANCE, FVisibilityModifier.EXPORT, false);
+            fields = InstanceField.createTrusted(null, new FIdentifier("fields"), FArray.getArrayFrom(FFieldType.INSTANCE), INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(fields); //TODO make final
         }
 

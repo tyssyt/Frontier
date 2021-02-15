@@ -23,6 +23,7 @@ import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
@@ -46,7 +47,7 @@ public class FArray extends FInstantiatedClass {
     public static FArray getArrayFrom(FType baseType) {
         try {
             return (FArray) FBaseArray.F_INSTANCE.getInstantiation(ImmutableList.of(baseType));
-        } catch (WrongNumberOfTypeArguments wrongNumberOfTypeArguments) {
+        } catch (WrongNumberOfTypeArguments | NonEmbeddableType syntaxError) {
             return Utils.cantHappen();
         }
     }
@@ -98,7 +99,7 @@ public class FArray extends FInstantiatedClass {
 
             //addDefaultFunctions(); TODO should only be added once for "base class"
             //TODO add container equals, and prolly do something to equality once that is done
-            InstanceField size = new InstanceField(null, SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false);
+            InstanceField size = InstanceField.createTrusted(null, SIZE, FIntN._32, this, FVisibilityModifier.EXPORT, false, false);
             addFieldTrusted(size); //TODO make final
             namespace.getFunctions(true).get(size.getIdentifier()).clear(); //remove setter TODO no longer needed when field is final
             access = Access.createPredefined(this, baseType, FIntN._32);

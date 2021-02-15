@@ -23,17 +23,17 @@ public class FFieldType extends FBaseClass {
     static {
         //field name
         {
-            name = new InstanceField(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false);
+            name = InstanceField.createTrusted(null, new FIdentifier("name"), FStringLiteral.TYPE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(name); //TODO make final
         }
         //field type
         {
-            type = new InstanceField(null, new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false);
+            type = InstanceField.createTrusted(null, new FIdentifier("type"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(type); //TODO make final
         }
         //field memberOf
         {
-            memberOf = new InstanceField(null, new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false);
+            memberOf = InstanceField.createTrusted(null, new FIdentifier("memberOf"), FTypeType.INSTANCE, INSTANCE, FVisibilityModifier.EXPORT, false, false);
             INSTANCE.addFieldTrusted(memberOf); //TODO make final
         }
 

@@ -17,6 +17,7 @@ import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.location.Location;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
@@ -128,7 +129,7 @@ public class FBaseClass extends FClass {
     }
 
     @Override
-    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments, NonEmbeddableType {
         if (getParametersList().size() != types.size()) {
             throw new WrongNumberOfTypeArguments(this, types, getParametersList().size());
         }

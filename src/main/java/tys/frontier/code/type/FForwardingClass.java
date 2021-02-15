@@ -6,6 +6,7 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.InstanceField;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 
 import java.util.List;
@@ -64,7 +65,7 @@ public abstract class FForwardingClass extends FClass {
     }
 
     @Override
-    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments {
+    public FClass getInstantiation(List<FType> types) throws WrongNumberOfTypeArguments, NonEmbeddableType {
         return proxy.getInstantiation(types);
     }
 

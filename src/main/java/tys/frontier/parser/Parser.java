@@ -118,7 +118,16 @@ public class Parser {
                 if (namespace.getType() != null)
                     namespace.getType().generateConstructor(false);
         delegates.createDelegatedFunctions(classesToPrepare);
-        classesToPrepare.forEach(FInstantiatedClass::prepare);
+        List<SyntaxError> errors = new ArrayList<>();
+        for (FInstantiatedClass fInstantiatedClass : classesToPrepare) {
+            try {
+                fInstantiatedClass.prepare();
+            } catch (NonEmbeddableType nonEmbeddableType) {
+                errors.add(nonEmbeddableType);
+            }
+        }
+        if (!errors.isEmpty())
+            throw SyntaxErrors.create(errors);
     }
 
     private static void visitBodies(FrontierModule module, Delegates delegates) throws SyntaxErrors {
@@ -134,7 +143,7 @@ public class Parser {
             Log.warning(Parser.class, warnings.toString());
     }
 
-    public void registerInstantiatedClass(FInstantiatedClass toRegister) {
+    public void registerInstantiatedClass(FInstantiatedClass toRegister) throws NonEmbeddableType {
         if (classesToPrepare == null)
             toRegister.prepare();
         else

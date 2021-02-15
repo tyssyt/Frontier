@@ -40,7 +40,7 @@ public class FTuple extends FPredefinedClass {
         //add fields and getters
         //TODO @PositionForGeneratedCode
         for (FType fieldType : types) {
-            InstanceField field = new InstanceField(null, new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false);
+            InstanceField field = InstanceField.createTrusted(null, new FIdentifier(names.next()), fieldType, this, FVisibilityModifier.EXPORT, false, false);
             addFieldTrusted(field); //TODO make final
         }
         //remove setter TODO no longer needed when field final

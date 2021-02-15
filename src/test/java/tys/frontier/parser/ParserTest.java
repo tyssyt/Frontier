@@ -178,6 +178,11 @@ public class ParserTest {
         assertEquals(NativeWithBody.class, e.getClass());
     }
     @Test
+    public void parseNonEmbeddableType() throws Exception {
+        SyntaxError e = parseSyntaxError("NonEmbeddableType.front");
+        assertEquals(NonEmbeddableType.class, e.getClass());
+    }
+    @Test
     public void parseNonOpenRemoteFunctionDeclaration() throws Exception {
         SyntaxError e = parseSyntaxError("NonOpenRemoteFunctionDeclaration.front");
         assertEquals(NonOpenRemoteFunctionDeclaration.class, e.getClass());

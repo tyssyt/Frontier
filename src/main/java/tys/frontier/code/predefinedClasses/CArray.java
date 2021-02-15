@@ -15,6 +15,7 @@ import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
@@ -35,7 +36,7 @@ public class CArray extends FInstantiatedClass {
     public static CArray getArrayFrom(FType baseType) {
         try {
             return (CArray) FArray.FBaseArray.C_INSTANCE.getInstantiation(ImmutableList.of(baseType));
-        } catch (WrongNumberOfTypeArguments wrongNumberOfTypeArguments) {
+        } catch (WrongNumberOfTypeArguments | NonEmbeddableType syntaxError) {
             return Utils.cantHappen();
         }
     }

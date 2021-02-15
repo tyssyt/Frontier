@@ -14,6 +14,7 @@ import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.ForPlaceholder;
 import tys.frontier.code.typeInference.Variance;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.passes.GenericBaking;
 import tys.frontier.util.Utils;
 
@@ -44,11 +45,11 @@ public class FInstantiatedClass extends FForwardingClass {
         this.newNamespace = new DefaultNamespace(namespace.getLocation(), newIdentifier, namespace.getVisibility(), namespace.getNative(), this);
     }
 
-    public void prepare() {
+    public void prepare() throws NonEmbeddableType {
         TypeInstantiation typeInstantiation = getTypeInstantiation();
         //add instance fields
         for (InstanceField baseField : proxy.getInstanceFields().values()) {
-            InstanceField instantiatedField = new InstanceField(baseField.getLocation(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),this, baseField.getVisibility(), baseField.hasAssignment());
+            InstanceField instantiatedField = InstanceField.create(baseField.getLocation(), baseField.getIdentifier(), typeInstantiation.getType(baseField.getType()),this, baseField.getVisibility(), baseField.hasAssignment(), baseField.isEmbedded());
             this.addFieldTrusted(instantiatedField);
             baseFunctionMap.put(baseField.getGetter(), instantiatedField.getGetter());
             baseFunctionMap.put(baseField.getSetter(), instantiatedField.getSetter());

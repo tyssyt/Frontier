@@ -997,10 +997,18 @@ class LLVMTransformer implements
         else
             address = LLVMGetNamedGlobal(module.getModule(), getStaticFieldName(field));
 
-        if (fieldAccessor.isGetter())
-            return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
-        else
-            return LLVMBuildStore(builder, field instanceof InstanceField ? args.get(1) : args.get(0), address);
+        //TODO if we have it, this can become field.isEmbedded && !field.getType().isDefaultEmbedded
+        if (field instanceof InstanceField && ((InstanceField) field).isEmbedded() && LLVMGetTypeKind(module.getLlvmType(field.getType())) == LLVMPointerTypeKind) {
+            if (fieldAccessor.isGetter())
+                return address;
+            else
+                return LLVMBuildStore(builder, LLVMBuildLoad(builder, args.get(1), "loadForEmbedStore"), address);
+        } else {
+            if (fieldAccessor.isGetter())
+                return LLVMBuildLoad(builder, address, "load_" + field.getIdentifier().name);
+            else
+                return LLVMBuildStore(builder, field instanceof InstanceField ? args.get(1) : args.get(0), address);
+        }
     }
 
     @Override

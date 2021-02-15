@@ -1,0 +1,2 @@
+class A:
+    embed a : [int32] = [int32, 1];

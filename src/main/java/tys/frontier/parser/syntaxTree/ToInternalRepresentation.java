@@ -1028,7 +1028,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
     }
 
-    public ImmutableList<FParameter> visitLambdaHeader(FrontierParser.LambdaHeaderContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+    public ImmutableList<FParameter> visitLambdaHeader(FrontierParser.LambdaHeaderContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, NonEmbeddableType {
         ImmutableList.Builder<FParameter> params = ImmutableList.builder();
         for (FrontierParser.LambdaParamContext c : ctx.lambdaParam()) {
             params.add(visitLambdaParam(c, parameters));
@@ -1036,7 +1036,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return params.build();
     }
 
-    public FParameter visitLambdaParam(FrontierParser.LambdaParamContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable {
+    public FParameter visitLambdaParam(FrontierParser.LambdaParamContext ctx, Map<FIdentifier, FTypeVariable> parameters) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, NonEmbeddableType {
         TerminalNode idContext = ctx.IDENTIFIER();
         if (idContext != null) {
             FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
@@ -1065,7 +1065,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         return res;
     }
 
-    public Optional<FLocalVariable> visitLambdaParam(FrontierParser.LambdaParamContext ctx, FType type) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, IncompatibleTypes {
+    public Optional<FLocalVariable> visitLambdaParam(FrontierParser.LambdaParamContext ctx, FType type) throws WrongNumberOfTypeArguments, TypeNotFound, ParameterizedTypeVariable, IncompatibleTypes, NonEmbeddableType {
         TerminalNode idContext = ctx.IDENTIFIER();
         if (idContext != null) {
             FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();

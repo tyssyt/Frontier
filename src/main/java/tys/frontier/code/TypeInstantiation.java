@@ -17,6 +17,7 @@ import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
+import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
 import tys.frontier.util.Utils;
 
@@ -148,7 +149,7 @@ public class TypeInstantiation {
             }
             try {
                 return fClass.getInstantiation(args);
-            } catch (WrongNumberOfTypeArguments wrongNumberOfTypeArguments) {
+            } catch (WrongNumberOfTypeArguments | NonEmbeddableType syntaxError) {
                 return Utils.cantHappen();
             }
         } else if (original instanceof FTypeVariable) {
