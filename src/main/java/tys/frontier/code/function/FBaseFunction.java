@@ -7,7 +7,6 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.type.FType;
@@ -116,8 +115,6 @@ public class FBaseFunction implements FFunction {
     public boolean isMain() {
         return identifier.name.equals("main")
                 && modifier == FVisibilityModifier.EXPORT
-                && memberOf instanceof DefaultNamespace
-                && ((DefaultNamespace) memberOf).getVisibility() == FVisibilityModifier.EXPORT
                 && signature.isMain();
     }
 

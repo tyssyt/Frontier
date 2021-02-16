@@ -30,7 +30,7 @@ public class FrontierModule implements Module {
 
     @Override
     public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
-        return getExportedNamespaces().values().stream()
+        return getNamespaces()
                 .flatMap(namespace -> namespace.getFunctions(false).values().stream())
                 .map(Signature::getFunction)
                 .filter(FFunction::isMain)
