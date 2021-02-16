@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 import List;
 
 export class Main:
@@ -16,7 +17,7 @@ export static main () {
     IO.print(a);
     IO.print(b);
     IO.print(c);
-    IO.printInt(e);
+    printInt(e);
     IO.printLine("");
 
     a,b = b,a;
@@ -26,23 +27,23 @@ export static main () {
     IO.printLine("");
 
     a, b, c, d: = b, c, a+b, a+2*b+c;
-    IO.printInt(a);
-    IO.printInt(b);
-    IO.printInt(c);
-    IO.printInt(d);
+    printInt(a);
+    printInt(b);
+    printInt(c);
+    printInt(d);
     IO.printLine("");
 
     arr :[int32] = [int32, 5];
     arr[2] = -42;
     arr2 := arr;
     arr, arr[2], f:int32 = [int32, 3], 42, 0; //wait, thats illegal
-    IO.printInt(arr[2]);
-    IO.printInt(arr2[2]);
+    printInt(arr[2]);
+    printInt(arr2[2]);
     IO.printLine("");
 
 	//e,f += g(); //TODO
-    //IO.printInt(e);
-    //IO.printInt(f);
+    //printInt(e);
+    //printInt(f);
 
     l := List<([char], int64)>.create();
 
@@ -50,8 +51,12 @@ export static main () {
     l.add("g2esports.com/shop", 42);
     qwe:[char], rtz:int64 = l[0];
     qwe2:[char], rtz2:int64 = l[1];
-    IO.printInt(rtz);
+    printInt(rtz);
     IO.printLine(qwe);
-    IO.printInt(rtz2);
+    printInt(rtz2);
     IO.printLine(qwe2);
+}
+
+static printInt(l: int64) {
+    IO.print(Strings.intToString(l));
 }

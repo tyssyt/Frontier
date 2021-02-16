@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 
 class G<T>:
     constructors;
@@ -20,47 +21,51 @@ class O<T>:
 export class Main:
 
 export static main() {
-    IO.printInt(0);
+    printInt(0);
     {
         test := O<int64>();
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
     {
         test := O<int64>(t=2);
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
     {
         test := O<int64?>();
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
     {
         test := O<int64?>(t=4);
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
 
     {
         test := G<int64>(t=5);
-        IO.printInt(test.get());
+        printInt(test.get());
     }
     {
         test := G<int64?>(t=6);
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
     {
         test := G<int64?>(t=null); //TODO this null should not be necessary, but in the current state of constructors it is, the ToDo document has a note on this
         if (test.get()) {
-            IO.printInt(test.get()!);
+            printInt(test.get()!);
         }
     }
-    IO.printInt(8);
+    printInt(8);
+}
+
+static printInt(l: int64) {
+    IO.print(Strings.intToString(l));
 }

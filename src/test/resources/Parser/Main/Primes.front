@@ -1,5 +1,6 @@
 import IO;
 import Strings;
+import Stringer;
 import List;
 
 
@@ -15,9 +16,7 @@ class Sieb:
 
     nextPrime() -> int32 {
         if Main.verbose {
-            IO.print("computing Prime Number ");
-            IO.printInt(primes.size()+1);
-            IO.printLine("");
+            IO.printLine(Stringer.format("computing Prime Number %", primes.size()+1, ""));
         }
 
         candidate: int32 = primes[primes.size()-1];
@@ -29,18 +28,10 @@ class Sieb:
             prime = true;
 
             if Main.verbose {
-                IO.print("candidate: ");
-                IO.printInt(candidate);
-                IO.printLine("");
+                IO.printLine(Stringer.format("candidate: %", candidate, ""));
             }
 
             for divisor : primes {
-                if Main.verbose {
-                    IO.print("sieving with: ");
-                    IO.printInt(divisor);
-                    IO.printLine("");
-                }
-
                 if candidate % divisor =*= 0 {
                     prime = false;
                     break;
@@ -59,15 +50,11 @@ static verbose: bool = false;
 
 export static main (args: [[char]]) {
     numberOfPrimesToCompute := Strings.parseInt(args[1]).toInt32;
-    IO.print("computing ");
-    IO.printInt(numberOfPrimesToCompute);
-    IO.print(" primes!");
-    IO.printLine("");
+    IO.printLine(Stringer.format("computing % primes!", numberOfPrimesToCompute, ""));
 
     sieb := Sieb.create(numberOfPrimesToCompute);
     while numberOfPrimesToCompute > 1 {
-        IO.printInt(sieb.nextPrime());
-        IO.printLine("");
+        IO.printLine(Strings.intToString(sieb.nextPrime()));
         numberOfPrimesToCompute = numberOfPrimesToCompute-1;
     }
 }

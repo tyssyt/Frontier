@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 
 native include NativeInclude.lib;
 native include NativeInclude.bc;
@@ -20,28 +21,28 @@ static writeToAddr(ptr: native[int64], val: int64) {
 
 export static main () {
     //call c
-    IO.printInt(cfuncRetuningInt());
+    printInt(cfuncRetuningInt());
     IO.print(",");
 
     //call llvm
     llvm := llvmFunc(69);
-    IO.printInt(llvm.number);
+    printInt(llvm.number);
     IO.print(",");
 
     //manip addressof instance field
     writeToAddr(native[].of(llvm.number), 420);
-    IO.printInt(llvm.number);
+    printInt(llvm.number);
     IO.print(",");
 
     //manip addressof static field
     writeToAddr(native[].of(staticInt), 666);
-    IO.printInt(staticInt);
+    printInt(staticInt);
     IO.print(",");
 
     //manip addressof local variable
     i : int64 = -1;
     writeToAddr(native[].of(i), 1337);
-    IO.printInt(i);
+    printInt(i);
     IO.print(",");
 
     //manip carray of farray and manip
@@ -53,4 +54,8 @@ export static main () {
 
     //CArray to FArray
     IO.print(str.c_array.copyToFArray(3));
+}
+
+static printInt(l: int64) {
+    IO.print(Strings.intToString(l));
 }

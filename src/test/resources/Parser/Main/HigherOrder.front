@@ -1,5 +1,6 @@
 import IO;
 import List;
+import Strings;
 
 export class Test:
 
@@ -24,6 +25,10 @@ static forEach <T,R> (l: List<T>, f: (T->R)) {
     }
 }
 
+static printInt(l: int64) {
+    IO.print(Strings.intToString(l));
+}
+
 export static main() {
     list := List<int64>.create();
     i:int32 = 0;
@@ -32,16 +37,16 @@ export static main() {
         i = i+1;
     }
     IO.print("1:");
-    Test.forEach(list, IO.printInt**);
+    Test.forEach(list, printInt**);
     IO.print("\n2:");
-    forEach(doNothing(list), doNothing(IO.printInt**));
+    forEach(doNothing(list), doNothing(printInt**));
     IO.print("\n3:");
     asdf : (List<int64>, (int64->()) -> ()) = forEach**;
-    call(asdf, list, IO.printInt**);
+    call(asdf, list, printInt**);
     IO.print("\n4:");
-    call(forEach**, list, IO.printInt**);
+    call(forEach**, list, printInt**);
     IO.print("\n5:");
-    call(doNothing(forEach**), doNothing(list), doNothing(IO.printInt**));
+    call(doNothing(forEach**), doNothing(list), doNothing(printInt**));
     //doNothing(doNothing**); this is invalid
     call(call2**, IO.print**([char]), "\ndone");
 }

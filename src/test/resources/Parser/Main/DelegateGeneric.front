@@ -1,5 +1,6 @@
 import IO;
 import List;
+import Strings;
 
 class IntList:
 
@@ -75,30 +76,34 @@ export static main () {
     intList.add(10);
     intList.add(9);
     intList.add(8);
-    forEach(intList, IO.printInt**);
+    forEach(intList, printInt**);
 
     IO.print("|");
 
     //forwarding non generic in generic
     gen := createGenericWithDelegateFromOutside();
-    //IO.printInt(gen.doSthUseful(\i, j -> i+j)); //TODO i32<returnvalue<i64, so maybe this is correct to fail here, should analyse
-    IO.printInt(gen.doSthUseful(\i: int32,  j: int32 -> i+j)); //so giving types is enough, nice
-    IO.printInt(gen);
+    //printInt(gen.doSthUseful(\i, j -> i+j)); //TODO i32<returnvalue<i64, so maybe this is correct to fail here, should analyse
+    printInt(gen.doSthUseful(\i: int32,  j: int32 -> i+j)); //so giving types is enough, nice
+    printInt(gen);
 
     IO.print("|");
 
     //in a generic class, forward from a generic class, but in the instantiation we use a type parameter of the current class
     moregen := MoreGenerix<List<int64>>.create(Generic<List<int64>>.create(intList,49));
     moregen.getT().add(51);
-    forEach(intList, IO.printInt**);
-    IO.printInt(moregen.getT()[3]);
+    forEach(intList, printInt**);
+    printInt(moregen.getT()[3]);
 
     IO.print("|");
 
-    IO.printInt(moregen.doSthUseful(\i, j -> i[0] + j));
+    printInt(moregen.doSthUseful(\i, j -> i[0] + j));
 
     IO.print("|");
 
     overload(gen);
     overload2(gen);
+}
+
+static printInt(l: int64) {
+    IO.print(Strings.intToString(l));
 }

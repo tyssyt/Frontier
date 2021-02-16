@@ -3,6 +3,14 @@ export namespace Native:
     export native getchar() -> int32;
 
 export native class CFile:
+    export static EOF : int32 = -1; //c std lib implementations could choose a different value for EOF...
+    export static MODE_READ:   native[char] = "r\0".c_array; //TODO weird cases of string literals...
+    export static MODE_WRITE:  native[char] = "w\0".c_array;
+    export static MODE_APPEND: native[char] = "a\0".c_array;
+
     export native static fopen(filename: native[char], mode: native[char]) -> CFile;
     export native static fputc(character: int32, stream: CFile) -> int32;
+    export native fgetc() -> int32;
+    export native static ungetc(character: int32, stream: CFile) -> int32;
     export native fflush() -> int32;
+    export native fclose();

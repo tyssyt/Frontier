@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 import List;
 
 export class Lambda:
@@ -45,7 +46,7 @@ static buildMat() -> List<List<int64>> {
 static printMat(mat: List<List<int64>>) {
     forEach(mat, \inner -> {
         forEach(inner, \e -> {
-            IO.printInt(e);
+            IO.print(Strings.intToString(e));
             IO.print(", ");
         });
         IO.printLine("");

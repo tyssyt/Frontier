@@ -1,14 +1,10 @@
 import Native;
-import Strings;
+import Stringer;
 
-export namespace IO:
+export namespace IO: //TODO many duplications from File
 
     export print(chara: char) {
         Native.putchar(chara);
-    }
-
-    export printInt(l: int64) {
-        print(Strings.intToString(l));
     }
 
     export print(string: [char]) {
@@ -23,7 +19,15 @@ export namespace IO:
         }
         print("\n");
     }
+/*
+    export print <Tup*> (string: [char], args: Tup) {
+        print(Stringer.format(string, args));
+    }
 
+    export printLine <Tup*> (string: [char], args: Tup) {
+        printLine(Stringer.format(string, args));
+    }
+*/
     export print(s: native[char]) {
         i : int32 = 0;
         while true {
@@ -60,7 +64,7 @@ export namespace IO:
         return Native.getchar().toChar;
     }
 
-    export getInt() -> int64 {
+    export getInt() -> int64? {
         res: int64 = 0;
 
         //check for first char '-'
@@ -69,6 +73,10 @@ export namespace IO:
 
         if isNegative {
             nextChar = getChar();
+        }
+
+        if nextChar < 48 || nextChar > 57 {
+            return null;
         }
 
         while nextChar >= 48 && nextChar <= 57 {
@@ -84,48 +92,6 @@ export namespace IO:
         return res;
     }
 
-    isWhitspace(c: char) -> bool {
-        return (c >= 9 && c <= 13) || c =*= 32;
-    }
-
     charToInt(c: char) -> int32 {
         return c - 48;
-    }
-
-export class File:
-    export static modeWrite: native[char] = Strings.toCString("w\0"); //TODO there is still a bug with the compiler assuming "w" is char even though here it should be string
-    export static modeAppend: native[char] = Strings.toCString("a\0");
-
-    cFile: CFile;
-
-    export static fOpen(filename: [char], mode: native[char]) -> File {
-        return File(cFile = CFile.fopen(Strings.toCString(filename), mode));
-    }
-
-    export write(chara: char) {
-        writeNoFlush(chara);
-        cFile.fflush();
-    }
-
-    export writeInt(l: int64) {
-        write(Strings.intToString(l));
-    }
-
-    export write(string: [char]) {
-        for c : string {
-            writeNoFlush(c);
-        }
-        cFile.fflush();
-    }
-
-    export writeLine(string: [char]) {
-        for c : string {
-            writeNoFlush(c);
-        }
-        writeNoFlush("\n");
-        cFile.fflush();
-    }
-
-    writeNoFlush(chara: char) {
-        CFile.fputc(chara, cFile);
     }

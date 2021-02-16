@@ -1,0 +1,149 @@
+import Native;
+import Strings;
+import Stringer;
+import List;
+
+export class File: //TODO many duplications from IO
+
+    export static MODE_READ   : int32 = 0;
+    export static MODE_WRITE  : int32 = 1;
+    export static MODE_APPEND : int32 = 1;
+
+    cFile: CFile;
+    readBuffer : List<char>? = null;
+
+    export static readFile(filename: [char]) -> [char] {
+        file := _open(filename, MODE_READ);
+        c := file.readChar();
+        while c =!= CFile.EOF {
+            file.readBuffer!.add(c);
+            c = file.readChar();
+        }
+        file.close;
+        return file.readBuffer!.trim();
+    }
+
+    export static readLines(filename: [char]) -> [[char]] {
+        file := _open(filename, MODE_READ);
+        fileBuffer := List<[char]>.create();
+        line:, moreData: = file.readLine();
+        fileBuffer.add(line);
+        while moreData {
+            line, moreData = file.readLine();
+            fileBuffer.add(line);
+        }
+        file.close;
+        return fileBuffer.trim();
+    }
+
+    export static _open(filename: [char], mode: int32) -> File {
+        if mode == MODE_READ {
+            return File(cFile = CFile.fopen(Strings.toCString(filename), CFile.MODE_READ), readBuffer = List<char>.create(50));
+        } else if mode == MODE_WRITE {
+            return File(cFile = CFile.fopen(Strings.toCString(filename), CFile.MODE_WRITE));
+        } else if mode == MODE_APPEND {
+            return File(cFile = CFile.fopen(Strings.toCString(filename), CFile.MODE_APPEND));
+        }
+        //TODO some error
+        return File(cFile = CFile.fopen("".c_array, "".c_array));
+    }
+
+    export close() {
+        cFile.fclose();
+    }
+
+    export write(chara: char) {
+        writeNoFlush(chara);
+        cFile.fflush();
+    }
+
+    export write(string: [char]) {
+        for c : string {
+            writeNoFlush(c);
+        }
+        cFile.fflush();
+    }
+
+    export writeLine(string: [char]) {
+        for c : string {
+            writeNoFlush(c);
+        }
+        writeNoFlush("\n");
+        cFile.fflush();
+    }
+
+    export write <Tup*> (string: [char], args: Tup) {
+        write(Stringer.format(string, args));
+    }
+
+    export writeLine <Tup*> (string: [char], args: Tup) {
+        writeLine(Stringer.format(string, args));
+    }
+
+    export readChar() -> char {
+        return cFile.fgetc().toChar;
+    }
+
+    export readLine() -> [char], bool {
+        c := readChar();
+        while !isNewLine(c) && c =!= CFile.EOF {
+            readBuffer!.add(c);
+            c = readChar();
+        }
+
+        //because Windows
+        while isNewLine(c) {
+            c = readChar();
+        }
+        if c =!= CFile.EOF {
+            CFile.ungetc(c, cFile);
+        }
+
+        res := readBuffer!.trim();
+        readBuffer!.clear();
+        return res, c =!= CFile.EOF;
+    }
+
+    export readInt() -> int64? {
+        res: int64 = 0;
+
+        //check for first char '-'
+        nextChar := readChar();
+        isNegative := nextChar =*= 45;
+
+        if isNegative {
+            nextChar = readChar();
+        }
+
+        if nextChar < 48 || nextChar > 57 {
+            return null;
+        }
+
+        while nextChar >= 48 && nextChar <= 57 {
+            res = res * 10;
+            res = res + charToInt(nextChar);
+            nextChar = readChar();
+        }
+
+        if isNegative {
+            res = res * -1;
+        }
+
+        return res;
+    }
+
+    writeNoFlush(c: char) {
+        CFile.fputc(c, cFile);
+    }
+
+    isWhitspace(c: char) -> bool {
+        return (c >= 9 && c <= 13) || c =*= 32;
+    }
+
+    isNewLine(c: char) -> bool {
+        return c =*= "\n" || c =*= "\r";
+    }
+
+    charToInt(c: char) -> int32 {
+        return c - 48;
+    }

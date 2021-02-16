@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 import List;
 
 class Coord:
@@ -8,9 +9,9 @@ constructors;
 
 print() {
     IO.print("Coord{x=");
-    IO.printInt(x);
+    IO.print(Strings.intToString(x));
     IO.print(",y=");
-    IO.printInt(y);
+    IO.print(Strings.intToString(y));
     IO.print("}");
 }
 
@@ -58,7 +59,7 @@ static printOpt(str: [char]?, coord: Coord?, i: int64?) {
     }
     IO.print("|");
     if i {
-        IO.printInt(i);
+        IO.print(Strings.intToString(i));
     } else {
         IO.print("no Int");
     }
@@ -70,7 +71,7 @@ static print(str: [char], coord: Coord, i: int64?) {
     coord.print();
     IO.print("|");
     if i {
-        IO.printInt(i);
+        IO.print(Strings.intToString(i));
     } else {
         IO.print("no Int");
     }
@@ -98,7 +99,7 @@ export static main () {
         IO.printLine("--Array--");
         arr := gen.getArray(5);
         for str, coord, i, index : arr {
-            IO.printInt(index);
+            IO.print(Strings.intToString(index));
             IO.print(": ");
             print(str, coord, i);
             IO.printLine("");
@@ -111,7 +112,7 @@ export static main () {
         str1:, coord1:, i1:, arg2:, str2:, coord2:, i2: = gen.getTuple();
         print(str1, coord1, i1);
         IO.print("|");
-        IO.printInt(arg2);
+        IO.print(Strings.intToString(arg2));
         IO.print("|");
         print(str2, coord2, i2);
         IO.printLine("");

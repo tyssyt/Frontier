@@ -1,4 +1,5 @@
 import Strings;
+import Stringer;
 import IO;
 import Sort;
 import Random;
@@ -37,9 +38,7 @@ export class Main:
         } else {
             random = Random.createRNG(Timing.getTimestamp());
         }
-        IO.print("RNG Seed: ");
-        IO.printInt(random.seed);
-        IO.printLine("");
+        IO.printLine(Stringer.format("RNG Seed: %", random.seed, ""));
 
         sumSort: int64 = 0;
         anyFail := false;
@@ -57,9 +56,7 @@ export class Main:
             }
         }
 
-        IO.print("sumSort:  ");
-        IO.printInt(sumSort);
-        IO.printLine("");
+        IO.printLine(Stringer.format("RNG sumSort: %", sumSort, ""));
 
         if anyFail {
             IO.printLine("FAILED");

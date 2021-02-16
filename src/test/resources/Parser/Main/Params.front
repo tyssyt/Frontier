@@ -1,4 +1,5 @@
 import IO;
+import Strings;
 import List;
 
 export class Main:
@@ -19,7 +20,7 @@ static crazy <V,R> ((V->R) f := \t -> t.do(x=1, y=100), V v) -> R {
 
 export static main () {
     fun : (Main -> int32) = \t -> t.do(x=15, y=5);
-    IO.printInt(fun(Main()));
+    IO.print(Strings.intToString(fun(Main())));
     IO.print(getChar("@"));
     IO.print(getChar("#"));
     IO.print(getChar());
