@@ -90,4 +90,9 @@ public class FTypeType extends FBaseClass {
     public boolean canImplicitlyCast() {
         return false;
     }
+
+    public static void resetNamespace() {
+        INSTANCE.getNamespace().getFunctions(false).get(fieldsOf_ID).clear();
+        INSTANCE.getNamespace().addFunctionTrusted(fieldsOf);
+    }
 }
