@@ -6,7 +6,9 @@ import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FBool;
+import tys.frontier.code.predefinedClasses.FFloat;
+import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
@@ -131,6 +133,12 @@ public enum BinaryOperator implements Operator {
 
     public static void resetNamespace() {
         BinaryOperator.sGetNamespace().getFunctions(false).values()
-                .removeIf( sig -> !sig.getFunction().isPredefined() || sig.getType() instanceof FOptional);
+                .removeIf( sig -> canBeRemoved(sig.getParameters().get(0).getType()));
+    }
+
+    private static boolean canBeRemoved(FType type) {
+        if (!(type instanceof FClass))
+            return false;
+        return !(type == FBool.INSTANCE || type instanceof FIntN || type instanceof FFloat);
     }
 }

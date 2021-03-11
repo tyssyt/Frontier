@@ -6,7 +6,7 @@ import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.InstanceField;
 import tys.frontier.code.StaticField;
-import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.NativeDecl;
 import tys.frontier.code.function.operator.Operator;
@@ -199,7 +199,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             boolean open = ctx.OPEN() != null;
 
             Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
-            FFunction res = builder.setLocation(location).setMemberOf(namespace).setParams(parameters).build();
+            FBaseFunction res = builder.setLocation(location).setMemberOf(namespace).setParams(parameters).build();
             treeData.functions.put(ctx, res);
 
             if (nativeDecl != null && hasBody)

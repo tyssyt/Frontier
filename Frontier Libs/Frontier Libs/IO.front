@@ -19,7 +19,7 @@ export namespace IO: //TODO many duplications from File
         }
         print("\n");
     }
-/*
+
     export print <Tup*> (string: [char], args: Tup) {
         print(Stringer.format(string, args));
     }
@@ -27,7 +27,7 @@ export namespace IO: //TODO many duplications from File
     export printLine <Tup*> (string: [char], args: Tup) {
         printLine(Stringer.format(string, args));
     }
-*/
+
     export print(s: native[char]) {
         i : int32 = 0;
         while true {

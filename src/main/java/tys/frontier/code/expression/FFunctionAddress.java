@@ -2,7 +2,6 @@ package tys.frontier.code.expression;
 
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FFunctionType;
-import tys.frontier.code.type.FType;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
 import tys.frontier.parser.location.Position;
@@ -22,7 +21,7 @@ public class FFunctionAddress extends FExpression {
     }
 
     @Override
-    public FType getType() {
+    public FFunctionType getType() {
         return FFunctionType.from(function.getSignature());
     }
 

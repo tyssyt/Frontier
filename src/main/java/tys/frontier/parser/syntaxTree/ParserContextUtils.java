@@ -93,17 +93,16 @@ public final class ParserContextUtils {
         if (typeVariable == null)
             throw new UndeclaredVariable(Position.fromCtx(ctx), identifier);
 
-        TypeConstraints constraints = TypeConstraints.create();
-        constraints.getEquivalenceGroup().add(typeVariable);
+        TypeConstraints constraints = new TypeConstraints(typeVariable);
         UpperBoundContext uC = ctx.upperBound();
         if (uC != null) {
             for (FType type : typeListFromList(uC.typeList(), possibleNamespaces))
-                constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Contravariant));
+                constraints = constraints.add(new ImplicitCastable(ctx, type, Variance.Contravariant));
         }
         LowerBoundContext lC = ctx.lowerBound();
         if (lC != null) {
             for (FType type : typeListFromList(lC.typeList(), possibleNamespaces))
-                constraints = TypeConstraints.add(constraints, new ImplicitCastable(ctx, type, Variance.Covariant));
+                constraints = constraints.add(new ImplicitCastable(ctx, type, Variance.Covariant));
         }
         if (typeVariable.isFixed())
             constraints.setFixed();

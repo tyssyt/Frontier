@@ -359,4 +359,13 @@ public class GenericBaking implements FClassVisitor {
         Signature _new = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), typeInstantiation);
         return new FFunctionAddress(address.getPosition(), _new.getFunction());
     }
+
+    @Override
+    public FExpression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress address) {
+        Signature old = address.getUninstantiatedFunction().getSignature();
+        TypeInstantiation combinedInstantiation = address.getTypeInstantiation().then(typeInstantiation);
+        List<FType> argumentTypes = typesFromExpressionList(old.getParameters(), combinedInstantiation::getType);
+        Signature _new = Utils.findFunctionInstantiation(old, argumentTypes, ImmutableListMultimap.of(), combinedInstantiation);
+        return new FFunctionAddress(address.getPosition(), _new.getFunction());
+    }
 }

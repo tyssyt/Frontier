@@ -321,4 +321,21 @@ public final class Utils {
         return () -> zip(it1.iterator(), it2.iterator());
     }
 
+    public static <K, T, S> Iterable<Triple<K, T, S>> zip(Map<K, T> m1, Map<K, S> m2) {
+        Iterator<Map.Entry<K, T>> it = m1.entrySet().iterator();
+        return () -> new SimpleIterator<>(() -> {
+            try {
+                Map.Entry<K, T> next = it.next();
+                S val2 = m2.get(next.getKey());
+                while (val2 == null) {
+                    next = it.next();
+                    val2 = m2.get(next.getKey());
+                }
+                return new Triple<>(next.getKey(), next.getValue(), val2);
+            } catch (NoSuchElementException e) {
+                return null;
+            }
+        });
+    }
+
 }

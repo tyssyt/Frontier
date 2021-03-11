@@ -10,7 +10,7 @@ import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.code.visitor.ExpressionWalker;
@@ -30,18 +30,18 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
     }
 
     public static FExpression create(Position position, FType targetType, FExpression castedExpression, Variance variance) throws IncompatibleTypes {
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
+        ListMultimap<FTypeVariable, ImplicitCastable> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
         if (castedExpression instanceof FImplicitCast)
             castedExpression = ((FImplicitCast) castedExpression).getCastedExpression();
         FExpression res = create(position, targetType, castedExpression, variance, constraints);
-        for (Map.Entry<FTypeVariable, TypeConstraint> entry : constraints.entries()) {
+        for (Map.Entry<FTypeVariable, ImplicitCastable> entry : constraints.entries()) {
             if (!entry.getKey().tryAddConstraint(entry.getValue()))
                 throw new IncompatibleTypes(position, targetType, castedExpression.getType());
         }
         return res;
     }
 
-    public static FExpression create(Position position, FType targetType, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+    public static FExpression create(Position position, FType targetType, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
         FType baseType = castedExpression.getType();
         if (baseType == targetType)
             return castedExpression;
@@ -52,7 +52,7 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
             }
         }
         FImplicitCast res = new FImplicitCast(position, castedExpression, ImplicitTypeCast.create(baseType, targetType, variance, constraints));
-        for (TypeConstraint constraint : constraints.values()) {
+        for (ImplicitCastable constraint : constraints.values()) {
             constraint.setOrigin(res);
         }
         return res;
@@ -66,7 +66,7 @@ public class FImplicitCast extends FCast { //TODO consider removing all the forw
         }
     }
 
-    public static FExpression createTrusted(Position position, FType type, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public static FExpression createTrusted(Position position, FType type, FExpression castedExpression, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) {
         try {
             return create(position, type, castedExpression, variance, constraints);
         } catch (IncompatibleTypes incompatibleTypes) {

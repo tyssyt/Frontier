@@ -4,7 +4,8 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.HasCall;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
@@ -16,16 +17,15 @@ public class FTypeVariable implements FType {
     private TypeVariableNamespace namespace;
 
     public static FTypeVariable create(Location location, FIdentifier identifier, boolean fixed) {
-        return new FTypeVariable(location, identifier, fixed, TypeConstraints.create());
+        return new FTypeVariable(location, identifier, fixed);
     }
 
-    protected FTypeVariable(Location location, FIdentifier identifier, boolean fixed, TypeConstraints constraints) {
+    protected FTypeVariable(Location location, FIdentifier identifier, boolean fixed) {
         this.identifier = identifier;
-        this.constraints = constraints;
+        this.constraints = new TypeConstraints(this);
         this.namespace = new TypeVariableNamespace(location, this);
         if (fixed)
             constraints.setFixed();
-        constraints.addVar(this);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class FTypeVariable implements FType {
         return constraints.isResolved();
     }
 
-    public FType getResolved() {
+    public FClass getResolved() {
         return constraints.getResolved();
     }
 
@@ -76,16 +76,29 @@ public class FTypeVariable implements FType {
         return constraints.hardResolve();
     }
 
-    public boolean tryAddConstraint(TypeConstraint constraint) {
+    public boolean tryAddConstraint(ImplicitCastable implicitCastable) {
         if (isFixed()) {
-            return constraints.satisfies(constraint);
+            return constraints.satisfies(implicitCastable);
         } else {
             try {
-                constraints = TypeConstraints.add(constraints, constraint);
+                constraints.add(implicitCastable);
+                return true;
             } catch (UnfulfillableConstraints unfulfillableConstraints) {
                 return false;
             }
-            return true;
+        }
+    }
+
+    public boolean tryAddConstraint(HasCall hasCall) {
+        if (isFixed()) {
+            return constraints.satisfies(hasCall);
+        } else {
+            try {
+                constraints.add(hasCall);
+                return true;
+            } catch (UnfulfillableConstraints unfulfillableConstraints) {
+                return false;
+            }
         }
     }
 
@@ -94,12 +107,8 @@ public class FTypeVariable implements FType {
         return namespace;
     }
 
-    public FTypeVariable copy() {
-        return new FTypeVariable(namespace.getLocation(), identifier, isFixed(), constraints.copy());
-    }
-
-    public FTypeVariable copy(boolean fixed) {
-        return new FTypeVariable(namespace.getLocation(), identifier, fixed, constraints.copy());
+    public FTypeVariable shallowNonFixedCopy() {
+        return new FTypeVariable(namespace.getLocation(), identifier, false);
     }
 
     @Override

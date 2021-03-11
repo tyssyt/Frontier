@@ -13,9 +13,6 @@ import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.HasCall;
-import tys.frontier.code.typeInference.ImplicitCastable;
-import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.NonEmbeddableType;
 import tys.frontier.parser.syntaxErrors.WrongNumberOfTypeArguments;
@@ -200,20 +197,8 @@ public class TypeInstantiation {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public <C extends TypeConstraint> C getConstraint(C constraint) {
-        if (constraint instanceof ImplicitCastable) {
-            ImplicitCastable implicitCastable = (ImplicitCastable) constraint;
-            FType newType = getType(implicitCastable.getTarget());
-            if (newType == implicitCastable.getTarget())
-                return constraint;
-            else
-                return (C) new ImplicitCastable(constraint.getOrigin(), newType, implicitCastable.getVariance());
-        } else if (constraint instanceof HasCall) {
-            return constraint;
-        } else {
-            return Utils.cantHappen();
-        }
+    public void clean() {
+        typeMap.replaceAll((k, v) -> getType(v));
     }
 
     public TypeInstantiation intersect (List<FTypeVariable> typeVariables) {

@@ -8,11 +8,10 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Pair;
-import tys.frontier.util.Utils;
 
 import static tys.frontier.code.typeInference.Variance.Contravariant;
 import static tys.frontier.code.typeInference.Variance.Covariant;
@@ -48,7 +47,7 @@ public class TypeConversion extends ImplicitTypeCast {
         this.inner = inner;
     }
 
-    public static TypeConversion createTC(FClass baseType, FClass targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes { //TODO I do everything twice in here, which sucks and is error prone
+    public static TypeConversion createTC(FClass baseType, FClass targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes { //TODO I do everything twice in here, which sucks and is error prone
         assert variance == Covariant || variance == Contravariant;
         assert baseType != targetType;
 
@@ -115,34 +114,17 @@ public class TypeConversion extends ImplicitTypeCast {
     @Override
     public long getCost() {
         long l = inner == null ? 0 : inner.getCost();
-        switch (castType) {
-            case INTEGER_PROMOTION:
-                return l + castType.getCost(variance.sign * (((FIntN) target).getN() - ((FIntN) base).getN()));
-            case FLOAT_PROMOTION:
-            case TO_OPTIONAL:
-            case OPTIONAL_TO_BOOL:
-            case DELEGATE:
-                return l + castType.getCost(1);
-            default:
-                return Utils.cantHappen();
-        }
+        return switch (castType) {
+            case FLOAT_PROMOTION, TO_OPTIONAL, OPTIONAL_TO_BOOL, DELEGATE -> l + castType.getCost(1);
+            case INTEGER_PROMOTION -> l + castType.getCost(variance.sign * (((FIntN) target).getN() - ((FIntN) base).getN()));
+        };
     }
 
     @Override
     public boolean isNoOpCast() {
-        switch (castType) {
-            case INTEGER_PROMOTION:
-                return false;
-            case FLOAT_PROMOTION:
-                return false;
-            case TO_OPTIONAL:
-                return base != FBool.INSTANCE && target != FBool.INSTANCE && (inner == null || inner.isNoOpCast());
-            case OPTIONAL_TO_BOOL:
-                return false;
-            case DELEGATE:
-                return false;
-            default:
-                return Utils.cantHappen();
-        }
+        return switch (castType) {
+            case INTEGER_PROMOTION, FLOAT_PROMOTION, OPTIONAL_TO_BOOL, DELEGATE -> false;
+            case TO_OPTIONAL -> base != FBool.INSTANCE && target != FBool.INSTANCE && (inner == null || inner.isNoOpCast());
+        };
     }
 }

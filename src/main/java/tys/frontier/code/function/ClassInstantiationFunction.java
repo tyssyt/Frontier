@@ -48,6 +48,7 @@ public class ClassInstantiationFunction extends WithInstantiatedSignature {
         TypeInstantiation intersected = typeInstantiation.intersect(getParametersList());
         if (intersected.isEmpty())
             return this;
+        intersected.clean();
         return newInstantiations.computeIfAbsent(intersected, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
     }
 

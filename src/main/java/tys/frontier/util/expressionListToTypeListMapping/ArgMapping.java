@@ -11,7 +11,7 @@ import tys.frontier.code.literal.FNull;
 import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
@@ -55,8 +55,8 @@ public class ArgMapping {
         unpackAndPack(true, unpackArg, packParam, argIt, paramIt);
 
         ArgMapping res = new ArgMapping(unpackArg, packParam, target.size());
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(expressions, target);
-        TypeConstraint.addAll(constraints);
+        ListMultimap<FTypeVariable, ImplicitCastable> constraints = res.computeCasts(expressions, target);
+        ImplicitCastable.addAll(constraints);
         return res;
     }
     public static Pair<ArgMapping, List<FType>> createForCall(List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, List<FParameter> params) throws TooManyArguments, NotEnoughArguments {
@@ -107,8 +107,8 @@ public class ArgMapping {
     public static ArgMapping createBasic(List<FType> positionalArgs, List<FType> target) throws IncompatibleTypes, UnfulfillableConstraints {
         assert positionalArgs.size() == target.size();
         ArgMapping res = new ArgMapping(new BitSet(positionalArgs.size()), ArrayUtils.create(positionalArgs.size(), 1), positionalArgs.size());
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = res.computeCasts(positionalArgs, target);
-        TypeConstraint.addAll(constraints);
+        ListMultimap<FTypeVariable, ImplicitCastable> constraints = res.computeCasts(positionalArgs, target);
+        ImplicitCastable.addAll(constraints);
         return res;
     }
 
@@ -249,9 +249,9 @@ public class ArgMapping {
         return cost;
     }
 
-    public ListMultimap<FTypeVariable, TypeConstraint> computeCasts(List<FType> argumentTypes, List<FType> target) throws IncompatibleTypes {
+    public ListMultimap<FTypeVariable, ImplicitCastable> computeCasts(List<FType> argumentTypes, List<FType> target) throws IncompatibleTypes {
         casts = new ArrayList<>();
-        ListMultimap<FTypeVariable, TypeConstraint> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
+        ListMultimap<FTypeVariable, ImplicitCastable> constraints = MultimapBuilder.hashKeys().arrayListValues().build();
         List<FType> unpackedArguments = unpackBase(argumentTypes, FTuple::unpackType);
 
         int argumentIdx = 0;
@@ -278,7 +278,7 @@ public class ArgMapping {
         return constraints;
     }
 
-    public void computeCast(FType argumentType, FType targetType, ListMultimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+    public void computeCast(FType argumentType, FType targetType, ListMultimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
         if (argumentType != targetType)
             casts.add(ImplicitTypeCast.create(argumentType, targetType, Variance.Covariant, constraints));
         else

@@ -15,7 +15,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.HasSelfCall;
-import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.util.NameGenerator;
@@ -91,7 +90,8 @@ public class TypeVariableNamespace implements Namespace {
         res.signature = lhsResolve ? f.getLhsSignature() : f.getSignature();
         List<FType> paramTypes = Utils.typesFromExpressionList(res.signature.getParameters());
         res.argMapping = ArgMapping.createBasic(paramTypes, positionalArgs.size());
-        res.constraints = ImmutableListMultimap.of(typeVariable, constraint);
+        res.constraints.implicitCasts = ImmutableListMultimap.of();
+        res.constraints.hasCalls.put(typeVariable, constraint);
         return res;
     }
 
@@ -134,7 +134,7 @@ public class TypeVariableNamespace implements Namespace {
         private boolean lhsResolve;
 
         public ReturnTypeOf(FIdentifier identifier, boolean fixed, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, boolean lhsResolve) {
-            super(null, identifier, fixed, TypeConstraints.create()); //TODO is there anything reasonable I can use as location?
+            super(null, identifier, fixed); //TODO is there anything reasonable I can use as location?
             this.positionalArgs = positionalArgs;
             this.keywordArgs = keywordArgs;
             this.lhsResolve = lhsResolve;
@@ -166,7 +166,7 @@ public class TypeVariableNamespace implements Namespace {
         private FTypeVariable base;
 
         public IterationElementType(FTypeVariable base, boolean fixed) {
-            super(null, new FIdentifier("?" + base.getIdentifier().name + ".iter"), fixed, TypeConstraints.create());
+            super(null, new FIdentifier("?" + base.getIdentifier().name + ".iter"), fixed);
             this.base = base;
         }
 

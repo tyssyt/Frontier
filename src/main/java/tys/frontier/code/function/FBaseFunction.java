@@ -163,6 +163,7 @@ public class FBaseFunction implements FFunction {
         TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
         if (intersected.isEmpty())
             return this;
+        intersected.clean();
         return instantiations.computeIfAbsent(intersected, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
     }
 

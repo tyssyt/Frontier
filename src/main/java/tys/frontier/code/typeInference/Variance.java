@@ -1,7 +1,5 @@
 package tys.frontier.code.typeInference;
 
-import tys.frontier.util.Utils;
-
 public enum Variance {
     Covariant(1),
     Contravariant(-1),
@@ -22,15 +20,14 @@ public enum Variance {
     }
 
     public Variance opposite() {
-        switch (this) {
-            case Covariant:     return Contravariant;
-            case Contravariant: return Covariant;
-            case Invariant:     return Invariant;
-            default:            return Utils.cantHappen();
-        }
+        return switch (this) {
+            case Covariant -> Contravariant;
+            case Contravariant -> Covariant;
+            case Invariant -> Invariant;
+        };
     }
 
     public Variance then(Variance other) {
-        return fromSign(this.sign * other.sign);
+        return fromSign(this.sign * other.sign); //TODO isn't this completely wrong? like contra then contra shouldn't be co?
     }
 }

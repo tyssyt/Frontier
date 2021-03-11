@@ -9,7 +9,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Utils;
@@ -28,7 +28,7 @@ public abstract class ImplicitTypeCast {
         this.variance = variance;
     }
 
-    public static ImplicitTypeCast create(FType baseType, FType targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) throws IncompatibleTypes {
+    public static ImplicitTypeCast create(FType baseType, FType targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
         assert baseType != targetType;
 
         if (baseType == FNull.NULL_TYPE) {

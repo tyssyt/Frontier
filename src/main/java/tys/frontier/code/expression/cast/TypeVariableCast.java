@@ -5,7 +5,6 @@ import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.ImplicitCastable;
-import tys.frontier.code.typeInference.TypeConstraint;
 import tys.frontier.code.typeInference.Variance;
 
 import static tys.frontier.code.typeInference.Variance.*;
@@ -16,7 +15,7 @@ public class TypeVariableCast extends ImplicitTypeCast {
         super(base, target, variance);
     }
 
-    public static TypeVariableCast createTVC(FType baseType, FType targetType, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public static TypeVariableCast createTVC(FType baseType, FType targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) {
         assert baseType instanceof FTypeVariable || targetType instanceof FTypeVariable;
 
         //no need to add constraints for T -> T?
@@ -49,7 +48,7 @@ public class TypeVariableCast extends ImplicitTypeCast {
         return new TypeVariableCast(baseType, targetType, variance);
     }
 
-    public static void fixedVsNonFixedTypeCast(FTypeVariable fixed, FTypeVariable nonFixed, Variance variance, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public static void fixedVsNonFixedTypeCast(FTypeVariable fixed, FTypeVariable nonFixed, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) {
         ImplicitCastable constraint = new ImplicitCastable(null, nonFixed, variance);
         if (fixed.getConstraints().satisfies(constraint)) {
             constraints.put(nonFixed, new ImplicitCastable(null, fixed, variance.opposite()));

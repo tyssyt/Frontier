@@ -59,4 +59,8 @@ public interface ExpressionWalker<Expression> {
     default Expression visitFunctionAddress(FFunctionAddress expression) {
         return null;
     }
+
+    default Expression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress expression) {
+        return null;
+    }
 }

@@ -1,7 +1,6 @@
 package tys.frontier.code.typeInference;
 
 import com.google.common.collect.ListMultimap;
-import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
@@ -20,8 +19,7 @@ public class HasRemoteCall extends HasCall {
         this.in = in;
     }
 
-    @Override
-    FunctionResolver.Result resolve(TypeInstantiation typeInstantiation) throws FunctionNotFound {
+    FunctionResolver.Result resolve() throws FunctionNotFound {
         return in.softResolveFunction(getIdentifier(), getPositionalArgs(), getKeywordArgs(), null, isLhsResolve());
     }
 }

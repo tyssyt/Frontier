@@ -61,4 +61,9 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     default FExpression visitFunctionAddress(FFunctionAddress address) {
         return address;
     }
+
+    @Override
+    default FExpression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress address) {
+        return address;
+    }
 }

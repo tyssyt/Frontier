@@ -25,7 +25,7 @@ import tys.frontier.code.statement.FExpressionStatement;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.TypeConstraint;
+import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
@@ -89,7 +89,7 @@ public abstract class FClass implements FType {
             getDirectDelegates().put(field.getType(), field);
     }
 
-    public Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, TypeConstraint> constraints) {
+    public Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, ImplicitCastable> constraints) {
         FField res = getDirectDelegates().get(toType);
         if (res != null)
             return new Pair<>(res, null);

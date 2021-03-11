@@ -30,5 +30,6 @@ public interface ExpressionVisitor<Expression>  {
     default Expression visitVariable(FVariableExpression expression) {return null;}
     default Expression visitNamespaceExpression(FNamespaceExpression expression) {return null;}
     default Expression visitFunctionAddress(FFunctionAddress address) {return null;}
+    default Expression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress address) {return null;}
 
 }

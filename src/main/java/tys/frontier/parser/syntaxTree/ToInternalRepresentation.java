@@ -11,7 +11,6 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FImplicitCast;
 import tys.frontier.code.function.FConstructor;
 import tys.frontier.code.function.FFunction;
-import tys.frontier.code.function.InstantiableFunctionCopy;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.function.operator.BinaryOperator;
@@ -1194,17 +1193,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
         }
     }
 
-    private FFunction sthsthFunctionAddress(FFunction function) { //TODO name
+    private FExpression createFunctionAddress(Position position, FFunction function) {
         if (function.getParametersList().isEmpty())
-            return function;
+            return new FFunctionAddress(position, function);
 
-        FFunction res = InstantiableFunctionCopy.instantiableCopyOf(function);
-        currentFunction().genericFunctionAddressToInstantiate.addAll(res.getParametersList());
+        UninstantiatedFunctionAddress res = new UninstantiatedFunctionAddress(position, function);
+        for (FTypeVariable p : function.getParametersList())
+            currentFunction().genericFunctionAddressToInstantiate.add((FTypeVariable) res.getTypeInstantiation().getType(p));
         return res;
     }
 
     @Override
-    public FFunctionAddress visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
+    public FExpression visitInternalFunctionAddress(FrontierParser.InternalFunctionAddressContext ctx) {
         try {
             List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findNamespaceNoThrow)) : null;
             FIdentifier identifier;
@@ -1219,8 +1219,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             }
             Position pos = Position.fromCtx(ctx);
             FFunction function = getFunction(pos, namespace, identifier, params);
-            function = sthsthFunctionAddress(function);
-            return new FFunctionAddress(pos, function);
+            return createFunctionAddress(pos, function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
@@ -1228,7 +1227,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     @Override
-    public FFunctionAddress visitFunctionAddress(FrontierParser.FunctionAddressContext ctx) {
+    public FExpression visitFunctionAddress(FrontierParser.FunctionAddressContext ctx) {
         try {
             Namespace namespace = ParserContextUtils.getNamespace(ctx.typeType(), this::findNamespaceNoThrow);
             List<FType> params = ctx.typeList() != null ? FTuple.unpackType(ParserContextUtils.tupleFromList(ctx.typeList(), this::findNamespaceNoThrow)) : null;
@@ -1243,8 +1242,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             }
             Position pos = Position.fromCtx(ctx);
             FFunction function = getFunction(pos, namespace, identifier, params);
-            function = sthsthFunctionAddress(function);
-            return new FFunctionAddress(pos, function);
+            return createFunctionAddress(pos, function);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();

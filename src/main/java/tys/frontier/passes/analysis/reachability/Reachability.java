@@ -75,6 +75,7 @@ public class Reachability {
         Set<FFunctionAddress> seenAddresses = new HashSet<>();
 
         private void handle(TypeInstantiation typeInstantiation, Collection<FFunction> seenFunctions) {
+            assert typeInstantiation.values().stream().filter(t -> t instanceof FTypeVariable).findFirst().isEmpty();
             doHandle(typeInstantiation, seenFunctions);
 
             for (SubSegment subSegment : subSegments) {
