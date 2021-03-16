@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import tys.frontier.code.*;
 import tys.frontier.code.expression.*;
@@ -604,39 +603,63 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             res = (FIf) instantiateFunctionAddresses(res);
 
             OptionalInformationForIf info = OptionalInformationForIf.createFromCondition(res.getCondition());
-            res.setThen(handleIfBranch(ctx.lamdaBlock(), info));
-
-            if (ctx.block() != null)
-                res.setElse(visitBlock(ctx.block()));
-            else if (ctx.ifStatement() != null) {
-                res.setElse(FBlock.from(visitIfStatement(ctx.ifStatement())));
-                Token elseToken = ctx.ELSE().getSymbol();
-                res.cutPositionElif(elseToken.getLine(), elseToken.getCharPositionInLine() + elseToken.getText().length());
-            }
-
-            if (res.getThen().redirectsControlFlow().isEmpty() && res.getElse().flatMap(FBlock::redirectsControlFlow).isPresent()) {
-                FAssignment promotions = info.createPromotions(currentFunction().declaredVars.peek());
-                return FBlock.from(res.getPosition(), res, promotions);
-            } else
-                return res;
+            res.setThen(handleThenBranch(ctx.lamdaBlock(), info));
+            handleElseBranch(ctx, res, info);
+            return maybePostPromote(res, info);
         } catch (SyntaxError syntaxError) {
             errors.add(syntaxError);
             throw new Failed();
         }
     }
 
-    private FBlock handleIfBranch(FrontierParser.LamdaBlockContext ctx, OptionalInformationForIf info) throws SyntaxError {
+    private FBlock handleThenBranch(FrontierParser.LamdaBlockContext ctx, OptionalInformationForIf info) throws SyntaxError {
         currentFunction().declaredVars.push();
         try {
-            if (info.getPromotableVars().isEmpty())
+            if (info.isPromoteThen() && !info.getPromotableVars().isEmpty()) {
+                FAssignment promotion = info.createPromotions(currentFunction().declaredVars.peek());
+                FBlock block = visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
+                return FBlock.from(block.getPosition(), promotion, block);
+            } else
                 return visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
-
-            FAssignment promotion = info.createPromotions(currentFunction().declaredVars.peek());
-            FBlock block = visitLamdaBlock(ctx, info.getPromotedLambdaValueTypes());
-            return FBlock.from(block.getPosition(), promotion, block);
         } finally {
             currentFunction().declaredVars.pop();
         }
+    }
+
+    //TODO I don't like this, there has to be a more elegant solution
+    private void handleElseBranch(FrontierParser.IfStatementContext ctx, FIf res, OptionalInformationForIf info) {
+        currentFunction().declaredVars.push();
+        try {
+            FAssignment promotion = null;
+            if (!info.isPromoteThen() && !info.getPromotableVars().isEmpty()) {
+                promotion = info.createPromotions(currentFunction().declaredVars.peek());
+            }
+            if (ctx.block() != null) {
+                FBlock block = visitBlock(ctx.block());
+                FBlock elseBody = promotion != null ? FBlock.from(block.getPosition(), promotion, block) : block;
+                res.setElse(elseBody);
+            } else if (ctx.ifStatement() != null) {
+                FStatement statement = visitIfStatement(ctx.ifStatement());
+                FBlock elseBody = promotion != null ? FBlock.from(statement.getPosition(), promotion, statement) : FBlock.from(statement);
+                res.setElse(elseBody);
+                res.cutPositionElif(ctx.ELSE().getSymbol());
+            }
+        } finally {
+            currentFunction().declaredVars.pop();
+        }
+    }
+
+    private FStatement maybePostPromote(FIf res, OptionalInformationForIf info) {
+        if (!info.getPromotableVars().isEmpty()) {
+            boolean thenRedirects = res.getThen().redirectsControlFlow().isPresent();
+            boolean elseRedirects = res.getElse().flatMap(FBlock::redirectsControlFlow).isPresent();
+            if (( info.isPromoteThen() && !thenRedirects &&  elseRedirects) ||
+                (!info.isPromoteThen() &&  thenRedirects && !elseRedirects)) {
+                FAssignment promotions = info.createPromotions(currentFunction().declaredVars.peek());
+                return FBlock.from(res.getPosition(), res, promotions);
+            }
+        }
+        return res;
     }
 
     private FLoopIdentifier startLoop() {

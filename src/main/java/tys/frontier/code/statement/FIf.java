@@ -1,5 +1,6 @@
 package tys.frontier.code.statement;
 
+import org.antlr.v4.runtime.Token;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.predefinedClasses.FBool;
@@ -55,7 +56,9 @@ public class FIf extends FStatement {
         this.elze = _else;
     }
 
-    public void cutPositionElif(int lineTo, int columnTo) {
+    public void cutPositionElif(Token elseToken) {
+        int lineTo = elseToken.getLine();
+        int columnTo = elseToken.getCharPositionInLine() + elseToken.getText().length();
         position = new Position(position.getLineFrom(), lineTo, position.getColumnFrom(), columnTo);
     }
 

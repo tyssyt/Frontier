@@ -6,17 +6,18 @@ import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FVariableExpression;
 import tys.frontier.code.expression.cast.FImplicitCast;
+import tys.frontier.code.function.operator.BinaryOperator;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.statement.*;
-import tys.frontier.util.Conditions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import static tys.frontier.util.Conditions.*;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FLambdaIfLowering extends StatementReplacer {
@@ -35,6 +36,7 @@ public class FLambdaIfLowering extends StatementReplacer {
     }
 
     //TODO @PositionForGeneratedCode
+    //the logic in here needs to stay in sync with OptionalInformationForIf (at least the branch that can create lambdaValues)
     public FStatement replace (FIf fIf) {
         if (!(fIf.getThen() instanceof FLambdaBlock))
             return fIf;
@@ -45,9 +47,8 @@ public class FLambdaIfLowering extends StatementReplacer {
         Iterator<FLocalVariable> varIt = variables.iterator();
         List<FExpression> newAtoms = new ArrayList<>();
         List<FExpression> castedCacheVars = new ArrayList<>(variables.size());
-        //TODO this logic needs to be kept up tp date with the finding in OptionalInformationForIf, deduplicate
-        for (FExpression atom : Conditions.splitOnAnd(fIf.getCondition())) {
-            if (Conditions.isOptionalExistAtom(atom)) {
+        for (FExpression atom : splitOnOp(removeBrackets(fIf.getCondition()), BinaryOperator.AND)) {
+            if (isOptionalExistAtom(atom)) {
                 FExpression castedExpression = ((FImplicitCast) atom).getCastedExpression();
                 if (!(castedExpression instanceof FVariableExpression)) {
                     FCacheExpression cache = FCacheExpression.create(generateCacheName(varIt.next().getIdentifier()), castedExpression);
@@ -71,7 +72,7 @@ public class FLambdaIfLowering extends StatementReplacer {
         newThen.add(assignment);
         newThen.addAll(then);
 
-        return FIf.createTrusted(fIf.getPosition(), Conditions.and(newAtoms), FBlock.from(then.getPosition(), newThen), fIf.getElse().orElse(null));
+        return FIf.createTrusted(fIf.getPosition(), and(newAtoms), FBlock.from(then.getPosition(), newThen), fIf.getElse().orElse(null));
     }
 
     private static String generateCacheName(FIdentifier identifier) {

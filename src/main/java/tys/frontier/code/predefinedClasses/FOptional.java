@@ -33,6 +33,7 @@ public class FOptional extends FPredefinedClass {
         OptionalNamespace namespace = OptionalNamespace.create(this);
         setNamespace(namespace);
         //addDefaultFunctions(); TODO should only be added once for "base class"
+        //TODO I have opt -> bool cast, why the hell do I need to define the not operator on optional?
         FunctionBuilder builder = new FunctionBuilder(UnaryOperator.NOT.identifier, namespace)
                 .setVisibility(namespace.getVisibility()).setPredefined(true).setParams(this);
         namespace.addFunctionTrusted(builder.setReturnType(FBool.INSTANCE).build());
