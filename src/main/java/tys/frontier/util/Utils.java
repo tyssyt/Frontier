@@ -162,8 +162,7 @@ public final class Utils {
         FIdentifier identifier = function.getIdentifier();
         if (identifier instanceof FInstantiatedFunctionIdentifier)
             identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
-        else
-            identifier = function.getIdentifier();
+
         if (needsReResolve(function, oldNamespace, identifier)) {
             FType returnType = typeInstantiation.getType(signature.getType());
 
@@ -181,8 +180,11 @@ public final class Utils {
             }
         }
 
-        if (oldType == null)
-            return signature;
+        if (oldType == null) { //namespace without class
+            FFunction instantiation = function.getInstantiation(typeInstantiation);
+            return signature.isLhs() ? instantiation.getLhsSignature() : instantiation.getSignature();
+        }
+
         FType newType = typeInstantiation.getType(oldType);
         Namespace newNamespace = newType.getNamespace();
 
