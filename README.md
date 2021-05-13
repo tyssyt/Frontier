@@ -1,6 +1,6 @@
 # Frontier
 
-I made dis :)
+I made dis.
 
 ## Getting Started
 
