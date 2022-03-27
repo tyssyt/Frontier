@@ -5,11 +5,6 @@ import tys.frontier.code.expression.cast.FImplicitCast;
 
 public interface ExpressionWalker<Expression> {
 
-    default Expression visitBrackets(FBracketsExpression brackets) {
-        brackets.getInner().accept(this);
-        return null;
-    }
-
     default Expression visitFunctionCall(FFunctionCall functionCall) {
         for (FExpression param : functionCall.getArguments(true))
             param.accept(this);
@@ -60,7 +55,20 @@ public interface ExpressionWalker<Expression> {
         return null;
     }
 
-    default Expression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress expression) {
+    default Expression visitPack(Pack pack) {
+        for (FExpression expression : pack.getExpressions())
+            expression.accept(this);
+        return null;
+    }
+
+    default Expression visitUnpack(Unpack unpack) {
+        unpack.getUnpackedExpression().accept(this);
+        return null;
+    }
+
+    default Expression visitUnpackedElement(Unpack.UnpackedElement unpackedElement) {
+        if (unpackedElement.isLast())
+            unpackedElement.getUnpack().accept(this);
         return null;
     }
 }

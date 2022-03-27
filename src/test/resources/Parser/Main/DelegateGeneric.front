@@ -53,16 +53,8 @@ static overload (i: Generic<int32>) {
     IO.print("one");
 }
 
-static overload <T> (i: Generic<T>) {
-    IO.print("two");
-}
-
 static overload (i: int32) {
     IO.print("three");
-}
-
-static overload2 <T> (i: Generic<T>) {
-    IO.print("two");
 }
 
 static overload2 (i: int32) {

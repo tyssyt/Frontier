@@ -79,7 +79,7 @@ static print(str: [char], coord: Coord, i: int64?) {
 
 export static main () {
 
-	gen := Generic<([char], Coord, int64?)>(t="nice", Coord(x=6, y=9), null);
+	gen := Generic<([char], Coord, int64?)>(t=("nice", Coord(x=6, y=9), null));
 
     { //opt null
         IO.printLine("--Opt null--");
@@ -134,7 +134,7 @@ export static main () {
     { //Address
         IO.printLine("--Address--");
         f := Generic<([char], [char])>.getArray**;
-        a := f(Generic<([char], [char])>(t="Beep", "Boop"), 3);
+        a := f(Generic<([char], [char])>(t=("Beep", "Boop")), 3);
         s1:, s2: = a[2];
         IO.print(s1);
         IO.print(s2);

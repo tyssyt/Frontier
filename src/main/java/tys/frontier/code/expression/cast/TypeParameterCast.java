@@ -1,8 +1,6 @@
 package tys.frontier.code.expression.cast;
 
-import com.google.common.collect.Multimap;
 import tys.frontier.code.TypeInstantiation;
-import tys.frontier.code.predefinedClasses.FArray;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -10,7 +8,7 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.ImplicitCastable;
+import tys.frontier.code.typeInference.Constraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 
@@ -33,11 +31,6 @@ public class TypeParameterCast extends ImplicitTypeCast {
         this.casts = casts;
     }
 
-    private TypeParameterCast(FArray base, FArray target, Variance variance, ImplicitTypeCast[] casts) {
-        super(base, target, variance);
-        this.casts = casts;
-    }
-
     private TypeParameterCast(FFunctionType base, FFunctionType target, Variance variance, ImplicitTypeCast[] casts) {
         super(base, target, variance);
         this.casts = casts;
@@ -49,7 +42,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
     }
 
     //TODO remove once optionals are generic
-    public static TypeParameterCast createTPC(FOptional baseType, FOptional targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
+    public static TypeParameterCast createTPC(FOptional baseType, FOptional targetType, Variance variance, Constraints constraints) throws IncompatibleTypes {
         assert variance == Covariant || variance == Contravariant;
         assert baseType != targetType;
 
@@ -61,8 +54,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
     }
 
     //TODO remove once functionType is generic
-    public static TypeParameterCast createTPC(FFunctionType baseType, FFunctionType targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
-        assert variance == Covariant || variance == Contravariant;
+    public static TypeParameterCast createTPC(FFunctionType baseType, FFunctionType targetType, Variance variance, Constraints constraints) throws IncompatibleTypes {
         assert baseType != targetType;
 
         ImplicitTypeCast in = null;
@@ -75,8 +67,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
         return new TypeParameterCast(baseType, targetType, variance, new ImplicitTypeCast[] {in, out});
     }
 
-    public static TypeParameterCast createTPC(FInstantiatedClass baseType, FInstantiatedClass targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
-        assert variance == Covariant || variance == Contravariant;
+    public static TypeParameterCast createTPC(FInstantiatedClass baseType, FInstantiatedClass targetType, Variance variance, Constraints constraints) throws IncompatibleTypes {
         assert baseType != targetType;
         FClass nonParameterized = baseType.getProxy();
         assert  nonParameterized == targetType.getProxy();
@@ -105,8 +96,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
         return new TypeParameterCast(baseType, targetType, variance, casts);
     }
 
-    public static TypeParameterCast createTPC(FTuple baseType, FTuple targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes {
-        assert variance == Covariant || variance == Contravariant;
+    public static TypeParameterCast createTPC(FTuple baseType, FTuple targetType, Variance variance, Constraints constraints) throws IncompatibleTypes {
         assert baseType != targetType;
 
         List<FType> baseTypes = baseType.getTypes();
@@ -124,8 +114,7 @@ public class TypeParameterCast extends ImplicitTypeCast {
             if (b==t)
                 continue;
 
-            //TODO think about variance
-            casts[i] = ImplicitTypeCast.create(b, t, variance, constraints); //fails just propagate TODO at some point catch the fail and improve the error message
+            casts[i] = ImplicitTypeCast.create(b, t, Variance.Invariant, constraints); //fails just propagate TODO at some point catch the fail and improve the error message
         }
 
         return new TypeParameterCast(baseType, targetType, variance, casts);

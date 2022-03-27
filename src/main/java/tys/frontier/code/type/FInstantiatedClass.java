@@ -124,17 +124,6 @@ public class FInstantiatedClass extends FForwardingClass {
     }
 
     @Override
-    public int concreteness() {
-        int res = Integer.MAX_VALUE;
-        for (FType param : instantiatedParameters) {
-            res = Integer.min(res, param.concreteness());
-        }
-        if (res == Integer.MAX_VALUE) //avoid overflow
-            return Integer.MAX_VALUE;
-        return res+1;
-    }
-
-    @Override
     public Map<FType, FField> getDirectDelegates() {
         return newDelegates;
     }

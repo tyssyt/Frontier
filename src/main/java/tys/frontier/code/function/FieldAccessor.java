@@ -13,11 +13,9 @@ import tys.frontier.parser.location.Position;
 import tys.frontier.util.Pair;
 import tys.frontier.util.Utils;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 public class FieldAccessor implements FFunction {
@@ -129,11 +127,6 @@ public class FieldAccessor implements FFunction {
     @Override
     public Map<FIdentifier, FTypeVariable> getParameters() {
         return emptyMap();
-    }
-
-    @Override
-    public List<FTypeVariable> getParametersList() {
-        return emptyList();
     }
 
     @Override

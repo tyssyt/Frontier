@@ -18,8 +18,6 @@ import tys.frontier.code.type.FBaseClass;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.ImplicitCastable;
-import tys.frontier.code.typeInference.TypeConstraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ExpressionVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
@@ -49,8 +47,7 @@ public final class ParserContextUtils {
             if (old != null)
                 throw new TwiceDefinedLocalVariable(Position.fromCtx(c), Position.fromCtx(old), id);
 
-            boolean fixed = c.STAR() == null;
-            vars.add(FTypeVariable.create(null, id, fixed)); //TODO get file from somewhere
+            vars.add(FTypeVariable.create(null, id)); //TODO get file from somewhere
             Variance variance;
             if(c.IN() != null)
                 variance = Variance.Contravariant;
@@ -93,23 +90,26 @@ public final class ParserContextUtils {
         if (typeVariable == null)
             throw new UndeclaredVariable(Position.fromCtx(ctx), identifier);
 
-        TypeConstraints constraints = new TypeConstraints(typeVariable);
+        List<FClass> implicitCastableCovariant = new ArrayList<>();
         UpperBoundContext uC = ctx.upperBound();
-        if (uC != null) {
+        if (uC != null)
             for (FType type : typeListFromList(uC.typeList(), possibleNamespaces))
-                constraints = constraints.add(new ImplicitCastable(ctx, type, Variance.Contravariant));
-        }
+                if (type instanceof FClass)
+                    implicitCastableCovariant.add((FClass) type);
+                else
+                    Utils.NYI("non Class in Type Bound"); //TODO
+        List<FClass> implicitCastableContravariant = new ArrayList<>();
         LowerBoundContext lC = ctx.lowerBound();
-        if (lC != null) {
+        if (lC != null)
             for (FType type : typeListFromList(lC.typeList(), possibleNamespaces))
-                constraints = constraints.add(new ImplicitCastable(ctx, type, Variance.Covariant));
-        }
-        if (typeVariable.isFixed())
-            constraints.setFixed();
-        typeVariable.setConstraints(constraints);
+                if (type instanceof FClass)
+                    implicitCastableCovariant.add((FClass) type);
+                else
+                    Utils.NYI("non Class in Type Bound"); //TODO
+        typeVariable.setConstraints(implicitCastableCovariant, implicitCastableContravariant);
     }
 
-    public static FBaseClass getPredefined (FrontierParser.PredefinedTypeContext ctx) {
+    public static FBaseClass getPredefined(FrontierParser.PredefinedTypeContext ctx) {
         return switch (((TerminalNode) ctx.children.get(0)).getSymbol().getType()) {
             case BOOL    -> FBool.INSTANCE;
             case INT     -> Utils.NYI("unbounded int type");
@@ -245,12 +245,12 @@ public final class ParserContextUtils {
         Token token = ((TerminalNode) child).getSymbol();
         String text = token.getText();
         return switch (token.getType()) {
-            case IntegerLiteral       -> new FIntNLiteral(new BigInteger(text), text);
+            case IntegerLiteral       -> new FIntNLiteral(new BigInteger(text));
             case NULL                 -> FNull.UNTYPED;
             case FloatingPointLiteral ->
                     switch (text.charAt(text.length() - 1)) {
-                        case 'f', 'F' -> new FFloat32Literal(Float.parseFloat(text), text);
-                        default       -> new FFloat64Literal(Double.parseDouble(text), text);
+                        case 'f', 'F' -> new FFloat32Literal(Float.parseFloat(text));
+                        default       -> new FFloat64Literal(Double.parseDouble(text));
                     };
             case StringLiteral        -> {
                 String string = getStringLiteral(token);

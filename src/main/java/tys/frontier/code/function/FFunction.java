@@ -18,7 +18,6 @@ import tys.frontier.parser.location.Location;
 import tys.frontier.parser.location.Position;
 import tys.frontier.util.StringBuilderToString;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -60,8 +59,6 @@ public interface FFunction extends IdentifierNameable, Typed, ControlFlowIDontKn
     FLocalVariable getFreshVariable(Position position, FType type);
 
     Map<FIdentifier, FTypeVariable> getParameters();
-
-    List<FTypeVariable> getParametersList(); //TODO see if we can eliminate either this or the map
 
     boolean isInstantiation();
     FFunction getBaseR();

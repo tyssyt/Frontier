@@ -1,17 +1,18 @@
 package tys.frontier.code.expression.cast;
 
-import com.google.common.collect.Multimap;
 import tys.frontier.code.FField;
 import tys.frontier.code.predefinedClasses.FBool;
 import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.predefinedClasses.FOptional;
+import tys.frontier.code.predefinedClasses.FTuple;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.ImplicitCastable;
+import tys.frontier.code.typeInference.Constraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
 import tys.frontier.util.Pair;
+
+import java.util.Optional;
 
 import static tys.frontier.code.typeInference.Variance.Contravariant;
 import static tys.frontier.code.typeInference.Variance.Covariant;
@@ -47,7 +48,15 @@ public class TypeConversion extends ImplicitTypeCast {
         this.inner = inner;
     }
 
-    public static TypeConversion createTC(FClass baseType, FClass targetType, Variance variance, Multimap<FTypeVariable, ImplicitCastable> constraints) throws IncompatibleTypes { //TODO I do everything twice in here, which sucks and is error prone
+    public static Optional<TypeConversion> tryTupleToOptional(FTuple baseType, FTuple targetType, Variance variance) {
+        if (variance == Covariant && FOptional.canBeTreatedAsOptional(targetType) && FOptional.from(baseType) == targetType)
+            return Optional.of(new TypeConversion(baseType, targetType, variance, CastType.TO_OPTIONAL, null));
+        if (variance == Contravariant && FOptional.canBeTreatedAsOptional(baseType) && FOptional.from(targetType) == baseType)
+            return Optional.of(new TypeConversion(baseType, targetType, variance, CastType.TO_OPTIONAL, null));
+        return Optional.empty();
+    }
+
+    public static TypeConversion createTC(FClass baseType, FClass targetType, Variance variance, Constraints constraints) throws IncompatibleTypes { //TODO I do everything twice in here, which sucks and is error prone
         assert variance == Covariant || variance == Contravariant;
         assert baseType != targetType;
 

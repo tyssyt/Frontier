@@ -152,21 +152,6 @@ public class ParserTest {
         assertEquals(InvalidForDeclaration.class, e.getClass());
     }
     @Test
-    public void parseInvalidOpenDeclaration1() throws Exception {
-        SyntaxError e = parseSyntaxError("InvalidOpenDeclaration1.front");
-        assertEquals(InvalidOpenDeclaration.class, e.getClass());
-    }
-    @Test
-    public void parseInvalidOpenDeclaration2() throws Exception {
-        SyntaxError e = parseSyntaxError("InvalidOpenDeclaration2.front");
-        assertEquals(InvalidOpenDeclaration.class, e.getClass());
-    }
-    @Test
-    public void parseInvalidSignatureRemoteFunctionDeclaration() throws Exception {
-        SyntaxError e = parseSyntaxError("InvalidSignatureRemoteFunctionDeclaration.front");
-        assertEquals(InvalidSignatureOpenOverload.class, e.getClass());
-    }
-    @Test
     public void parseMissingReturn() throws Exception {
         SyntaxError e = parseSyntaxError("MissingReturn.front");
         assertEquals(MissingReturn.class, e.getClass());
@@ -183,11 +168,6 @@ public class ParserTest {
         assertEquals(NonEmbeddableType.class, e.getClass());
     }
     @Test
-    public void parseNonOpenRemoteFunctionDeclaration() throws Exception {
-        SyntaxError e = parseSyntaxError("NonOpenRemoteFunctionDeclaration.front");
-        assertEquals(NonOpenRemoteFunctionDeclaration.class, e.getClass());
-    }
-    @Test
     public void parseNonOptionalExMark() throws Exception {
         SyntaxError e = parseSyntaxError("NonOptionalExMark.front");
         assertEquals(NonOptionalExMark.class, e.getClass());
@@ -200,7 +180,7 @@ public class ParserTest {
     @Test
     public void parseNotEnoughArgumentsReturn() throws Exception {
         SyntaxError e = parseSyntaxError("NotEnoughArgumentsReturn.front");
-        assertEquals(NotEnoughArguments.class, e.getClass());
+        assertEquals(IncompatibleTypes.class, e.getClass());
     }
     @Test
     public void parseParameterizedTypeVariable() throws Exception {
@@ -215,11 +195,6 @@ public class ParserTest {
     @Test
     public void parseTooManyArgumentsAssign() throws Exception {
         SyntaxError e = parseSyntaxError("TooManyArgumentsAssign.front");
-        assertEquals(TooManyArguments.class, e.getClass());
-    }
-    @Test
-    public void parseTooManyArgumentsReturn() throws Exception {
-        SyntaxError e = parseSyntaxError("TooManyArgumentsReturn.front");
         assertEquals(TooManyArguments.class, e.getClass());
     }
     @Test
@@ -261,7 +236,7 @@ public class ParserTest {
     @Test
     public void parseUnfulfillableConstraint() throws Exception {
         SyntaxError e = parseSyntaxError("UnfulfillableConstraints.front");
-        assertEquals(UnfulfillableConstraints.class, e.getClass());
+        assertEquals(FunctionNotFound.class, e.getClass());
     }
     @Test
     public void parseUntypedVariable() throws Exception {
@@ -271,10 +246,10 @@ public class ParserTest {
     @Test
     public void parseUntypedFunctionAddress() throws Exception {
         SyntaxError e = parseSyntaxError("UntypedFunctionAddress.front");
-        assertEquals(UnfulfillableConstraints.class, e.getClass());
+        assertEquals(InvalidExpressionBinding.class, e.getClass());
     }
     @Test
-    public void WrongNumberOfIdentifiersInFor() throws Exception {
+    public void parseWrongNumberOfIdentifiersInFor() throws Exception {
         SyntaxError e = parseSyntaxError("WrongNumberOfIdentifiersInFor.front");
         assertEquals(WrongNumberOfIdentifiersInFor.class, e.getClass());
     }

@@ -23,7 +23,7 @@ public class ClassInstantiationFunction extends WithInstantiatedSignature {
         super(base, memberOf.getTypeInstantiation());
         assert base.getMemberOf() == memberOf.getProxy().getNamespace();
         assert (base instanceof FBaseFunction);
-        assert getTypeInstantiation().intersect(base.getParametersList()).isEmpty();
+        assert getTypeInstantiation().intersect(base.getParameters().values()).isEmpty();
         newMemberOf = memberOf;
         newInstantiations = base.getParameters().isEmpty() ? Collections.emptyMap() : new MapMaker().concurrencyLevel(1).weakValues().makeMap();
     }
@@ -45,10 +45,9 @@ public class ClassInstantiationFunction extends WithInstantiatedSignature {
 
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) { //TODO this is a copy of baseFunctions impl, but we can't proxy it because we need to work on our own copy of the data
-        TypeInstantiation intersected = typeInstantiation.intersect(getParametersList());
+        TypeInstantiation intersected = typeInstantiation.intersect(getParameters().values());
         if (intersected.isEmpty())
             return this;
-        intersected.clean();
         return newInstantiations.computeIfAbsent(intersected, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
     }
 

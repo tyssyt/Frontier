@@ -25,11 +25,6 @@ public class FCharLiteral implements FLiteral {
     }
 
     @Override
-    public String getOriginalString() {
-        return value+"";
-    }
-
-    @Override
     public FClass getType() {
         return FIntN._8;
     }

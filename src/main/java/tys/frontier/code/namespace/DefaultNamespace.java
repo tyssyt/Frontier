@@ -5,11 +5,9 @@ import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.StaticField;
-import tys.frontier.code.expression.DynamicFunctionCall;
-import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.expression.*;
 import tys.frontier.code.function.*;
+import tys.frontier.code.functionResolve.FunctionResolver;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FTuple;
@@ -19,12 +17,10 @@ import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FunctionResolver;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
 import tys.frontier.parser.syntaxErrors.IdentifierCollision;
-import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.util.NameGenerator;
@@ -43,8 +39,6 @@ public class DefaultNamespace implements Namespace {
     private BiMap<FIdentifier, StaticField> staticFields = HashBiMap.create();
     private ListMultimap<FIdentifier, Signature> lhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
     private ListMultimap<FIdentifier, Signature> rhsFunctions = MultimapBuilder.hashKeys().arrayListValues().build();
-    private Map<FIdentifier, FFunction> openFunctions = new HashMap<>();
-    private List<FFunction> remoteFunctions = new ArrayList<>();
 
     private NameGenerator lambdaNames = new NameGenerator("λ", "");
     private NameGenerator returnTypeNames;
@@ -86,31 +80,8 @@ public class DefaultNamespace implements Namespace {
         return rhsFunctions.isEmpty();
     }
 
-    public void setOpen(FFunction fFunction) throws InvalidOpenDeclaration {
-        if (fClass != null && !fClass.getParametersList().isEmpty())
-            throw new InvalidOpenDeclaration(fFunction, "in generic class");
-        if (fFunction.getParameters().isEmpty())
-            throw new InvalidOpenDeclaration(fFunction, "non generic function");
-        FFunction old = openFunctions.put(fFunction.getIdentifier(), fFunction);
-        assert old == null;
-    }
-
     public NativeDecl getNative() {
         return nativeDecl;
-    }
-
-    @Override
-    public FFunction getOpen(FIdentifier identifier) {
-        return openFunctions.get(identifier);
-    }
-
-    @Override
-    public void addRemoteFunction(FFunction fFunction) {
-        remoteFunctions.add(fFunction);
-    }
-
-    public List<FFunction> getRemoteFunctions() {
-        return remoteFunctions;
     }
 
     public void addField(StaticField field) throws IdentifierCollision, SignatureCollision {
@@ -129,12 +100,12 @@ public class DefaultNamespace implements Namespace {
                     .setLocation(field.getLocation()).setVisibility(field.getVisibility()).build();
 
             //TODO @PositionForGeneratedCode
-            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), List.of());
+            FFunctionCall fieldGet = FFunctionCall.create(null, field.getGetter().getSignature(), List.of());
             List<FExpression> paramExprs = Utils.map(dynamicCall.getSignature().getParameters(), p -> new FVariableExpression(null, p));
             DynamicFunctionCall call = DynamicFunctionCall.createTrusted(null, fieldGet, paramExprs);
             FStatement body = functionType.getOut() == FTuple.VOID ?
                     new FExpressionStatement(null, call) :
-                    FReturn.createTrusted(null, List.of(call), dynamicCall);
+                    FReturn.createTrusted(null, call, dynamicCall);
             dynamicCall.setBody(FBlock.from(null, body));
             addFunction(dynamicCall);
         }
@@ -163,7 +134,12 @@ public class DefaultNamespace implements Namespace {
     }
 
     private void addFunction(Signature signature, boolean lhs) throws SignatureCollision {
-        for (Signature other : getFunctions(lhs).get(signature.getFunction().getIdentifier())) {
+        List<Signature> others = getFunctions(lhs).get(signature.getFunction().getIdentifier());
+        if (others.size() > 0) {
+            if (signature.getFunction().getParameters().size() > 0 || others.get(0).getFunction().getParameters().size() > 0)
+                throw new SignatureCollision(signature, others.get(0)); // cannot overload generic functions
+        }
+        for (Signature other : others) {
             if (SignatureCollision.collide(signature, other))
                 throw new SignatureCollision(signature, other);
         }
@@ -179,9 +155,9 @@ public class DefaultNamespace implements Namespace {
     }
 
     @Override
-    public FunctionResolver.Result softResolveFunction(FIdentifier identifier, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve) throws FunctionNotFound {
+    public FunctionResolver.Result resolveFunction(FIdentifier identifier, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, FType returnType, boolean lhsResolve, List<UnboundExpression> unbounds) throws FunctionNotFound {
         assert returnType == null || !lhsResolve;
-        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, this, lhsResolve);
+        return FunctionResolver.resolve(identifier, positionalArgs, keywordArgs, returnType, this, lhsResolve, unbounds);
     }
 
     public FIdentifier getFreshLambdaName() {

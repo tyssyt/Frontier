@@ -51,8 +51,8 @@ public class FBaseClass extends FClass {
 
     public void addDefaultFunctions() {
         try {
-            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, FBool.INSTANCE));
+            BinaryOperator.EQUALS_ID.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.NOT_EQUALS_ID.addPredefined(this, FBool.INSTANCE);
         } catch (SignatureCollision e) {
             Utils.handleException(e);
         }
@@ -91,11 +91,6 @@ public class FBaseClass extends FClass {
     @Override
     public ForImpl getForImpl() {
         return forImpl;
-    }
-
-    @Override
-    public int concreteness() {
-        return parametersList.isEmpty() ? Integer.MAX_VALUE : 1;
     }
 
     @Override

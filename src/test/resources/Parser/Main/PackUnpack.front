@@ -13,7 +13,7 @@ static g() -> int32, int32 {
 }
 
 export static main () {
-    a:, b:, c:, e:int64 = f(), 8888;
+    (a:, b:, c:), e:int64 = f(), 8888;
     IO.print(a);
     IO.print(b);
     IO.print(c);
@@ -41,14 +41,10 @@ export static main () {
     printInt(arr2[2]);
     IO.printLine("");
 
-	//e,f += g(); //TODO
-    //printInt(e);
-    //printInt(f);
-
     l := List<([char], int64)>.create();
 
-    l.add("string", e);
-    l.add("g2esports.com/shop", 42);
+    l.add(("string", e));
+    l.add(("g2esports.com/shop", 42));
     qwe:[char], rtz:int64 = l[0];
     qwe2:[char], rtz2:int64 = l[1];
     printInt(rtz);

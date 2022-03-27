@@ -4,20 +4,20 @@ import Strings;
 
 export class Test:
 
-static doNothing <T> (t: T) -> T {
-    alsoT:T = t;
+static doNothing <T1> (t: T1) -> T1 {
+    alsoT: T1 = t;
     return alsoT;
 }
 
-static call <R,T,S> (f: (T,S->R), t: T, s: S) -> R {
+static call <R2,T2,S2> (f: (T2,S2->R2), t: T2, s: S2) -> R2 {
     return f(t, s);
 }
 
-static call2 <R,T> (f: (T->R), t: T) -> R {
+static call2 <R3,T3> (f: (T3->R3), t: T3) -> R3 {
     return f(t);
 }
 
-static forEach <T,R> (l: List<T>, f: (T->R)) {
+static forEach <T4,R4> (l: List<T4>, f: (T4->R4)) {
     i:int32 = 0;
     while i<l.size() {
         f(l.elements()[i]);
@@ -46,7 +46,7 @@ export static main() {
     IO.print("\n4:");
     call(forEach**, list, printInt**);
     IO.print("\n5:");
-    call(doNothing(forEach**), doNothing(list), doNothing(printInt**));
+    call(forEach**, doNothing(list), doNothing(printInt**)); // TODO originally had a do nothing around forEach**, but that is currently not supported!
     //doNothing(doNothing**); this is invalid
     call(call2**, IO.print**([char]), "\ndone");
 }

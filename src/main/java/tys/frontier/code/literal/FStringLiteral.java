@@ -21,11 +21,6 @@ public class FStringLiteral implements FLiteral { //TODO make sure string litera
     }
 
     @Override
-    public String getOriginalString() {
-        return value;
-    }
-
-    @Override
     public FClass getType() {
         return TYPE;
     }

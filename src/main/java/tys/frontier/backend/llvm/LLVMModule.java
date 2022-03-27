@@ -28,6 +28,7 @@ import tys.frontier.util.OS;
 import tys.frontier.util.Utils;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 
 import static java.util.Comparator.comparing;
@@ -216,6 +217,27 @@ public class LLVMModule implements AutoCloseable {
         assert tuple != FTuple.VOID;
         PointerPointer<LLVMTypeRef> types = createPointerPointer(tuple.getTypes(), this::getLlvmType);
         return LLVMStructTypeInContext(context, types, tuple.arity(), FALSE);
+    }
+
+    LLVMValueRef getNull(FType fOptional) {
+        if (fOptional instanceof FTuple) {
+            List<FType> fTypes = ((FTuple) fOptional).getTypes();
+            return LLVMConstNamedStruct(getLlvmType(fOptional), createPointerPointer(fTypes, this::getNull), fTypes.size());
+        }
+
+        assert fOptional instanceof FOptional;
+        FType base = ((FOptional) fOptional).getBaseType();
+        if (base == FBool.INSTANCE) {
+            return LLVMConstInt(LLVMIntTypeInContext(getContext(), 2), 2, FALSE);
+        } else if (base instanceof FIntN) {
+            return LLVMConstInt(getLlvmType(base), ((FIntN) base).minValue().subtract(BigInteger.ONE).longValue(), FALSE);
+        } else if (base instanceof FFloat32 || base instanceof FFloat64) {
+            return Utils.NYI("null literal for floating point types");
+        } else if (base instanceof FTuple) {
+            return Utils.cantHappen();
+        } else {
+            return LLVMConstPointerNull(getLlvmType(base));
+        }
     }
 
     LLVMValueRef constantString(String s) { //TODO needs sync for multithreading

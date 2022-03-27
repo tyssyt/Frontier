@@ -5,6 +5,7 @@ import Type;
 export namespace Stringer:
 
     //TODO this would benefit from a toString form that takes a stringbuilder to append to, to avoid creating stringBuilders
+    /* TODO rework without Tup*
     format <Tup*> (string: [char], args: Tup) -> [char] { //TODO a constraint that allows iter on T
         stringBuilder := List<char>.create();
 
@@ -27,7 +28,9 @@ export namespace Stringer:
         }
         return stringBuilder.trim();
     }
+    */
 
+    /* TODO rework without open
     open toString <T> (t: T) -> [char] {
         stringBuilder := List<char>.create();
 
@@ -56,6 +59,7 @@ export namespace Stringer:
         }
         return "null";
     }
+    */
 
     static toString(b: bool) -> [char] {
         if b {

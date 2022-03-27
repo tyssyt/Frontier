@@ -9,6 +9,7 @@ import tys.frontier.code.statement.loop.FWhile;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public interface StatementVisitor<Statement, Expression> extends ExpressionVisitor<Expression> {
 
     //Top Down
@@ -31,7 +32,7 @@ public interface StatementVisitor<Statement, Expression> extends ExpressionVisit
     default Statement exitIf(FIf fIf, Expression cond, Statement then, Optional<Statement> elze) {
         return null;
     }
-    default Statement exitReturn(FReturn fReturn, List<Expression> values) {
+    default Statement exitReturn(FReturn fReturn, Optional<Expression> value) {
         return null;
     }
     default Statement exitVarAssignment(FAssignment assignment, List<Expression> variables, List<Expression> values) {

@@ -1,27 +1,24 @@
 package tys.frontier.code.function.operator;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import tys.frontier.code.FVisibilityModifier;
-import tys.frontier.code.function.*;
+import tys.frontier.code.function.FBaseFunction;
+import tys.frontier.code.function.FFunction;
+import tys.frontier.code.function.FunctionBuilder;
+import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.code.predefinedClasses.FBool;
-import tys.frontier.code.predefinedClasses.FFloat;
-import tys.frontier.code.predefinedClasses.FIntN;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.parser.syntaxErrors.FunctionNotFound;
-import tys.frontier.parser.syntaxErrors.InvalidOpenDeclaration;
 import tys.frontier.parser.syntaxErrors.SignatureCollision;
 import tys.frontier.util.Utils;
 
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Collections.emptyMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
 
 public enum BinaryOperator implements Operator {
@@ -52,31 +49,6 @@ public enum BinaryOperator implements Operator {
     private static final ImmutableMap<String, BinaryOperator> parserTokenMap =
             Arrays.stream(values()).collect(toImmutableMap(o -> o.parserToken, o -> o));
 
-    private static DefaultNamespace binOpNamespace;
-
-    static { //init binOpNamespace
-        FIdentifier p1Id = new FIdentifier("P1");
-        FIdentifier p2Id = new FIdentifier("P2");
-        FIdentifier rId = new FIdentifier("R");
-
-        //TODO @PositionForGeneratedCode
-        binOpNamespace = new DefaultNamespace(null, new FIdentifier("!BinOps"), FVisibilityModifier.EXPORT, new NativeDecl(null), null);
-        for (BinaryOperator binaryOperator : parserTokenMap.values()) {
-            //add open function to binOp namespace
-            FTypeVariable p1 = FTypeVariable.create(null, p1Id, true);
-            FTypeVariable p2 = FTypeVariable.create(null, p2Id, true);
-            FTypeVariable r = FTypeVariable.create(null, rId, true);
-
-            FBaseFunction function = new FunctionBuilder(binaryOperator.identifier, binOpNamespace)
-                    .setParams(p1, p2).setReturnType(r).setParameters(p1, p2, r).build();
-            try {
-                binOpNamespace.setOpen(function);
-            } catch (InvalidOpenDeclaration invalidOpenDeclaration) {
-                Utils.cantHappen();
-            }
-        }
-    }
-
 
     public final String parserToken;
     public final FIdentifier identifier;
@@ -98,47 +70,24 @@ public enum BinaryOperator implements Operator {
     @Override
     public boolean isUserDefinable() {
         return switch (this) {
-            case EQUALS_ID, NOT_EQUALS_ID -> false;
+            case EQUALS_ID, NOT_EQUALS_ID, AND, OR -> false;
             default -> true;
         };
     }
 
-    public static DefaultNamespace sGetNamespace() {
-        return binOpNamespace;
-    }
-
-    @Override
-    public Optional<DefaultNamespace> getNamespace() {
-        return Optional.of(binOpNamespace);
-    }
-
-    public Signature getFunction(FType first, FType second) throws FunctionNotFound {
-        return binOpNamespace.hardResolveFunction(identifier, Arrays.asList(first, second), ImmutableListMultimap.of(), null, false).signature;
-    }
-
     public Signature getFunctionTrusted(FType first, FType second) {
         try {
-            return getFunction(first, second);
+            return first.getNamespace().resolveFunction(identifier, Arrays.asList(first, second), emptyMap(), null, false, List.of()).signature;
         } catch (FunctionNotFound functionNotFound) {
             return Utils.cantHappen();
         }
     }
 
     public FFunction addPredefined(FClass fClass, FClass ret) throws SignatureCollision {
-        FBaseFunction res = new FunctionBuilder(identifier, binOpNamespace)
-                .setVisibility(fClass.getNamespace().getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
-        binOpNamespace.addFunction(res);
+        DefaultNamespace namespace = fClass.getNamespace();
+        FBaseFunction res = new FunctionBuilder(identifier, namespace)
+                .setVisibility(namespace.getVisibility()).setPredefined(true).setParams(fClass, fClass).setReturnType(ret).build();
+        namespace.addFunction(res);
         return res;
-    }
-
-    public static void resetNamespace() {
-        BinaryOperator.sGetNamespace().getFunctions(false).values()
-                .removeIf( sig -> canBeRemoved(sig.getParameters().get(0).getType()));
-    }
-
-    private static boolean canBeRemoved(FType type) {
-        if (!(type instanceof FClass))
-            return false;
-        return !(type == FBool.INSTANCE || type instanceof FIntN || type instanceof FFloat);
     }
 }

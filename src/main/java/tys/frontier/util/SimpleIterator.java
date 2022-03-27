@@ -5,6 +5,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 //TODO consider implementing PeekingIterator
+//TODO isn't this the same as Guava AbstractIterator?
 public class SimpleIterator<E> implements Iterator<E> {
 
     public SimpleIterator(Supplier<E> computeNext) {

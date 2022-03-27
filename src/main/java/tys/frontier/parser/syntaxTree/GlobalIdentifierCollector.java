@@ -50,7 +50,7 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         this.errors = errors;
     }
 
-    public static Delegates collectIdentifiers(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
+    public static void collectIdentifiers(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
         GlobalIdentifierCollector collector = new GlobalIdentifierCollector(file, delegates, errors);
         for (FrontierParser.ClassDeclarationContext ctx : collector.treeData.root.classDeclaration()) {
             ctx.accept(collector);
@@ -58,7 +58,6 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
         for (FrontierParser.NamespaceDeclarationContext ctx : collector.treeData.root.namespaceDeclaration()) {
             ctx.accept(collector);
         }
-        return collector.delegates;
     }
 
     @Override
@@ -172,47 +171,31 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             ImmutableList<FParameter> parameters = params.build();
 
             //identifier
-            DefaultNamespace namespace;
             TerminalNode identifierNode = ctx.IDENTIFIER();
-            if (identifierNode != null) {
+            if (identifierNode != null) { //normal method
                 builder.setIdentifier(new FIdentifier(identifierNode.getText()));
-                FrontierParser.TypeTypeContext typeTypeContext = ctx.typeType();
-                if (typeTypeContext != null)
-                    namespace = (DefaultNamespace) ParserContextUtils.getNamespace(typeTypeContext, typeResolver);
-                else
-                    namespace = currentNamespace;
-            } else {
-                //Operator overloading
+            } else { //Operator overloading
                 if (currentClass == null)
                     return Utils.NYI("operator overloading in namespace without class");
-                Operator operator = Operator.get(ctx.operator().getText(), Utils.typesFromExpressionList(parameters));
+                Operator operator = Operator.get(ctx.operator().getText(), parameters.size());
                 if (!operator.isUserDefinable())
-                    return Utils.NYI("non overridable Operator aka FunctionNotFoundOrSth"); //TODO
+                    return Utils.NYI(operator.getIdentifier() + " is not user definable"); //TODO
                 builder.setIdentifier(operator.getIdentifier());
-                namespace = operator.getNamespace().orElse(currentNamespace);
             }
 
             builder.setVisibility(ParserContextUtils.getVisibility(ctx.visibilityModifier()));
             NativeDecl nativeDecl = ParserContextUtils.getNative(ctx.nativeModifier());
             if (nativeDecl != null)
                 builder.setNative(nativeDecl);
-            boolean open = ctx.OPEN() != null;
 
             Location location = new Location(currentNamespace.getLocation().getFile(), Position.fromCtx(ctx));
-            FBaseFunction res = builder.setLocation(location).setMemberOf(namespace).setParams(parameters).build();
+            FBaseFunction res = builder.setLocation(location).setMemberOf(currentNamespace).setParams(parameters).build();
             treeData.functions.put(ctx, res);
 
             if (nativeDecl != null && hasBody)
                 throw new NativeWithBody(res);
 
-            if(!open || nativeDecl != null || hasBody) //open non native functions without body should not be added
-                namespace.addFunction(res);
-
-            if (open) //mark as open
-                namespace.setOpen(res);
-
-            if (namespace != currentNamespace) //mark as remote
-                currentNamespace.addRemoteFunction(res);
+            currentNamespace.addFunction(res);
 
         } catch (SyntaxErrors e) {
             errors.addAll(e.errors);

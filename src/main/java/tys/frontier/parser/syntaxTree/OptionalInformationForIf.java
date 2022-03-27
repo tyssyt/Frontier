@@ -37,11 +37,9 @@ public class OptionalInformationForIf {
 
     //the logic in here needs to stay in sync with LambdaIfLowering
     public static OptionalInformationForIf createFromCondition(FExpression condition) {
-        condition = removeBrackets(condition);
-
         boolean negated = isBooleanNot(condition);
         if (negated)
-            condition = removeBrackets(((FFunctionCall) condition).getArguments(false).get(0));
+            condition = ((FFunctionCall) condition).getArguments(false).get(0);
 
         if (!negated && isOptionalExistAtom(condition)) {
             FExpression atom = ((FImplicitCast) condition).getCastedExpression();
@@ -109,7 +107,7 @@ public class OptionalInformationForIf {
             FOptional opt = (FOptional) promoteable.getType();
             FLocalVariable promotedVar = new FLocalVariable(promoteable.getPosition(), promoteable.getIdentifier(), opt.getBaseType());
             lhs.add(new FVarDeclaration(promotedVar));
-            promote.add(FFunctionCall.createTrusted(null, opt.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, promoteable))));
+            promote.add(FFunctionCall.create(null, opt.getExmark().getSignature(), mutableSingletonList(new FVariableExpression(null, promoteable))));
             variableScope.put(promotedVar.getIdentifier(), promotedVar); //this should override the non promoted declaration
         }
         return FAssignment.createTrusted(null, lhs, promote);

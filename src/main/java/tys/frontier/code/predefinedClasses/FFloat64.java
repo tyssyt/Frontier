@@ -34,15 +34,15 @@ public class FFloat64 extends FFloat {
 
         {
             StaticField nan = new StaticField(null, NAN, this, namespace, FVisibilityModifier.EXPORT, true);
-            nan.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NaN, NAN.name)));
+            nan.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NaN)));
             namespace.addFieldTrusted(nan);
 
             StaticField infPos = new StaticField(null, INF_POS, this, namespace, FVisibilityModifier.EXPORT, true);
-            infPos.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.POSITIVE_INFINITY, INF_POS.name)));
+            infPos.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.POSITIVE_INFINITY)));
             namespace.addFieldTrusted(infPos);
 
             StaticField infNeg = new StaticField(null, INF_NEG, this, namespace, FVisibilityModifier.EXPORT, true);
-            infNeg.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NEGATIVE_INFINITY, INF_NEG.name)));
+            infNeg.setAssignmentTrusted(new FLiteralExpression(null, new FFloat64Literal(Double.NEGATIVE_INFINITY)));
             namespace.addFieldTrusted(infNeg);
         }
 

@@ -1,11 +1,9 @@
 package tys.frontier.code;
 
-import com.google.common.collect.ListMultimap;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
-import tys.frontier.code.namespace.TypeVariableNamespace.IterationElementType;
 import tys.frontier.code.namespace.TypeVariableNamespace.ReturnTypeOf;
 import tys.frontier.code.predefinedClasses.FFunctionType;
 import tys.frontier.code.predefinedClasses.FOptional;
@@ -20,17 +18,15 @@ import tys.frontier.util.Utils;
 
 import java.util.*;
 
-import static java.util.Collections.singletonMap;
-
 public class TypeInstantiation {
 
     public static final TypeInstantiation EMPTY = new TypeInstantiation(Collections.emptyMap()) {
         @Override
-        public TypeInstantiation intersect(List<FTypeVariable> typeVariables) {
+        public TypeInstantiation intersect(Collection<FTypeVariable> typeVariables) {
             return this;
         }
         @Override
-        public TypeInstantiation then(TypeInstantiation other) {
+        public TypeInstantiation with(TypeInstantiation other) {
             return other;
         }
         @Override
@@ -41,6 +37,10 @@ public class TypeInstantiation {
         @Override
         public int hashCode() {
             return 0;
+        }
+        @Override
+        public FType getType(FType original) {
+            return original;
         }
     };
 
@@ -56,33 +56,13 @@ public class TypeInstantiation {
     public static TypeInstantiation create(Map<FTypeVariable, FType> typeMap) {
         if (typeMap.isEmpty())
             return EMPTY;
-        //clean up the map to make sure no lhs appears on a rhs
-        Iterator<Map.Entry<FTypeVariable, FType>> it = typeMap.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<FTypeVariable, FType> entry = it.next();
-            if (entry.getKey() == entry.getValue())
-                it.remove();
-            else
-                entry.setValue(resolveTrans(entry.getValue(), typeMap));
-        }
-        return new TypeInstantiation(typeMap);
+        TypeInstantiation typeInstantiation = new TypeInstantiation(typeMap);
+        typeInstantiation.clean();
+        return typeInstantiation;
     }
 
-    private static FType resolveTrans(FType startType, Map<FTypeVariable, FType> typeMap) {
-        FType type = startType;
-        while (true) {
-            if (!(type instanceof FTypeVariable)) {
-                return type;
-            }
-
-            FType _new = typeMap.get(type);
-            if (_new == null) {
-                return type;
-            }
-            type = _new;
-            if (startType == _new) //cycle detection
-                return Utils.handleError("types were resolved cyclic"); //TODO
-        }
+    private void clean() {
+        typeMap.replaceAll((k, v) -> getType(v));
     }
 
     public boolean isEmpty() {
@@ -97,6 +77,10 @@ public class TypeInstantiation {
         return typeMap.entrySet();
     }
 
+    public Set<FTypeVariable> keys() {
+        return typeMap.keySet();
+    }
+
     public Collection<FType> values() {
         return typeMap.values();
     }
@@ -104,23 +88,6 @@ public class TypeInstantiation {
 
     public boolean fits(FFunction hasParam) {
         return typeMap.size() == hasParam.getParameters().size() && typeMap.keySet().containsAll(hasParam.getParameters().values());
-    }
-
-    public boolean fitsIgnoreReturn(FFunction function) {
-        if (fits(function))
-            return true;
-        FType returnType = function.getType();
-        if (returnType instanceof FTypeVariable && function.getParameters().get(returnType.getIdentifier()) == returnType) {
-            //the return type is a parameter
-            if (typeMap.size() != function.getParameters().size()-1)
-                return false;
-            for (FTypeVariable param : function.getParametersList()) {
-                if (param != returnType && !typeMap.containsKey(param))
-                    return false;
-            }
-            return true;
-        }
-        return false;
     }
 
     public FType getType(FType original) {
@@ -151,24 +118,13 @@ public class TypeInstantiation {
             }
         } else if (original instanceof FTypeVariable) {
             FTypeVariable typeVariable = (FTypeVariable) original;
-            if (typeVariable.isResolved())
-                return getType(typeVariable.getResolved());
 
             FType res = typeMap.get(original);
             if (res != null)
-                return getType(res);
+                return res;
 
-            if (original instanceof IterationElementType) {
-                IterationElementType iterationElementType = (IterationElementType) original;
-                FTypeVariable oldIterable = iterationElementType.getBase();
-                FType newIterable = getType(oldIterable);
-
-                if (newIterable != oldIterable)
-                    return getType(newIterable.getForImpl().getElementType());
-            }
-
-            if (original instanceof ReturnTypeOf) {
-                ReturnTypeOf returnTypeOf = (ReturnTypeOf) original;
+            if (typeVariable instanceof ReturnTypeOf) {
+                ReturnTypeOf returnTypeOf = (ReturnTypeOf) typeVariable;
                 FType oldMemberOf = returnTypeOf.getBase();
                 if (oldMemberOf != null) {
                     FType newMemberOf = getType(oldMemberOf);
@@ -178,7 +134,7 @@ public class TypeInstantiation {
                 }
             }
 
-            return original;
+            return typeVariable;
         } else {
             return Utils.cantHappen();
         }
@@ -186,10 +142,11 @@ public class TypeInstantiation {
 
     private FType instantiatedReturnType(ReturnTypeOf returnTypeOf, Namespace newMemberOf) {
         List<FType> positionalArgs = Utils.map(returnTypeOf.getPositionalArgs(), this::getType);
-        ListMultimap<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
+        Map<FIdentifier, FType> keywordArgs = Utils.map(returnTypeOf.getKeywordArgs(), this::getType);
         try {
-            Signature instantiation = newMemberOf.hardResolveFunction(returnTypeOf.getFunction().getIdentifier(),
-                    positionalArgs, keywordArgs, null, returnTypeOf.isLhsResolve()).signature;
+            Signature instantiation = newMemberOf.resolveFunction(returnTypeOf.getFunction().getIdentifier(),
+                    positionalArgs, keywordArgs, null, returnTypeOf.isLhsResolve(), returnTypeOf.getUnbounds()
+                ).signature;
             //if (!(instantiation.getType() instanceof FTypeVariable.ReturnTypeOf))
             return getType(instantiation.getType());
         } catch (FunctionNotFound functionNotFound) {
@@ -197,11 +154,7 @@ public class TypeInstantiation {
         }
     }
 
-    public void clean() {
-        typeMap.replaceAll((k, v) -> getType(v));
-    }
-
-    public TypeInstantiation intersect (List<FTypeVariable> typeVariables) {
+    public TypeInstantiation intersect (Collection<FTypeVariable> typeVariables) {
         Map<FTypeVariable, FType> newMap = new HashMap<>(typeMap);
         boolean changed = newMap.keySet().retainAll(typeVariables);
         if (changed)
@@ -210,23 +163,18 @@ public class TypeInstantiation {
             return this;
     }
 
-    public boolean disjoint(TypeInstantiation other) {
-        return Utils.disjoint(this.typeMap.keySet(), other.typeMap.keySet());
-    }
-
-    public TypeInstantiation then(TypeInstantiation other) {
+    public TypeInstantiation with(TypeInstantiation other) {
         if (other.isEmpty())
             return this;
-        Map<FTypeVariable, FType> newMap = new HashMap<>(other.typeMap);
-        for (Map.Entry<FTypeVariable, FType> entry : this.typeMap.entrySet()) {
-            FType old = newMap.put(entry.getKey(), other.getType(entry.getValue()));
-            assert old == null;
-        }
+        Map<FTypeVariable, FType> newMap = new HashMap<>(this.typeMap);
+        newMap.putAll(other.typeMap);
         return create(newMap);
     }
 
     public TypeInstantiation with(FTypeVariable from, FType to) {
-        return new TypeInstantiation(singletonMap(from, to)).then(this);
+        Map<FTypeVariable, FType> newMap = new HashMap<>(this.typeMap);
+        newMap.put(from, to);
+        return create(newMap);
     }
 
     @Override

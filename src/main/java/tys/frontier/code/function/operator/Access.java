@@ -6,13 +6,10 @@ import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.util.Pair;
-
-import java.util.Optional;
 
 import static com.google.common.collect.Lists.asList;
 
@@ -26,11 +23,6 @@ public class Access implements Operator {
     @Override
     public FIdentifier getIdentifier() {
         return ID;
-    }
-
-    @Override
-    public Optional<DefaultNamespace> getNamespace() {
-        return Optional.empty();
     }
 
     @Override

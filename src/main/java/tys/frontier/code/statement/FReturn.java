@@ -7,55 +7,47 @@ import tys.frontier.code.visitor.StatementVisitor;
 import tys.frontier.code.visitor.StatementWalker;
 import tys.frontier.parser.location.Position;
 import tys.frontier.parser.syntaxErrors.IncompatibleTypes;
-import tys.frontier.parser.syntaxErrors.NotEnoughArguments;
-import tys.frontier.parser.syntaxErrors.TooManyArguments;
-import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
-import tys.frontier.util.Joiners;
 import tys.frontier.util.Utils;
-import tys.frontier.util.expressionListToTypeListMapping.ArgMapping;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-
-import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FReturn extends FStatement {
 
-    private List<FExpression> expressions;
-    private ArgMapping argMapping;
+    private FExpression expression;
     private FFunction function;
 
-    private FReturn(Position position, List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
+    private FReturn(Position position, FExpression expression, FFunction function) {
         super(position);
-        this.expressions = expressions;
         this.function = function;
-        this.argMapping = ArgMapping.createCasted(
-                Utils.typesFromExpressionList(expressions),
-                function.getType() == FTuple.VOID ? Collections.emptyList() : Collections.singletonList(function.getType()));
+        this.expression = expression;
     }
 
-    public static FReturn create(Position position, List<FExpression> expressions, FFunction function) throws IncompatibleTypes, TooManyArguments, NotEnoughArguments, UnfulfillableConstraints {
-        return new FReturn(position, expressions, function);
+    public static FReturn create(Position position, FExpression expression, FFunction function) throws IncompatibleTypes {
+        return new FReturn(position, expression, function).checkTypes();
     }
-    public static FReturn createTrusted(Position position, List<FExpression> expressions, FFunction function) {
+
+    public static FReturn createTrusted(Position position, FExpression expression, FFunction function) {
         try {
-            return create(position, expressions, function);
-        } catch (IncompatibleTypes | TooManyArguments | NotEnoughArguments | UnfulfillableConstraints e) {
+            return create(position, expression, function);
+        } catch (IncompatibleTypes incompatibleTypes) {
             return Utils.cantHappen();
         }
     }
-    public static FReturn createTrusted(Position position, FExpression expression, FFunction function) {
-        return createTrusted(position, mutableSingletonList(expression), function);
+
+    public static FReturn createWithDelayedCheck(Position position, FExpression expression, FFunction function) {
+        return new FReturn(position, expression, function);
     }
 
-    public List<FExpression> getExpressions() {
-        return expressions;
+    public FReturn checkTypes() throws IncompatibleTypes {
+        if (expression != null)
+            this.expression = expression.typeCheck(function.getType());
+        else if (function.getType() != FTuple.VOID)
+            throw new IncompatibleTypes(position, function.getType(), FTuple.VOID);
+        return this;
     }
 
-    public ArgMapping getArgMapping() {
-        return argMapping;
+    public Optional<FExpression> getExpression() {
+        return Optional.ofNullable(expression);
     }
 
     public FFunction getFunction() {
@@ -70,10 +62,7 @@ public class FReturn extends FStatement {
     @Override
     public <S, E> S accept(StatementVisitor<S, E> visitor) {
         visitor.enterReturn(this);
-        List<E> expressions = new ArrayList<>(this.expressions.size());
-        for (FExpression e : this.expressions)
-            expressions.add(e.accept(visitor));
-        return visitor.exitReturn(this, expressions);
+        return visitor.exitReturn(this, Optional.ofNullable(expression).map(e -> e.accept(visitor)));
     }
 
     @Override
@@ -83,8 +72,9 @@ public class FReturn extends FStatement {
 
     @Override
     public StringBuilder toString(StringBuilder sb) {
-        if (expressions.isEmpty())
+        if (expression == null)
             return sb.append("return;");
-        return Joiners.ON_COMMA_PACKED.appendTo(sb.append("return "), expressions).append(';');
+        else
+            return sb.append("return ").append(expression).append(';');
     }
 }

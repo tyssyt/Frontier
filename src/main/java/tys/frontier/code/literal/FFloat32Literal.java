@@ -6,11 +6,9 @@ import tys.frontier.code.type.FClass;
 public class FFloat32Literal implements FLiteral {
 
     public final float value;
-    public final String originalString;
 
-    public FFloat32Literal(float value, String originalString) {
+    public FFloat32Literal(float value) {
         this.value = value;
-        this.originalString = originalString;
     }
 
     @Override
@@ -21,11 +19,6 @@ public class FFloat32Literal implements FLiteral {
     @Override
     public FClass getType() {
         return FFloat32.INSTANCE;
-    }
-
-    @Override
-    public String getOriginalString() {
-        return originalString;
     }
 
     @Override

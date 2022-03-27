@@ -8,6 +8,12 @@ public class IncompatibleTypes extends SyntaxError {
     public final FType expected;
     public final FType actual;
 
+    protected IncompatibleTypes(Position position, String message, FType expected, FType actual) {
+        super(position, message);
+        this.expected = expected;
+        this.actual = actual;
+    }
+
     public IncompatibleTypes(FType expected, FType actual) {
         super("expected: " + expected.getIdentifier() + ", got: " + actual.getIdentifier());
         this.expected = expected;

@@ -34,7 +34,6 @@ tokens {
     PRIVATE,
     STATIC,
     NATIVE,
-    OPEN,
     OPERATOR,
     EMBED,
     DELEGATE,
@@ -103,7 +102,7 @@ typeParameters
     ;
 
 typeParamer
-    :   (IN|OUT)? IDENTIFIER STAR?  //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
+    :   (IN|OUT)? IDENTIFIER //TODO it would be nice to not have in & out as keyword anywhere, as they can only appear within type parameters
     ;
 
 typeParameterSpecification
@@ -149,7 +148,7 @@ methodDeclaration
 
 methodHeader //Tuple-ize
     :   visibilityModifier? nativeModifier? STATIC?
-        ((OPEN | typeType DOT)? IDENTIFIER | OPERATOR operator)
+        (IDENTIFIER | OPERATOR operator)
         typeParameters? formalParameters
         (ARROW typeList | BACKARROW typedIdentifiers)? typeParameterSpecification*
     ;
@@ -259,12 +258,12 @@ statement
     |   ifStatement                                                                         #ifStatement_
     |   FOR IDENTIFIER (COMMA IDENTIFIER)* COLON expression block                           #foreachStatement
     |   WHILE  expression  block                                                            #whileStatement
-    |   RETURN tupleExpression? SEMI                                                        #returnStatement
+    |   RETURN expressionList? SEMI                                                         #returnStatement
     |   BREAK SEMI                                                                          #breakStatement
     |   CONTINUE SEMI                                                                       #continueStatement
     |   SEMI                                                                                #emptyStatement
     |   expression SEMI                                                                     #expressionStatement
-    |   assignLhss ASSIGN tupleExpression SEMI                                              #assignment
+    |   assignLhss ASSIGN expressionList SEMI                                               #assignment
     ;
 
 assignLhss
@@ -272,8 +271,14 @@ assignLhss
     ;
 
 assignLhs
-    :   IDENTIFIER COLON typeType?
+    :   simpleLhs
+    |   LPAREN simpleLhs (COMMA simpleLhs)* RPAREN
     |   expression
+    ;
+
+simpleLhs
+    :   IDENTIFIER
+    |   IDENTIFIER COLON typeType?
     ;
 
 ifStatement
@@ -285,7 +290,7 @@ ifStatement
 //TODO the STAR STAR in adress is a temporary fix to avoid clash with multiplication
 
 expression
-    :   LPAREN expression RPAREN                                   #bracketsExpr
+    :   LPAREN expressionList RPAREN                               #tupleExpression
     |   expression LBRACK arguments RBRACK                         #arrayAccess
     |   expression DOT IDENTIFIER (LPAREN arguments? RPAREN)?      #externalFunctionCall
     |   IDENTIFIER LPAREN arguments? RPAREN                        #internalFunctionCall
@@ -295,7 +300,7 @@ expression
     |   IDENTIFIER STAR STAR (LPAREN typeList RPAREN)?             #internalFunctionAddress
     |   OPERATOR operator STAR STAR (LPAREN typeList RPAREN)?      #internalFunctionAddress
     |   LBRACK typeOrTuple COMMA expression RBRACK                 #newArray
-    |   LBRACK typeOrTuple? COLON tupleExpression COMMA? RBRACK    #arrayLiteral
+    |   LBRACK typeOrTuple? COLON expressionList COMMA? RBRACK     #arrayLiteral
     |   (EXMARK|SUB) expression                                    #preUnaryOp
     |   expression EXMARK                                          #cast
     |   expression (STAR|SLASH|MOD) expression                     #binaryOp
@@ -311,15 +316,15 @@ expression
     |   literal                                                    #literalExpr
     |   IDENTIFIER                                                 #variableExpr
     |   typeType                                                   #typeTypeExpr
-    |   NATIVE ARRAY DOT IDENTIFIER LPAREN tupleExpression RPAREN #addressOf //TODO if we can ever have non instantiated static functions in generic classes, this is no longer necessary
+    |   NATIVE ARRAY DOT IDENTIFIER LPAREN expressionList RPAREN   #addressOf //TODO if we can ever have non instantiated static functions in generic classes, this is no longer necessary
     ;
 
 arguments
-    :   tupleExpression (COMMA namedExpressions)?
+    :   expressionList (COMMA namedExpressions)?
     |   namedExpressions
     ;
 
-tupleExpression
+expressionList
     :   expression (COMMA expression)*
     ;
 
@@ -328,7 +333,7 @@ namedExpressions
     ;
 
 namedExpression
-    :   IDENTIFIER ASSIGN tupleExpression
+    :   IDENTIFIER ASSIGN expression
     ;
 
 lambda

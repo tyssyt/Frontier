@@ -52,7 +52,7 @@ public class WithInstantiatedSignature extends ForwardingFunction {
 
     @Override
     public TypeInstantiation getTypeInstantiationToBase() {
-        return proxy.getTypeInstantiationToBase().then(instantiation);
+        return proxy.getTypeInstantiationToBase().with(instantiation);
     }
 
     @Override

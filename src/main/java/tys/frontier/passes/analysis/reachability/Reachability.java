@@ -1,6 +1,5 @@
 package tys.frontier.passes.analysis.reachability;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import tys.frontier.code.FField;
@@ -21,18 +20,17 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.FForEach;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
 import tys.frontier.code.statement.loop.forImpl.PrimitiveFor;
-import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
-import tys.frontier.code.typeInference.IsIterable;
 import tys.frontier.code.visitor.FClassVisitor;
 import tys.frontier.util.Utils;
 
 import java.util.*;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static java.util.Collections.emptyMap;
 
 public class Reachability {
 
@@ -52,7 +50,6 @@ public class Reachability {
     }
 
     private static class BaseAnalysis {
-
 
         private static class SubSegment {
             FForEach loop;
@@ -75,7 +72,7 @@ public class Reachability {
         Set<FFunctionAddress> seenAddresses = new HashSet<>();
 
         private void handle(TypeInstantiation typeInstantiation, Collection<FFunction> seenFunctions) {
-            assert typeInstantiation.values().stream().filter(t -> t instanceof FTypeVariable).findFirst().isEmpty();
+            assert typeInstantiation.values().stream().noneMatch(t -> t instanceof FTypeVariable);
             doHandle(typeInstantiation, seenFunctions);
 
             for (SubSegment subSegment : subSegments) {
@@ -95,23 +92,9 @@ public class Reachability {
                     for (FField field : instantiatedType.getInstanceFields().values()) {
                         subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
                     }
-                } else if (subSegment.loop.getForImpl() instanceof IsIterable) {
-                    ForImpl instantiatedImpl = instantiatedType.getForImpl();
-                    assert instantiatedImpl != null;
-                    if (instantiatedImpl instanceof TupleFor) {
-                        assert instantiatedType instanceof FTuple;
-                        //same handling as Tuples in PrimitiveFor
-                        for (FField field : instantiatedType.getInstanceFields().values()) {
-                            subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, field.getType()), seenFunctions);
-                        }
-                    } else {
-                        FType instantietedIteratorType = typeInstantiation.getType(instantiatedImpl.getElementType());
-                        subSegment.baseAnalysis.handle(typeInstantiation.with(subSegment.iteratorType, instantietedIteratorType), seenFunctions);
-                    }
                 } else {
                     Utils.cantHappen();
                 }
-
             }
         }
 
@@ -121,14 +104,14 @@ public class Reachability {
                 //We can't use fc.getArguments, because default Values have not been baked, so we work around it by finding the base signature and calling the formerly private fillDefaultArgs
                 Signature sig = fC.getSignature().isLhs() ? fC.getFunction().getBaseR().getLhsSignature()
                         :  fC.getFunction().getBaseR().getSignature();
-                List<FType> paramTypes = Utils.typesFromExpressionList(fC.fillDefaultArgs(sig), typeInstantiation::getType);
+                List<FType> paramTypes = Utils.typesFromExpressionList(fC.getArgsAndFillDefaultFrom(sig), typeInstantiation::getType);
 
-                FFunction f = Utils.findFunctionInstantiation(fC.getSignature(), paramTypes, ImmutableListMultimap.of(), typeInstantiation).getFunction();
+                FFunction f = Utils.findFunctionInstantiation(fC.getSignature(), paramTypes, emptyMap(), typeInstantiation, List.of()).getFunction();
                 seenFunctions.add(f);
             }
             for (FFunctionAddress fA : seenAddresses) {
                 List<FType> paramTypes = Utils.typesFromExpressionList(fA.getFunction().getSignature().getParameters(), typeInstantiation::getType);
-                FFunction f = Utils.findFunctionInstantiation(fA.getFunction().getSignature(), paramTypes, ImmutableListMultimap.of(), typeInstantiation).getFunction();
+                FFunction f = Utils.findFunctionInstantiation(fA.getFunction().getSignature(), paramTypes, emptyMap(), typeInstantiation, List.of()).getFunction();
                 seenFunctions.add(f);
             }
         }
@@ -257,21 +240,17 @@ public class Reachability {
             @Override
             public void enterForEach(FForEach forEach) {
                 ForImpl forImpl = forEach.getForImpl();
-                assert forImpl instanceof PrimitiveFor || forImpl instanceof IsIterable;
+                assert forImpl instanceof PrimitiveFor;
                 BaseAnalysis analysis = new BaseAnalysis();
                 analysis.parentSegment = current;
                 FType loopVarType = forEach.getIterators().get(0).getType();
-                FType containerType;
-                if (forImpl instanceof PrimitiveFor)
-                    containerType = getOnlyElement(((FFunctionCall) forEach.getContainer()).getArguments(false)).getType();
-                else
-                    containerType = forEach.getContainer().getType();
+                FType containerType = getOnlyElement(((FFunctionCall) forEach.getContainer()).getArguments(false)).getType();
                 current.subSegments.add(new BaseAnalysis.SubSegment(forEach, analysis, (FTypeVariable) containerType, (FTypeVariable) loopVarType));
                 current = analysis;
             }
             @Override
             public FStatement exitForEach(FForEach forEach, FExpression container, FStatement body) {
-                assert forEach.getForImpl() instanceof PrimitiveFor || forEach.getForImpl() instanceof IsIterable;
+                assert forEach.getForImpl() instanceof PrimitiveFor;
                 current = current.parentSegment;
                 return null;
             }

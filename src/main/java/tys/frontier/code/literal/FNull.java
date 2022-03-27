@@ -36,8 +36,4 @@ public class FNull implements FLiteral {
         return "null";
     }
 
-    @Override
-    public String getOriginalString() {
-        return toString();
-    }
 }

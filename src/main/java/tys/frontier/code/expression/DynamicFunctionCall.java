@@ -55,6 +55,10 @@ public class DynamicFunctionCall extends FExpression {
             throw new IncompatibleTypes(getPosition(), FFunctionType.from(argType, FTuple.VOID), function.getType());
         }
 
+        if (function instanceof UnboundExpression) {
+            Utils.NYI("calling an unbound expression directly"); //TODO
+        }
+
         FType type = ((FFunctionType) function.getType()).getIn();
         List<FType> params = FTuple.unpackType(type);
 
@@ -71,10 +75,10 @@ public class DynamicFunctionCall extends FExpression {
     public <E> E accept(ExpressionVisitor<E> visitor) {
         visitor.enterDynamicFunctionCall(this);
         E function = this.function.accept(visitor);
-        List<E> params = new ArrayList<>(this.arguments.size());
+        List<E> args = new ArrayList<>(this.arguments.size());
         for (FExpression arg : this.arguments)
-            params.add(arg.accept(visitor));
-        return visitor.exitDynamicFunctionCall(this, function, params);
+            args.add(arg.accept(visitor));
+        return visitor.exitDynamicFunctionCall(this, function, args);
     }
 
     @Override

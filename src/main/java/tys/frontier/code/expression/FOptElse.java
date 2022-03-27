@@ -41,7 +41,7 @@ public class FOptElse extends FExpression {
         if (optType instanceof FTypeVariable) {
             FTypeVariable var = (FTypeVariable) optType;
             FClass opt = FOptional.from(elze.getType());
-            if (!var.tryAddConstraint(new ImplicitCastable(this, opt, Variance.Invariant)))
+            if (!var.satisfies(new ImplicitCastable(this, opt, Variance.Invariant)))
                 throw new IncompatibleTypes(getPosition(), var, opt);
             return;
         }

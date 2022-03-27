@@ -54,18 +54,18 @@ public abstract class FPredefinedClass extends FBaseClass {
         namespace.addFunctionTrusted(builder.build());
 
         try {
-            namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.LESS.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.LESS_EQUAL.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.GREATER.addPredefined(this, FBool.INSTANCE));
-            namespace.addRemoteFunction(BinaryOperator.GREATER_EQUAL.addPredefined(this, FBool.INSTANCE));
+            BinaryOperator.EQUALS.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.NOT_EQUALS.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.LESS.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.LESS_EQUAL.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.GREATER.addPredefined(this, FBool.INSTANCE);
+            BinaryOperator.GREATER_EQUAL.addPredefined(this, FBool.INSTANCE);
 
-            namespace.addRemoteFunction(BinaryOperator.PLUS.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.MINUS.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.TIMES.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.DIVIDED.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.MODULO.addPredefined(this, this));
+            BinaryOperator.PLUS.addPredefined(this, this);
+            BinaryOperator.MINUS.addPredefined(this, this);
+            BinaryOperator.TIMES.addPredefined(this, this);
+            BinaryOperator.DIVIDED.addPredefined(this, this);
+            BinaryOperator.MODULO.addPredefined(this, this);
         } catch (SignatureCollision signatureCollision) {
             Utils.cantHappen();
         }
@@ -87,7 +87,7 @@ public abstract class FPredefinedClass extends FBaseClass {
 
             Signature less = BinaryOperator.LESS.getFunctionTrusted(this, this);
             List<FExpression> arguments = asList(new FVariableExpression(null, firstParam), (new FVariableExpression(null, thirdParam)));
-            FExpression lessCall = FFunctionCall.createTrusted(null, less, arguments);
+            FExpression lessCall = FFunctionCall.create(null, less, arguments);
             FIf then = buildChoice(clamp, BinaryOperator.GREATER);
             FReturn _else = FReturn.createTrusted(null, new FVariableExpression(null, thirdParam), clamp);
             clamp.setBody(FBlock.from(FIf.createTrusted(null, lessCall, FBlock.from(then), FBlock.from(_else))));
@@ -100,7 +100,7 @@ public abstract class FPredefinedClass extends FBaseClass {
         FParameter secondParam = function.getSignature().getParameters().get(1);
         Signature sig = op.getFunctionTrusted(this, this);
         List<FExpression> arguments = asList(new FVariableExpression(null, firstParam), (new FVariableExpression(null, secondParam)));
-        FExpression sigCall = FFunctionCall.createTrusted(null, sig, arguments);
+        FExpression sigCall = FFunctionCall.create(null, sig, arguments);
         FReturn then = FReturn.createTrusted(null, new FVariableExpression(null, firstParam), function);
         FReturn _else = FReturn.createTrusted(null, new FVariableExpression(null, secondParam), function);
         return FIf.createTrusted(null, sigCall, FBlock.from(then), FBlock.from(_else));

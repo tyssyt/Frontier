@@ -1,31 +1,25 @@
 package tys.frontier.code.function.operator;
 
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.code.type.FType;
 import tys.frontier.parser.antlr.FrontierLexer;
 import tys.frontier.util.Utils;
-
-import java.util.List;
-import java.util.Optional;
 
 public interface Operator {
 
     FIdentifier getIdentifier();
     boolean isUserDefinable();
-    Optional<DefaultNamespace> getNamespace();
 
-    static Operator get(String stringRepresentation, List<FType> argTypes) {
+    static Operator get(String stringRepresentation, int numberOfArgs) {
         Operator operator = null;
         if (stringRepresentation.equals(Access.PARSER_TOKEN))
             operator = Access.INSTANCE;
-        else if (argTypes.size() == 1)
+        else if (numberOfArgs == 1)
             operator = UnaryOperator.getFromParserToken(stringRepresentation);
-        else if (argTypes.size() == 2)
+        else if (numberOfArgs == 2)
             operator = BinaryOperator.getFromParserToken(stringRepresentation);
 
         if (operator == null)
-            return Utils.NYI("unknown Operator: " + stringRepresentation + ", " + argTypes); //TODO proper error
+            return Utils.NYI("unknown Operator: " + stringRepresentation + '(' + numberOfArgs + ')'); //TODO proper error
         return operator;
     }
 

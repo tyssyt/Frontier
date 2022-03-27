@@ -4,28 +4,28 @@ import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.Namespace;
 import tys.frontier.code.namespace.TypeVariableNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.HasCall;
 import tys.frontier.code.typeInference.ImplicitCastable;
-import tys.frontier.code.typeInference.TypeConstraints;
+import tys.frontier.code.typeInference.Variance;
 import tys.frontier.parser.location.Location;
-import tys.frontier.parser.syntaxErrors.UnfulfillableConstraints;
+import tys.frontier.util.Joiners;
+import tys.frontier.util.Utils;
+
+import java.util.List;
 
 public class FTypeVariable implements FType {
 
     private FIdentifier identifier;
-    private TypeConstraints constraints;
+    private List<FClass> implictCastableCovariant = List.of();
+    private List<FClass> implictCastableContravariant = List.of();
     private TypeVariableNamespace namespace;
 
-    public static FTypeVariable create(Location location, FIdentifier identifier, boolean fixed) {
-        return new FTypeVariable(location, identifier, fixed);
+    public static FTypeVariable create(Location location, FIdentifier identifier) {
+        return new FTypeVariable(location, identifier);
     }
 
-    protected FTypeVariable(Location location, FIdentifier identifier, boolean fixed) {
+    protected FTypeVariable(Location location, FIdentifier identifier) {
         this.identifier = identifier;
-        this.constraints = new TypeConstraints(this);
         this.namespace = new TypeVariableNamespace(location, this);
-        if (fixed)
-            constraints.setFixed();
     }
 
     @Override
@@ -33,73 +33,36 @@ public class FTypeVariable implements FType {
         return identifier;
     }
 
-    @Override
-    public int concreteness() {
-        return 0;
+    public List<FClass> getImplictCastableCovariant() {
+        return implictCastableCovariant;
     }
 
     @Override
     public boolean canImplicitlyCast() {
-        if (isResolved())
-            return getResolved().canImplicitlyCast();
-        return true; //TODO when fixed we could check the constraints and find cases where we can return false
-    }
-
-    public boolean isFixed() {
-        return constraints.isFixed();
+        return true;
     }
 
     @Override
     public ForImpl getForImpl() {
-        return constraints.getForImpl();
+        return null;
     }
 
-    public void setConstraints(TypeConstraints constraints) {
-        assert constraints.getEquivalenceGroup().contains(this);
-        assert constraints.isFixed() || !this.constraints.isFixed();
-        this.constraints = constraints;
+    public void setConstraints(List<FClass> implictCastableCovariant, List<FClass> implictCastableContravariant) {
+        assert this.implictCastableCovariant.isEmpty() && this.implictCastableContravariant.isEmpty();
+        this.implictCastableCovariant = implictCastableCovariant;
+        this.implictCastableContravariant = implictCastableContravariant;
     }
 
-    public TypeConstraints getConstraints() {
-        return constraints;
-    }
+    public boolean satisfies(ImplicitCastable castable) {
+        if (!(castable.getTarget() instanceof FClass))
+            return false;
+        FClass fClass = (FClass) castable.getTarget();
 
-    public boolean isResolved() {
-        return constraints.isResolved();
-    }
-
-    public FClass getResolved() {
-        return constraints.getResolved();
-    }
-
-    public FClass hardResolve() throws UnfulfillableConstraints {
-        return constraints.hardResolve();
-    }
-
-    public boolean tryAddConstraint(ImplicitCastable implicitCastable) {
-        if (isFixed()) {
-            return constraints.satisfies(implicitCastable);
-        } else {
-            try {
-                constraints.add(implicitCastable);
-                return true;
-            } catch (UnfulfillableConstraints unfulfillableConstraints) {
-                return false;
-            }
-        }
-    }
-
-    public boolean tryAddConstraint(HasCall hasCall) {
-        if (isFixed()) {
-            return constraints.satisfies(hasCall);
-        } else {
-            try {
-                constraints.add(hasCall);
-                return true;
-            } catch (UnfulfillableConstraints unfulfillableConstraints) {
-                return false;
-            }
-        }
+        return switch (castable.getVariance()) {
+            case Covariant     -> implictCastableCovariant.contains(fClass);
+            case Contravariant -> implictCastableContravariant.contains(fClass);
+            case Invariant     -> false;
+        };
     }
 
     @Override
@@ -107,15 +70,23 @@ public class FTypeVariable implements FType {
         return namespace;
     }
 
-    public FTypeVariable shallowNonFixedCopy() {
-        return new FTypeVariable(namespace.getLocation(), identifier, false);
-    }
-
     @Override
     public StringBuilder toString(StringBuilder sb) {
         sb.append(getIdentifier().name);
-        if (!isFixed())
-            sb.append('*');
+        if (!implictCastableCovariant.isEmpty() || !implictCastableContravariant.isEmpty()) {
+            sb.append('[');
+            if (!implictCastableCovariant.isEmpty()) {
+                sb.append(Variance.Covariant._char);
+                Joiners.ON_COMMA_PACKED.appendTo(sb, Utils.map(implictCastableCovariant, FClass::getIdentifier));
+                if (!implictCastableContravariant.isEmpty())
+                    sb.append(' ');
+            }
+            if (!implictCastableContravariant.isEmpty()) {
+                sb.append(Variance.Contravariant._char);
+                Joiners.ON_COMMA_PACKED.appendTo(sb, Utils.map(implictCastableContravariant, FClass::getIdentifier));
+            }
+            sb.append(']');
+        }
         return sb;
     }
 

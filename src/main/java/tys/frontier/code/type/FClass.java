@@ -2,7 +2,6 @@ package tys.frontier.code.type;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.UnmodifiableIterator;
 import tys.frontier.code.FField;
 import tys.frontier.code.FParameter;
@@ -25,7 +24,7 @@ import tys.frontier.code.statement.FExpressionStatement;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.statement.loop.forImpl.ForImpl;
-import tys.frontier.code.typeInference.ImplicitCastable;
+import tys.frontier.code.typeInference.Constraints;
 import tys.frontier.code.typeInference.Variance;
 import tys.frontier.code.visitor.ClassVisitor;
 import tys.frontier.parser.syntaxErrors.*;
@@ -35,6 +34,8 @@ import tys.frontier.util.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static tys.frontier.util.Utils.mutableSingletonList;
 
 public abstract class FClass implements FType {
     public abstract void setParameters(List<FTypeVariable> parameters, List<Variance> parameterVariance);
@@ -89,7 +90,7 @@ public abstract class FClass implements FType {
             getDirectDelegates().put(field.getType(), field);
     }
 
-    public Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Multimap<FTypeVariable, ImplicitCastable> constraints) {
+    public Pair<FField, ImplicitTypeCast> getDelegate(FType toType, Constraints constraints) {
         FField res = getDirectDelegates().get(toType);
         if (res != null)
             return new Pair<>(res, null);
@@ -126,11 +127,11 @@ public abstract class FClass implements FType {
             while (it.hasNext())
                 paramExprs.add(new FVariableExpression(null, it.next()));
 
-            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, field.getGetter().getSignature(), List.of(thisVar));
+            FFunctionCall fieldGet = FFunctionCall.create(null, field.getGetter().getSignature(), mutableSingletonList(thisVar));
             DynamicFunctionCall call = DynamicFunctionCall.createTrusted(null, fieldGet, paramExprs);
             FStatement body = functionType.getOut() == FTuple.VOID ?
                     new FExpressionStatement(null, call) :
-                    FReturn.createTrusted(null, List.of(call), dynamicCall);
+                    FReturn.createTrusted(null, call, dynamicCall);
             dynamicCall.setBody(FBlock.from(null, body));
             getNamespace().addFunction(dynamicCall);
         }

@@ -11,7 +11,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.location.Position;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -95,11 +94,6 @@ public abstract class ForwardingFunction implements FFunction {
     @Override
     public Map<FIdentifier, FTypeVariable> getParameters() {
         return proxy.getParameters();
-    }
-
-    @Override
-    public List<FTypeVariable> getParametersList() {
-        return proxy.getParametersList();
     }
 
     @Override

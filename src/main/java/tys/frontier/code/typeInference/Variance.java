@@ -1,14 +1,16 @@
 package tys.frontier.code.typeInference;
 
 public enum Variance {
-    Covariant(1),
-    Contravariant(-1),
-    Invariant(0);
+    Covariant(1, '>'),
+    Contravariant(-1, '<'),
+    Invariant(0, '=');
 
     public final int sign;
+    public final char _char;
 
-    Variance(int sign) {
+    Variance(int sign, char _char) {
         this.sign = sign;
+        this._char = _char;
     }
 
     public static Variance fromSign(int sign) {

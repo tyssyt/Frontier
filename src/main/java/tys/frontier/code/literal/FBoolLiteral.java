@@ -28,8 +28,4 @@ public class FBoolLiteral implements FLiteral {
     public String toString() {
         return "" + value;
     }
-    @Override
-    public String getOriginalString() {
-        return toString();
-    }
 }

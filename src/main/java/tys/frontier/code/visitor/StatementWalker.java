@@ -29,8 +29,7 @@ public interface StatementWalker<Statement, Expression> extends ExpressionWalker
     }
 
     default Statement visitReturn(FReturn fReturn) {
-        for (FExpression expression : fReturn.getExpressions())
-            expression.accept(this);
+        fReturn.getExpression().ifPresent(expression -> expression.accept(this));
         return null;
     }
 

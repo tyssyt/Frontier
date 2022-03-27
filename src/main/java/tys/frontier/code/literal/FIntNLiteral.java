@@ -1,61 +1,56 @@
 package tys.frontier.code.literal;
 
+import tys.frontier.code.predefinedClasses.FIntLiteralType;
 import tys.frontier.code.predefinedClasses.FIntN;
+import tys.frontier.code.type.FClass;
 
 import java.math.BigInteger;
 
 public class FIntNLiteral implements FLiteral {
 
+    public static final FIntNLiteral INT32_0 = new FIntNLiteral(0,FIntN._32);
+
     public final BigInteger value;
     private FIntN type;
-    public final String originalString;
 
-    public FIntNLiteral(long value) {
-        this(BigInteger.valueOf(value), "" + value);
+    public FIntNLiteral(long value, FIntN type) {
+        this(BigInteger.valueOf(value), type);
     }
 
-    public FIntNLiteral(BigInteger value, String originalString) {
-        this(value, FIntN.getIntN(FIntN.neededBits(value)), originalString);
+    public FIntNLiteral(BigInteger value) {
+        this.value = value;
     }
 
-    public FIntNLiteral(BigInteger value, FIntN type, String originalString) {
+    public FIntNLiteral(BigInteger value, FIntN type) {
         this.value = value;
         this.type = type;
-        this.originalString = originalString;
     }
 
     @Override
     public FIntNLiteral copy() {
-        return new FIntNLiteral(value, type, originalString);
+        return new FIntNLiteral(value, type);
     }
 
     @Override
-    public String getOriginalString() {
-        return originalString;
-    }
-
-    @Override
-    public FIntN getType() {
-        return type;
+    public FClass getType() {
+        return type == null ? FIntLiteralType.INSTANCE : type;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof FIntNLiteral)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
         FIntNLiteral that = (FIntNLiteral) o;
 
         if (!value.equals(that.value)) return false;
-        if (!type.equals(that.type)) return false;
-        return originalString.equals(that.originalString);
+        return type != null ? type.equals(that.type) : that.type == null;
     }
 
     @Override
     public int hashCode() {
         int result = value.hashCode();
-        result = 31 * result + type.hashCode();
-        result = 31 * result + originalString.hashCode();
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         return result;
     }
 

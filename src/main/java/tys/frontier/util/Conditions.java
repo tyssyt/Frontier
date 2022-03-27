@@ -1,6 +1,5 @@
 package tys.frontier.util;
 
-import tys.frontier.code.expression.FBracketsExpression;
 import tys.frontier.code.expression.FExpression;
 import tys.frontier.code.expression.FFunctionCall;
 import tys.frontier.code.expression.FLiteralExpression;
@@ -22,19 +21,12 @@ public class Conditions {
 
     private Conditions() {}
 
-    public static FExpression removeBrackets(FExpression cond) {
-        while (cond instanceof FBracketsExpression)
-            cond = ((FBracketsExpression) cond).getInner();
-        return cond;
-    }
-
     public static boolean isBooleanNot(FExpression cond) {
         assert cond.getType() == FBool.INSTANCE;
         if (cond instanceof FFunctionCall) {
             FFunctionCall functionCall = (FFunctionCall) cond;
-            if (functionCall.getFunction().getIdentifier().equals(UnaryOperator.NOT.getIdentifier())
-                    && functionCall.getFunction().getMemberOf().getType() == FBool.INSTANCE)
-                return true;
+            return functionCall.getFunction().getIdentifier().equals(UnaryOperator.NOT.getIdentifier())
+                    && functionCall.getFunction().getMemberOf().getType() == FBool.INSTANCE;
         }
         return false;
     }
@@ -44,11 +36,9 @@ public class Conditions {
         assert cond.getType() == FBool.INSTANCE;
         if (cond instanceof FFunctionCall) {
             FFunctionCall functionCall = (FFunctionCall) cond;
-            if (functionCall.getFunction().getIdentifier().equals(operator.getIdentifier())
+            return functionCall.getFunction().getIdentifier().equals(operator.getIdentifier())
                     && functionCall.getArguments(false).get(0).getType() == FBool.INSTANCE
-                    && functionCall.getArguments(false).get(1).getType() == FBool.INSTANCE
-            )
-                return true;
+                    && functionCall.getArguments(false).get(1).getType() == FBool.INSTANCE;
         }
         return false;
     }
@@ -58,7 +48,7 @@ public class Conditions {
         Queue<FExpression> todo = new ArrayDeque<>();
         todo.add(cond);
         while (!todo.isEmpty()) {
-            FExpression cur = removeBrackets(todo.remove());
+            FExpression cur = todo.remove();
             assert cur.getType() == FBool.INSTANCE;
             if (isBinaryBooleanOp(cur, operator))
                 todo.addAll(((FFunctionCall) cur).getArguments(false));
@@ -83,7 +73,7 @@ public class Conditions {
     //TODO @PositionForGeneratedCode, but here it's not even generated and I might have a Position if I try
     public static FExpression and(FExpression atom1, FExpression atom2) {
         assert atom1.getType() == FBool.INSTANCE && atom2.getType() == FBool.INSTANCE;
-        return FFunctionCall.createTrusted(null, AND, asList(atom1, atom2));
+        return FFunctionCall.create(null, AND, asList(atom1, atom2));
     }
 
     //TODO @PositionForGeneratedCode

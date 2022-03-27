@@ -82,7 +82,7 @@ public class FConstructor extends FBaseFunction {
         DefaultNamespace memberOf = getMemberOf();
         FLocalVariable _this = new FLocalVariable(null, FIdentifier.THIS, memberOf.getType());
 
-        FFunctionCall functionCall = FFunctionCall.createTrusted(null, Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
+        FFunctionCall functionCall = FFunctionCall.create(null, Iterables.getOnlyElement(memberOf.getFunctions(false).get(MALLOC_ID)), Collections.emptyList());
         FAssignment thisDecl = FAssignment.createDecl(_this, functionCall);
 
         List<FExpression> fields = new ArrayList<>(getSignature().getParameters().size());
@@ -90,7 +90,7 @@ public class FConstructor extends FBaseFunction {
         for (FParameter param : getSignature().getParameters()) {
             FExpression thisExpr = new FVariableExpression(null, _this);
             FField field = memberOf.getType().getInstanceFields().get(param.getIdentifier());
-            fields.add(FFunctionCall.createTrusted(null, field.getSetter().getLhsSignature(), mutableSingletonList(thisExpr)));
+            fields.add(FFunctionCall.create(null, field.getSetter().getLhsSignature(), mutableSingletonList(thisExpr)));
             params.add(new FVariableExpression(null, param));
         }
         FAssignment fieldAssign = FAssignment.createTrusted(null, fields, params);

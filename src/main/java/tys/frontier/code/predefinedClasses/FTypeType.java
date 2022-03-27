@@ -60,7 +60,7 @@ public class FTypeType extends FBaseClass {
 
         //function typeOf
         {
-            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"), true);
+            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"));
             typeOf = new FunctionBuilder(typeof_ID, namespace)
                     .setParams(t).setReturnType(FTypeType.INSTANCE).setParameters(t).build();
             typeOf.setBody(FBlock.from(FReturn.createTrusted(null, new FNamespaceExpression(null, t.getNamespace()), typeOf)));
@@ -69,7 +69,7 @@ public class FTypeType extends FBaseClass {
 
         //function fieldsOf
         {
-            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"), true);
+            FTypeVariable t = FTypeVariable.create(null, new FIdentifier("T"));
 
             //Dummy return Type that has nothing but a forEach Impl TODO change when we have a simpler mechanism to return an iterable
             FBaseClass dummy = new FBaseClass(null, new FIdentifier("!PrimitiveForEachHolder"), FVisibilityModifier.EXPORT, null);

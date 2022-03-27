@@ -55,14 +55,6 @@ public class FOptional extends FPredefinedClass {
     }
 
     @Override
-    public int concreteness() { //TODO once optionals use generics this is no longer necessary
-        int res = baseType.concreteness();
-        if (res == Integer.MAX_VALUE) //avoid overflow
-            return Integer.MAX_VALUE;
-        return res+1;
-    }
-
-    @Override
     public boolean canImplicitlyCast() {  //TODO once optionals use generics this is no longer necessary
         return true;
     }

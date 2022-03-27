@@ -24,7 +24,6 @@ import tys.frontier.code.statement.FStatement;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.syntaxErrors.*;
 import tys.frontier.util.Pair;
 
@@ -115,7 +114,6 @@ public class Delegates {
         ImmutableList.Builder<FParameter> builder = ImmutableList.builder();
         builder.add(FParameter.create(params.get(0).getPosition(), params.get(0).getIdentifier(), to, false));
         builder.addAll(params.subList(1, params.size()));
-        assert toDelegate.getParameters().values().stream().allMatch(FTypeVariable::isFixed);
 
         DefaultNamespace namespace = to.getNamespace();
         FBaseFunction res = new FunctionBuilder(toDelegate.getIdentifier(), namespace).setVisibility(to.getNamespace().getVisibility())
@@ -138,7 +136,7 @@ public class Delegates {
             ImmutableList<FParameter> params = toDo.getSignature().getParameters();
 
             FVariableExpression thisExpr = new FVariableExpression(null, params.get(0));
-            FFunctionCall fieldGet = FFunctionCall.createTrusted(null, d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
+            FFunctionCall fieldGet = FFunctionCall.create(null, d.field.getGetter().getSignature(), mutableSingletonList(thisExpr));
 
             List<FExpression> arguments = new ArrayList<>(params.size());
             arguments.add(fieldGet);
@@ -146,7 +144,7 @@ public class Delegates {
                 arguments.add(new FVariableExpression(null, params.get(i)));
             }
 
-            FFunctionCall functionCall = FFunctionCall.createTrusted(null, toDoPair.b.getSignature(), arguments);
+            FFunctionCall functionCall = FFunctionCall.create(null, toDoPair.b.getSignature(), arguments);
 
             FStatement res;
             if (toDo.getType() == FTuple.VOID)

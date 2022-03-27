@@ -8,7 +8,6 @@ import tys.frontier.code.Typed;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FTupleIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.code.statement.loop.forImpl.TupleFor;
 import tys.frontier.code.type.FType;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Utils;
@@ -46,21 +45,7 @@ public class FTuple extends FPredefinedClass {
         //remove setter TODO no longer needed when field final
         namespace.getFunctions(true).clear();
 
-        //set for Impl
-        setForImpl(new TupleFor());
-
         //TODO for homogenous tuples, I can add array access operators and for by idx
-    }
-
-    @Override
-    public int concreteness() {
-        int res = Integer.MAX_VALUE;
-        for (FType type : types) {
-            res = Integer.min(res, type.concreteness());
-        }
-        if (res == Integer.MAX_VALUE) //avoid overflow
-            return Integer.MAX_VALUE;
-        return res+1;
     }
 
     @Override
@@ -84,7 +69,7 @@ public class FTuple extends FPredefinedClass {
         return from(asList(types));
     }
 
-    public static FType from(List<FType> types) {
+    public static FType from(List<? extends FType> types) {
         List<FType> flattened = new ArrayList<>();
         for (FType type : types) {
             if (type == VOID)

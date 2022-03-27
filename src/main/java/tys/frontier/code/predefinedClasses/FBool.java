@@ -28,15 +28,15 @@ public class FBool extends FPredefinedClass {
                 .setPredefined(true).setParams(this).setReturnType(this).build());
 
         try {
-            namespace.addRemoteFunction(BinaryOperator.EQUALS_ID.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS_ID.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.EQUALS.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.NOT_EQUALS.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.AND.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.OR.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.AAND.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.AOR.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.XOR.addPredefined(this, this));
+            BinaryOperator.EQUALS_ID.addPredefined(this, this);
+            BinaryOperator.NOT_EQUALS_ID.addPredefined(this, this);
+            BinaryOperator.EQUALS.addPredefined(this, this);
+            BinaryOperator.NOT_EQUALS.addPredefined(this, this);
+            BinaryOperator.AND.addPredefined(this, this);
+            BinaryOperator.OR.addPredefined(this, this);
+            BinaryOperator.AAND.addPredefined(this, this);
+            BinaryOperator.AOR.addPredefined(this, this);
+            BinaryOperator.XOR.addPredefined(this, this);
         } catch (SignatureCollision signatureCollision) {
             Utils.cantHappen();
         }

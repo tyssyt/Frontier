@@ -15,7 +15,6 @@ import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.operator.Access;
 import tys.frontier.code.identifier.FArrayIdentifier;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.literal.FIntNLiteral;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.statement.loop.forImpl.ForByIdx;
 import tys.frontier.code.type.FClass;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
+import static tys.frontier.code.literal.FIntNLiteral.INT32_0;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FArray extends FInstantiatedClass {
@@ -76,12 +76,12 @@ public class FArray extends FInstantiatedClass {
             them the identical TypeVariable as parameter.
             This is potentially dangerous, because it can't happen usually and may lead to unexpected behaviour.
             If that should happen, an even more complicated instantiation Dance needs to be performed, because both
-            constructors need an instantiation of the other array class to build all funciton headers.
+            constructors need an instantiation of the other array class to build all function headers.
             For this to happen, the parser needs to be in an early enough stage, such that the "prepare" step of
             instantiated functions is NOT immediately called. (this usually should be the case but is hard to enforce)
          */
         //TODO @PositionForGeneratedCode
-        static final FBaseArray F_INSTANCE = new FBaseArray(FTypeVariable.create(null, new FIdentifier("baseType"), true));
+        static final FBaseArray F_INSTANCE = new FBaseArray(FTypeVariable.create(null, new FIdentifier("baseType")));
         static final CArray.CBaseArray C_INSTANCE = new CArray.CBaseArray(F_INSTANCE);
 
         private Pair<FFunction, FFunction> access;
@@ -120,9 +120,9 @@ public class FArray extends FInstantiatedClass {
                     FParameter.create(null, new FIdentifier("targetOffset"), FIntN._32, true),
                     FParameter.create(null, new FIdentifier("length"), FIntN._32, true)
             );
-            params.get(2).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());
-            params.get(3).setDefaultValueTrusted(new FLiteralExpression(null, new FIntNLiteral(0)), emptySet());
-            FFunctionCall sourceSize = FFunctionCall.createTrusted(null, size.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, params.get(0))));
+            params.get(2).setDefaultValueTrusted(new FLiteralExpression(null, INT32_0), emptySet());
+            params.get(3).setDefaultValueTrusted(new FLiteralExpression(null, INT32_0), emptySet());
+            FFunctionCall sourceSize = FFunctionCall.create(null, size.getGetter().getSignature(), mutableSingletonList(new FVariableExpression(null, params.get(0))));
             params.get(4).setDefaultValueTrusted(sourceSize, Set.of(params.get(0)));
             namespace.addFunctionTrusted(builder.setParams(params).setReturnType(FTuple.VOID).build());
 

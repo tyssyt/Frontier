@@ -30,11 +30,6 @@ public abstract class FForwardingClass extends FClass {
     }
 
     @Override
-    public int concreteness() {
-        return proxy.concreteness();
-    }
-
-    @Override
     public FVisibilityModifier getConstructorVisibility() {
         return proxy.getConstructorVisibility();
     }

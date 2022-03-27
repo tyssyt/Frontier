@@ -2,11 +2,9 @@ package tys.frontier.code.function.operator;
 
 import com.google.common.collect.ImmutableMap;
 import tys.frontier.code.identifier.FIdentifier;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.parser.antlr.FrontierLexer;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static tys.frontier.code.function.operator.Operator.getParserToken;
@@ -38,11 +36,6 @@ public enum UnaryOperator implements Operator {
     @Override
     public boolean isUserDefinable() {
         return true;
-    }
-
-    @Override
-    public Optional<DefaultNamespace> getNamespace() {
-        return Optional.empty();
     }
 
 }

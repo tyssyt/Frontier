@@ -1,4 +1,4 @@
 class A:
     f() {
-        i : int64 = 4,2;
+        i : int64, j : int32 = 4,2,0;
     }

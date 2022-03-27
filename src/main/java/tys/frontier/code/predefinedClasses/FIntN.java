@@ -52,10 +52,10 @@ public class FIntN extends FPredefinedClass {
 
         DefaultNamespace namespace = this.getNamespace();
         StaticField max = new StaticField(null, MAX, this, namespace, FVisibilityModifier.EXPORT, true);
-        max.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(maxValue(), this, "" + maxValue())));
+        max.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(maxValue(), this)));
         namespace.addFieldTrusted(max);
         StaticField min = new StaticField(null, MIN, this, namespace, FVisibilityModifier.EXPORT, true);
-        min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this, "" + minValue())));
+        min.setAssignmentTrusted(new FLiteralExpression(null, new FIntNLiteral(minValue(), this)));
         namespace.addFieldTrusted(min);
 
         FunctionBuilder builder = new FunctionBuilder().setMemberOf(getNamespace()).setPredefined(true).setParams(this);
@@ -73,10 +73,10 @@ public class FIntN extends FPredefinedClass {
         DefaultNamespace namespace = this.getNamespace();
 
         try {
-            namespace.addRemoteFunction(BinaryOperator.AAND.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.AOR.addPredefined(this, this));
-            namespace.addRemoteFunction(BinaryOperator.XOR.addPredefined(this, this));
-        } catch (SignatureCollision signatureCollision) {
+            BinaryOperator.AAND.addPredefined(this, this);
+            BinaryOperator.AOR.addPredefined(this, this);
+            BinaryOperator.XOR.addPredefined(this, this);
+        } catch (SignatureCollision e) {
             Utils.cantHappen();
         }
 

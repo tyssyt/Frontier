@@ -7,7 +7,7 @@ export class File: //TODO many duplications from IO
 
     export static MODE_READ   : int32 = 0;
     export static MODE_WRITE  : int32 = 1;
-    export static MODE_APPEND : int32 = 1;
+    export static MODE_APPEND : int32 = 2;
 
     cFile: CFile;
     readBuffer : List<char>? = null;

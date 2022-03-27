@@ -4,10 +4,7 @@ import tys.frontier.code.FLocalVariable;
 import tys.frontier.code.FParameter;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.StaticField;
-import tys.frontier.code.expression.FExpression;
-import tys.frontier.code.expression.FFunctionCall;
-import tys.frontier.code.expression.FLiteralExpression;
-import tys.frontier.code.expression.FVariableExpression;
+import tys.frontier.code.expression.*;
 import tys.frontier.code.function.FBaseFunction;
 import tys.frontier.code.function.FunctionBuilder;
 import tys.frontier.code.function.Signature;
@@ -21,9 +18,9 @@ import tys.frontier.code.statement.FBlock;
 import tys.frontier.code.statement.FReturn;
 import tys.frontier.code.type.FType;
 
-import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static tys.frontier.util.Utils.mutableSingletonList;
 
 public class FFloat32 extends FFloat {
@@ -51,15 +48,15 @@ public class FFloat32 extends FFloat {
 
         {
             StaticField nan = new StaticField(null, NAN, this, namespace, FVisibilityModifier.EXPORT, true);
-            nan.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.NaN, NAN.name)));
+            nan.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.NaN)));
             namespace.addFieldTrusted(nan);
 
             StaticField infPos = new StaticField(null, INF_POS, this, namespace, FVisibilityModifier.EXPORT, true);
-            infPos.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.POSITIVE_INFINITY, INF_POS.name)));
+            infPos.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.POSITIVE_INFINITY)));
             namespace.addFieldTrusted(infPos);
 
             StaticField infNeg = new StaticField(null, INF_NEG, this, namespace, FVisibilityModifier.EXPORT, true);
-            infNeg.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.NEGATIVE_INFINITY, INF_NEG.name)));
+            infNeg.setAssignmentTrusted(new FLiteralExpression(null, new FFloat32Literal(Float.NEGATIVE_INFINITY)));
             namespace.addFieldTrusted(infNeg);
         }
 
@@ -90,27 +87,27 @@ public class FFloat32 extends FFloat {
             FLocalVariable bits = new FLocalVariable(null, new FIdentifier("bits"), int32);
             FParameter firstParam = splitRepresentation.getSignature().getParameters().get(0);
             List<FExpression> arguments = mutableSingletonList(new FVariableExpression(null, firstParam));
-            FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.createTrusted(null, rawBits.getSignature(), arguments));
+            FAssignment bitsDecl = FAssignment.createDecl(bits, FFunctionCall.create(null, rawBits.getSignature(), arguments));
 
             //sign: bits < 0
             Signature less = BinaryOperator.LESS.getFunctionTrusted(int32, int32);
-            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0)));
-            FExpression sign = FFunctionCall.createTrusted(null, less, arguments);
+            arguments = asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0, int32)));
+            FExpression sign = FFunctionCall.create(null, less, arguments);
 
             //exponent: (bits >> 23) & 0xFF
             Signature uShiftR = int32.getUShiftR().getSignature();
             Signature aAnd = BinaryOperator.AAND.getFunctionTrusted(int32, int32);
 
-            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(23)));
-            FFunctionCall expShift = FFunctionCall.createTrusted(null, uShiftR, arguments);
-            arguments = Arrays.asList(expShift, new FLiteralExpression(null, new FIntNLiteral(0xFF)));
-            FExpression exponent = FFunctionCall.createTrusted(null, aAnd, arguments);
+            arguments = asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(23, int32)));
+            FFunctionCall expShift = FFunctionCall.create(null, uShiftR, arguments);
+            arguments = asList(expShift, new FLiteralExpression(null, new FIntNLiteral(0xFF, int32)));
+            FExpression exponent = FFunctionCall.create(null, aAnd, arguments);
 
             //mantissa: bits & 0x7FFFFF
-            arguments = Arrays.asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0x7FFFFF)));
-            FExpression mantissa = FFunctionCall.createTrusted(null, aAnd, arguments);
+            arguments = asList(new FVariableExpression(null, bits), new FLiteralExpression(null, new FIntNLiteral(0x7FFFFF, int32)));
+            FExpression mantissa = FFunctionCall.create(null, aAnd, arguments);
 
-            FReturn _return = FReturn.createTrusted(null, List.of(sign, exponent, mantissa), splitRepresentation);
+            FReturn _return = FReturn.createTrusted(null, new Pack(null, asList(sign, exponent, mantissa)), splitRepresentation);
             splitRepresentation.setBody(FBlock.from(null, bitsDecl, _return));
         }
     }

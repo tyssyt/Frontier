@@ -5,6 +5,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import tys.frontier.code.FField;
 import tys.frontier.code.TypeInstantiation;
 import tys.frontier.code.Typed;
+import tys.frontier.code.expression.UnboundExpression;
 import tys.frontier.code.function.*;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.identifier.FInstantiatedFunctionIdentifier;
@@ -134,8 +135,8 @@ public final class Utils {
         return Lists.transform(exps, Typed::getType);
     }
 
-    public static <T> ListMultimap<T, FType> typesFromExpressionMap(ListMultimap<T, ? extends Typed> exps) {
-        return Multimaps.transformValues(exps, Typed::getType);
+    public static <T> Map<T, FType> typesFromExpressionMap(Map<T, ? extends Typed> exps) {
+        return Maps.transformValues(exps, Typed::getType);
     }
 
     public static List<FType> typesFromExpressionList(List<? extends Typed> exps, UnaryOperator<FType> op) {
@@ -145,15 +146,7 @@ public final class Utils {
         return res;
     }
 
-    private static boolean needsReResolve(FFunction function, Namespace namespace, FIdentifier identifier) {
-        if (function instanceof DummyFunction)
-            return true;
-        if (namespace.getOpen(identifier) != null) //TODO optimisation: only reresolve when the original call needed casts
-            return true;
-        return false;
-    }
-
-    public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, ListMultimap<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation) {
+    public static Signature findFunctionInstantiation(Signature signature, List<FType> positionalArgs, Map<FIdentifier, FType> keywordArgs, TypeInstantiation typeInstantiation, List<UnboundExpression> unbounds) {
         //handle namespace/class instantiation
         FFunction function = signature.getFunction();
         Namespace oldNamespace = function.getMemberOf();
@@ -163,7 +156,7 @@ public final class Utils {
         if (identifier instanceof FInstantiatedFunctionIdentifier)
             identifier = ((FInstantiatedFunctionIdentifier) identifier).baseIdentifier;
 
-        if (needsReResolve(function, oldNamespace, identifier)) {
+        if (function instanceof DummyFunction) { // needs re-resolve
             FType returnType = typeInstantiation.getType(signature.getType());
 
             Namespace namespace;
@@ -174,7 +167,7 @@ public final class Utils {
             }
 
             try {
-                return namespace.hardResolveFunction(identifier, positionalArgs, keywordArgs, returnType, signature.isLhs()).signature;
+                return namespace.resolveFunction(identifier, positionalArgs, keywordArgs, returnType, signature.isLhs(), unbounds).signature;
             } catch (FunctionNotFound functionNotFound) {
                 return Utils.cantHappen();
             }
@@ -240,6 +233,7 @@ public final class Utils {
         return isGetter ? field.getGetter() : field.getSetter();
     }
 
+    //TODO I vaguely remember joining Identifiers with Joiner on Type Variable/Constraint stuff. Unify!
     @CanIgnoreReturnValue
     public static StringBuilder joinIdentifiers(StringBuilder sb, Iterator<? extends IdentifierNameable> nameables, String separator) {
         if (nameables.hasNext()) {
@@ -255,36 +249,6 @@ public final class Utils {
     @CanIgnoreReturnValue
     public static StringBuilder joinIdentifiers(StringBuilder sb, Iterable<? extends IdentifierNameable> nameables, String separator) {
         return joinIdentifiers(sb, nameables.iterator(), separator);
-    }
-
-    public static <T> boolean disjoint(Set<T> a, Set<T> b) {
-        if (a.size() < b.size()) {
-            for (T t : a) {
-                if (b.contains(t))
-                    return false;
-            }
-        } else {
-            for (T t : b) {
-                if (a.contains(t))
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    public static <T> T firstDuplicate(Set<T> a, Set<T> b) {
-        if (a.size() < b.size()) {
-            for (T t : a) {
-                if (b.contains(t))
-                    return t;
-            }
-        } else {
-            for (T t : b) {
-                if (a.contains(t))
-                    return t;
-            }
-        }
-        return null;
     }
 
     public static <T> int countNonNull(Iterable<T> iterable) {
@@ -321,23 +285,6 @@ public final class Utils {
 
     public static <T,S> Iterable<Pair<T,S>> zip(Iterable<T> it1, Iterable<S> it2) {
         return () -> zip(it1.iterator(), it2.iterator());
-    }
-
-    public static <K, T, S> Iterable<Triple<K, T, S>> zip(Map<K, T> m1, Map<K, S> m2) {
-        Iterator<Map.Entry<K, T>> it = m1.entrySet().iterator();
-        return () -> new SimpleIterator<>(() -> {
-            try {
-                Map.Entry<K, T> next = it.next();
-                S val2 = m2.get(next.getKey());
-                while (val2 == null) {
-                    next = it.next();
-                    val2 = m2.get(next.getKey());
-                }
-                return new Triple<>(next.getKey(), next.getValue(), val2);
-            } catch (NoSuchElementException e) {
-                return null;
-            }
-        });
     }
 
 }

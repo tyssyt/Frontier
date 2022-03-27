@@ -27,7 +27,7 @@ public interface FStatementVisitor extends FExpressionVisitor, StatementVisitor<
     }
 
     @Override
-    default FStatement exitReturn(FReturn fReturn, List<FExpression> values) {
+    default FStatement exitReturn(FReturn fReturn, Optional<FExpression> value) {
         return fReturn;
     }
 

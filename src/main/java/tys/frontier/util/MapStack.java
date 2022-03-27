@@ -44,11 +44,11 @@ public class MapStack<K,V> implements Iterable<Map<K,V>> {
     }
 
     public V put(K key, V value) {
-        return stack.peek().put(key, value);
+        return stack.element().put(key, value);
     }
 
     public void putAll(Map<? extends  K, ? extends V> map) {
-        stack.peek().putAll(map);
+        stack.element().putAll(map);
     }
 
     public V get(K key) {

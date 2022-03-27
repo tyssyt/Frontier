@@ -4,21 +4,17 @@ import tys.frontier.code.expression.*;
 import tys.frontier.code.expression.cast.FImplicitCast;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
 
     @Override
-    default FExpression exitBrackets(FBracketsExpression brackets, FExpression inner) {
-        return brackets;
-    }
-
-    @Override
-    default FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> params) {
+    default FExpression exitFunctionCall(FFunctionCall functionCall, List<FExpression> args) {
         return functionCall;
     }
 
     @Override
-    default FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> params) {
+    default FExpression exitDynamicFunctionCall(DynamicFunctionCall functionCall, FExpression function, List<FExpression> args) {
         return functionCall;
     }
 
@@ -35,6 +31,21 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
     @Override
     default FExpression exitCache(FCacheExpression cache, FExpression fExpression) {
         return cache;
+    }
+
+    @Override
+    default FExpression exitPack(Pack pack, List<FExpression> expressions) {
+        return pack;
+    }
+
+    @Override
+    default FExpression exitUnpack(Unpack unpack, FExpression unpackedExpression) {
+        return unpack;
+    }
+
+    @Override
+    default FExpression exitUnpackedElement(Unpack.UnpackedElement unpackedElement, Optional<FExpression> unpack) {
+        return unpackedElement;
     }
 
     @Override
@@ -62,8 +73,4 @@ public interface FExpressionVisitor extends ExpressionVisitor<FExpression> {
         return address;
     }
 
-    @Override
-    default FExpression visitUninstantiatedFunctionAddress(UninstantiatedFunctionAddress address) {
-        return address;
-    }
 }

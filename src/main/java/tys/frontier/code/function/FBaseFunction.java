@@ -16,7 +16,9 @@ import tys.frontier.parser.location.Position;
 import tys.frontier.util.NameGenerator;
 import tys.frontier.util.Pair;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 
 public class FBaseFunction implements FFunction {
 
@@ -32,7 +34,6 @@ public class FBaseFunction implements FFunction {
     private Signature lhsSignature;
 
     protected Map<FIdentifier, FTypeVariable> parameters;
-    protected List<FTypeVariable> parametersList;
     private Map<TypeInstantiation, FInstantiatedFunction> instantiations;
 
 
@@ -50,11 +51,9 @@ public class FBaseFunction implements FFunction {
 
         if (parameters.isEmpty()) {
             this.parameters = Collections.emptyMap();
-            this.parametersList = Collections.emptyList();
             this.instantiations = Collections.emptyMap();
         } else {
             this.parameters = parameters;
-            this.parametersList = new ArrayList<>(parameters.values());
             this.instantiations = new MapMaker().concurrencyLevel(1).weakValues().makeMap();
         }
     }
@@ -139,11 +138,6 @@ public class FBaseFunction implements FFunction {
     }
 
     @Override
-    public List<FTypeVariable> getParametersList() {
-        return parametersList;
-    }
-
-    @Override
     public boolean isInstantiation() {
         return false;
     }
@@ -160,11 +154,15 @@ public class FBaseFunction implements FFunction {
 
     @Override
     public FFunction getInstantiation(TypeInstantiation typeInstantiation) {
-        TypeInstantiation intersected = typeInstantiation.intersect(parametersList);
+        TypeInstantiation intersected = typeInstantiation.intersect(parameters.values());
         if (intersected.isEmpty())
             return this;
-        intersected.clean();
         return instantiations.computeIfAbsent(intersected, i -> FInstantiatedFunction.fromFunctionInstantiation(this, intersected));
+    }
+
+    public void setInferredReturnTypeForLambda(FType newReturnType) {
+        assert lhsSignature == null && signature.getType() == null;
+        signature = new Signature(this, signature.getParameters(), newReturnType);
     }
 
     @Override

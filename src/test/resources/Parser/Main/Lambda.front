@@ -4,7 +4,7 @@ import List;
 
 export class Lambda:
 
-static forEach <T, R> (l: List<T>, f: (T->R)) {
+static forEach <T> (l: List<T>, f: (T->())) {
     i:int32 = 0;
     while i < l.size() {
         f(l.elements()[i]);
