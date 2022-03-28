@@ -2,6 +2,10 @@ import Kernel32;
 
 export namespace Timing:
 
+    //TODO probably the OS has an even more accurate TS, like when the process was created, but that is probably a Pain to get
+    //https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes
+    export programStartTime : int64 = getTimestamp(); //TODO make sure this is the very first field initialized in the static field initializer
+
     export getTimestamp() -> int64 {
         ts : int64 = 0;
         Kernel32.getTimestamp(native[].of(ts));

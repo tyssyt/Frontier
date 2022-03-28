@@ -78,6 +78,8 @@ public class Linker { //TODO clean up seperators
             builder.add("-debug");
         builder.addAll(inputFiles);
         builder.add("-nodefaultlib:OLDNAMES.lib");
+        builder.add("-nodefaultlib:user32.lib");
+        builder.add("-nodefaultlib:gdi32.lib");
         for (String weirdExcludeThingy : weirdExcludeThingies)
             builder.add("-nodefaultlib:" + weirdExcludeThingy);
         return new ProcessBuilder(builder.build());

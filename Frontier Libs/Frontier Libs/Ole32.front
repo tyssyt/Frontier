@@ -1,0 +1,235 @@
+native include Ole32.Lib; //TODO platform dependent include, this is x64
+
+export native class GUID:
+    export constructors;
+
+    export static ZERO                : GUID = GUID(a=0, b=0, c=0, d1=0, d2=0, d3=0, d4=0, d5=0, d6=0, d7=0, d8=0);
+    export static MMDeviceEnumerator  : GUID = GUID(a=-1126300779, b= -6865, c=18044, d1=-114, d2= 61, d3=-60, d4=  87, d5=-110, d6=-111, d7=105, d8= 46);
+    export static IMMDeviceEnumerator : GUID = GUID(a=-1453955886, b=-27116, c=20277, d1= -89, d2= 70, d3=-34, d4=-115, d5= -74, d6=  54, d7= 23, d8=-26);
+    export static IAudioClient        : GUID = GUID(a=  481930572, b= -9222, c=19506, d1= -79, d2=120, d3=-62, d4= -11, d5= 104, d6= -89, d7=  3, d8=-78);
+    export static IAudioRenderClient  : GUID = GUID(a= -225137412, b= 12614, c=17539, d1= -89, d2=-65, d3=-83, d4= -36, d5= -89, d6= -62, d7= 96, d8=-30);
+
+    a: int32;
+    b: int16;
+    c: int16;
+    d1: char;
+    d2: char;
+    d3: char;
+    d4: char;
+    d5: char;
+    d6: char;
+    d7: char;
+    d8: char;
+
+    export static zero() -> GUID {
+        return GUID(a=0, b=0, c=0, d1=0, d2=0, d3=0, d4=0, d5=0, d6=0, d7=0, d8=0);
+    }
+
+export native class IMMDeviceEnumerator:
+    //EDataFlow
+    export static DATA_FLOW_RENDER  : int32 = 0;
+    export static DATA_FLOW_CAPTURE : int32 = 1;
+    //ERole
+    export static ROLE_CONSOLE        : int32 = 0;
+    export static ROLE_MULTIMEDIA     : int32 = 1;
+    export static ROLE_COMMUNICATIONS : int32 = 2;
+
+    //Device State Mask Bits
+    export static DEVICE_STATE_ACTIVE     : int32 =  1;
+    export static DEVICE_STATE_DISABLED   : int32 =  2;
+    export static DEVICE_STATE_NOTPRESENT : int32 =  4;
+    export static DEVICE_STATE_UNPLUGGED  : int32 =  8;
+    export static DEVICE_STATE_ALL        : int32 = 15;
+
+    delegate *: export vTable: IMMDeviceEnumeratorVTable;
+export native class IMMDeviceEnumeratorVTable:
+    //From IUnknown
+    export queryInterface: (IMMDeviceEnumerator, GUID, native[char]?  -> int32);
+    export addRef: (IMMDeviceEnumerator -> int32);
+    export release: (IMMDeviceEnumerator -> int32);
+
+    //from IMMDeviceEnumerator
+    export enumAudioEndpoints: (IMMDeviceEnumerator, /*data flow*/ int32, /*device state mask*/ int32, native[IMMDeviceCollection?] -> int32);
+    export getDefaultAudioEndpoint: (IMMDeviceEnumerator, /*data flow*/ int32, /*role*/ int32, native[IMMDevice?] -> int32);
+    export getDevice: (IMMDeviceEnumerator, native[char], native[IMMDevice?] -> int32);
+    //export registerEndpointNotificationCallback: (IMMDeviceEnumerator, ... -> int32); TODO
+    //export unregisterEndpointNotificationCallback: (IMMDeviceEnumerator, ... -> int32); TODO
+
+
+export native class IMMDevice:
+    export static STORAGE_ACCESS_MODE_READ      : int32 = 0;
+    export static STORAGE_ACCESS_MODE_WRITE     : int32 = 1;
+    export static STORAGE_ACCESS_MODE_READWRITE : int32 = 2;
+
+    export static DEVICE_STATE_ACTIVE     : int32 = 1;
+    export static DEVICE_STATE_DISABLED   : int32 = 2;
+    export static DEVICE_STATE_NOTPRESENT : int32 = 4;
+    export static DEVICE_STATE_UNPLUGGED  : int32 = 8;
+
+    delegate *: export vTable: IMMDeviceVTable;
+export native class IMMDeviceVTable:
+    //From IUnknown
+    export queryInterface: (IMMDevice, GUID, native[char]?  -> int32);
+    export addRef: (IMMDevice -> int32);
+    export release: (IMMDevice -> int32);
+
+    //from IMMDevice
+    export activate: (IMMDevice, GUID, /*execution context*/ int32, /*set to null for IAudioClient*/ native[char]?, native[IAudioClient?] -> int32);
+    export openPropertyStore: (IMMDevice, /*access mode*/ int32, native[IPropertyStore?] -> int32);
+    export getId: (IMMDevice, native[native[char]?] -> int32);
+    export getState: (IMMDevice, native[int32] -> int32);
+
+
+export native class IMMDeviceCollection:
+    delegate *: export vTable: IMMDeviceCollectionVTable;
+export native class IMMDeviceCollectionVTable:
+    //From IUnknown
+    export queryInterface: (IMMDeviceCollection, GUID, native[char]?  -> int32);
+    export addRef: (IMMDeviceCollection -> int32);
+    export release: (IMMDeviceCollection -> int32);
+
+    //from IMMDeviceCollection
+    export getCount: (IMMDeviceCollection, native[int32] -> int32);
+    export item: (IMMDeviceCollection, int32, native[IMMDevice?] -> int32);
+
+
+export native class IPropertyStore:
+    delegate *: export vTable: IPropertyStoreVTable;
+export native class IPropertyStoreVTable:
+    //From IUnknown
+    export queryInterface: (IPropertyStore, GUID, native[char]?  -> int32);
+    export addRef: (IPropertyStore -> int32);
+    export release: (IPropertyStore -> int32);
+
+    //from IPropertyStoreCollection
+    export getCount: (IPropertyStore, native[int32] -> int32);
+    export getAt: (IPropertyStore, int32, PropertyKey -> int32);
+    export getValue: (IPropertyStore, PropertyKey, PropVariant -> int32);
+    export setValue: (IPropertyStore, PropertyKey, PropVariant -> int32);
+    export commit: (IPropertyStore -> int32);
+
+export native("PROPERTYKEY") class PropertyKey:
+    export constructors;
+
+    export static GUID_PKEY_DEVICE : GUID = GUID(a=-1537465010, b=-8420, c=20221, d1=(-128).toChar(), d2=32, d3=103, d4=-47, d5=70, d6=-88, d7=80, d8=-32);
+    export static Device_DeviceDesc            : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId= 2); // DEVPROP_TYPE_STRING
+    export static Device_HardwareIds           : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId= 3); // DEVPROP_TYPE_STRING_LIST
+    export static Device_CompatibleIds         : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId= 4); // DEVPROP_TYPE_STRING_LIST
+    export static Device_Service               : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId= 6); // DEVPROP_TYPE_STRING
+    export static Device_Class                 : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId= 9); // DEVPROP_TYPE_STRING
+    export static Device_ClassGuid             : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=10); // DEVPROP_TYPE_GUID
+    export static Device_Driver                : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=11); // DEVPROP_TYPE_STRING
+    export static Device_ConfigFlags           : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=12); // DEVPROP_TYPE_UINT32
+    export static Device_Manufacturer          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=13); // DEVPROP_TYPE_STRING
+    export static Device_FriendlyName          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=14); // DEVPROP_TYPE_STRING
+    export static Device_LocationInfo          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=15); // DEVPROP_TYPE_STRING
+    export static Device_PDOName               : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=16); // DEVPROP_TYPE_STRING
+    export static Device_Capabilities          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=17); // DEVPROP_TYPE_UNINT32
+    export static Device_UINumber              : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=18); // DEVPROP_TYPE_STRING
+    export static Device_UpperFilters          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=19); // DEVPROP_TYPE_STRING_LIST
+    export static Device_LowerFilters          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=20); // DEVPROP_TYPE_STRING_LIST
+    export static Device_BusTypeGuid           : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=21); // DEVPROP_TYPE_GUID
+    export static Device_LegacyBusType         : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=22); // DEVPROP_TYPE_UINT32
+    export static Device_BusNumber             : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=23); // DEVPROP_TYPE_UINT32
+    export static Device_EnumeratorName        : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=24); // DEVPROP_TYPE_STRING
+    export static Device_Security              : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=25); // DEVPROP_TYPE_SECURITY_DESCRIPTOR
+    export static Device_SecuritySDS           : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=26); // DEVPROP_TYPE_SECURITY_DESCRIPTOR_STRING
+    export static Device_DevType               : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=27); // DEVPROP_TYPE_UINT32
+    export static Device_Exclusive             : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=28); // DEVPROP_TYPE_UINT32
+    export static Device_Characteristics       : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=29); // DEVPROP_TYPE_UINT32
+    export static Device_Address               : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=30); // DEVPROP_TYPE_UINT32
+    export static Device_UINumberDescFormat    : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=31); // DEVPROP_TYPE_STRING
+    export static Device_PowerData             : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=32); // DEVPROP_TYPE_BINARY
+    export static Device_RemovalPolicy         : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=33); // DEVPROP_TYPE_UINT32
+    export static Device_RemovalPolicyDefault  : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=34); // DEVPROP_TYPE_UINT32
+    export static Device_RemovalPolicyOverride : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=35); // DEVPROP_TYPE_UINT32
+    export static Device_InstallState          : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=36); // DEVPROP_TYPE_UINT32
+    export static Device_LocationPaths         : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=37); // DEVPROP_TYPE_STRING_LIST
+    export static Device_BaseContainerId       : PropertyKey = PropertyKey(fmtId=GUID_PKEY_DEVICE, pId=38); // DEVPROP_TYPE_GUID
+
+    export embed fmtId : GUID;
+    export       pId   : int32;
+
+export native("PROPVARIANT") class PropVariant:
+    export constructors;
+    export vt : int16;
+    export reserved1 : int16;
+    export reserved2 : int16;
+    export reserved3 : int16;
+
+    export val : native[char]?;
+
+export native class IAudioClient:
+    export static SHAREMODE_SHARED    : int32 = 0;
+    export static SHAREMODE_EXCLUSIVE : int32 = 1;
+
+    delegate *: export vTable: IAudioClientVTable;
+export native class IAudioClientVTable:
+    //From IUnknown
+    export queryInterface: (IAudioClient, GUID, native[char]?  -> int32);
+    export addRef: (IAudioClient -> int32);
+    export release: (IAudioClient -> int32);
+
+    //from IAudioClient
+    export initialize: (IAudioClient, /*shareMode*/ int32, /*streamFlags*/ int32, /*bufferSize in 100ns*/ int64, /*period in 100ns*/ int64, WaveformatExtensible, GUID? -> int32);
+    export getBufferSize: (IAudioClient, native[int32] -> int32);
+    export getStreamLatency: (IAudioClient, native[int64] -> int32);
+    export getCurrentPadding: (IAudioClient, native[int32] -> int32);
+    export isFormatSupported: (IAudioClient, /*shareMode*/ int32, WaveformatExtensible, /*closest match*/ native[WaveformatExtensible] -> int32);
+    export getMixFormat: (IAudioClient, native[WaveformatExtensible?] -> int32);
+    export getDevicePeriod: (IAudioClient, /*default period in 100ns*/ native[int64], /*minimum period in 100ns*/ native[int64] -> int32);
+    export start: (IAudioClient -> int32);
+    export stop: (IAudioClient -> int32);
+    export reset: (IAudioClient -> int32);
+    export setEventHandle: (IAudioClient, native[char] -> int32); //TODO implement Handle Type
+    export getService: (IAudioClient, GUID, native[IAudioRenderClient?] -> int32);
+
+
+export class IAudioRenderClient:
+    export static FLAG_SILENT : int32 = 2;
+
+    delegate *: export vTable: IAudioRenderClientVTable;
+export native class IAudioRenderClientVTable:
+    //From IUnknown
+    export queryInterface: (IAudioRenderClient, GUID, native[char]?  -> int32);
+    export addRef: (IAudioRenderClient -> int32);
+    export release: (IAudioRenderClient -> int32);
+
+    //from IAudioRenderClient
+    export getBuffer: (IAudioRenderClient, /*requested frames*/ int32, native[native[float32]?] -> int32); //TODO can we somhow make this generic?
+    export releaseBuffer: (IAudioRenderClient, /*written frames*/ int32, /*flags*/ int32 -> int32);
+
+
+export native class WaveformatExtensible:
+    export static FORMAT_TAG_WAVEFORMAT_EXTENSIBLE : int16 = -2; // 0xFFFE
+    export static MIN_SIZE_WAVEFORMAT_EXTENSIBLE   : int16 = 22;
+
+    export static SUBTYPE_PCM        : GUID = GUID(a=1, b=0, c=16, d1=(-128).toChar, d2=0, d3=0, d4=-86, d5=0, d6=56, d7=-101, d8=113);
+    export static SUBTYPE_IEEE_FLOAT : GUID = GUID(a=3, b=0, c=16, d1=(-128).toChar, d2=0, d3=0, d4=-86, d5=0, d6=56, d7=-101, d8=113);
+
+    //TODO constants for channel mask?
+
+    //WaveformatEx
+    export formatTag         : int16;
+    export channels          : int16;
+    export samplesPerSecond  : int32;
+    export avgBytesPerSecond : int32;
+    export blockAlign        : int16;
+    export bitsPerSample     : int16;
+    export cbSize            : int16;
+
+    //WaveformatExtensible
+    export samples           : int16; //union of validBitsPerSample and samplesPerBlock
+    export channelMask       : int32;
+    export embed subFormat   : GUID;
+
+
+export namespace COM:
+
+export static CLSCTX_ALL : int32 = 0; //TODO this is probably not the right place for this constant...
+
+export native("CoInitializeEx") coInitialize(reserved: native[char]?, coInit: int32 = 0) -> int32;
+export native("CoCreateInstance") coCreateInstance <T> (clsId: GUID, unknown: native[char]?, context: int32, refId: GUID, res: native[T]) -> int32;
+export native("CoTaskMemFree") coTaskMemFree <T> (t: T);
+
+//TODO CoTaskMemFree - for freeing strings, i.e. the string written by getId
