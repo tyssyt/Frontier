@@ -21,9 +21,12 @@ import tys.frontier.passes.analysis.reachability.Reachability;
 import tys.frontier.passes.lowering.FForEachLowering;
 import tys.frontier.passes.lowering.FLambdaIfLowering;
 import tys.frontier.style.Style;
+import tys.frontier.tools.BitcodeLinker;
+import tys.frontier.tools.HeaderGenerator;
 import tys.frontier.util.FileUtils;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -33,7 +36,20 @@ public class Main {
     private static final LLVMBackend.OutputFileType outputType =
             LLVMBackend.OutputFileType.EXECUTABLE;
 
-    public static void main(String[] args) throws SyntaxError, SyntaxErrors, IOException {
+    public static void main(String[] args) throws SyntaxError, SyntaxErrors, IOException, URISyntaxException {
+        if (args.length > 0) {
+            switch (args[0]) {
+                case "bitcodeLinker" -> {
+                    BitcodeLinker.main(Arrays.copyOfRange(args, 1, args.length));
+                    return;
+                }
+                case "headerGenerator" -> {
+                    HeaderGenerator.main(Arrays.copyOfRange(args, 1, args.length));
+                    return;
+                }
+            }
+        }
+
         //TODO use some library for argument parsing?
         String input;
         String output = null;
