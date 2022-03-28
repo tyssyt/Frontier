@@ -9,6 +9,7 @@ import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.type.FInstantiatedClass;
+import tys.frontier.logging.Logger;
 import tys.frontier.parser.Parser;
 import tys.frontier.parser.modules.FolderRepository;
 import tys.frontier.parser.modules.ImportResolver;
@@ -39,6 +40,7 @@ public class Main {
         List<ModuleRepository> repositories = new ArrayList<>();
         boolean keepTmpDir = false;
         boolean debug = false;
+        Logger.Level logLevel = null;
 
         int i = 0;
         while (i < args.length) {
@@ -65,6 +67,16 @@ public class Main {
                     keepTmpDir = Boolean.parseBoolean(args[i]);
                 }
                 case "-debug" -> debug = true;
+                case "-logLevel" -> {
+                    i++;
+                    if (logLevel != null)
+                        System.err.println("-logLevel argument given more then once");
+                    try {
+                        logLevel = Logger.Level.valueOf(args[i]);
+                    } catch (IllegalArgumentException e) {
+                        System.err.println("unrecognized logLevel: " + args[i]);
+                    }
+                }
                 default -> System.err.println("unrecognized argument: " + arg);
             }
             i++;
@@ -79,6 +91,9 @@ public class Main {
 
         if (output == null)
             output = input.substring(0, input.lastIndexOf('.'));
+
+        if (logLevel != null)
+            Logger.setLevel(logLevel);
 
         main(input, output, repositories, keepTmpDir, debug);
     }

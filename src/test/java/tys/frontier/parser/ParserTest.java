@@ -6,9 +6,7 @@ import org.junit.Test;
 import tys.frontier.State;
 import tys.frontier.code.FField;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
-import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.modules.ImportResolver;
 import tys.frontier.parser.modules.ResourceRepository;
 import tys.frontier.parser.syntaxErrors.*;
@@ -27,9 +25,7 @@ public class ParserTest {
 
     @Before
     public void setUp() {
-        Logger logger = Log.DEFAULT_LOGGER;
-        if (logger instanceof StdOutLogger)
-            ((StdOutLogger) logger).setLevel(Logger.Level.WARNING);
+        Logger.setLevel(Logger.Level.WARNING);
         State.reset();
         State.get().setImportResolver(new ImportResolver(Collections.singletonList(ResourceRepository.INSTANCE)));
     }

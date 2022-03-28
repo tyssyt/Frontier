@@ -8,9 +8,7 @@ import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import tys.frontier.State;
 import tys.frontier.code.predefinedClasses.FTypeType;
-import tys.frontier.logging.Log;
 import tys.frontier.logging.Logger;
-import tys.frontier.logging.StdOutLogger;
 import tys.frontier.parser.syntaxErrors.SyntaxError;
 import tys.frontier.parser.syntaxErrors.SyntaxErrors;
 import tys.frontier.util.FileUtils;
@@ -34,9 +32,7 @@ public class MainTest {
 
     @BeforeClass
     public static void beforeClass() {
-        Logger logger = Log.DEFAULT_LOGGER;
-        if (logger instanceof StdOutLogger)
-            ((StdOutLogger) logger).setLevel(Logger.Level.INFO);
+        Logger.setLevel(Logger.Level.INFO);
     }
 
     @After

@@ -12,7 +12,6 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FInstantiatedClass;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.logging.Log;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.location.Location;
 import tys.frontier.parser.location.Position;
@@ -31,12 +30,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static tys.frontier.logging.Logger.info;
+import static tys.frontier.logging.Logger.warn;
+
 public class Parser {
 
     private Set<FInstantiatedClass> classesToPrepare = new HashSet<>();
 
     public static FrontierModule parse(Path file, Style style) throws IOException, SyntaxErrors, SyntaxError {
-        Log.info(Parser.class, "parsing  " + file);
+        info("parsing  %s", file);
         Parser parser = new Parser();
         Parser old = State.get().setCurrentParser(parser);
         try {
@@ -48,7 +50,7 @@ public class Parser {
             parser.classesToPrepare = null;
             prepareClasses(module, delegates, classesToPrepare);
             visitBodies(module, delegates);
-            Log.info(Parser.class, "finished " + file);
+            info("finished %s", file);
             return module;
         } finally {
             old = State.get().setCurrentParser(old);
@@ -140,7 +142,7 @@ public class Parser {
         if (!syntaxErrors.isEmpty())
             throw SyntaxErrors.create(syntaxErrors);
         if (!warnings.isEmpty())
-            Log.warning(Parser.class, warnings.toString());
+            warn(warnings.toString());
     }
 
     public void registerInstantiatedClass(FInstantiatedClass toRegister) throws NonEmbeddableType {

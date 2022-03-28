@@ -21,7 +21,6 @@ import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.*;
 import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
-import tys.frontier.logging.Log;
 import tys.frontier.util.FileUtils;
 import tys.frontier.util.Joiners;
 import tys.frontier.util.OS;
@@ -35,6 +34,7 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static org.bytedeco.llvm.global.LLVM.*;
 import static tys.frontier.backend.llvm.LLVMUtil.*;
+import static tys.frontier.logging.Logger.info;
 
 public class LLVMModule implements AutoCloseable {
 
@@ -619,13 +619,13 @@ public class LLVMModule implements AutoCloseable {
                 break;
             case EXECUTABLE:
                 String tempName = State.get().getTempDir().getPath() + fileName.substring(fileName.lastIndexOf(FileUtils.filesep)) + "_temp.o";
-                Log.info(this, "writing temporary object file to: " + tempName);
+                info("writing temporary object file to: %s", tempName);
                 try (Target target = Target.getDefault()) {
                     errorId = target.emitToFile(module, tempName, LLVMObjectFile, error);
                     if (errorId != 0)
                         break;
                     ProcessBuilder linkerCall = Linker.buildCall(tempName, fileName, userLibs, target.getTargetTriple(), debug);
-                    Log.info(this, "calling Linker: " + Joiners.ON_SPACE.join(linkerCall.command()));
+                    info("calling Linker: %s", Joiners.ON_SPACE.join(linkerCall.command()));
                     Process p = linkerCall.inheritIO().start();
                     p.waitFor();
                 } catch (IOException | InterruptedException e) {
