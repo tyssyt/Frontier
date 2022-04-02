@@ -1,91 +1,51 @@
 package tys.frontier.code.module;
 
-import com.google.common.collect.MoreCollectors;
+import com.google.common.base.Suppliers;
 import tys.frontier.code.FVisibilityModifier;
 import tys.frontier.code.function.FFunction;
 import tys.frontier.code.function.Signature;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
-import tys.frontier.parser.ParsedFile;
 
-import java.util.*;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.function.Supplier;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static java.util.stream.Collectors.toMap;
+import static tys.frontier.util.Utils.asMap;
 
 public class FrontierModule implements Module {
 
-    private ParsedFile entryPoint;
-    private List<Include> nativeIncludes = new ArrayList<>();
+    private String name;
+    private List<Module> imports;
+    private List<Path> files;
+    private List<Include> nativeIncludes;
+
+    private Map<FIdentifier, DefaultNamespace> namespaces;
 
     //cached thingies
-    private Map<FIdentifier, DefaultNamespace> exportedNamespaces;
-    private List<ParsedFile> files;
+    private Supplier<Map<FIdentifier, DefaultNamespace>> exportedNamespaces = Suppliers.memoize(this::initExportedNamespaces);
 
-    @Deprecated
-    public ParsedFile getEntryPoint() { //TODO I *should* be able to remove this
-        return entryPoint;
+    public FrontierModule(String name, List<Module> imports, List<Path> files, List<Include> nativeIncludes, List<DefaultNamespace> namespaces) {
+        this.name = name;
+        this.imports = imports;
+        this.files = files;
+        this.nativeIncludes = nativeIncludes;
+        this.namespaces = asMap(namespaces);
     }
 
     @Override
-    public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
-        return getNamespaces()
-                .flatMap(namespace -> namespace.getFunctions(false).values().stream())
-                .map(Signature::getFunction)
-                .filter(FFunction::isMain)
-                .collect(MoreCollectors.onlyElement());
-    }
-
-    public void setEntryPoint(ParsedFile entryPoint) {
-        assert this.entryPoint == null;
-        this.entryPoint = entryPoint;
+    public String getName() {
+        return name;
     }
 
     @Override
-    public Map<FIdentifier, DefaultNamespace> getExportedNamespaces() {
-        if (exportedNamespaces == null)
-            exportedNamespaces = initExportedNamespaces();
-        return exportedNamespaces;
-    }
-
-    private Map<FIdentifier, DefaultNamespace> initExportedNamespaces() {
-        return getNamespaces()
-                .filter(namespace -> namespace.getVisibility() == FVisibilityModifier.EXPORT)
-                .collect(toMap(DefaultNamespace::getIdentifier, Function.identity()));
-    }
-
-    @Override
-    public DefaultNamespace getNamespace(FIdentifier identifier) {
-        for (ParsedFile file : getFiles()) {
-            DefaultNamespace namespace = file.getNamespaces().get(identifier);
-            if (namespace != null && namespace.getVisibility() != FVisibilityModifier.PRIVATE)
-                return namespace;
-        }
-        return null;
-    }
-
-    @Override
-    public Stream<DefaultNamespace> getNamespaces() {
-        return getFiles().stream().flatMap(file -> file.getNamespaces().values().stream());
-    }
-
-    public List<ParsedFile> getFiles() {
-        if (files == null)
-            files = initFiles();
-        return files;
-    }
-
-    private List<ParsedFile> initFiles()  {
-        List<ParsedFile> res = new ArrayList<>();
-        Queue<ParsedFile> toDo = new ArrayDeque<>();
-        toDo.add(entryPoint);
-        while (!toDo.isEmpty()) {
-            ParsedFile cur = toDo.remove();
-            res.add(cur);
-            toDo.addAll(cur.getIncludes());
-        }
-        return res;
+    public List<Module> getImports() {
+        return imports;
     }
 
     @Override
@@ -93,16 +53,30 @@ public class FrontierModule implements Module {
         return nativeIncludes;
     }
 
-    public void addNativeIncludes(List<Include> nativeIncludes) {
-        this.nativeIncludes.addAll(nativeIncludes);
+    public List<Path> getFiles() {
+        return files;
     }
 
     @Override
-    public List<Module> getImports() {
-        List<Module> res = new ArrayList<>();
-        for (ParsedFile file : getFiles()) {
-            res.addAll(file.getImports());
-        }
-        return res;
+    public Map<FIdentifier, DefaultNamespace> getNamespaces() {
+        return namespaces;
+    }
+
+    @Override
+    public Map<FIdentifier, DefaultNamespace> getExportedNamespaces() {
+        return exportedNamespaces.get();
+    }
+    private Map<FIdentifier, DefaultNamespace> initExportedNamespaces() {
+        return namespaces.values().stream()
+                .filter(namespace -> namespace.getVisibility() == FVisibilityModifier.EXPORT)
+                .collect(toMap(DefaultNamespace::getIdentifier, Function.identity()));
+    }
+
+    public FFunction findMain() throws IllegalArgumentException, NoSuchElementException {
+        return namespaces.values().stream()
+                .flatMap(namespace -> namespace.getFunctions(false).values().stream())
+                .map(Signature::getFunction)
+                .filter(FFunction::isMain)
+                .collect(onlyElement());
     }
 }

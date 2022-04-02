@@ -49,7 +49,7 @@ public class ParserTest {
     @Test
     public void parseAccessForbiddenClass() throws Exception {
         SyntaxError e = parseSyntaxError("AccessForbiddenClass.front");
-        assertEquals(UndeclaredVariable.class, e.getClass()); //this was TypeNotFound before the identifier change, due to how findLocal findType works we now classify B as not found local variable and not found type
+        assertEquals(PrivateNamespace.class, e.getClass()); //this was TypeNotFound before the identifier change, due to how findLocal findType works we now classify B as not found local variable and not found type
     }
     @Test
     public void parseAvoidCastingEverythingToBool() throws Exception {
@@ -83,11 +83,6 @@ public class ParserTest {
     public void parseCyclicDelegate2() throws Exception {
         SyntaxError e = parseSyntaxError("CyclicDelegate2.front");
         assertEquals(CyclicDelegate.class, e.getClass());
-    }
-    @Test
-    public void parseCyclicInclude() throws Exception {
-        SyntaxError e = parseSyntaxError("CyclicInclude.front");
-        assertEquals(CyclicInclude.class, e.getClass());
     }
     @Test
     public void parseDelegateFromStaticField() throws Exception {

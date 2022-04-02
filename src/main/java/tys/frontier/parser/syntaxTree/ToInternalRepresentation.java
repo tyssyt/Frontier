@@ -28,7 +28,6 @@ import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.code.typeInference.Constraints;
 import tys.frontier.code.typeInference.ImplicitCastable;
 import tys.frontier.code.typeInference.Variance;
-import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.location.Location;
@@ -68,6 +67,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     }
 
     private SyntaxTreeData treeData;
+    private Map<FIdentifier, DefaultNamespace> namespaceResolver;
     private List<Warning> warnings;
     private List<SyntaxError> errors;
 
@@ -77,20 +77,18 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
     private Deque<FunctionContext> functionContextStack = new ArrayDeque<>();
     private Map<FVariable, FTypeVariable> typeVariableMap = new HashMap<>();
 
-    private ParsedFile file;
-
     private boolean useLhsresolve = false;
 
 
-    private ToInternalRepresentation(ParsedFile file, List<Warning> warnings, List<SyntaxError> errors) {
-        this.treeData = file.getTreeData();
-        this.file = file;
+    private ToInternalRepresentation(SyntaxTreeData treeData, Map<FIdentifier, DefaultNamespace> namespaceResolver, List<Warning> warnings, List<SyntaxError> errors) {
+        this.treeData = treeData;
+        this.namespaceResolver = namespaceResolver;
         this.warnings = warnings;
         this.errors = errors;
     }
 
-    public static void toInternal(ParsedFile file, List<Warning> warnings, List<SyntaxError> errors) {
-        ToInternalRepresentation visitor = new ToInternalRepresentation(file, warnings, errors);
+    public static void toInternal(SyntaxTreeData treeData, Map<FIdentifier, DefaultNamespace> namespaceResolver, List<Warning> warnings, List<SyntaxError> errors) {
+        ToInternalRepresentation visitor = new ToInternalRepresentation(treeData, namespaceResolver, warnings, errors);
         try {
             visitor.visitFile(visitor.treeData.root);
         } catch (AssertionError assertionError) {
@@ -115,16 +113,19 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
             if (res != null)
                 return res.getNamespace();
         }
+
         //check type parameters of current class
         if (currentTypeParams != null) {
             FType type = currentTypeParams.get(identifier);
             if (type != null)
                 return type.getNamespace();
         }
+
         //check module & imports
-        Namespace namespace = file.resolveNamespace(identifier);
+        DefaultNamespace namespace = namespaceResolver.get(identifier);
         if (namespace != null)
             return namespace;
+
         if (searchLocal) {
             //check for declaration of type variables
             try {
@@ -138,6 +139,7 @@ public class ToInternalRepresentation extends FrontierBaseVisitor<Object> {
                 throw new TypeNotFound(position, identifier);
             }
         }
+
         throw new TypeNotFound(position, identifier);
     }
 

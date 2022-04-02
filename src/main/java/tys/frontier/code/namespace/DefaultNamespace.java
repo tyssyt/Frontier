@@ -44,6 +44,7 @@ public class DefaultNamespace implements Namespace {
     private NameGenerator returnTypeNames;
 
     public DefaultNamespace(Location location, FIdentifier identifier, FVisibilityModifier visibility, NativeDecl nativeDecl, FClass fClass) {
+        assert visibility != FVisibilityModifier.PRIVATE;
         this.location = location;
         this.identifier = identifier;
         this.visibility = visibility;

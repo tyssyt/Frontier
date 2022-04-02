@@ -1,28 +1,21 @@
 package tys.frontier.code.module;
 
-import tys.frontier.code.function.FFunction;
 import tys.frontier.code.identifier.FIdentifier;
 import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.visitor.ModuleVisitor;
 import tys.frontier.code.visitor.ModuleWalker;
 
 import java.util.*;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static tys.frontier.util.Utils.map;
 
 public interface Module {
-    FFunction findMain() throws IllegalArgumentException, NoSuchElementException;
 
-    Map<FIdentifier, DefaultNamespace> getExportedNamespaces();
-
-    DefaultNamespace getNamespace(FIdentifier identifier);
-
-    Stream<DefaultNamespace> getNamespaces();
-
-    List<Include> getNativeIncludes();
-
+    String getName();
     List<Module> getImports();
+    List<Include> getNativeIncludes();
+    Map<FIdentifier, DefaultNamespace> getNamespaces();
+    Map<FIdentifier, DefaultNamespace> getExportedNamespaces();
 
     default List<Module> findImportedModulesReflexiveTransitive() {
         List<Module> res = new ArrayList<>();
@@ -42,7 +35,6 @@ public interface Module {
 
     default <M,N,C,Fi,Fu,S,E> M accept(ModuleVisitor<M, N, C, Fi, Fu, S, E> visitor) {
         visitor.enterModule(this);
-        List<N> ns = getNamespaces().map(namespace -> namespace.accept(visitor)).collect(toList());
-        return visitor.exitModule(this, ns);
+        return visitor.exitModule(this, map(getNamespaces().values(), ns -> ns.accept(visitor)));
     }
 }

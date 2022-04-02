@@ -273,7 +273,7 @@ public class FForEachLowering extends StatementReplacer {
         FIdentifier stringsIdentifier = new FIdentifier("Strings");
         Namespace stringsNamespace = null;
         for (Module _import : State.get().getTypeModule().getImports()) {
-            stringsNamespace = _import.getNamespace(stringsIdentifier);
+            stringsNamespace = _import.getNamespaces().get(stringsIdentifier);
             if (stringsNamespace != null)
                 break;
         }

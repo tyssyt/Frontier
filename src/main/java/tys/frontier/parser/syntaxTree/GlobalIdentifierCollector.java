@@ -18,7 +18,6 @@ import tys.frontier.code.type.FClass;
 import tys.frontier.code.type.FType;
 import tys.frontier.code.type.FTypeVariable;
 import tys.frontier.parser.Delegates;
-import tys.frontier.parser.ParsedFile;
 import tys.frontier.parser.antlr.FrontierBaseVisitor;
 import tys.frontier.parser.antlr.FrontierParser;
 import tys.frontier.parser.location.Location;
@@ -35,23 +34,23 @@ import java.util.function.Function;
 
 public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
 
-    private ParsedFile file;
     private SyntaxTreeData treeData;
+    private Map<FIdentifier, DefaultNamespace> namespaceResolver;
     private Delegates delegates;
     private List<SyntaxError> errors;
 
     private DefaultNamespace currentNamespace;
     private FClass currentClass;
 
-    private GlobalIdentifierCollector(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
-        this.file = file;
-        this.treeData = file.getTreeData();
+    private GlobalIdentifierCollector(SyntaxTreeData treeData, Map<FIdentifier, DefaultNamespace> namespaceResolver, Delegates delegates, List<SyntaxError> errors) {
+        this.treeData = treeData;
+        this.namespaceResolver = namespaceResolver;
         this.delegates = delegates;
         this.errors = errors;
     }
 
-    public static void collectIdentifiers(ParsedFile file, Delegates delegates, List<SyntaxError> errors) {
-        GlobalIdentifierCollector collector = new GlobalIdentifierCollector(file, delegates, errors);
+    public static void collectIdentifiers(SyntaxTreeData treeData, Map<FIdentifier, DefaultNamespace> namespaceResolver, Delegates delegates, List<SyntaxError> errors) {
+        GlobalIdentifierCollector collector = new GlobalIdentifierCollector(treeData, namespaceResolver, delegates, errors);
         for (FrontierParser.ClassDeclarationContext ctx : collector.treeData.root.classDeclaration()) {
             ctx.accept(collector);
         }
@@ -261,6 +260,6 @@ public class GlobalIdentifierCollector extends FrontierBaseVisitor<Object> {
             for (FType p : currentClass.getParametersList())
                 if (p.getIdentifier().equals(identifier))
                     return p.getNamespace();
-        return file.resolveNamespace(identifier);
+        return namespaceResolver.get(identifier);
     }
 }

@@ -1,11 +1,8 @@
 package tys.frontier.parser.modules;
 
-import com.google.common.collect.ImmutableMap;
 import tys.frontier.State;
-import tys.frontier.code.identifier.FIdentifier;
+import tys.frontier.code.module.FrontierModule;
 import tys.frontier.code.module.Module;
-import tys.frontier.code.module.SimpleModule;
-import tys.frontier.code.namespace.DefaultNamespace;
 import tys.frontier.code.predefinedClasses.FFieldType;
 import tys.frontier.code.predefinedClasses.FTypeType;
 import tys.frontier.parser.Parser;
@@ -15,10 +12,7 @@ import tys.frontier.style.Style;
 import tys.frontier.util.FileUtils;
 
 import java.io.IOException;
-import java.nio.file.Path;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import java.util.List;
 
 public class ResourceRepository implements ModuleRepository {
 
@@ -29,13 +23,10 @@ public class ResourceRepository implements ModuleRepository {
 
     @Override
     public Module resolve(String name) throws SyntaxErrors, IOException, SyntaxError { //TODO make this work when running in a Jar
-        switch (name) {
-            case "Type":
-                return createTypeModule();
-            default:
-                Path path = FileUtils.pathToResource("Frontier Libs/" + name + ".front");
-                return Parser.parse(path, getStyle());
-        }
+        return switch (name) {
+            case "Type" -> createTypeModule();
+            default -> Parser.parse(FileUtils.pathToResource("Frontier Libs/" + name + ".front"), getStyle());
+        };
     }
 
     @Override
@@ -43,11 +34,10 @@ public class ResourceRepository implements ModuleRepository {
         return Style.DEFAULT_STYLE;
     }
 
-    private static SimpleModule createTypeModule() throws SyntaxErrors, SyntaxError {
+    private static Module createTypeModule() throws SyntaxErrors, SyntaxError {
         Module _import = State.get().getImportResolver().requestModule("Strings"); //TODO requests strings specifically from this repo...
-        ImmutableMap<FIdentifier, DefaultNamespace> namespaces = ImmutableMap.of(FTypeType.IDENTIFIER, FTypeType.INSTANCE.getNamespace(), FFieldType.IDENTIFIER, FFieldType.INSTANCE.getNamespace());
-        SimpleModule res = new SimpleModule(namespaces, singletonList(_import), emptyList());
-        State.get().setTypeModule(res);
-        return res;
+        FrontierModule typeModule = new FrontierModule("Type", List.of(_import), List.of(), List.of(), List.of(FTypeType.INSTANCE.getNamespace(), FFieldType.INSTANCE.getNamespace()));
+        State.get().setTypeModule(typeModule);
+        return typeModule;
     }
 }

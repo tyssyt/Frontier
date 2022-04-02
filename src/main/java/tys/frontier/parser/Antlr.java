@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-public class FileParser {
+public class Antlr {
 
-    public static ParsedFile runAntlr(Path file, Style style) throws IOException, SyntaxErrors {
+    public static FrontierParser.FileContext runAntlr(Path file, Style style) throws IOException, SyntaxErrors {
         try (InputStream input = new FileInputStream(file.toFile())) {
             FrontierLexer lexer = new FrontierLexer(CharStreams.fromStream(input), style.getKeywords());
             CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -29,12 +29,11 @@ public class FileParser {
             FrontierParser.FileContext res = parser.file();
             if (parser.getNumberOfSyntaxErrors() > 0)
                 throw SyntaxErrors.create(errorListener.errors);
-            return new ParsedFile(res, file);
+            return res;
         }
     }
 
     private static class AntLrErrorListener implements ANTLRErrorListener {
-
         private List<AntRecognitionException> errors = new ArrayList<>();
 
         @Override
@@ -43,19 +42,13 @@ public class FileParser {
         }
 
         @Override
-        public void reportAmbiguity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact, BitSet ambigAlts, ATNConfigSet configs) {
-
-        }
+        public void reportAmbiguity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, boolean exact, BitSet ambigAlts, ATNConfigSet configs) {}
 
         @Override
-        public void reportAttemptingFullContext(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, BitSet conflictingAlts, ATNConfigSet configs) {
-
-        }
+        public void reportAttemptingFullContext(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, BitSet conflictingAlts, ATNConfigSet configs) {}
 
         @Override
-        public void reportContextSensitivity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {
-
-        }
+        public void reportContextSensitivity(org.antlr.v4.runtime.Parser recognizer, DFA dfa, int startIndex, int stopIndex, int prediction, ATNConfigSet configs) {}
     }
 
 }

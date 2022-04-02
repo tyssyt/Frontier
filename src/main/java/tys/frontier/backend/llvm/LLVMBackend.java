@@ -41,13 +41,13 @@ public class LLVMBackend implements Backend {
         List<Module> allModules = fModule.findImportedModulesReflexiveTransitive();
         if (reachability == null) {
             namespaces = allModules.stream()
-                    .flatMap(Module::getNamespaces)
+                    .flatMap(m -> m.getNamespaces().values().stream())
                     .collect(toList());
         } else {
             namespaces = reachability.getReachableNamespaces().keySet();
         }
         //TODO optimization opertunity, when a param is never written to (or dereferenced) we don't have to alloca it... but that can be done by opt passes...
-        try (LLVMModule module = createModule(fModule.getEntryPoint().getFilePath().toString(), namespaces, fModule.findMain(), debug)) {
+        try (LLVMModule module = createModule(fModule.getName(), namespaces, fModule.findMain(), debug)) {
             if (out.lastIndexOf('.') < 2) //TODO this breaks if .. appears in out
                 out = out + '.' + fileType.fileExtension;
             if (fileType == OutputFileType.LLVM_IR) {
