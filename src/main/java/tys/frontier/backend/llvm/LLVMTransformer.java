@@ -130,7 +130,7 @@ class LLVMTransformer implements
         if (debug) {
             this.diBuilder = module.createDebugInfoBuilder();
             LLVMMetadataRef fileScope = createFileScope(entryPoint.getLocation());
-            LLVMDIBuilderCreateCompileUnit(diBuilder, LLVMDWARFSourceLanguageC, fileScope, "me :)", 5, FALSE, "", 0, 0, "", 0, LLVMDWARFEmissionFull, 0, TRUE, FALSE);
+            LLVMDIBuilderCreateCompileUnit(diBuilder, LLVMDWARFSourceLanguageC, fileScope, "me :)", 5, FALSE, "", 0, 0, "", 0, LLVMDWARFEmissionFull, 0, TRUE, FALSE, "", 0, "", 0);
             if (OS.isWindows()) {
                 //TODO no idea what the behaviour does
                 LLVMAddModuleFlag(module.getModule(), LLVMModuleFlagBehaviorWarning, "CodeView", 8, LLVMValueAsMetadata(indexLiteral(1)));
