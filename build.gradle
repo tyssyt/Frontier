@@ -3,7 +3,7 @@ version '0.11'
 apply plugin: 'java'
 apply plugin: 'antlr'
 
-sourceCompatibility = 14
+sourceCompatibility = 15
 compileJava.options.encoding = 'UTF-8'
 
 repositories {
@@ -21,10 +21,10 @@ sourceSets {
 
 dependencies {
     antlr 'org.antlr:antlr4:4.9.3'
-    compile group: 'org.bytedeco', name: 'llvm-platform', version: '13.0.1-1.5.7'
-    compile group: 'com.google.guava', name: 'guava', version: '31.1-jre'
-    compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.5.8'
-    testCompile group: 'junit', name: 'junit', version: '4.13.2'
+    implementation group: 'org.bytedeco', name: 'llvm-platform', version: '13.0.1-1.5.7'
+    implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+    implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.5.8'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 }
 
 generateGrammarSource {
